@@ -1,15 +1,13 @@
-// src/app/layout.tsx
-import { ClerkProvider } from '@clerk/nextjs'; // Importe o ClerkProvider
-import type { Metadata } from 'next'; // Importe Metadata
-import { Inter } from 'next/font/google'; // Importe a fonte Inter
+import { ClerkProvider } from '@clerk/nextjs';
+import { Inter } from 'next/font/google';
+import type { Metadata } from 'next';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] }); // Inicialize a fonte Inter
+const inter = Inter({ subsets: ['latin'] });
 
-// Defina os metadados para sua aplicação
 export const metadata: Metadata = {
-  title: 'DJ Pool App',
-  description: 'Sua plataforma de músicas para DJs',
+  title: 'DJ Pool Platform',
+  description: 'Sua plataforma de músicas para DJs.',
 };
 
 export default function RootLayout({
@@ -18,14 +16,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // Garanta que não há espaços ou quebras de linha entre 'return (' e a tag <html>
-    <html lang="pt-BR" className={inter.className}> {/* Aplica a classe da fonte aqui */}
-      <body>
-        {/* Envolva sua aplicação com ClerkProvider aqui dentro do <body> */}
-        <ClerkProvider>
-          {children} {/* Renderiza o conteúdo das suas páginas */}
-        </ClerkProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="pt-BR">
+        <body className={inter.className}>{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }

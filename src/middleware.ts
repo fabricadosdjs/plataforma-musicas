@@ -1,13 +1,16 @@
-// src/middleware.ts (Versão de Teste Simplificada)
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-export function middleware(request: NextRequest) {
-    // Não faz nada, apenas continua para a rota solicitada
-    return NextResponse.next();
-}
+// Define quais rotas são protegidas e exigem login
+const isProtectedRoute = createRouteMatcher([
+  '/admin(.*)', // Exemplo: protege a rota /admin e suas sub-rotas
+]);
 
-// Aplica o middleware a todas as rotas
+export default clerkMiddleware((auth, req) => {
+  if (isProtectedRoute(req)) {
+    auth().protect();
+  }
+});
+
 export const config = {
-    matcher: '/((?!_next/static|_next/image|favicon.ico).*)',
+  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
 };
