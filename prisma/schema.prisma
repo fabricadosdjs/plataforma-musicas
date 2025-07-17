@@ -1,0 +1,29 @@
+// prisma/schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  isPro     Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Track {
+  id                   String   @id @default(cuid())
+  title                String
+  artist               String
+  genre                String
+  mediafirePlayUrl     String
+  mediafireDownloadUrl String
+  isFeatured           Boolean  @default(false)
+  playCount            Int      @default(0)
+  downloadCount        Int      @default(0)
+  createdAt            DateTime @default(now())
+}
