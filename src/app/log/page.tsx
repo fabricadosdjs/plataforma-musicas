@@ -1,8 +1,8 @@
-// src/app/new/page.tsx
+"use client"; // Adicionado para permitir o uso de event handlers como onError
 
 // Este componente representa a página de músicas recém-adicionadas.
 // É a homepage padrão do seu aplicativo DJ Pool.
-export default function NewPage() {
+export default function LogPage() {
     return (
         <div className="min-h-screen bg-white text-black flex flex-col">
             {/* Cabeçalho */}
@@ -22,7 +22,7 @@ export default function NewPage() {
 
             {/* Conteúdo Principal */}
             <main className="flex-grow container mx-auto p-4 md:p-8">
-                <h2 className="text-3xl font-bold text-primary mb-6">Músicas Recém-Adicionadas</h2>
+                <h2 className="text-3xl font-bold text-primary mb-6">Músicas Recém-Adicionadas (Log)</h2>
 
                 {/* Grade de Músicas (Placeholder) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
