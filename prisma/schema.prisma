@@ -33,15 +33,22 @@ model Download {
 }
 
 model User {
-  id        String     @id @unique
-  email     String?    @unique
-  name      String?
+  id                    String    @id @unique
+  email                 String?   @unique
+  name                  String?
   // Relações com os novos modelos
-  likes     Like[]
-  downloads Download[]
+  likes                 Like[]
+  downloads             Download[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Campos para integração com Stripe (Adicionados aqui)
+  stripeCustomerId      String?   @unique // ID do cliente Stripe
+  stripeSubscriptionId  String?   @unique // ID da assinatura Stripe
+  stripePriceId         String?   // ID do preço do produto Stripe (plano)
+  stripeCurrentPeriodEnd DateTime? // Fim do período atual da assinatura
+  subscriptionStatus    String?   // Status da assinatura (e.g., 'active', 'canceled', 'trialing')
 }
 
 model Track {
