@@ -14,11 +14,11 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 // O middleware do Clerk.
-// Ele recebe uma função que é executada para cada requisição.
-export default clerkMiddleware((auth, req) => {
+// 'auth' já é o objeto de autenticação, não precisa ser chamado como função.
+export default clerkMiddleware((auth, req) => { // <--- MUDANÇA AQUI: Removido 'async'
     // Se a rota NÃO for pública, protege-a (exige autenticação)
     if (!isPublicRoute(req)) {
-        auth().protect();
+        auth.protect(); // <--- MUDANÇA AQUI: Removido 'await' e parênteses de 'auth()'
     }
 });
 
