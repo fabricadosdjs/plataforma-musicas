@@ -1,8 +1,21 @@
-// src/app/featured/page.tsx
+"use client";
+
+import MainLayout from "@/components/layout/MainLayout";
+
 export default function FeaturedPage() {
+    
+    const PageContent = () => {
+        return (
+            <div className="flex-grow p-8">
+                <h1 className="text-3xl font-extrabold text-gray-900">Músicas em Destaque</h1>
+                <p className="mt-4 text-gray-600">O conteúdo desta página será implementado em breve.</p>
+            </div>
+        );
+    };
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-white text-black text-2xl font-bold p-4">
-            Página de Destaques
-        </div>
+        <MainLayout>
+            {() => <PageContent />}
+        </MainLayout>
     );
 }

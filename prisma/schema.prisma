@@ -1,29 +1,60 @@
-// prisma/schema.prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  isPro     Boolean  @default(false)
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Novo modelo para armazenar Likes
+model Like {
+  id        Int      @id @default(autoincrement())
+  trackId   Int
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+
+  @@unique([userId, trackId])
+}
+
+// Novo modelo para armazenar Downloads
+model Download {
+  id        Int      @id @default(autoincrement())
+  trackId   Int
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, trackId])
+}
+
+model User {
+  id        String     @id @unique
+  email     String?    @unique
+  name      String?
+  // Relações com os novos modelos
+  likes     Like[]
+  downloads Download[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Track {
-  id                   String   @id @default(cuid())
-  title                String
-  artist               String
-  genre                String
-  mediafirePlayUrl     String
-  mediafireDownloadUrl String
-  isFeatured           Boolean  @default(false)
-  playCount            Int      @default(0)
-  downloadCount        Int      @default(0)
-  createdAt            DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  songName    String
+  artist      String
+  style       String
+  version     String
+  imageUrl    String
+  previewUrl  String
+  downloadUrl String
+  releaseDate DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
