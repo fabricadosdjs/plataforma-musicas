@@ -130,7 +130,7 @@ const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, cu
     );
 });
 
-const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload, likedTracks, downloadedTracks, currentTrackId, isPlaying }: { tracks: Track[], onPlay: (track: Track) => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, likedTracks: number[], downloadedTracks: number[], currentTrackId: number | null, isPlaying: boolean }) {
+const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload, likedTracks, downloadedTracks, currentTrackId, isPlaying }: { tracks: Track[], onPlay: (track: Track, list: Track[]) => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, likedTracks: number[], downloadedTracks: number[], currentTrackId: number | null, isPlaying: boolean }) {
     return (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm table-fixed">
@@ -161,7 +161,7 @@ const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload
                 return (
                   <tr key={track.id} className="border-b border-gray-800 hover:bg-[#2a2b2c] group">
                     <td className="p-3 text-center">
-                      <button onClick={() => onPlay(track)} className="w-16 h-16 flex items-center justify-center rounded-lg bg-gray-700/20 group-hover:bg-blue-500 transition-colors relative">
+                      <button onClick={() => onPlay(track, tracks)} className="w-16 h-16 flex items-center justify-center rounded-lg bg-gray-700/20 group-hover:bg-blue-500 transition-colors relative">
                         <img src={track.imageUrl} alt={track.songName} className="w-full h-full object-cover rounded-lg" />
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             {isCurrentlyPlaying && isPlaying ? <Pause size={24} className="text-white" /> : <Play size={24} className="text-white" />}
@@ -187,6 +187,55 @@ const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload
           </table>
         </div>
       );
+});
+
+const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onLike, onDownload, onPlayPause, isPlaying }: { track: Track | null, onNext: () => void, onPrevious: () => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, onPlayPause: (state: boolean) => void, isPlaying: boolean }) {
+    const waveformRef = useRef<HTMLDivElement>(null);
+    const wavesurfer = useRef<any>(null);
+
+    useEffect(() => {
+        const createWaveSurfer = async () => {
+            if (waveformRef.current) {
+                const WaveSurfer = (await import('wavesurfer.js')).default;
+                if (wavesurfer.current) wavesurfer.current.destroy();
+                wavesurfer.current = WaveSurfer.create({ container: waveformRef.current, waveColor: '#4A5568', progressColor: '#38B2AC', cursorWidth: 1, barWidth: 2, barGap: 2, barRadius: 2, height: 40, responsive: true, hideScrollbar: true });
+                if (track) {
+                    wavesurfer.current.load(track.previewUrl);
+                    wavesurfer.current.on('ready', () => wavesurfer.current.play());
+                    wavesurfer.current.on('play', () => onPlayPause(true));
+                    wavesurfer.current.on('pause', () => onPlayPause(false));
+                    wavesurfer.current.on('finish', onNext);
+                }
+            }
+        };
+        if (track) createWaveSurfer();
+        return () => wavesurfer.current?.destroy();
+    }, [track, onNext, onPlayPause]);
+
+    if (!track) return null;
+    
+    const handlePlayPause = () => wavesurfer.current?.playPause();
+
+    return (
+        <footer className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-gray-800 z-20">
+            <div className="container mx-auto px-6 py-3 flex items-center gap-4">
+                <img src={track.imageUrl} alt={track.songName} className="w-14 h-14 rounded-lg shadow-sm flex-shrink-0" />
+                <div className="flex items-center gap-4 flex-shrink-0">
+                    <button onClick={onPrevious} className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-700"><SkipBack size={20} /></button>
+                    <button onClick={handlePlayPause} className="w-12 h-12 flex items-center justify-center rounded-full bg-white text-black hover:bg-gray-200 transition-transform hover:scale-105">{isPlaying ? <Pause size={24} /> : <Play size={24} />}</button>
+                    <button onClick={onNext} className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-700"><SkipForward size={20} /></button>
+                </div>
+                <div className="flex-grow flex flex-col justify-center gap-1 w-full min-w-0">
+                    <div className="truncate"><p className="font-bold text-white truncate">{track.songName}</p><p className="text-sm text-gray-400 truncate">{track.artist}</p></div>
+                    <div ref={waveformRef} className="w-full h-[40px]"></div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button onClick={() => onLike(track.id)} className="p-3 rounded-full hover:bg-blue-500/10" title="Like"><ThumbsUp size={20} className="text-blue-400" /></button>
+                  <button onClick={() => onDownload(track)} className="p-3 rounded-full hover:bg-green-500/10" title="Download"><Download size={20} className="text-green-400" /></button>
+                </div>
+            </div>
+        </footer>
+    );
 });
 
 const SiteFooter = memo(function SiteFooter() {
@@ -236,7 +285,7 @@ function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: nu
 
 // --- Página Principal ---
 export default function NewPage() {
-  const { playTrack, currentTrack, likedTracks, downloadedTracks, handleLike, handleDownload, alertMessage, closeAlert, isUserDataLoaded, isPlaying } = useAppContext();
+  const { playTrack, nextTrack, previousTrack, currentTrack, likedTracks, downloadedTracks, handleLike, handleDownload, alertMessage, closeAlert, isUserDataLoaded, isPlaying, setIsPlaying } = useAppContext();
   
   const [allTracks, setAllTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -366,8 +415,16 @@ export default function NewPage() {
           <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </main>
       </div>
-      {/* O FooterPlayer foi removido da renderização principal, pois agora é controlado pelo AppContext */}
       <SiteFooter />
+      <FooterPlayer 
+          track={currentTrack} 
+          onNext={nextTrack}
+          onPrevious={previousTrack}
+          onLike={handleLike}
+          onDownload={handleDownload}
+          isPlaying={isPlaying}
+          onPlayPause={setIsPlaying}
+      />
     </div>
   );
 }
