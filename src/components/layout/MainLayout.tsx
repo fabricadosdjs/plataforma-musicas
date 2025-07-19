@@ -112,6 +112,7 @@ const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query
 
 const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onLike, onDownload, isPlaying, onPlayPause }: { track: Track | null, onNext: () => void, onPrevious: () => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, isPlaying: boolean, onPlayPause: (state: boolean) => void }) {
     const waveformRef = useRef<HTMLDivElement>(null);
+    // CORRIGIDO: Removido o ponto e vírgula extra no comentário
     const wavesurfer = useRef<WaveSurferInstance | null>(null); // CORRIGIDO: Tipado useRef
     // const [isPlaying, setIsPlaying] = useState(false); // REMOVIDO: isPlaying e setIsPlaying vêm do AppContext
 
@@ -271,5 +272,4 @@ function AppConsumerFooterPlayer({ setAlertMessage }: { setAlertMessage: (msg: s
         onPlayPause={setIsPlaying}
     />
   );
-}
 }
