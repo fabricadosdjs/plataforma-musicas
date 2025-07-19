@@ -54,6 +54,7 @@ const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query
     const navLinks = [
       { href: '/new', label: 'New' }, { href: '/featured', label: 'Featured' },
       { href: '/trending', label: 'Trending' }, { href: '/charts', label: 'Charts' },
+      { href: '/pro', label: 'PRO' }, // Adicionado link para PRO
     ];
     return (
       <header className="w-full bg-[#121212]/80 backdrop-blur-sm p-4 flex justify-between items-center border-b border-gray-800 sticky top-0 z-30">
@@ -106,11 +107,11 @@ const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, cu
     }, []);
 
     const handleFilterChange = (type: 'genres' | 'versions' | 'uploadDate', value: string) => {
-      onFilterChange((prevFilters) => { // CORRIGIDO: prevFilters agora é do tipo FiltersState
+      onFilterChange((prevFilters) => {
           if (type === 'genres' || type === 'versions') {
             const currentFilter = prevFilters[type];
-            // CORRIGIDO: Adicionada tipagem explícita para o filter callback se necessário, ou usar as 'string[]'
-            const newFilter = currentFilter.includes(value) ? currentFilter.filter((item: string) => item !== value) : [...currentFilter, value];
+            // CORRIGIDO: Adicionada asserção de tipo explícita para o array resultante
+            const newFilter: string[] = currentFilter.includes(value) ? currentFilter.filter((item: string) => item !== value) : [...currentFilter, value];
             return { ...prevFilters, [type]: newFilter };
           }
           return { ...prevFilters, [type]: value };

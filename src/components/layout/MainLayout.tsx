@@ -13,7 +13,7 @@ import Image from 'next/image';
 // ADICIONADO: Importar os ícones X e Info para o componente Alert
 import { X as XIcon, Info as InfoIcon } from 'lucide-react'; 
 // ADICIONADO: Importar o AppContext para prover os valores
-import { AppContextProvider } from '@/context/AppContext';
+import { AppContextProvider, useAppContext } from '@/context/AppContext'; // Importar useAppContext aqui também
 
 // --- Tipos ---
 // Definição do tipo Track (pode ser a mesma usada nas páginas)
@@ -54,6 +54,7 @@ const Alert = memo(function Alert({ message, onClose }: { message: string, onClo
   );
 });
 
+// CORRIGIDO: Tipagem do parâmetro 'e' no onChange
 const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query: string) => void }) {
     const pathname = usePathname();
     const navLinks = [
@@ -76,7 +77,8 @@ const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query
         </div>
         <div className="relative w-full max-w-md mx-4 hidden lg:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input type="text" placeholder="Pesquisar por música ou artista..." onChange={(e) => onSearchChange(e.target.value)} className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"/>
+          {/* CORRIGIDO: Tipagem explícita para o evento onChange */}
+          <input type="text" placeholder="Pesquisar por música ou artista..." onChange={(e: React.ChangeEvent<HTMLInputElement>) => onSearchChange(e.target.value)} className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"/>
         </div>
         <div className="flex items-center gap-8">
             <nav className="hidden md:flex items-center space-x-8">
@@ -186,7 +188,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   // REMOVIDO: Estados que devem ser gerenciados pelo AppContext ou pela página
   // const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [alertMessage, setAlertMessage] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(''); // Warning: 'searchTerm' is assigned a value but never used.
   // REMOVIDO: Estados que devem ser gerenciados pelo AppContext
   // const [likedTracks, setLikedTracks] = useState<number[]>([]);
   // const [downloadedTracks, setDownloadedTracks] = useState<number[]>([]);
@@ -215,7 +217,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   // para o AppContextProvider. Por isso, este MainLayout deve ser o Wrapper.
 
   // Componente Alert usa o alertMessage deste layout
-  const closeAlert = useCallback(() => setAlertMessage(''), []);
+  const closeAlert = useCallback(() => setAlertMessage(''), []); // Warning: 'setAlertMessage' is defined but never used.
 
   // O Header precisa de onSearchChange. O Player precisa de track, onNext, onPrevious, onLike, onDownload.
   // Estes virão do AppContext.
@@ -269,4 +271,5 @@ function AppConsumerFooterPlayer({ setAlertMessage }: { setAlertMessage: (msg: s
         onPlayPause={setIsPlaying}
     />
   );
+}
 }

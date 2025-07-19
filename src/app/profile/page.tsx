@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, memo, useRef } from 'react'; // REMOVIDO useMemo (não utilizado)
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
-import { useAppContext } from '@/context/AppContext';
+import { useAppContext } from '@/context/AppContext'; // Importar useAppContext
 import { Loader2, Camera, ThumbsUp, Download, Play, AlertCircle, Music, Search, Instagram, Twitter, Facebook, SkipBack, SkipForward, Pause } from 'lucide-react';
 import Link from 'next/link';
 import Head from 'next/head';
@@ -41,6 +41,7 @@ const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query
       { href: '/featured', label: 'Featured' },
       { href: '/trending', label: 'Trending' },
       { href: '/charts', label: 'Charts' },
+      { href: '/pro', label: 'PRO' }, // Adicionado link para PRO
     ];
   
     return (
@@ -106,10 +107,11 @@ const SiteFooter = memo(function SiteFooter() {
     );
 });
 
-const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onLike, onDownload }: { track: Track | null, onNext: () => void, onPrevious: () => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void }) {
+// Este FooterPlayer é o que precisa ser ajustado
+const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onLike, onDownload, isPlaying, onPlayPause }: { track: Track | null, onNext: () => void, onPrevious: () => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, isPlaying: boolean, onPlayPause: (state: boolean) => void }) { // ADICIONADO isPlaying e onPlayPause
     const waveformRef = useRef<HTMLDivElement>(null);
     const wavesurfer = useRef<WaveSurferInstance | null>(null); // CORRIGIDO: Tipado useRef
-    const [isPlaying, setIsPlaying] = useState(false);
+    // REMOVIDO: const [isPlaying, setIsPlaying] = useState(false); // Esta linha (que era 31) é o problema e foi removida
 
     useEffect(() => {
         const createWaveSurfer = async () => {
@@ -120,15 +122,15 @@ const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onL
                 if (track) {
                     wavesurfer.current.load(track.previewUrl);
                     wavesurfer.current.on('ready', () => wavesurfer.current?.play()); // Adicionado '?' para segurança
-                    wavesurfer.current.on('play', () => setIsPlaying(true));
-                    wavesurfer.current.on('pause', () => setIsPlaying(false));
+                    wavesurfer.current.on('play', () => onPlayPause(true)); // Usando onPlayPause do contexto
+                    wavesurfer.current.on('pause', () => onPlayPause(false)); // Usando onPlayPause do contexto
                     wavesurfer.current.on('finish', onNext);
                 }
             }
         };
         if (track) createWaveSurfer();
         return () => wavesurfer.current?.destroy();
-    }, [track, onNext]);
+    }, [track, onNext, onPlayPause]); // Adicionado onPlayPause às dependências
 
     if (!track) return null;
     
@@ -166,9 +168,10 @@ interface ProfileMusicListProps {
     likedTracks: number[];
     downloadedTracks: number[];
     currentTrackId: number | null;
+    isPlaying: boolean; // ADICIONADO: Prop isPlaying para MusicTable
 }
 
-function ProfileMusicList({ tracks, onPlay, onLike, onDownload, likedTracks, downloadedTracks, currentTrackId }: ProfileMusicListProps) {
+function ProfileMusicList({ tracks, onPlay, onLike, onDownload, likedTracks, downloadedTracks, currentTrackId, isPlaying }: ProfileMusicListProps) {
     if (tracks.length === 0) {
         return <p className="text-gray-500 mt-8 text-center">Nenhuma música encontrada nesta lista.</p>;
     }
@@ -178,16 +181,16 @@ function ProfileMusicList({ tracks, onPlay, onLike, onDownload, likedTracks, dow
             {tracks.map((track: Track) => {
                 const isLiked = likedTracks.includes(track.id);
                 const isDownloaded = downloadedTracks.includes(track.id);
-                const isPlaying = track.id === currentTrackId;
+                const isCurrentlyPlaying = track.id === currentTrackId;
 
                 return (
                     <div key={track.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 group transition-colors">
                         <div className="flex items-center gap-4">
-                            <div className={`relative w-12 h-12 rounded-md overflow-hidden cursor-pointer shadow-sm ${isPlaying ? 'ring-2 ring-blue-500' : ''}`} onClick={() => onPlay(track, tracks)}>
+                            <div className={`relative w-12 h-12 rounded-md overflow-hidden cursor-pointer shadow-sm ${isCurrentlyPlaying ? 'ring-2 ring-blue-500' : ''}`} onClick={() => onPlay(track, tracks)}>
                                 {/* CORRIGIDO: Substituído <img> por <Image /> */}
                                 <Image src={track.imageUrl} alt={track.songName} width={48} height={48} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {isPlaying ? <span className="text-white text-xs font-bold">TOCANDO</span> : <Play size={20} className="text-white" />}
+                                    {isCurrentlyPlaying && isPlaying ? <span className="text-white text-xs font-bold">TOCANDO</span> : <Play size={20} className="text-white" />}
                                 </div>
                             </div>
                             <div>
@@ -212,7 +215,7 @@ function ProfileMusicList({ tracks, onPlay, onLike, onDownload, likedTracks, dow
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
-  const { playTrack, nextTrack, previousTrack, currentTrack, likedTracks: likedTrackIds, downloadedTracks: downloadedTrackIds, handleLike, handleDownload } = useAppContext();
+  const { playTrack, nextTrack, previousTrack, currentTrack, likedTracks: likedTrackIds, downloadedTracks: downloadedTrackIds, handleLike, handleDownload, isPlaying, setIsPlaying } = useAppContext(); // ADICIONADO isPlaying e setIsPlaying
   
   const [activeTab, setActiveTab] = useState<'likes' | 'downloads'>('likes');
   const [profileLikes, setProfileLikes] = useState<Track[]>([]);
@@ -314,8 +317,8 @@ export default function ProfilePage() {
                       <div className="flex justify-center p-16"><Loader2 className="animate-spin text-blue-500" size={32} /></div>
                   ) : (
                       <>
-                          {activeTab === 'likes' && <ProfileMusicList tracks={profileLikes} onPlay={handlePlayFromProfile} onLike={handleLike} onDownload={handleDownload} likedTracks={likedTrackIds} downloadedTracks={downloadedTrackIds} currentTrackId={currentTrack?.id || null} />}
-                          {activeTab === 'downloads' && <ProfileMusicList tracks={profileDownloads} onPlay={handlePlayFromProfile} onLike={handleLike} onDownload={handleDownload} likedTracks={likedTrackIds} downloadedTracks={downloadedTrackIds} currentTrackId={currentTrack?.id || null} />}
+                          {activeTab === 'likes' && <ProfileMusicList tracks={profileLikes} onPlay={handlePlayFromProfile} onLike={handleLike} onDownload={handleDownload} likedTracks={likedTrackIds} downloadedTracks={downloadedTrackIds} currentTrackId={currentTrack?.id || null} isPlaying={isPlaying} />} {/* ADICIONADO isPlaying */}
+                          {activeTab === 'downloads' && <ProfileMusicList tracks={profileDownloads} onPlay={handlePlayFromProfile} onLike={handleLike} onDownload={handleDownload} likedTracks={likedTrackIds} downloadedTracks={downloadedTrackIds} currentTrackId={currentTrack?.id || null} isPlaying={isPlaying} />} {/* ADICIONADO isPlaying */}
                           
                           {!isLoading && profileLikes.length === 0 && activeTab === 'likes' && (
                             <div className="text-center text-gray-500 p-16 border-2 border-dashed border-gray-300 rounded-lg">
@@ -341,6 +344,8 @@ export default function ProfilePage() {
           onPrevious={previousTrack}
           onLike={handleLike}
           onDownload={handleDownload}
+          isPlaying={isPlaying} // Passando isPlaying
+          onPlayPause={setIsPlaying} // Passando setIsPlaying
         />
       </div>
     </>

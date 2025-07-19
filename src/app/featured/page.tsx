@@ -11,7 +11,7 @@ import { usePathname } from 'next/navigation';
 import { Play, Download, ThumbsUp, X, Info, Pause, SkipBack, SkipForward, Music, Search, Instagram, Twitter, Facebook, ChevronDown, Crown, Copyright } from 'lucide-react';
 // IMPORTADO Image do Next.js para otimização
 import Image from 'next/image';
-import { useAppContext } from '@/context/AppContext';
+import { useAppContext } from '@/context/AppContext'; // Importar useAppContext
 
 // --- Tipos e Dados (Fonte de Dados Única e Real) ---
 type Track = {
@@ -42,19 +42,19 @@ const mockTracks: Track[] = [
     { id: 2, songName: 'Out Of Sight Of You', artist: 'Interview', style: 'Pop', version: 'Original', imageUrl: 'https://i.ibb.co/L6vjWd3/img-1.jpg', previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', downloadUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', releaseDate: '2025-07-16', likeCount: 150, downloadCount: 250, hasCopyright: true },
     { id: 3, songName: 'Jigga Boo', artist: 'Tyrell The God', style: 'Trap Hip Hop', version: 'Dirty', imageUrl: 'https://i.ibb.co/hH4vjJg/img-2.jpg', previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', downloadUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', releaseDate: '2025-07-15', likeCount: 400, downloadCount: 800 },
     // Adicionando mais músicas para um total de 150+ para teste de paginação
-    ...Array.from({ length: 150 }, (_, i) => ({ 
-        id: 100 + i, 
-        songName: `Top Track ${i + 1}`, 
-        artist: `Artist ${i % 15}`, 
-        style: ['House', 'Eletronica', 'Sertanejo', 'Pop', 'Trap Hip Hop', 'R&B'][i % 6], 
+    ...Array.from({ length: 150 }, (_, i) => ({
+        id: 100 + i,
+        songName: `Top Track ${i + 1}`,
+        artist: `Artist ${i % 15}`,
+        style: ['House', 'Eletronica', 'Sertanejo', 'Pop', 'Trap Hip Hop', 'R&B'][i % 6],
         version: ['Remix', 'Original', 'Dirty'][i % 3] as Track['version'], // CORRIGIDO: Removido 'as any'
-        imageUrl: `https://placehold.co/64x64/8B5CF6/FFFFFF?text=T${i+1}`, 
-        previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', 
-        downloadUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', 
-        releaseDate: `2025-07-${18 - (i % 7)}`, 
-        likeCount: Math.floor(Math.random() * 300) + 50, 
-        downloadCount: Math.floor(Math.random() * 800) + 100, 
-        hasCopyright: i % 5 === 0 
+        imageUrl: `https://placehold.co/64x64/8B5CF6/FFFFFF?text=T${i+1}`,
+        previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+        downloadUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+        releaseDate: `2025-07-${18 - (i % 7)}`,
+        likeCount: Math.floor(Math.random() * 300) + 50,
+        downloadCount: Math.floor(Math.random() * 800) + 100,
+        hasCopyright: i % 5 === 0
     })),
 ];
 
@@ -66,6 +66,7 @@ const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query
     const navLinks = [
       { href: '/new', label: 'New' }, { href: '/featured', label: 'Featured' },
       { href: '/trending', label: 'Trending' }, { href: '/charts', label: 'Charts' },
+      { href: '/pro', label: 'PRO' }, // Adicionado link para PRO
     ];
     return (
       <header className="w-full bg-white/80 backdrop-blur-sm p-4 flex justify-between items-center border-b border-gray-200 sticky top-0 z-30">
@@ -117,7 +118,7 @@ const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload
                     <td className="p-3">
                       <div className={`relative w-14 h-14 rounded-lg overflow-hidden cursor-pointer shadow-lg ${isPlaying ? 'ring-2 ring-blue-500' : ''}`} onClick={() => onPlay(track, tracks)}>
                         {/* CORRIGIDO: Substituído <img> por <Image /> */}
-                        <Image src={track.imageUrl} alt={track.songName} width={56} height={56} className="w-full h-full object-cover" /> 
+                        <Image src={track.imageUrl} alt={track.songName} width={56} height={56} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">{isPlaying ? <span className="text-white text-xs font-bold">TOCANDO</span> : <Play size={24} className="text-white" />}</div>
                       </div>
                     </td>
@@ -162,10 +163,10 @@ interface WaveSurferInstance {
     // Adicione outras propriedades/métodos do wavesurfer que você usar
 }
 
-const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onLike, onDownload }: { track: Track | null, onNext: () => void, onPrevious: () => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void }) {
+const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onLike, onDownload, isPlaying, onPlayPause }: { track: Track | null, onNext: () => void, onPrevious: () => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, isPlaying: boolean, onPlayPause: (state: boolean) => void }) { // ADICIONADO isPlaying e onPlayPause
     const waveformRef = useRef<HTMLDivElement>(null);
     const wavesurfer = useRef<WaveSurferInstance | null>(null); // CORRIGIDO: Tipado useRef
-    const [isPlaying, setIsPlaying] = useState(false);
+    // REMOVIDO: const [isPlaying, setIsPlaying] = useState(false); // Esta linha era a 161 e foi removida
 
     useEffect(() => {
         const createWaveSurfer = async () => {
@@ -177,18 +178,18 @@ const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onL
                 if (track) {
                     wavesurfer.current.load(track.previewUrl);
                     wavesurfer.current.on('ready', () => wavesurfer.current?.play());
-                    wavesurfer.current.on('play', () => setIsPlaying(true));
-                    wavesurfer.current.on('pause', () => setIsPlaying(false));
+                    wavesurfer.current.on('play', () => onPlayPause(true)); // Usa onPlayPause do contexto
+                    wavesurfer.current.on('pause', () => onPlayPause(false)); // Usa onPlayPause do contexto
                     wavesurfer.current.on('finish', onNext);
                 }
             }
         };
         if (track) createWaveSurfer();
         return () => wavesurfer.current?.destroy();
-    }, [track, onNext]);
+    }, [track, onNext, onPlayPause]); // Adicionado onPlayPause como dependência
 
     if (!track) return null;
-    
+
     const handlePlayPause = () => wavesurfer.current?.playPause();
 
     return (
@@ -230,7 +231,7 @@ const SiteFooter = memo(function SiteFooter() {
     );
 });
 
-function TopOfWeekWidget({ tracks, onPlay, onLike, onDownload, likedTracks, downloadedTracks, currentTrackId }: { tracks: Track[], onPlay: (track: Track, list: Track[]) => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, likedTracks: number[], downloadedTracks: number[], currentTrackId: number | null }) {
+function TopOfWeekWidget({ tracks, onPlay, onLike, onDownload, likedTracks, downloadedTracks, currentTrackId, isPlaying }: { tracks: Track[], onPlay: (track: Track, list: Track[]) => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, likedTracks: number[], downloadedTracks: number[], currentTrackId: number | null, isPlaying: boolean }) { // ADICIONADO isPlaying aqui
     const topTracks = useMemo(() => {
         return [...tracks].sort((a, b) => b.downloadCount - a.downloadCount).slice(0, 100);
     }, [tracks]);
@@ -242,14 +243,14 @@ function TopOfWeekWidget({ tracks, onPlay, onLike, onDownload, likedTracks, down
                 {topTracks.map((track, index) => {
                     const isLiked = likedTracks.includes(track.id);
                     const isDownloaded = downloadedTracks.includes(track.id);
-                    const isPlaying = track.id === currentTrackId;
+                    const isPlayingTrack = track.id === currentTrackId; // Renomeado para evitar conflito com prop 'isPlaying'
                     return (
                         <div key={track.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 group">
                             <div className="text-lg font-bold text-gray-400 w-8 text-center">{index + 1}</div>
-                            <div className={`relative w-12 h-12 rounded-md overflow-hidden cursor-pointer shadow-sm ${isPlaying ? 'ring-2 ring-blue-500' : ''}`} onClick={() => onPlay(track, topTracks)}>
+                            <div className={`relative w-12 h-12 rounded-md overflow-hidden cursor-pointer shadow-sm ${isPlayingTrack ? 'ring-2 ring-blue-500' : ''}`} onClick={() => onPlay(track, topTracks)}>
                                 {/* CORRIGIDO: Substituído <img> por <Image /> */}
-                                <Image src={track.imageUrl} alt={track.songName} width={48} height={48} className="w-full h-full object-cover" /> 
-                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">{isPlaying ? <span className="text-white text-xs font-bold">...</span> : <Play size={20} className="text-white" />}</div>
+                                <Image src={track.imageUrl} alt={track.songName} width={48} height={48} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">{isPlayingTrack && isPlaying ? <span className="text-white text-xs font-bold">...</span> : <Play size={20} className="text-white" />}</div> {/* Usando isPlayingTrack e isPlaying do contexto */}
                             </div>
                             <div className="flex-grow truncate">
                                 <p className="font-semibold text-gray-800 truncate">{track.songName}</p>
@@ -282,8 +283,8 @@ function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: nu
 }
 
 export default function FeaturedPage() {
-  const { playTrack, nextTrack, previousTrack, currentTrack, likedTracks, downloadedTracks, handleLike, handleDownload, alertMessage, closeAlert } = useAppContext();
-  
+  const { playTrack, nextTrack, previousTrack, currentTrack, likedTracks, downloadedTracks, handleLike, handleDownload, alertMessage, closeAlert, isPlaying, setIsPlaying } = useAppContext(); // ADICIONADO isPlaying e setIsPlaying
+
   const [filters, setFilters] = useState({ genre: 'all' });
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -326,7 +327,7 @@ export default function FeaturedPage() {
       return genreMatch && searchMatch;
     });
   }, [filters, searchTerm, featuredTracks]);
-  
+
   const paginatedTracks = useMemo(() => {
     const startIndex = (currentPage - 1) * tracksPerPage;
     return filteredTracks.slice(startIndex, startIndex + tracksPerPage);
@@ -349,7 +350,7 @@ export default function FeaturedPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Featured</h2>
             <div className="relative">
-                <select 
+                <select
                     value={filters.genre}
                     onChange={(e) => { setFilters({ genre: e.target.value }); setCurrentPage(1); }}
                     className="appearance-none rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm font-semibold text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -361,22 +362,25 @@ export default function FeaturedPage() {
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <MusicTable tracks={paginatedTracks} onPlay={handlePlay} onLike={handleLike} onDownload={handleDownload} likedTracks={likedTracks} downloadedTracks={downloadedTracks} currentTrackId={currentTrack?.id || null} />
           </div>
 
           <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </main>
-        <TopOfWeekWidget tracks={mockTracks} onPlay={handlePlay} onLike={handleLike} onDownload={handleDownload} likedTracks={likedTracks} downloadedTracks={downloadedTracks} currentTrackId={currentTrack?.id || null} />
+        {/* Passando isPlaying para TopOfWeekWidget */}
+        <TopOfWeekWidget tracks={mockTracks} onPlay={handlePlay} onLike={handleLike} onDownload={handleDownload} likedTracks={likedTracks} downloadedTracks={downloadedTracks} currentTrackId={currentTrack?.id || null} isPlaying={isPlaying} />
       </div>
       <SiteFooter />
-      <FooterPlayer 
-        track={currentTrack} 
+      <FooterPlayer
+        track={currentTrack}
         onNext={nextTrack}
         onPrevious={previousTrack}
         onLike={handleLike}
         onDownload={handleDownload}
+        isPlaying={isPlaying} // Passando isPlaying para FooterPlayer
+        onPlayPause={setIsPlaying} // Passando setIsPlaying para FooterPlayer
       />
     </div>
   );
