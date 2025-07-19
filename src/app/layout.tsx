@@ -1,6 +1,7 @@
 import { ClerkProvider } from '@clerk/nextjs';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
+import { AppProvider } from '@/context/AppContext'; // Importa o novo Provider
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -17,9 +18,11 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="pt-BR">
-        <body className={inter.className}>{children}</body>
-      </html>
+      <AppProvider> {/* Envolve a aplicação com o AppProvider */}
+        <html lang="pt-BR">
+          <body className={inter.className}>{children}</body>
+        </html>
+      </AppProvider>
     </ClerkProvider>
   );
 }

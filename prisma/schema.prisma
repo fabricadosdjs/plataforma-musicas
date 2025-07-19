@@ -10,10 +10,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Novo modelo para armazenar Likes
 model Like {
   id        Int      @id @default(autoincrement())
   trackId   Int
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
@@ -21,34 +21,24 @@ model Like {
   @@unique([userId, trackId])
 }
 
-// Novo modelo para armazenar Downloads
 model Download {
   id        Int      @id @default(autoincrement())
   trackId   Int
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
-
-  @@unique([userId, trackId])
 }
 
 model User {
-  id                    String    @id @unique
-  email                 String?   @unique
-  name                  String?
-  // Relações com os novos modelos
-  likes                 Like[]
-  downloads             Download[]
+  id        String     @id @unique
+  email     String?    @unique
+  name      String?
+  likes     Like[]
+  downloads Download[]
 
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  // Campos para integração com Stripe (Adicionados aqui)
-  stripeCustomerId      String?   @unique // ID do cliente Stripe
-  stripeSubscriptionId  String?   @unique // ID da assinatura Stripe
-  stripePriceId         String?   // ID do preço do produto Stripe (plano)
-  stripeCurrentPeriodEnd DateTime? // Fim do período atual da assinatura
-  subscriptionStatus    String?   // Status da assinatura (e.g., 'active', 'canceled', 'trialing')
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Track {
@@ -61,6 +51,11 @@ model Track {
   previewUrl  String
   downloadUrl String
   releaseDate DateTime
+  duration    String   // Novo campo para a duração
+  fileSize    String   // Novo campo para o tamanho do arquivo
+
+  likes     Like[]
+  downloads Download[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

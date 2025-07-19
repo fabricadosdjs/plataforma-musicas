@@ -1,3 +1,4 @@
+// Header.tsx
 "use client";
 
 import Link from 'next/link';
@@ -22,6 +23,7 @@ export default function Header({ onSearchChange }: { onSearchChange: (query: str
           <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
             <Music size={16} className="text-white" />
           </div>
+          {/* A fonte Dosis será aplicada globalmente via CSS */}
           <h1 className="text-xl font-bold text-gray-900 hidden sm:block">
             DJ Pool
           </h1>

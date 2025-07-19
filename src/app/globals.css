@@ -1,15 +1,16 @@
+/* globals.css */
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* As variáveis --font-dosis serão geradas automaticamente pelo Next.js com base no MainLayout.tsx */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Removido --font-sans e --font-mono se não estiverem mais sendo usados ou definidos de outra forma */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +23,14 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-dosis); /* Aplica a fonte Dosis como padrão para o corpo */
+  /* Removido Arial, Helvetica, sans-serif, pois var(--font-dosis) cuidará disso */
 }
+
+/* Se precisar de uma fonte de fallback, adicione após var(--font-dosis), por exemplo: */
+/* font-family: var(--font-dosis), sans-serif; */
+
+/* Você também pode criar classes de utilidade no Tailwind para fontes específicas, se desejar */
+/* .font-dosis {
+  font-family: var(--font-dosis);
+} */

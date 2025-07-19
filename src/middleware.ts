@@ -1,18 +1,28 @@
+// src/middleware.ts
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
-// Define quais rotas são protegidas e exigem login
-const isProtectedRoute = createRouteMatcher([
-  '/admin(.*)', // Exemplo: protege a rota /admin e suas sub-rotas
+const isAdminRoute = createRouteMatcher([
+  '/admin(.*)', // Protege a rota /admin e todas as suas sub-rotas
 ]);
 
-export default clerkMiddleware((auth, req: NextRequest) => {
-  if (isProtectedRoute(req)) {
-    // CORREÇÃO: Chamamos o método protect() diretamente no objeto auth.
-    // Forma incorreta: auth().protect()
-    // Forma correta: auth.protect()
-    auth.protect();
+export default clerkMiddleware((auth, req) => {
+  // Verifica se o utilizador está a tentar aceder a uma rota de admin
+  if (isAdminRoute(req)) {
+    // Primeiro, protege a rota para garantir que o utilizador está logado
+    auth.protect(); // CORREÇÃO APLICADA AQUI
+
+    // Depois, verifica se o utilizador logado tem a permissão de admin
+    const { sessionClaims } = auth();
+    if (sessionClaims?.publicMetadata?.role !== 'admin') {
+      // Se não for admin, redireciona para a página inicial
+      const homeUrl = new URL('/new', req.url);
+      return NextResponse.redirect(homeUrl);
+    }
   }
+  
+  // Permite o acesso a todas as outras rotas
+  return NextResponse.next();
 });
 
 export const config = {
