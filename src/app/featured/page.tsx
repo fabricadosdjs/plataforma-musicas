@@ -1,11 +1,16 @@
+// src/app/featured/page.tsx
 "use client";
 
 import React, { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
-import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
-import Head from 'next/head';
+// REMOVIDO useUser (não utilizado)
+import { UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
+// REMOVIDO Head (não utilizado e obsoleto no App Router para esta finalidade)
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Play, Download, ThumbsUp, X, Info, Pause, SkipBack, SkipForward, Music, Search, Loader2, Instagram, Twitter, Facebook, ChevronDown, Crown, Copyright } from 'lucide-react';
+// REMOVIDO Loader2 (não utilizado)
+import { Play, Download, ThumbsUp, X, Info, Pause, SkipBack, SkipForward, Music, Search, Instagram, Twitter, Facebook, ChevronDown, Crown, Copyright } from 'lucide-react';
+// IMPORTADO Image do Next.js para otimização
+import Image from 'next/image';
 import { useAppContext } from '@/context/AppContext';
 
 // --- Tipos e Dados (Fonte de Dados Única e Real) ---
@@ -24,7 +29,7 @@ type Track = {
   hasCopyright?: boolean;
 };
 
-const todayDate = new Date().toISOString().split('T')[0];
+// REMOVIDO todayDate (não utilizada)
 const rebekaImage = 'https://i.ibb.co/5qVv4TK/20250603-1839-Capa-Sertanejo-Rom-ntico-simple-compose-01jwvvpxkaet6b797dee9nr3py.png';
 
 // Usando uma fonte de dados consistente com a página /new, com contagens de like/download
@@ -37,7 +42,20 @@ const mockTracks: Track[] = [
     { id: 2, songName: 'Out Of Sight Of You', artist: 'Interview', style: 'Pop', version: 'Original', imageUrl: 'https://i.ibb.co/L6vjWd3/img-1.jpg', previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', downloadUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', releaseDate: '2025-07-16', likeCount: 150, downloadCount: 250, hasCopyright: true },
     { id: 3, songName: 'Jigga Boo', artist: 'Tyrell The God', style: 'Trap Hip Hop', version: 'Dirty', imageUrl: 'https://i.ibb.co/hH4vjJg/img-2.jpg', previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', downloadUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', releaseDate: '2025-07-15', likeCount: 400, downloadCount: 800 },
     // Adicionando mais músicas para um total de 150+ para teste de paginação
-    ...Array.from({ length: 150 }, (_, i) => ({ id: 100 + i, songName: `Top Track ${i + 1}`, artist: `Artist ${i % 15}`, style: ['House', 'Eletronica', 'Sertanejo', 'Pop', 'Trap Hip Hop', 'R&B'][i % 6], version: ['Remix', 'Original', 'Dirty'][i % 3] as any, imageUrl: `https://placehold.co/64x64/8B5CF6/FFFFFF?text=T${i+1}`, previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', downloadUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', releaseDate: `2025-07-${18 - (i % 7)}`, likeCount: Math.floor(Math.random() * 300) + 50, downloadCount: Math.floor(Math.random() * 800) + 100, hasCopyright: i % 5 === 0 })),
+    ...Array.from({ length: 150 }, (_, i) => ({ 
+        id: 100 + i, 
+        songName: `Top Track ${i + 1}`, 
+        artist: `Artist ${i % 15}`, 
+        style: ['House', 'Eletronica', 'Sertanejo', 'Pop', 'Trap Hip Hop', 'R&B'][i % 6], 
+        version: ['Remix', 'Original', 'Dirty'][i % 3] as Track['version'], // CORRIGIDO: Removido 'as any'
+        imageUrl: `https://placehold.co/64x64/8B5CF6/FFFFFF?text=T${i+1}`, 
+        previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', 
+        downloadUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', 
+        releaseDate: `2025-07-${18 - (i % 7)}`, 
+        likeCount: Math.floor(Math.random() * 300) + 50, 
+        downloadCount: Math.floor(Math.random() * 800) + 100, 
+        hasCopyright: i % 5 === 0 
+    })),
 ];
 
 
@@ -98,7 +116,8 @@ const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload
                   <tr key={track.id} className="border-b border-gray-200 group">
                     <td className="p-3">
                       <div className={`relative w-14 h-14 rounded-lg overflow-hidden cursor-pointer shadow-lg ${isPlaying ? 'ring-2 ring-blue-500' : ''}`} onClick={() => onPlay(track, tracks)}>
-                        <img src={track.imageUrl} alt={track.songName} className="w-full h-full object-cover" />
+                        {/* CORRIGIDO: Substituído <img> por <Image /> */}
+                        <Image src={track.imageUrl} alt={track.songName} width={56} height={56} className="w-full h-full object-cover" /> 
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">{isPlaying ? <span className="text-white text-xs font-bold">TOCANDO</span> : <Play size={24} className="text-white" />}</div>
                       </div>
                     </td>
@@ -132,20 +151,32 @@ const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload
       );
 });
 
+// Definindo um tipo para a instância do WaveSurfer para evitar 'any'
+interface WaveSurferInstance {
+    load: (url: string) => void;
+    play: () => void;
+    pause: () => void;
+    playPause: () => void;
+    destroy: () => void;
+    on: (event: string, callback: (...args: any[]) => void) => void;
+    // Adicione outras propriedades/métodos do wavesurfer que você usar
+}
+
 const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onLike, onDownload }: { track: Track | null, onNext: () => void, onPrevious: () => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void }) {
     const waveformRef = useRef<HTMLDivElement>(null);
-    const wavesurfer = useRef<any>(null);
+    const wavesurfer = useRef<WaveSurferInstance | null>(null); // CORRIGIDO: Tipado useRef
     const [isPlaying, setIsPlaying] = useState(false);
 
     useEffect(() => {
         const createWaveSurfer = async () => {
             if (waveformRef.current) {
-                const WaveSurfer = (await import('wavesurfer.js')).default;
+                const WaveSurferModule = await import('wavesurfer.js');
+                const WaveSurfer = WaveSurferModule.default;
                 if (wavesurfer.current) wavesurfer.current.destroy();
                 wavesurfer.current = WaveSurfer.create({ container: waveformRef.current, waveColor: '#E2E8F0', progressColor: '#007BFF', cursorWidth: 1, barWidth: 2, barGap: 2, barRadius: 2, height: 40, responsive: true, hideScrollbar: true });
                 if (track) {
                     wavesurfer.current.load(track.previewUrl);
-                    wavesurfer.current.on('ready', () => wavesurfer.current.play());
+                    wavesurfer.current.on('ready', () => wavesurfer.current?.play());
                     wavesurfer.current.on('play', () => setIsPlaying(true));
                     wavesurfer.current.on('pause', () => setIsPlaying(false));
                     wavesurfer.current.on('finish', onNext);
@@ -163,7 +194,8 @@ const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onL
     return (
         <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20 shadow-[0_-4px_15px_rgba(0,0,0,0.08)]">
             <div className="container mx-auto px-6 py-3 flex items-center gap-4">
-                <img src={track.imageUrl} alt={track.songName} className="w-14 h-14 rounded-lg shadow-sm flex-shrink-0" />
+                {/* CORRIGIDO: Substituído <img> por <Image /> */}
+                <Image src={track.imageUrl} alt={track.songName} width={56} height={56} className="w-14 h-14 rounded-lg shadow-sm flex-shrink-0" />
                 <div className="flex items-center gap-4 flex-shrink-0">
                     <button onClick={onPrevious} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200"><SkipBack size={20} className="text-gray-700" /></button>
                     <button onClick={handlePlayPause} className="w-12 h-12 flex items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors">{isPlaying ? <Pause size={24} /> : <Play size={24} />}</button>
@@ -215,7 +247,8 @@ function TopOfWeekWidget({ tracks, onPlay, onLike, onDownload, likedTracks, down
                         <div key={track.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 group">
                             <div className="text-lg font-bold text-gray-400 w-8 text-center">{index + 1}</div>
                             <div className={`relative w-12 h-12 rounded-md overflow-hidden cursor-pointer shadow-sm ${isPlaying ? 'ring-2 ring-blue-500' : ''}`} onClick={() => onPlay(track, topTracks)}>
-                                <img src={track.imageUrl} alt={track.songName} className="w-full h-full object-cover" />
+                                {/* CORRIGIDO: Substituído <img> por <Image /> */}
+                                <Image src={track.imageUrl} alt={track.songName} width={48} height={48} className="w-full h-full object-cover" /> 
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">{isPlaying ? <span className="text-white text-xs font-bold">...</span> : <Play size={20} className="text-white" />}</div>
                             </div>
                             <div className="flex-grow truncate">
@@ -301,12 +334,14 @@ export default function FeaturedPage() {
 
   const totalPages = Math.ceil(filteredTracks.length / tracksPerPage);
 
-  const handlePlay = useCallback((track: any, trackList: any[]) => {
+  // CORRIGIDO: Tipagem de track e trackList
+  const handlePlay = useCallback((track: Track, trackList: Track[]) => {
     playTrack(track, trackList);
   }, [playTrack]);
 
   return (
     <div className="bg-gray-50 text-gray-800 font-nunito min-h-screen flex flex-col">
+      {/* REMOVIDO Head: No App Router, meta tags são gerenciadas de outra forma */}
       <Header onSearchChange={setSearchTerm} />
       <Alert message={alertMessage} onClose={closeAlert} />
       <div className="flex max-w-screen-2xl mx-auto w-full flex-grow">

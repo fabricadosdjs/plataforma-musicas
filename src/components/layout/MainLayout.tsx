@@ -1,13 +1,58 @@
+// src/components/layout/MainLayout.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
 import Head from 'next/head';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Play, Download, ThumbsUp, X, Info, Pause, SkipBack, SkipForward, Music, Search, Loader2, Instagram, Twitter, Facebook } from 'lucide-react';
+// REMOVIDOS ícones não utilizados: X, Info, Loader2 (serão definidos no Alert ou removidos se não usados)
+import { Play, Download, ThumbsUp, Pause, SkipBack, SkipForward, Music, Search, Instagram, Twitter, Facebook } from 'lucide-react';
+// ADICIONADO: Importar Image do next/image para otimização
+import Image from 'next/image';
+// ADICIONADO: Importar os ícones X e Info para o componente Alert
+import { X as XIcon, Info as InfoIcon } from 'lucide-react'; 
+// ADICIONADO: Importar o AppContext para prover os valores
+import { AppContextProvider } from '@/context/AppContext';
+
+// --- Tipos ---
+// Definição do tipo Track (pode ser a mesma usada nas páginas)
+type Track = {
+  id: number;
+  songName: string;
+  artist: string;
+  imageUrl: string;
+  downloadUrl: string;
+  actionDate?: string; // Propriedade opcional, se nem todas as tracks tiverem
+  previewUrl: string; 
+};
+
+// Definindo um tipo para a instância do WaveSurfer para evitar 'any'
+interface WaveSurferInstance {
+    load: (url: string) => void;
+    play: () => void;
+    pause: () => void;
+    playPause: () => void;
+    destroy: () => void;
+    on: (event: string, callback: (...args: any[]) => void) => void;
+    // Adicione outras propriedades/métodos do wavesurfer que você usar
+}
 
 // --- Componentes Internos do Layout (Header, Player, Footer) ---
+
+// Componente de Alerta (movido para cá para ser global)
+const Alert = memo(function Alert({ message, onClose }: { message: string, onClose: () => void }) {
+  if (!message) return null;
+  return (
+    <div className="fixed top-24 right-6 bg-blue-600 text-white p-4 rounded-lg shadow-lg flex items-center gap-4 z-50 animate-fade-in-down">
+      <InfoIcon size={24} /> {/* Usando InfoIcon aqui */}
+      <span>{message}</span>
+      <button onClick={onClose} className="p-1 rounded-full hover:bg-white/20">
+        <XIcon size={18} /> {/* Usando XIcon aqui */}
+      </button>
+    </div>
+  );
+});
 
 const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query: string) => void }) {
     const pathname = usePathname();
@@ -16,6 +61,7 @@ const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query
       { href: '/featured', label: 'Featured' },
       { href: '/trending', label: 'Trending' },
       { href: '/charts', label: 'Charts' },
+      { href: '/pro', label: 'PRO' }, // Adicionado o link PRO se for o caso
     ];
   
     return (
@@ -39,14 +85,18 @@ const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query
                 {link.label}
                 </Link>
             ))}
+             <ClerkLoaded>
+                <SignedIn>
+                    <Link href="/profile" className={`font-semibold transition-colors pb-2 ${pathname === '/profile' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-blue-600'}`}>
+                        Meu Perfil
+                    </Link>
+                </SignedIn>
+            </ClerkLoaded>
             </nav>
             <div className="flex items-center gap-4">
                 <ClerkLoading><div className="h-8 w-28 bg-gray-200 rounded-md animate-pulse"></div></ClerkLoading>
                 <ClerkLoaded>
-                    <SignedIn>
-                        <Link href="/profile" className={`font-semibold transition-colors pb-2 hidden md:block ${pathname === '/profile' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-blue-600'}`}>Meu Perfil</Link>
-                        <UserButton afterSignOutUrl="/new"/>
-                    </SignedIn>
+                    <SignedIn><UserButton afterSignOutUrl="/new"/></SignedIn>
                     <SignedOut>
                         <SignInButton mode="modal"><button className="font-semibold px-3 py-2 rounded-md transition-colors text-gray-600 hover:text-blue-600">Entrar</button></SignInButton>
                         <SignUpButton mode="modal"><button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">Cadastrar</button></SignUpButton>
@@ -58,10 +108,10 @@ const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query
     );
 });
 
-const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onLike, onDownload }: { track: any | null, onNext: () => void, onPrevious: () => void, onLike: (trackId: number) => void, onDownload: (track: any) => void }) {
+const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onLike, onDownload, isPlaying, onPlayPause }: { track: Track | null, onNext: () => void, onPrevious: () => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, isPlaying: boolean, onPlayPause: (state: boolean) => void }) {
     const waveformRef = useRef<HTMLDivElement>(null);
-    const wavesurfer = useRef<any>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
+    const wavesurfer = useRef<WaveSurferInstance | null>(null); // CORRIGIDO: Tipado useRef
+    // const [isPlaying, setIsPlaying] = useState(false); // REMOVIDO: isPlaying e setIsPlaying vêm do AppContext
 
     useEffect(() => {
         const createWaveSurfer = async () => {
@@ -71,16 +121,16 @@ const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onL
                 wavesurfer.current = WaveSurfer.create({ container: waveformRef.current, waveColor: '#E2E8F0', progressColor: '#007BFF', cursorWidth: 1, barWidth: 2, barGap: 2, barRadius: 2, height: 40, responsive: true, hideScrollbar: true });
                 if (track) {
                     wavesurfer.current.load(track.previewUrl);
-                    wavesurfer.current.on('ready', () => wavesurfer.current.play());
-                    wavesurfer.current.on('play', () => setIsPlaying(true));
-                    wavesurfer.current.on('pause', () => setIsPlaying(false));
+                    wavesurfer.current.on('ready', () => wavesurfer.current?.play());
+                    wavesurfer.current.on('play', () => onPlayPause(true)); // Usa onPlayPause do contexto
+                    wavesurfer.current.on('pause', () => onPlayPause(false)); // Usa onPlayPause do contexto
                     wavesurfer.current.on('finish', onNext);
                 }
             }
         };
         if (track) createWaveSurfer();
         return () => wavesurfer.current?.destroy();
-    }, [track, onNext]);
+    }, [track, onNext, onPlayPause]); // Adicionado onPlayPause como dependência
 
     if (!track) return null;
     
@@ -89,7 +139,8 @@ const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onL
     return (
         <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20 shadow-[0_-4px_15px_rgba(0,0,0,0.08)]">
             <div className="container mx-auto px-6 py-3 flex items-center gap-4">
-                <img src={track.imageUrl} alt={track.songName} className="w-14 h-14 rounded-lg shadow-sm flex-shrink-0" />
+                {/* CORRIGIDO: Substituído <img> por <Image /> */}
+                <Image src={track.imageUrl} alt={track.songName} width={56} height={56} className="w-14 h-14 rounded-lg shadow-sm flex-shrink-0" />
                 <div className="flex items-center gap-4 flex-shrink-0">
                     <button onClick={onPrevious} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200"><SkipBack size={20} className="text-gray-700" /></button>
                     <button onClick={handlePlayPause} className="w-12 h-12 flex items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors">{isPlaying ? <Pause size={24} /> : <Play size={24} />}</button>
@@ -129,106 +180,93 @@ const SiteFooter = memo(function SiteFooter() {
 
 
 // --- O Layout Principal ---
-export default function MainLayout({ children }: { children: (props: any) => React.ReactNode }) {
+// O children agora não precisa de props, pois o AppContext proverá o que for necessário
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser();
-  const [currentTrack, setCurrentTrack] = useState<any | null>(null);
+  // REMOVIDO: Estados que devem ser gerenciados pelo AppContext ou pela página
+  // const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [alertMessage, setAlertMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [likedTracks, setLikedTracks] = useState<number[]>([]);
-  const [downloadedTracks, setDownloadedTracks] = useState<number[]>([]);
-  const [downloadCount, setDownloadCount] = useState(0);
-  const [isUserDataLoaded, setIsUserDataLoaded] = useState(false);
+  // REMOVIDO: Estados que devem ser gerenciados pelo AppContext
+  // const [likedTracks, setLikedTracks] = useState<number[]>([]);
+  // const [downloadedTracks, setDownloadedTracks] = useState<number[]>([]);
+  // const [downloadCount, setDownloadCount] = useState(0);
+  // const [isUserDataLoaded, setIsUserDataLoaded] = useState(false);
 
+  // useEffect que busca dados do usuário, mas os estados são do AppContext
   useEffect(() => {
+    // Esta lógica de buscar dados do usuário e popular AppContext deve estar no AppContext
+    // ou em um hook personalizado dentro dele.
+    // Aqui no MainLayout, você apenas usaria o que já vem do AppContext.
+    // Se a intenção era que o MainLayout inicializasse o AppContext,
+    // então a lógica de fetch deve estar no AppContext e não aqui.
+    // Por enquanto, vou remover a busca de dados aqui, assumindo que AppContext lida com isso.
+    // Se o seu AppContext não estiver buscando dados do usuário, precisaremos revisar ele.
     if (isLoaded && user) {
-      const fetchUserData = async () => {
-        try {
-          const response = await fetch('/api/user-data');
-          if (!response.ok) throw new Error('Falha ao buscar dados do usuário');
-          const data = await response.json();
-          setLikedTracks(data.likedTrackIds || []);
-          setDownloadedTracks(data.downloadedTrackIds || []);
-          setDownloadCount(data.downloadCount || 0);
-        } catch (error) { console.error("Erro:", error); } 
-        finally { setIsUserDataLoaded(true); }
-      };
-      fetchUserData();
-    } else if (isLoaded && !user) {
-      setLikedTracks([]);
-      setDownloadedTracks([]);
-      setDownloadCount(0);
-      setIsUserDataLoaded(true);
+        // Exemplo: Disparar uma ação no AppContext para carregar dados do usuário
+        // context.loadUserData(user.id);
     }
   }, [user, isLoaded]);
 
-  const handleAuthAction = useCallback((message: string) => {
-    setAlertMessage(message);
-    setTimeout(() => setAlertMessage(''), 4000);
-  }, []);
+  // Ações de handleAuthAction, handleLike, handleDownload devem vir do AppContext
+  // Se elas são definidas aqui, significa que este é o Provider do AppContext.
+  // Se MainLayout for o Provider, então o AppContext.tsx precisa ser ajustado.
+  // Vou assumir por enquanto que MainLayout é o Provider e mover essas lógicas
+  // para o AppContextProvider. Por isso, este MainLayout deve ser o Wrapper.
 
-  const handleLike = useCallback((trackId: number) => {
-    if (!user) { handleAuthAction("Faça login para curtir músicas."); return; }
-    const newLikedTracks = likedTracks.includes(trackId) ? likedTracks.filter(id => id !== trackId) : [...likedTracks, trackId];
-    setLikedTracks(newLikedTracks);
-    fetch('/api/likes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trackId }) })
-      .catch(error => { console.error("Falha ao salvar like:", error); setLikedTracks(likedTracks); });
-  }, [user, likedTracks, handleAuthAction]);
+  // Componente Alert usa o alertMessage deste layout
+  const closeAlert = useCallback(() => setAlertMessage(''), []);
 
-  const handleDownload = useCallback((track: any) => {
-    if (!user) { handleAuthAction("Faça login para baixar músicas."); return; }
-    const hasActivePlan = false; 
-    const DOWNLOAD_LIMIT = 5;
-    if (hasActivePlan || downloadedTracks.includes(track.id)) {
-      window.open(track.downloadUrl, '_blank');
-    } else {
-      if (downloadCount < DOWNLOAD_LIMIT) {
-        const newCount = downloadCount + 1;
-        const newDownloadedTracks = [...downloadedTracks, track.id];
-        setDownloadCount(newCount);
-        setDownloadedTracks(newDownloadedTracks);
-        fetch('/api/downloads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trackId: track.id }) })
-          .catch(error => { console.error("Falha:", error); setDownloadCount(downloadCount); setDownloadedTracks(downloadedTracks); });
-        window.open(track.downloadUrl, '_blank');
-        handleAuthAction(`Download realizado! Você tem ${DOWNLOAD_LIMIT - newCount} downloads restantes.`);
-      } else {
-        handleAuthAction(`Você atingiu seu limite de ${DOWNLOAD_LIMIT} downloads gratuitos.`);
-      }
-    }
-  }, [user, downloadCount, downloadedTracks, handleAuthAction]);
-
-  const sharedProps = {
-    isUserDataLoaded,
-    likedTracks,
-    downloadedTracks,
-    currentTrackId: currentTrack?.id || null,
-    onPlay: setCurrentTrack,
-    onLike: handleLike,
-    onDownload: handleDownload,
-    searchTerm,
-  };
+  // O Header precisa de onSearchChange. O Player precisa de track, onNext, onPrevious, onLike, onDownload.
+  // Estes virão do AppContext.
+  // O FooterPlayer precisa de isPlaying e onPlayPause
+  // Aqui assumimos que AppContextProvider já está provendo esses valores.
+  // Se MainLayout for o AppContextProvider, a lógica precisa ser um pouco diferente.
+  // Vou refatorar para que MainLayout simplesmente use o AppContext.
 
   return (
-    <>
+    // Envolvendo o conteúdo com AppContextProvider
+    <AppContextProvider>
       <Head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
       </Head>
       <div className="bg-gray-50 text-gray-800 font-nunito min-h-screen flex flex-col">
-        <Header onSearchChange={setSearchTerm} />
-        <Alert message={alertMessage} onClose={() => setAlertMessage('')} />
+        {/* Header precisa de onSearchChange para o input de busca */}
+        <Header onSearchChange={setSearchTerm} /> 
+        {/* Alert precisa de message e onClose, que vêm do estado local do MainLayout */}
+        <Alert message={alertMessage} onClose={closeAlert} />
         <div className="flex-grow">
-            {children(sharedProps)}
+            {children} {/* children é um React.ReactNode agora, não uma função */}
         </div>
         <SiteFooter />
-        <FooterPlayer 
-            track={currentTrack} 
-            onNext={() => {}} // A lógica de next/prev precisa ser passada pela página específica
-            onPrevious={() => {}}
-            onLike={handleLike}
-            onDownload={handleDownload}
-        />
+        {/* FooterPlayer precisa de props do AppContext */}
+        {/* Você precisará importar useAppContext aqui para passar as props para o FooterPlayer */}
+        <AppConsumerFooterPlayer setAlertMessage={setAlertMessage} />
       </div>
-    </>
+    </AppContextProvider>
+  );
+}
+
+// Componente Wrapper para consumir o AppContext e passar para FooterPlayer
+// Isso é necessário porque `MainLayout` é o `AppContextProvider` e não pode
+// consumir seu próprio contexto diretamente em sua função principal.
+function AppConsumerFooterPlayer({ setAlertMessage }: { setAlertMessage: (msg: string) => void }) {
+  const { currentTrack, nextTrack, previousTrack, handleLike, handleDownload, isPlaying, setIsPlaying } = useAppContext();
+  
+  // As funções onNext e onPrevious aqui vão precisar da lógica de "lista de reprodução"
+  // que o AppContext deve fornecer. Por enquanto, as mantemos como simples chamadas.
+
+  return (
+    <FooterPlayer 
+        track={currentTrack} 
+        onNext={nextTrack}
+        onPrevious={previousTrack}
+        onLike={handleLike}
+        onDownload={handleDownload}
+        isPlaying={isPlaying}
+        onPlayPause={setIsPlaying}
+    />
   );
 }

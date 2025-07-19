@@ -1,11 +1,16 @@
+// src/app/new/page.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from 'react';
-import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
+// REMOVIDO useUser (não utilizado)
+import { UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
 import Head from 'next/head';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Play, Download, ThumbsUp, X, Info, Pause, SkipBack, SkipForward, Music, Search, Loader2, Instagram, Twitter, Facebook, ChevronDown, Copyright } from 'lucide-react';
+// REMOVIDO Copyright (não utilizado)
+import { Play, Download, ThumbsUp, X, Info, Pause, SkipBack, SkipForward, Music, Search, Loader2, Instagram, Twitter, Facebook, ChevronDown } from 'lucide-react';
+// IMPORTADO Image para otimização de imagens
+import Image from 'next/image';
 import { useAppContext } from '@/context/AppContext';
 
 // --- Tipos ---
@@ -23,6 +28,24 @@ type Track = {
   fileSize: string;
   hasCopyright?: boolean;
 };
+
+// Interface para o estado dos filtros, para evitar 'any'
+interface FiltersState {
+  genres: string[];
+  versions: string[];
+  uploadDate: string;
+}
+
+// Definindo um tipo para a instância do WaveSurfer para evitar 'any'
+interface WaveSurferInstance {
+    load: (url: string) => void;
+    play: () => void;
+    pause: () => void;
+    playPause: () => void;
+    destroy: () => void;
+    on: (event: string, callback: (...args: any[]) => void) => void;
+    // Adicione outras propriedades/métodos do wavesurfer que você usar
+}
 
 // --- Componentes ---
 
@@ -67,13 +90,14 @@ const Alert = memo(function Alert({ message, onClose }: { message: string, onClo
   );
 });
 
-const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, currentFilters }: { tracks: Track[], onFilterChange: (filters: any) => void, currentFilters: any }) {
+// CORRIGIDO: Tipagem de onFilterChange e currentFilters
+const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, currentFilters }: { tracks: Track[], onFilterChange: (filters: (prev: FiltersState) => FiltersState) => void, currentFilters: FiltersState }) {
     const availableGenres = useMemo(() => [...new Set(tracks.map(t => t.style))], [tracks]);
     const availableVersions = useMemo(() => [...new Set(tracks.map(t => t.version))], [tracks]);
     const availableDates = useMemo(() => {
         const dates = new Set<string>();
         const now = new Date();
-        const start = new Date('2025-07-01');
+        const start = new Date('2025-07-01'); // Adicionei '2025-07-01' como ponto de partida
         while (start <= now) {
             dates.add(start.toISOString().slice(0, 7));
             start.setMonth(start.getMonth() + 1);
@@ -82,9 +106,10 @@ const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, cu
     }, []);
 
     const handleFilterChange = (type: 'genres' | 'versions' | 'uploadDate', value: string) => {
-      onFilterChange((prevFilters: any) => {
+      onFilterChange((prevFilters) => { // CORRIGIDO: prevFilters agora é do tipo FiltersState
           if (type === 'genres' || type === 'versions') {
             const currentFilter = prevFilters[type];
+            // CORRIGIDO: Adicionada tipagem explícita para o filter callback se necessário, ou usar as 'string[]'
             const newFilter = currentFilter.includes(value) ? currentFilter.filter((item: string) => item !== value) : [...currentFilter, value];
             return { ...prevFilters, [type]: newFilter };
           }
@@ -162,7 +187,8 @@ const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload
                   <tr key={track.id} className="border-b border-gray-800 hover:bg-[#2a2b2c] group">
                     <td className="p-3 text-center">
                       <button onClick={() => onPlay(track, tracks)} className="w-16 h-16 flex items-center justify-center rounded-lg bg-gray-700/20 group-hover:bg-blue-500 transition-colors relative">
-                        <img src={track.imageUrl} alt={track.songName} className="w-full h-full object-cover rounded-lg" />
+                        {/* CORRIGIDO: Substituído <img> por <Image /> */}
+                        <Image src={track.imageUrl} alt={track.songName} width={64} height={64} className="w-full h-full object-cover rounded-lg" />
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             {isCurrentlyPlaying && isPlaying ? <Pause size={24} className="text-white" /> : <Play size={24} className="text-white" />}
                         </div>
@@ -191,7 +217,7 @@ const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload
 
 const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onLike, onDownload, onPlayPause, isPlaying }: { track: Track | null, onNext: () => void, onPrevious: () => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, onPlayPause: (state: boolean) => void, isPlaying: boolean }) {
     const waveformRef = useRef<HTMLDivElement>(null);
-    const wavesurfer = useRef<any>(null);
+    const wavesurfer = useRef<WaveSurferInstance | null>(null); // CORRIGIDO: Tipado useRef
 
     useEffect(() => {
         const createWaveSurfer = async () => {
@@ -201,7 +227,7 @@ const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onL
                 wavesurfer.current = WaveSurfer.create({ container: waveformRef.current, waveColor: '#4A5568', progressColor: '#38B2AC', cursorWidth: 1, barWidth: 2, barGap: 2, barRadius: 2, height: 40, responsive: true, hideScrollbar: true });
                 if (track) {
                     wavesurfer.current.load(track.previewUrl);
-                    wavesurfer.current.on('ready', () => wavesurfer.current.play());
+                    wavesurfer.current.on('ready', () => wavesurfer.current?.play()); // Adicionado '?' para segurança
                     wavesurfer.current.on('play', () => onPlayPause(true));
                     wavesurfer.current.on('pause', () => onPlayPause(false));
                     wavesurfer.current.on('finish', onNext);
@@ -219,7 +245,8 @@ const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onL
     return (
         <footer className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-gray-800 z-20">
             <div className="container mx-auto px-6 py-3 flex items-center gap-4">
-                <img src={track.imageUrl} alt={track.songName} className="w-14 h-14 rounded-lg shadow-sm flex-shrink-0" />
+                {/* CORRIGIDO: Substituído <img> por <Image /> */}
+                <Image src={track.imageUrl} alt={track.songName} width={56} height={56} className="w-14 h-14 rounded-lg shadow-sm flex-shrink-0" />
                 <div className="flex items-center gap-4 flex-shrink-0">
                     <button onClick={onPrevious} className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-700"><SkipBack size={20} /></button>
                     <button onClick={handlePlayPause} className="w-12 h-12 flex items-center justify-center rounded-full bg-white text-black hover:bg-gray-200 transition-transform hover:scale-105">{isPlaying ? <Pause size={24} /> : <Play size={24} />}</button>
@@ -285,11 +312,13 @@ function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: nu
 
 // --- Página Principal ---
 export default function NewPage() {
+  // REMOVIDO useUser da desestruturação
   const { playTrack, nextTrack, previousTrack, currentTrack, likedTracks, downloadedTracks, handleLike, handleDownload, alertMessage, closeAlert, isUserDataLoaded, isPlaying, setIsPlaying } = useAppContext();
   
   const [allTracks, setAllTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState({ genres: [], versions: [], uploadDate: 'all' });
+  // CORRIGIDO: Tipagem inicial de filters
+  const [filters, setFilters] = useState<FiltersState>({ genres: [], versions: [], uploadDate: 'all' });
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const tracksPerPage = 100;

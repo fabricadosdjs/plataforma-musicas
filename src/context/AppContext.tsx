@@ -1,3 +1,4 @@
+// src/context/AppContext.tsx
 "use client";
 
 import React, { createContext, useState, useContext, useCallback, useMemo, useEffect } from 'react';
@@ -28,6 +29,8 @@ interface AppContextType {
   alertMessage: string;
   closeAlert: () => void;
   isUserDataLoaded: boolean;
+  isPlaying: boolean; // ADICIONADO: Estado de reprodução
+  setIsPlaying: (state: boolean) => void; // ADICIONADO: Função para definir o estado de reprodução
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -42,6 +45,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [downloadedTracks, setDownloadedTracks] = useState<number[]>([]);
   const [downloadCount, setDownloadCount] = useState(0);
   const [isUserDataLoaded, setIsUserDataLoaded] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false); // ADICIONADO: Estado de reprodução
 
   const showAlert = useCallback((message: string) => {
     setAlertMessage(message);
@@ -60,7 +64,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           setDownloadCount(data.downloadCount || 0);
         } catch (error) {
           console.error("Erro ao buscar dados do usuário:", error);
-          // CORREÇÃO: Adicionada notificação de erro para o usuário.
           showAlert("Não foi possível carregar seus dados. Tente recarregar a página.");
         } finally {
           setIsUserDataLoaded(true);
@@ -78,6 +81,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const playTrack = useCallback((track: Track, trackList: Track[] = []) => {
     setCurrentTrack(track);
     setPlaylist(trackList.length > 0 ? trackList : [track]);
+    setIsPlaying(true); // Definir como tocando quando uma nova música é selecionada
   }, []);
 
   const nextTrack = useCallback(() => {
@@ -85,6 +89,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const currentIndex = playlist.findIndex(t => t.id === currentTrack.id);
     const nextIndex = (currentIndex + 1) % playlist.length;
     setCurrentTrack(playlist[nextIndex]);
+    setIsPlaying(true); // Manter tocando ao ir para a próxima música
   }, [currentTrack, playlist]);
 
   const previousTrack = useCallback(() => {
@@ -92,6 +97,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const currentIndex = playlist.findIndex(t => t.id === currentTrack.id);
     const prevIndex = (currentIndex - 1 + playlist.length) % playlist.length;
     setCurrentTrack(playlist[prevIndex]);
+    setIsPlaying(true); // Manter tocando ao ir para a música anterior
   }, [currentTrack, playlist]);
   
   const handleLike = useCallback((trackId: number) => {
@@ -136,7 +142,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     alertMessage,
     closeAlert: () => setAlertMessage(''),
     isUserDataLoaded,
-  }), [currentTrack, playTrack, nextTrack, previousTrack, likedTracks, downloadedTracks, handleLike, handleDownload, alertMessage, isUserDataLoaded]);
+    isPlaying, // ADICIONADO ao value
+    setIsPlaying, // ADICIONADO ao value
+  }), [currentTrack, playTrack, nextTrack, previousTrack, likedTracks, downloadedTracks, handleLike, handleDownload, alertMessage, isUserDataLoaded, isPlaying, setIsPlaying]); // ADICIONADO às dependências
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

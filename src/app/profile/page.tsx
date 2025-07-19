@@ -1,12 +1,15 @@
+// src/app/profile/page.tsx
 "use client";
 
-import React, { useState, useEffect, useMemo, memo, useRef } from 'react';
+import React, { useState, useEffect, memo, useRef } from 'react'; // REMOVIDO useMemo (não utilizado)
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
 import { useAppContext } from '@/context/AppContext';
 import { Loader2, Camera, ThumbsUp, Download, Play, AlertCircle, Music, Search, Instagram, Twitter, Facebook, SkipBack, SkipForward, Pause } from 'lucide-react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { usePathname } from 'next/navigation';
+// ADICIONADO: Importar Image do next/image para otimização
+import Image from 'next/image';
 
 type Track = {
   id: number;
@@ -18,8 +21,18 @@ type Track = {
   previewUrl: string; 
 };
 
+// Definindo um tipo para a instância do WaveSurfer para evitar 'any'
+interface WaveSurferInstance {
+    load: (url: string) => void;
+    play: () => void;
+    pause: () => void;
+    playPause: () => void;
+    destroy: () => void;
+    on: (event: string, callback: (...args: any[]) => void) => void;
+    // Adicione outras propriedades/métodos do wavesurfer que você usar
+}
+
 // --- COMPONENTES ---
-// Para evitar erros de importação, todos os componentes necessários estão definidos aqui.
 
 const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query: string) => void }) {
     const pathname = usePathname();
@@ -95,7 +108,7 @@ const SiteFooter = memo(function SiteFooter() {
 
 const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onLike, onDownload }: { track: Track | null, onNext: () => void, onPrevious: () => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void }) {
     const waveformRef = useRef<HTMLDivElement>(null);
-    const wavesurfer = useRef<any>(null);
+    const wavesurfer = useRef<WaveSurferInstance | null>(null); // CORRIGIDO: Tipado useRef
     const [isPlaying, setIsPlaying] = useState(false);
 
     useEffect(() => {
@@ -106,7 +119,7 @@ const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onL
                 wavesurfer.current = WaveSurfer.create({ container: waveformRef.current, waveColor: '#E2E8F0', progressColor: '#007BFF', cursorWidth: 1, barWidth: 2, barGap: 2, barRadius: 2, height: 40, responsive: true, hideScrollbar: true });
                 if (track) {
                     wavesurfer.current.load(track.previewUrl);
-                    wavesurfer.current.on('ready', () => wavesurfer.current.play());
+                    wavesurfer.current.on('ready', () => wavesurfer.current?.play()); // Adicionado '?' para segurança
                     wavesurfer.current.on('play', () => setIsPlaying(true));
                     wavesurfer.current.on('pause', () => setIsPlaying(false));
                     wavesurfer.current.on('finish', onNext);
@@ -124,7 +137,8 @@ const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onL
     return (
         <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20 shadow-[0_-4px_15px_rgba(0,0,0,0.08)]">
             <div className="container mx-auto px-6 py-3 flex items-center gap-4">
-                <img src={track.imageUrl} alt={track.songName} className="w-14 h-14 rounded-lg shadow-sm flex-shrink-0" />
+                {/* CORRIGIDO: Substituído <img> por <Image /> */}
+                <Image src={track.imageUrl} alt={track.songName} width={56} height={56} className="w-14 h-14 rounded-lg shadow-sm flex-shrink-0" />
                 <div className="flex items-center gap-4 flex-shrink-0">
                     <button onClick={onPrevious} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200"><SkipBack size={20} className="text-gray-700" /></button>
                     <button onClick={handlePlayPause} className="w-12 h-12 flex items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors">{isPlaying ? <Pause size={24} /> : <Play size={24} />}</button>
@@ -143,7 +157,18 @@ const FooterPlayer = memo(function FooterPlayer({ track, onNext, onPrevious, onL
     );
 });
 
-function ProfileMusicList({ tracks, onPlay, onLike, onDownload, likedTracks, downloadedTracks, currentTrackId }: any) {
+// CORRIGIDO: Tipagem dos props para ProfileMusicList
+interface ProfileMusicListProps {
+    tracks: Track[];
+    onPlay: (track: Track, trackList: Track[]) => void;
+    onLike: (trackId: number) => void;
+    onDownload: (track: Track) => void;
+    likedTracks: number[];
+    downloadedTracks: number[];
+    currentTrackId: number | null;
+}
+
+function ProfileMusicList({ tracks, onPlay, onLike, onDownload, likedTracks, downloadedTracks, currentTrackId }: ProfileMusicListProps) {
     if (tracks.length === 0) {
         return <p className="text-gray-500 mt-8 text-center">Nenhuma música encontrada nesta lista.</p>;
     }
@@ -159,7 +184,8 @@ function ProfileMusicList({ tracks, onPlay, onLike, onDownload, likedTracks, dow
                     <div key={track.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 group transition-colors">
                         <div className="flex items-center gap-4">
                             <div className={`relative w-12 h-12 rounded-md overflow-hidden cursor-pointer shadow-sm ${isPlaying ? 'ring-2 ring-blue-500' : ''}`} onClick={() => onPlay(track, tracks)}>
-                                <img src={track.imageUrl} alt={track.songName} className="w-full h-full object-cover" />
+                                {/* CORRIGIDO: Substituído <img> por <Image /> */}
+                                <Image src={track.imageUrl} alt={track.songName} width={48} height={48} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     {isPlaying ? <span className="text-white text-xs font-bold">TOCANDO</span> : <Play size={20} className="text-white" />}
                                 </div>
@@ -235,7 +261,8 @@ export default function ProfilePage() {
         <Header onSearchChange={() => {}} />
         <main className="flex-grow">
           <div className="h-[350px] bg-gray-200 relative">
-              <img src="https://placehold.co/1500x350/cccccc/999999?text=Capa+do+Perfil" alt="Capa do Perfil" className="w-full h-full object-cover" />
+              {/* CORRIGIDO: Substituído <img> por <Image /> */}
+              <Image src="https://placehold.co/1500x350/cccccc/999999?text=Capa+do+Perfil" alt="Capa do Perfil" fill style={{ objectFit: 'cover' }} priority={true} />
               <Link href="/manage-profile" className="absolute top-4 right-4 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-colors">
                   <Camera size={20} className="text-gray-700" />
               </Link>
@@ -243,7 +270,8 @@ export default function ProfilePage() {
           <div className="container mx-auto max-w-5xl px-8">
               <div className="flex items-end -mt-20">
                   <div className="relative w-40 h-40 bg-white rounded-full border-4 border-white shadow-lg flex-shrink-0 flex items-center justify-center">
-                      {user?.imageUrl ? <img src={user.imageUrl} alt="Foto do Perfil" className="w-full h-full rounded-full object-cover"/> : <span className="text-6xl font-bold text-gray-400">{user?.firstName?.[0]}</span>}
+                      {/* CORRIGIDO: Substituído <img> por <Image /> se imageUrl existir */}
+                      {user?.imageUrl ? <Image src={user.imageUrl} alt="Foto do Perfil" width={152} height={152} className="w-full h-full rounded-full object-cover"/> : <span className="text-6xl font-bold text-gray-400">{user?.firstName?.[0]}</span>}
                       <Link href="/manage-profile" className="absolute bottom-2 right-2 bg-gray-200/80 p-2 rounded-full hover:bg-gray-300 transition-colors">
                         <Camera size={16} className="text-gray-700" />
                       </Link>
@@ -263,7 +291,8 @@ export default function ProfilePage() {
                     <div className="py-1"><AlertCircle className="h-5 w-5 text-yellow-500 mr-3" /></div>
                     <div>
                       <p className="font-bold">Complete seu perfil!</p>
-                      <p className="text-sm">Parece que seu nome completo não está definido. Clique em "Editar Perfil" para atualizá-lo.</p>
+                      {/* CORRIGIDO: Escapando as aspas */}
+                      <p className="text-sm">Parece que seu nome completo não está definido. Clique em &quot;Editar Perfil&quot; para atualizá-lo.</p>
                     </div>
                   </div>
                 </div>
@@ -285,8 +314,8 @@ export default function ProfilePage() {
                       <div className="flex justify-center p-16"><Loader2 className="animate-spin text-blue-500" size={32} /></div>
                   ) : (
                       <>
-                          {activeTab === 'likes' && <ProfileMusicList tracks={profileLikes} onPlay={handlePlayFromProfile} onLike={handleLike} onDownload={handleDownload} likedTracks={likedTrackIds} downloadedTracks={downloadedTrackIds} currentTrackId={currentTrack?.id} />}
-                          {activeTab === 'downloads' && <ProfileMusicList tracks={profileDownloads} onPlay={handlePlayFromProfile} onLike={handleLike} onDownload={handleDownload} likedTracks={likedTrackIds} downloadedTracks={downloadedTrackIds} currentTrackId={currentTrack?.id} />}
+                          {activeTab === 'likes' && <ProfileMusicList tracks={profileLikes} onPlay={handlePlayFromProfile} onLike={handleLike} onDownload={handleDownload} likedTracks={likedTrackIds} downloadedTracks={downloadedTrackIds} currentTrackId={currentTrack?.id || null} />}
+                          {activeTab === 'downloads' && <ProfileMusicList tracks={profileDownloads} onPlay={handlePlayFromProfile} onLike={handleLike} onDownload={handleDownload} likedTracks={likedTrackIds} downloadedTracks={downloadedTrackIds} currentTrackId={currentTrack?.id || null} />}
                           
                           {!isLoading && profileLikes.length === 0 && activeTab === 'likes' && (
                             <div className="text-center text-gray-500 p-16 border-2 border-dashed border-gray-300 rounded-lg">

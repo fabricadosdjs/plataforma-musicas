@@ -6,7 +6,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
-import { Music, Search, Instagram, Twitter, Facebook, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+// REMOVIDO 'Search' pois não é utilizado e causava warning
+import { Music, Instagram, Twitter, Facebook, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
 // --- Componentes Reutilizados ---
 
@@ -68,7 +69,8 @@ const SiteFooter = memo(function SiteFooter() {
 
 // --- Página de Adicionar Música ---
 export default function AddMusicPage() {
-  const { user } = useUser();
+  // REMOVIDO '{ user }' pois a variável 'user' não é utilizada e causava warning
+  useUser(); 
   const [formData, setFormData] = useState({
     songName: '',
     artist: '',
@@ -120,8 +122,9 @@ export default function AddMusicPage() {
         downloadUrl: '',
       }));
 
-    } catch (error: any) {
-      setMessage({ type: 'error', text: `Erro: ${error.message}` });
+    } catch (error) { // CORRIGIDO: Removido ': any' para evitar o erro do ESLint/TypeScript
+      // CORRIGIDO: Adicionada verificação de tipo para acessar a propriedade 'message' com segurança
+      setMessage({ type: 'error', text: `Erro: ${error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.'}` });
     } finally {
       setIsLoading(false);
     }

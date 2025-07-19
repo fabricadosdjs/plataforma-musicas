@@ -1,12 +1,13 @@
 // src/app/pro/page.tsx
 "use client"; // Este componente precisa ser um Client Component para interatividade
 
-import React, { useState, useEffect, useCallback, memo } from 'react'; // Importe useEffect, useCallback, memo
+import React, { useState, useEffect, memo } from 'react'; // REMOVIDO useCallback (não utilizado)
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs'; // Importe componentes do Clerk
 import Head from 'next/head'; // Importe Head para metadados e fontes
 import Link from 'next/link'; // Importe Link
 import { usePathname } from 'next/navigation'; // Importe usePathname
-import { X, Info, Music, Search, SkipBack, SkipForward, Play, Pause, ThumbsUp, Download, Instagram, Twitter, Facebook, Loader2 } from 'lucide-react'; // Importe os ícones necessários
+// REMOVIDOS ícones não utilizados: SkipBack, SkipForward, Play, Pause, ThumbsUp, Download, Loader2
+import { X, Info, Music, Search, Instagram, Twitter, Facebook } from 'lucide-react'; 
 import { loadStripe } from '@stripe/stripe-js'; // ADICIONADO: Importação de loadStripe
 
 // --- Componentes Reutilizados de /new/page.tsx ---
@@ -181,13 +182,19 @@ export default function ProPage() {
       const stripe = await stripePromise;
       if (stripe) {
         // CORREÇÃO AQUI: Extrair apenas o sessionId da URL
-        const sessionId = session.url.split('cs_test_')[1] ? 'cs_test_' + session.url.split('cs_test_')[1].split('?')[0] : ''; // Pega o ID e remove params
+        // A lógica de extração parece um pouco complexa e talvez não seja necessária se 'session.id' já estiver disponível
+        // Se 'session' do backend já retornar { id: 'cs_test_xyz' } ou { url: 'https://checkout.stripe.com/c/pay/cs_test_xyz...' }
+        // Se a sessão tem a propriedade 'id', use-a diretamente. Ex: sessionId: session.id
+        // Se for apenas 'session.url' e o Stripe precise do ID, sua lógica atual de parsear a string pode funcionar,
+        // mas é mais seguro ter o ID retornado diretamente do seu backend.
+        // Por hora, manterei sua lógica de extração, mas saiba que pode ser simplificada.
+        const sessionId = session.url.split('cs_test_')[1] ? 'cs_test_' + session.url.split('cs_test_')[1].split('?')[0] : '';
         if (!sessionId) {
             throw new Error('Could not extract session ID from Stripe URL.');
         }
 
         const { error } = await stripe.redirectToCheckout({
-          sessionId: sessionId // <--- CORREÇÃO: Passando apenas o ID da sessão
+          sessionId: sessionId
         });
 
         if (error) {
@@ -198,9 +205,10 @@ export default function ProPage() {
         setMessage('Erro ao carregar o Stripe. Por favor, tente novamente.');
       }
 
-    } catch (error: any) {
+    } catch (error) { // CORRIGIDO: Removido ': any'
+      // CORRIGIDO: Adicionada verificação de tipo para acessar a propriedade 'message' com segurança
       console.error('Erro ao criar sessão de checkout:', error);
-      setMessage(`Erro ao iniciar o pagamento: ${error.message}`);
+      setMessage(`Erro ao iniciar o pagamento: ${error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.'}`);
     } finally {
       setLoading(false);
     }
