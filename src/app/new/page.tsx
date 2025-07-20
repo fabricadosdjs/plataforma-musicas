@@ -6,7 +6,7 @@ import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, C
 import Head from 'next/head';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-// Remover Pause, UserIcon se não forem usados em outros lugares para evitar avisos
+// Removidos 'Pause' e 'UserIcon' se não usados em outros lugares para evitar avisos
 import { Play, Download, ThumbsUp, X, Info, Music, Search, Loader2, Instagram, Twitter, Facebook, ChevronDown, Menu as MenuIcon, Copyright as CopyrightIcon, Bug as BugIcon } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 
@@ -23,9 +23,16 @@ type Track = {
   releaseDate: string;
 };
 
+// Interface para os filtros (definida aqui para uso no SidebarFilters e NewPage)
+interface Filters {
+  genres: string[];
+  versions: string[];
+  uploadDate: string;
+}
+
 // --- Componentes ---
 
-// ReportConfirmationModal: Corrigido react/no-unescaped-entities
+// ReportConfirmationModal: Estilizado e horizontal
 const ReportConfirmationModal = memo(function ReportConfirmationModal({ isOpen, trackName, onConfirm, onCancel }: { isOpen: boolean, trackName: string | undefined, onConfirm: () => void, onCancel: () => void }) {
     if (!isOpen) return null;
 
@@ -37,7 +44,7 @@ const ReportConfirmationModal = memo(function ReportConfirmationModal({ isOpen, 
                     Denúncia de Direitos Autorais
                 </h3>
                 <p className="text-base sm:text-lg text-gray-700 leading-relaxed mb-8">
-                    Você está prestes a denunciar a música &quot;<strong className="text-red-700 font-bold">{trackName || 'esta música'}</strong>&quot; {/* Corrigido: &quot; */}
+                    Você está prestes a denunciar a música &quot;<strong className="text-red-700 font-bold">{trackName || 'esta música'}</strong>&quot;
                     por violação de direitos autorais.
                     <br />
                     Esta ação é séria e será investigada. Por favor, confirme se deseja prosseguir.
@@ -58,7 +65,7 @@ const ReportConfirmationModal = memo(function ReportConfirmationModal({ isOpen, 
     );
 });
 
-// ConfirmationModal (para re-download) - Corrigido react/no-unescaped-entities
+// ConfirmationModal (para re-download)
 const ConfirmationModal = memo(function ConfirmationModal({ isOpen, title, message, onConfirm, onCancel }: { isOpen: boolean, title: string, message: string, onConfirm: () => void, onCancel: () => void }) {
     if (!isOpen) return null;
 
@@ -80,7 +87,7 @@ const ConfirmationModal = memo(function ConfirmationModal({ isOpen, title, messa
     );
 });
 
-// NOVO Componente: BugReportConfirmationModal - Corrigido react/no-unescaped-entities
+// NOVO Componente: BugReportConfirmationModal
 const BugReportConfirmationModal = memo(function BugReportConfirmationModal({ isOpen, trackName, onConfirm, onCancel }: { isOpen: boolean, trackName: string | undefined, onConfirm: () => void, onCancel: () => void }) {
     if (!isOpen) return null;
 
@@ -114,7 +121,7 @@ const BugReportConfirmationModal = memo(function BugReportConfirmationModal({ is
 
 
 const MobileMenu = memo(function MobileMenu({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-    const { user, isLoaded } = useUser();
+    const { user, isLoaded } = useUser(); // isLoaded ainda não é usado diretamente aqui, mas pode ser em outros componentes
     const pathname = usePathname();
     const navLinks = [
         { href: '/new', label: 'New' }, { href: '/featured', label: 'Featured' },
@@ -252,7 +259,9 @@ const Alert = memo(function Alert({ message, onClose }: { message: string, onClo
   );
 });
 
-const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, currentFilters }: { tracks: Track[], onFilterChange: (filters: any) => void, currentFilters: any }) {
+const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, currentFilters }: { tracks: Track[], onFilterChange: (filters: any) => void, currentFilters: any }) => {
+    // isLoaded não é usado, removemos para evitar warning (se AppContext não o usa)
+    // const { isLoaded } = useUser();
     const availableGenres = useMemo(() => [...new Set(tracks.map(t => t.style))], [tracks]);
     const availableVersions = useMemo(() => [...new Set(tracks.map(t => t.version))], [tracks]);
     const availableDates = useMemo(() => {
@@ -267,7 +276,8 @@ const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, cu
     }, []);
 
     const handleFilterChange = (type: 'genres' | 'versions' | 'uploadDate', value: string) => {
-      onFilterChange((prevFilters: any) => {
+      // Corrigido: prevFilters não é 'any', mas sim do tipo Filters
+      onFilterChange((prevFilters: Filters) => {
           if (type === 'genres' || type === 'versions') {
             const currentFilter = prevFilters[type];
             const newFilter = currentFilter.includes(value) ? currentFilter.filter((item: string) => item !== value) : [...currentFilter, value];
@@ -315,17 +325,17 @@ const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, cu
     );
 });
 
-// Componente MusicTable - AQUI ESTÁ A MAIOR MUDANÇA PARA RESPONSIVIDADE
+// Componente MusicTable
 const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload, onReportCopyright, onReportBug, likedTracks, downloadedTracks, currentTrackId, isPlaying }: { tracks: Track[], onPlay: (track: Track) => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, onReportCopyright: (track: Track) => void, onReportBug: (track: Track) => void, likedTracks: number[], downloadedTracks: number[], currentTrackId: number | null, isPlaying: boolean }) {
     return (
-        <div className="flex flex-col gap-4 sm:gap-6"> {/* Usa flex-col para empilhar em mobile, adiciona gap */}
+        <div className="flex flex-col gap-4 sm:gap-6">
           {tracks.map((track) => {
             const isLiked = likedTracks.includes(track.id);
             const isDownloaded = downloadedTracks.includes(track.id);
             const isCurrentlyPlaying = track.id === currentTrackId;
 
             return (
-              <div key={track.id} className="border-b border-gray-200 pb-4 sm:pb-6 last:border-b-0 bg-white rounded-xl shadow-md p-3 sm:p-4 md:p-5"> {/* Item individual da lista, com padding */}
+              <div key={track.id} className="border-b border-gray-200 pb-4 sm:pb-6 last:border-b-0 bg-white rounded-xl shadow-md p-3 sm:p-4 md:p-5">
                 {/* Contêiner principal da linha: flex-col em mobile/sm, flex-row em md+ */}
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-3 md:gap-4">
                   {/* Imagem e Botão Play/Pause - TAMANHO DA THUMBNAIL AJUSTADO */}
