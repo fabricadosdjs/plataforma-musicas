@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from '
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
 import Head from 'next/head';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname } = from 'next/navigation';
 import { Play, Download, ThumbsUp, X, Info, Music, Search, Loader2, Instagram, Twitter, Facebook, ChevronDown, Menu as MenuIcon, Copyright as CopyrightIcon, Bug as BugIcon } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 
@@ -322,7 +322,7 @@ const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, cu
 });
 
 // Componente MusicTable
-const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload, onReportCopyright, onReportBug, likedTracks, downloadedTracks, currentTrackId, isPlaying }: { tracks: Track[], onPlay: (track: Track) => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, onReportCopyright: (track: Track) => void, onReportBug: (track: Track) => void, likedTracks: number[], downloadedTracks: number[], currentTrackId: number | null, isPlaying: boolean }) {
+const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload, onReportCopyright, onReportBug, likedTracks, downloadedTracks, currentTrackId, isPlaying }: { tracks: Track[], onPlay: (track: Track) => void, onLike: (trackId: number) => void, onDownload: (track: Track) => void, onReportCopyright: (track: Track) => void, onReportBug: (track: Track) => void, likedTracks: number[], downloadedTracks: number[], currentTrackId: number | null, isPlaying: boolean }) => {
     return (
         <div className="flex flex-col gap-4 sm:gap-6">
           {tracks.map((track) => {
