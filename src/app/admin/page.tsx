@@ -1,4 +1,3 @@
-// src/app/admin/page.tsx
 "use client";
 
 import React from 'react';
@@ -6,7 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
-import { Music, Search, Instagram, Twitter, Facebook, LayoutDashboard, PlusCircle } from 'lucide-react';
+import { Music, Instagram, Twitter, Facebook, LayoutDashboard, PlusCircle } from 'lucide-react';
 
 // --- Componentes ---
 // Para garantir a consistência e evitar erros de importação,
@@ -85,7 +84,7 @@ export default function AdminDashboardPage() {
         <main className="flex-grow container mx-auto p-8">
           <div className="mb-8">
             <h1 className="text-4xl font-extrabold text-white">Painel Administrativo</h1>
-            <p className="text-gray-400 mt-2">Bem-vindo, {user?.firstName || 'Admin'}. Aqui você pode gerir o conteúdo do site.</p>
+            <p className="text-gray-400 mt-2">Bem-vindo, {user?.firstName || 'Admin'}. Aqui você pode gerenciar o conteúdo do site.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -109,7 +108,7 @@ export default function AdminDashboardPage() {
                         <LayoutDashboard size={24} className="text-gray-500" />
                     </div>
                     <div>
-                        <h2 className="font-bold text-lg text-gray-500">Gerir Utilizadores</h2>
+                        <h2 className="font-bold text-lg text-gray-500">Gerenciar Usuários</h2>
                         <p className="text-sm text-gray-600">(Em breve)</p>
                     </div>
                 </div>

@@ -1,6 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -22,23 +20,29 @@ model Like {
 }
 
 model Download {
-  id        Int      @id @default(autoincrement())
-  trackId   Int
-  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  trackId      Int
+  track        Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  downloadedAt DateTime @default(now()) // <-- NOVO CAMPO: Registra a data e hora exata do download.
 }
 
 model User {
-  id        String     @id @unique
-  email     String?    @unique
-  name      String?
-  likes     Like[]
-  downloads Download[]
+  id                 String    @id @unique
+  email              String?   @unique
+  name               String?
+  
+  // Novos campos para o limite de downloads diário
+  dailyDownloadCount Int       @default(0)
+  lastDownloadReset  DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  likes              Like[]
+  downloads          Download[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 model Track {
@@ -46,17 +50,15 @@ model Track {
   songName    String
   artist      String
   style       String
-  version     String
+  version     String? // Tornamos 'version' opcional para flexibilidade
   imageUrl    String
   previewUrl  String
   downloadUrl String
   releaseDate DateTime
-  duration    String   // Novo campo para a duração
-  fileSize    String   // Novo campo para o tamanho do arquivo
 
-  likes     Like[]
-  downloads Download[]
+  likes       Like[]
+  downloads   Download[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

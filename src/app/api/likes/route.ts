@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic'; // Adiciona esta linha
+
 export async function POST(req: Request) {
   try {
     const { userId } = getAuth(req);
@@ -15,7 +17,6 @@ export async function POST(req: Request) {
       return new NextResponse("ID da música é obrigatório", { status: 400 });
     }
 
-    // Verifica se o like já existe
     const existingLike = await prisma.like.findUnique({
       where: {
         userId_trackId: {
@@ -26,21 +27,10 @@ export async function POST(req: Request) {
     });
 
     if (existingLike) {
-      // Se existe, remove (unlike)
-      await prisma.like.delete({
-        where: {
-          id: existingLike.id,
-        },
-      });
+      await prisma.like.delete({ where: { id: existingLike.id } });
       return NextResponse.json({ message: 'Like removido' });
     } else {
-      // Se não existe, cria (like)
-      await prisma.like.create({
-        data: {
-          userId,
-          trackId,
-        },
-      });
+      await prisma.like.create({ data: { userId, trackId } });
       return NextResponse.json({ message: 'Like adicionado' });
     }
   } catch (error) {

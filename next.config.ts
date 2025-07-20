@@ -1,8 +1,7 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+// next.config.ts
+const nextConfig = {
   images: {
-    domains: ['placehold.co', 'i.ibb.co'], // adiciona todos os domínios que usar para imagens externas
+    domains: ['placehold.co', 'i.ibb.co'],
   },
 };
 
