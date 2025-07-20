@@ -6,7 +6,6 @@ import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, C
 import Head from 'next/head';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-// Removidos 'Pause' e 'UserIcon' se não usados em outros lugares para evitar avisos
 import { Play, Download, ThumbsUp, X, Info, Music, Search, Loader2, Instagram, Twitter, Facebook, ChevronDown, Menu as MenuIcon, Copyright as CopyrightIcon, Bug as BugIcon } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 
@@ -121,7 +120,7 @@ const BugReportConfirmationModal = memo(function BugReportConfirmationModal({ is
 
 
 const MobileMenu = memo(function MobileMenu({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-    const { user, isLoaded } = useUser(); // isLoaded ainda não é usado diretamente aqui, mas pode ser em outros componentes
+    const { user, isLoaded } = useUser();
     const pathname = usePathname();
     const navLinks = [
         { href: '/new', label: 'New' }, { href: '/featured', label: 'Featured' },
@@ -259,9 +258,7 @@ const Alert = memo(function Alert({ message, onClose }: { message: string, onClo
   );
 });
 
-const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, currentFilters }: { tracks: Track[], onFilterChange: (filters: any) => void, currentFilters: any }) => {
-    // isLoaded não é usado, removemos para evitar warning (se AppContext não o usa)
-    // const { isLoaded } = useUser();
+const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, currentFilters }: { tracks: Track[], onFilterChange: (filters: Filters) => void, currentFilters: Filters }) => {
     const availableGenres = useMemo(() => [...new Set(tracks.map(t => t.style))], [tracks]);
     const availableVersions = useMemo(() => [...new Set(tracks.map(t => t.version))], [tracks]);
     const availableDates = useMemo(() => {
@@ -276,7 +273,6 @@ const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, cu
     }, []);
 
     const handleFilterChange = (type: 'genres' | 'versions' | 'uploadDate', value: string) => {
-      // Corrigido: prevFilters não é 'any', mas sim do tipo Filters
       onFilterChange((prevFilters: Filters) => {
           if (type === 'genres' || type === 'versions') {
             const currentFilter = prevFilters[type];
@@ -353,7 +349,7 @@ const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload
                   </div>
                   {/* Informações da Música (Nome, Artista, Gênero) - REVISADO PARA ESTILO EM LINHA EM MD+ */}
                   <div className="flex-grow flex flex-col justify-center min-w-0 text-center md:text-left">
-                      {/* SongName e Style: flex-col em mobile, flex-row em sm+, com style empurrado para direita em md+ */}
+                      {/* SongName e Style: flex-col em mobile/sm, flex-row em md+ com justify-between */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-center sm:justify-start md:justify-between gap-1 sm:gap-2">
                           {/* FONTE DO TÍTULO DA MÚSICA AJUSTADA */}
                           <div className="font-bold text-sm sm:text-base text-gray-900 truncate">
