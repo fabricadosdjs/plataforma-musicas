@@ -6,7 +6,8 @@ import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, C
 import Head from 'next/head';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Play, Download, ThumbsUp, X, Info, Pause, Music, Search, Loader2, Instagram, Twitter, Facebook, ChevronDown, Menu as MenuIcon, User as UserIcon, Copyright as CopyrightIcon, Bug as BugIcon } from 'lucide-react';
+// Remover Pause, UserIcon se não forem usados em outros lugares para evitar avisos
+import { Play, Download, ThumbsUp, X, Info, Music, Search, Loader2, Instagram, Twitter, Facebook, ChevronDown, Menu as MenuIcon, Copyright as CopyrightIcon, Bug as BugIcon } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 
 // --- Tipos ---
@@ -24,7 +25,7 @@ type Track = {
 
 // --- Componentes ---
 
-// ReportConfirmationModal: Estilizado e horizontal
+// ReportConfirmationModal: Corrigido react/no-unescaped-entities
 const ReportConfirmationModal = memo(function ReportConfirmationModal({ isOpen, trackName, onConfirm, onCancel }: { isOpen: boolean, trackName: string | undefined, onConfirm: () => void, onCancel: () => void }) {
     if (!isOpen) return null;
 
@@ -36,7 +37,7 @@ const ReportConfirmationModal = memo(function ReportConfirmationModal({ isOpen, 
                     Denúncia de Direitos Autorais
                 </h3>
                 <p className="text-base sm:text-lg text-gray-700 leading-relaxed mb-8">
-                    Você está prestes a denunciar a música "<strong className="text-red-700 font-bold">{trackName || 'esta música'}</strong>"
+                    Você está prestes a denunciar a música &quot;<strong className="text-red-700 font-bold">{trackName || 'esta música'}</strong>&quot; {/* Corrigido: &quot; */}
                     por violação de direitos autorais.
                     <br />
                     Esta ação é séria e será investigada. Por favor, confirme se deseja prosseguir.
@@ -57,7 +58,7 @@ const ReportConfirmationModal = memo(function ReportConfirmationModal({ isOpen, 
     );
 });
 
-// Componente ConfirmationModal (para re-download)
+// ConfirmationModal (para re-download) - Corrigido react/no-unescaped-entities
 const ConfirmationModal = memo(function ConfirmationModal({ isOpen, title, message, onConfirm, onCancel }: { isOpen: boolean, title: string, message: string, onConfirm: () => void, onCancel: () => void }) {
     if (!isOpen) return null;
 
@@ -79,7 +80,7 @@ const ConfirmationModal = memo(function ConfirmationModal({ isOpen, title, messa
     );
 });
 
-// NOVO Componente: BugReportConfirmationModal
+// NOVO Componente: BugReportConfirmationModal - Corrigido react/no-unescaped-entities
 const BugReportConfirmationModal = memo(function BugReportConfirmationModal({ isOpen, trackName, onConfirm, onCancel }: { isOpen: boolean, trackName: string | undefined, onConfirm: () => void, onCancel: () => void }) {
     if (!isOpen) return null;
 
@@ -91,7 +92,7 @@ const BugReportConfirmationModal = memo(function BugReportConfirmationModal({ is
                     Reportar Problema na Música
                 </h3>
                 <p className="text-base sm:text-lg text-gray-700 leading-relaxed mb-8">
-                    Você está prestes a reportar um problema com a música "<strong className="text-orange-700 font-bold">{trackName || 'esta música'}</strong>".
+                    Você está prestes a reportar um problema com a música &quot;<strong className="text-orange-700 font-bold">{trackName || 'esta música'}</strong>&quot;.
                     <br />
                     Isso nos ajudará a corrigir links quebrados ou falhas de reprodução. Confirme sua denúncia.
                 </p>
@@ -328,7 +329,7 @@ const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload
                 {/* Contêiner principal da linha: flex-col em mobile/sm, flex-row em md+ */}
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-3 md:gap-4">
                   {/* Imagem e Botão Play/Pause - TAMANHO DA THUMBNAIL AJUSTADO */}
-                  <div className="relative flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden cursor-pointer shadow-md" onClick={() => onPlay(track)}> {/* Diminuído de w-16 h-16 para w-14 h-14 em mobile */}
+                  <div className="relative flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden cursor-pointer shadow-md" onClick={() => onPlay(track)}>
                     <img src={track.imageUrl} alt={track.songName} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       {isCurrentlyPlaying && isPlaying ? (
@@ -345,7 +346,7 @@ const MusicTable = memo(function MusicTable({ tracks, onPlay, onLike, onDownload
                       {/* SongName e Style: flex-col em mobile, flex-row em sm+, com style empurrado para direita em md+ */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-center sm:justify-start md:justify-between gap-1 sm:gap-2">
                           {/* FONTE DO TÍTULO DA MÚSICA AJUSTADA */}
-                          <div className="font-bold text-sm sm:text-base text-gray-900 truncate"> {/* Diminuído de text-base para text-sm em mobile, e sm:text-lg para sm:text-base */}
+                          <div className="font-bold text-sm sm:text-base text-gray-900 truncate">
                               {track.songName}
                           </div>
                           {/* Estilo: visível em todas as telas, empurrado para direita em md+ */}
