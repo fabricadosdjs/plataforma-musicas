@@ -1,11 +1,10 @@
-// src/app/new/page.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from 'react';
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
 import Head from 'next/head';
 import Link from 'next/link';
-import { usePathname } = from 'next/navigation';
+import { usePathname } from 'next/navigation'; // ✅ Correção aplicada aqui
 import { Play, Download, ThumbsUp, X, Info, Music, Search, Loader2, Instagram, Twitter, Facebook, ChevronDown, Menu as MenuIcon, Copyright as CopyrightIcon, Bug as BugIcon } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 
