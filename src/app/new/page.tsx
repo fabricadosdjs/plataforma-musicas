@@ -31,7 +31,6 @@ interface Filters {
 
 // --- Componentes ---
 
-// ReportConfirmationModal: Estilizado e horizontal
 const ReportConfirmationModal = memo(function ReportConfirmationModal({ isOpen, trackName, onConfirm, onCancel }: { isOpen: boolean, trackName: string | undefined, onConfirm: () => void, onCancel: () => void }) {
     if (!isOpen) return null;
 
@@ -64,7 +63,6 @@ const ReportConfirmationModal = memo(function ReportConfirmationModal({ isOpen, 
     );
 });
 
-// ConfirmationModal (para re-download)
 const ConfirmationModal = memo(function ConfirmationModal({ isOpen, title, message, onConfirm, onCancel }: { isOpen: boolean, title: string, message: string, onConfirm: () => void, onCancel: () => void }) {
     if (!isOpen) return null;
 
@@ -86,7 +84,6 @@ const ConfirmationModal = memo(function ConfirmationModal({ isOpen, title, messa
     );
 });
 
-// NOVO Componente: BugReportConfirmationModal
 const BugReportConfirmationModal = memo(function BugReportConfirmationModal({ isOpen, trackName, onConfirm, onCancel }: { isOpen: boolean, trackName: string | undefined, onConfirm: () => void, onCancel: () => void }) {
     if (!isOpen) return null;
 
@@ -142,10 +139,8 @@ const MobileMenu = memo(function MobileMenu({ isOpen, onClose }: { isOpen: boole
                 </div>
 
                 <div className="mb-8 border-b border-gray-200 pb-6">
-                    <ClerkLoading>
-                        <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
-                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                    </ClerkLoading>
+                    <ClerkLoading><div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
+                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div></ClerkLoading>
                     <ClerkLoaded>
                         <SignedIn>
                             <div className="flex items-center gap-3 mb-4">
@@ -464,8 +459,9 @@ export default function NewPage() {
             if (!res.ok) throw new Error('Falha ao buscar o catálogo de músicas');
             const data = await res.json();
             setAllTracks(data);
-        } catch (error) => { console.error(error); } // <-- CORREÇÃO AQUI: SyntaxError em catch
-        finally { setIsLoading(false); }
+        } catch (error) { // Removido '=>' aqui para corrigir o erro de sintaxe
+            console.error(error);
+        } finally { setIsLoading(false); }
     };
     fetchTracks();
   }, []);
