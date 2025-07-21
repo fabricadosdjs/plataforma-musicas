@@ -464,7 +464,7 @@ export default function NewPage() {
             if (!res.ok) throw new Error('Falha ao buscar o catálogo de músicas');
             const data = await res.json();
             setAllTracks(data);
-        } catch (error) { console.error(error); } 
+        } catch (error) => { console.error(error); } // <-- CORREÇÃO AQUI: SyntaxError em catch
         finally { setIsLoading(false); }
     };
     fetchTracks();
