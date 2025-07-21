@@ -459,9 +459,14 @@ export default function NewPage() {
             if (!res.ok) throw new Error('Falha ao buscar o catálogo de músicas');
             const data = await res.json();
             setAllTracks(data);
+<<<<<<< HEAD
         } catch (error) { // Removido '=>' aqui para corrigir o erro de sintaxe
             console.error(error);
         } finally { setIsLoading(false); }
+=======
+        } catch (error) => { console.error(error); } 
+        finally { setIsLoading(false); }
+>>>>>>> 1ee741fb637741eed61a4c2b95ad1489ac83a16a
     };
     fetchTracks();
   }, []);
