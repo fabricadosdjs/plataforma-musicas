@@ -1,10 +1,11 @@
+// src/app/new/page.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from 'react';
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton, SignUpButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs';
 import Head from 'next/head';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation'; // ✅ Correção aplicada aqui
+import { usePathname } from 'next/navigation';
 import { Play, Download, ThumbsUp, X, Info, Music, Search, Loader2, Instagram, Twitter, Facebook, ChevronDown, Menu as MenuIcon, Copyright as CopyrightIcon, Bug as BugIcon } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 
@@ -257,7 +258,7 @@ const Alert = memo(function Alert({ message, onClose }: { message: string, onClo
   );
 });
 
-const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, currentFilters }: { tracks: Track[], onFilterChange: (filters: Filters) => void, currentFilters: Filters }) => {
+const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange, currentFilters }: { tracks: Track[], onFilterChange: (filters: Filters) => void, currentFilters: Filters }) {
     const availableGenres = useMemo(() => [...new Set(tracks.map(t => t.style))], [tracks]);
     const availableVersions = useMemo(() => [...new Set(tracks.map(t => t.version))], [tracks]);
     const availableDates = useMemo(() => {
