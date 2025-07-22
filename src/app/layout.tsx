@@ -15,6 +15,10 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: 'DJ Pool Platform',
   description: 'Sua plataforma de músicas para DJs.',
+  referrer: 'no-referrer',
+  other: {
+    'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: wss:; img-src 'self' data: https: blob:;"
+  }
 };
 
 export default function RootLayout({
@@ -24,12 +28,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={montserrat.className}>
-      <head>
-        {/* Meta tags para melhorar downloads */}
-        <meta name="referrer" content="no-referrer" />
-        <meta httpEquiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: wss:; img-src 'self' data: https: blob:;" />
-
-        {/* Start of Tawk.to Script */}
+      <body>
+        {/* Meta tags para melhorar downloads - movido para head.tsx ou metadata */}
         <script
           type="text/javascript"
           dangerouslySetInnerHTML={{
@@ -46,9 +46,6 @@ export default function RootLayout({
             `,
           }}
         />
-        {/* End of Tawk.to Script */}
-      </head>
-      <body>
         <AuthProvider>
           <AppProvider>
             {children}
