@@ -9,15 +9,42 @@ export default function GlobalError({
   reset: () => void
 }) {
   return (
-    <html>
+    <html lang="pt-BR">
       <body>
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-          <div className="text-center">
-            <h2 className="text-4xl font-bold text-red-600 mb-4">Erro Global!</h2>
-            <p className="text-gray-600 mb-8">Algo deu muito errado.</p>
+        <div style={{ 
+          minHeight: '100vh', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          backgroundColor: '#f3f4f6',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <h2 style={{ 
+              fontSize: '2rem', 
+              fontWeight: 'bold', 
+              color: '#dc2626', 
+              marginBottom: '1rem' 
+            }}>
+              Erro Global!
+            </h2>
+            <p style={{ 
+              color: '#6b7280', 
+              marginBottom: '2rem' 
+            }}>
+              Algo deu muito errado.
+            </p>
             <button
               onClick={() => reset()}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
+              style={{
+                backgroundColor: '#2563eb',
+                color: 'white',
+                fontWeight: 'bold',
+                padding: '0.5rem 1rem',
+                borderRadius: '0.375rem',
+                border: 'none',
+                cursor: 'pointer'
+              }}
             >
               Tentar novamente
             </button>
