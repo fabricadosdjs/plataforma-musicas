@@ -1,0 +1,32 @@
+[
+    {
+        "songName": "Exemplo de Música 1",
+        "artist": "Artista Exemplo",
+        "style": "Pop",
+        "version": "Original Mix",
+        "imageUrl": "https://placehold.co/300x300/1f2937/ffffff?text=Música+1",
+        "previewUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+        "downloadUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+        "releaseDate": "2025-01-22"
+    },
+    {
+        "songName": "Exemplo de Música 2",
+        "artist": "Outro Artista",
+        "style": "Rock",
+        "version": "Extended Mix",
+        "imageUrl": "https://placehold.co/300x300/374151/ffffff?text=Música+2",
+        "previewUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+        "downloadUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+        "releaseDate": "2025-01-21"
+    },
+    {
+        "songName": "Exemplo de Música 3",
+        "artist": "DJ Exemplo",
+        "style": "Electronic",
+        "version": "Radio Edit",
+        "imageUrl": "https://placehold.co/300x300/4b5563/ffffff?text=Música+3",
+        "previewUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+        "downloadUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+        "releaseDate": "2025-01-20"
+    }
+]

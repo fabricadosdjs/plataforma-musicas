@@ -1,0 +1,58 @@
+{
+  "name": "plataforma-musicas",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:seed": "node prisma/seed.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.10.0",
+    "@auth/supabase-adapter": "^1.10.0",
+    "@prisma/client": "^6.12.0",
+    "@stripe/stripe-js": "^7.5.0",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/supabase-js": "^2.52.0",
+    "@types/bcryptjs": "^2.4.6",
+    "axios": "^1.10.0",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
+    "cheerio": "^1.1.0",
+    "classnames": "^2.5.1",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.2.0",
+    "lucide-react": "^0.525.0",
+    "next": "15.4.1",
+    "next-auth": "^4.24.11",
+    "nodemailer": "^6.9.8",
+    "oci-sdk": "^2.112.2",
+    "puppeteer": "^24.14.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "resend": "^4.7.0",
+    "stripe": "^18.3.0",
+    "wavesurfer.js": "^7.10.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
+    "@types/node": "^20",
+    "@types/nodemailer": "^6.4.17",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv-cli": "^8.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "15.4.1",
+    "prisma": "^6.12.0",
+    "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
+  }
+}
