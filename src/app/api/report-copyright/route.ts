@@ -2,12 +2,20 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    // Verificar se a API key do Resend está disponível
+    if (!process.env.RESEND_API_KEY) {
+      console.warn('RESEND_API_KEY not configured, skipping email sending');
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Denúncia recebida (email não configurado)' 
+      });
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
     const { track, user, timestamp } = await req.json();
 
     if (!track || !track.songName || !track.artist) {
