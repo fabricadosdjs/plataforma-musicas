@@ -1,7 +1,7 @@
 // Teste para verificar se as correções de UUID estão funcionando
 async function testAdminAccess() {
     console.log('🧪 Testando acesso de admin após correções...');
-    
+
     try {
         // Simular login como admin
         const loginResponse = await fetch('http://localhost:3000/api/auth/signin', {
@@ -14,28 +14,28 @@ async function testAdminAccess() {
                 password: 'admin123'
             })
         });
-        
+
         console.log('📝 Status do login:', loginResponse.status);
-        
+
         if (loginResponse.ok) {
             console.log('✅ Login de admin bem-sucedido');
-            
+
             // Testar algumas APIs que foram corrigidas
             console.log('\n🔍 Testando APIs corrigidas...');
-            
+
             // Teste 1: API de controle de downloads
             console.log('1. Testando /api/downloads/control...');
-            
+
             // Teste 2: API de likes
             console.log('2. Testando /api/likes...');
-            
+
             // Teste 3: API de play
             console.log('3. Testando /api/play...');
-            
+
         } else {
             console.log('❌ Falha no login de admin');
         }
-        
+
     } catch (error) {
         console.error('❌ Erro no teste:', error.message);
     }

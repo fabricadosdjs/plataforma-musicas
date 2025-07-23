@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 
     // Verificar se é um usuário admin especial (usar comportamento especial se necessário)
     const isAdmin = userId === 'admin-nextor-001' || (session.user as any).benefits?.adminAccess;
-    
+
     // Verificar se o userId é um UUID válido antes de fazer consultas
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!isAdmin && !uuidRegex.test(userId)) {
@@ -104,12 +104,12 @@ export async function GET(req: Request) {
 
     // Verificar se é um usuário admin especial
     const isAdmin = userId === 'admin-nextor-001' || (session.user as any).benefits?.adminAccess;
-    
+
     // Se for admin, retornar array vazio ou comportamento especial
     if (isAdmin) {
       return NextResponse.json({ likes: [] });
     }
-    
+
     // Verificar se o userId é um UUID válido antes de fazer consultas
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(userId)) {

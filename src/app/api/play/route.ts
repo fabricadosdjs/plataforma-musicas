@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
         // Verificar se é um usuário admin especial
         const isAdmin = session.user.id === 'admin-nextor-001' || (session.user as any).benefits?.adminAccess;
-        
+
         // Se for admin, retornar sucesso sem registrar no banco
         if (isAdmin) {
             return NextResponse.json({
