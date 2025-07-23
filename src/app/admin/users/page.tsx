@@ -806,10 +806,17 @@ export default function AdminUsersPage() {
                     </button>
                 </div>
 
-                {/* Users Table */}
-                <div className="bg-gray-800 rounded-xl overflow-hidden">
+                {/* Modern Users Table */}
+                <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 rounded-2xl border border-gray-700/50 backdrop-blur-sm overflow-hidden">
+                    {/* Table Header */}
+                    <div className="bg-gradient-to-r from-gray-800/80 to-gray-700/80 backdrop-blur-sm px-6 py-4 border-b border-gray-600/30">
+                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <Users className="w-5 h-5 text-blue-400" />
+                            Usuários Cadastrados ({filteredUsers.length})
+                        </h3>
+                    </div>
                     <div className="w-full">
-                        <table className="w-full table-fixed">
+                        <table className="w-full min-w-full">
                             <thead className="bg-[#5a6b4a]">
                                 <tr>
                                     <th className="w-[18%] px-4 py-3 text-left text-xs text-gray-300">

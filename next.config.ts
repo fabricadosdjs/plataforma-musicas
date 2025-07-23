@@ -6,6 +6,8 @@ const nextConfig = {
   images: {
     domains: ['placehold.co', 'i.ibb.co', 'files.catbox.moe'],
   },
+  output: 'standalone',
+  serverExternalPackages: ['@prisma/client'],
   async headers() {
     return [
       {

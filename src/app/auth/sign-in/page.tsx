@@ -1,8 +1,8 @@
 // app/auth/sign-in/page.tsx
 'use client';
 
+import { Lock, Mail, MessageCircle, User } from 'lucide-react';
 import { signIn } from 'next-auth/react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -40,58 +40,113 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
-      <div className="p-8 rounded-lg shadow-md w-96" style={{ background: 'rgba(23, 24, 38, 0.95)' }}>
-        <h2 className="text-2xl font-bold mb-6 text-center">Entrar</h2>
-
-        {error && <div className="bg-red-500/20 text-red-400 p-3 rounded mb-4 text-sm">{error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-bold mb-2" htmlFor="email">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline"
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center p-4 overflow-hidden">
+      <div className="w-full max-w-xl">
+        {/* Logo/Header */}
+        <div className="text-center mb-4">
+          {/* Logo Real da Nextor Records */}
+          <div className="inline-flex items-center justify-center mb-3">
+            <img
+              src="https://i.ibb.co/Y7WKPY57/logo-nexor.png"
+              alt="Nextor Records"
+              className="h-28 w-auto object-contain"
+              style={{ maxWidth: '500px', width: '500px' }}
             />
           </div>
-          <div className="mb-6">
-            <label className="block text-sm font-bold mb-2" htmlFor="password">
-              Senha
-            </label>
-            <input
-              type="password"
-              name="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-700 text-white mb-3 leading-tight focus:outline-none focus:shadow-outline"
-            />
+          <h1 className="text-xl font-bold text-white mb-1">Plataforma de Músicas</h1>
+          <p className="text-gray-400 text-sm">Acesse sua conta VIP</p>
+        </div>
+
+        {/* Form Card */}
+        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 shadow-2xl">
+          <div className="text-center mb-4">
+            <h2 className="text-lg font-bold text-white mb-1">Bem-vindo de volta</h2>
+            <p className="text-gray-400 text-sm">Entre com suas credenciais VIP</p>
           </div>
-          <div className="flex items-center justify-between">
+
+          {error && (
+            <div className="bg-red-900/30 border border-red-700 text-red-300 p-3 rounded-lg mb-4 text-sm flex items-center gap-2">
+              <Lock className="w-4 h-4 flex-shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="email">
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="email"
+                  name="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="seu.email@exemplo.com"
+                  className="w-full pl-9 pr-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="password">
+                Senha
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="password"
+                  name="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="••••••••"
+                  className="w-full pl-9 pr-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-2.5 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
             >
-              {loading ? 'Entrando...' : 'Entrar'}
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Entrando...</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2">
+                  <User className="w-4 h-4" />
+                  <span>Entrar na Plataforma</span>
+                </div>
+              )}
             </button>
-          </div>
-        </form>
+          </form>
 
-        <div className="text-center mt-6">
-          <p className="text-sm">
-            Não tem uma conta?{' '}
-            <Link href="/auth/sign-up" className="text-blue-400 hover:text-blue-500">
-              Cadastre-se
-            </Link>
+          {/* WhatsApp Button */}
+          <div className="mt-6 text-center">
+            <a
+              href="https://wa.me/5551935052274?text=Olá! Preciso dos meus dados de acesso VIP para a Plataforma de Músicas."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+            >
+              <MessageCircle className="w-5 h-5" />
+              Solicitar Dados via WhatsApp
+            </a>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-4">
+          <p className="text-gray-500 text-xs">
+            © 2025 Nextor Records. Acesso exclusivo para membros VIP.
           </p>
         </div>
       </div>

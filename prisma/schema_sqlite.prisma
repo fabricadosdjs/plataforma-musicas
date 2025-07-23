@@ -1,0 +1,72 @@
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Like {
+  id        Int       @id @default(autoincrement())
+  trackId   Int
+  userId    String
+  createdAt DateTime? @default(now())
+  track     Track     @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId])
+}
+
+model Download {
+  id                  Int       @id @default(autoincrement())
+  trackId             Int
+  userId              String
+  createdAt           DateTime? @default(now())
+  downloadedAt        DateTime? @default(now())
+  nextAllowedDownload DateTime?
+  track               Track     @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId])
+}
+
+model User {
+  id                      String     @id @default(cuid())
+  name                    String
+  whatsapp                String?
+  email                   String     @unique
+  password                String?
+  valor                   String?
+  vencimento              DateTime?
+  dataPagamento           DateTime?
+  status                  String     @default("ativo")
+  deemix                  Boolean    @default(true)
+  is_vip                  Boolean    @default(true)
+  dailyDownloadCount      Int?       @default(0)
+  lastDownloadReset       DateTime?
+  weeklyPackRequests      Int?       @default(0)
+  weeklyPlaylistDownloads Int?       @default(0)
+  lastWeekReset           DateTime?
+  customBenefits          String?
+  createdAt               DateTime?  @default(now())
+  updatedAt               DateTime?  @default(now())
+  downloads               Download[]
+  likes                   Like[]
+}
+
+model Track {
+  id          Int        @id @default(autoincrement())
+  songName    String
+  artist      String
+  style       String
+  version     String?
+  imageUrl    String
+  previewUrl  String
+  downloadUrl String
+  releaseDate DateTime
+  createdAt   DateTime?  @default(now())
+  updatedAt   DateTime?  @default(now())
+  downloads   Download[]
+  likes       Like[]
+}

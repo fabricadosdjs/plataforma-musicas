@@ -4,16 +4,17 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  schemas  = ["auth", "public"]
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["auth", "public"]
 }
 
 model Like {
   id        Int       @id @default(autoincrement())
   trackId   Int
-  userId    String
   createdAt DateTime? @default(now()) @db.Timestamptz(6)
+  userId    String    @db.Uuid
   track     Track     @relation(fields: [trackId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -25,10 +26,10 @@ model Like {
 model Download {
   id                  Int       @id @default(autoincrement())
   trackId             Int
-  userId              String
   createdAt           DateTime? @default(now()) @db.Timestamptz(6)
   downloadedAt        DateTime? @default(now()) @db.Timestamptz(6)
   nextAllowedDownload DateTime? @db.Timestamptz(6)
+  userId              String    @db.Uuid
   track               Track     @relation(fields: [trackId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user                User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -37,8 +38,24 @@ model Download {
   @@schema("public")
 }
 
+model Play {
+  id          Int       @id @default(autoincrement())
+  trackId     Int
+  userId      String    @db.Uuid
+  createdAt   DateTime? @default(now()) @db.Timestamptz(6)
+  duration    Int?      // Duração da reprodução em segundos
+  completed   Boolean   @default(false) // Se a música foi tocada até o fim
+  deviceInfo  String?   // Informações do dispositivo/browser
+  ipAddress   String?   // IP do usuário para analytics
+  track       Track     @relation(fields: [trackId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("play")
+  @@schema("public")
+}
+
 model User {
-  id                      String     @id @default(cuid())
+  id                      String     @id @db.Uuid
   name                    String
   whatsapp                String?
   email                   String     @unique
@@ -59,6 +76,7 @@ model User {
   updatedAt               DateTime?  @default(now()) @updatedAt @db.Timestamptz(6)
   downloads               Download[]
   likes                   Like[]
+  plays                   Play[]
 
   @@map("user")
   @@schema("public")
@@ -78,6 +96,7 @@ model Track {
   updatedAt   DateTime?  @default(now()) @updatedAt @db.Timestamptz(6)
   downloads   Download[]
   likes       Like[]
+  plays       Play[]
 
   @@map("track")
   @@schema("public")
@@ -129,8 +148,8 @@ model identities {
   last_sign_in_at DateTime? @db.Timestamptz(6)
   created_at      DateTime? @db.Timestamptz(6)
   updated_at      DateTime? @db.Timestamptz(6)
-  email           String?   @default(dbgenerated("lower((identity_data ->> 'email'::text))"))
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String?
+  id              String    @id @default(uuid()) @db.Uuid
   users           users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([provider_id, provider], map: "identities_provider_id_provider_unique")
@@ -206,6 +225,7 @@ model mfa_factors {
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model one_time_tokens {
   id         String              @id @db.Uuid
@@ -318,8 +338,7 @@ model sessions {
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model sso_domains {
   id              String        @id @db.Uuid
@@ -334,7 +353,7 @@ model sso_domains {
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations. Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model sso_providers {
@@ -380,7 +399,7 @@ model users {
   phone_change                String?           @default("")
   phone_change_token          String?           @default("") @db.VarChar(255)
   phone_change_sent_at        DateTime?         @db.Timestamptz(6)
-  confirmed_at                DateTime?         @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
+  confirmed_at                DateTime?         @db.Timestamptz(6)
   email_change_token_current  String?           @default("") @db.VarChar(255)
   email_change_confirm_status Int?              @default(0) @db.SmallInt
   banned_until                DateTime?         @db.Timestamptz(6)

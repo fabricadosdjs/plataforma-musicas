@@ -129,6 +129,16 @@ const MusicTable = ({ tracks }: MusicTableProps) => {
     };
 
     const handlePlayClick = (track: Track) => {
+        if (!session) {
+            showNotification('Você precisa estar logado para usar o player', 'warning');
+            return;
+        }
+
+        if (!session.user.is_vip) {
+            showNotification('Apenas usuários VIP podem usar o player', 'warning');
+            return;
+        }
+
         if (currentTrack?.id === track.id) {
             togglePlayPause();
         } else {
@@ -143,25 +153,8 @@ const MusicTable = ({ tracks }: MusicTableProps) => {
         }
 
         try {
-            const response = await fetch('/api/likes', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    trackId: trackId
-                }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                showNotification(data.message, 'success');
-                // Atualizar o contexto chamando a função do contexto
-                await handleLike(trackId);
-            } else {
-                showNotification(data.error || 'Erro ao processar like', 'error');
-            }
+            // Usar apenas a função do contexto que já faz a chamada da API
+            await handleLike(trackId);
         } catch (error) {
             console.error('Erro ao processar like:', error);
             showNotification('Erro ao processar like', 'error');
@@ -330,7 +323,7 @@ const MusicTable = ({ tracks }: MusicTableProps) => {
                             <td className="px-4 py-3">
                                 <button
                                     onClick={() => handlePlayClick(track)}
-                                    className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ${currentTrack?.id === track.id && isPlaying
+                                    className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer ${currentTrack?.id === track.id && isPlaying
                                         ? 'bg-green-700 text-white'
                                         : 'bg-gray-800 text-gray-400 hover:bg-green-700 hover:text-white'
                                         }`}
@@ -372,7 +365,7 @@ const MusicTable = ({ tracks }: MusicTableProps) => {
                                     <button
                                         onClick={() => handleDownloadClick(track)}
                                         disabled={!canDownload(track.id)}
-                                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-semibold transition-all duration-200 min-w-[80px] justify-center ${hasDownloaded(track.id)
+                                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-semibold transition-all duration-200 min-w-[80px] justify-center cursor-pointer ${hasDownloaded(track.id)
                                             ? canDownload(track.id)
                                                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                                                 : 'bg-blue-400 text-white opacity-50 cursor-not-allowed'
@@ -400,11 +393,11 @@ const MusicTable = ({ tracks }: MusicTableProps) => {
                                     <button
                                         onClick={() => handleLikeClick(track.id)}
                                         disabled={!session?.user?.is_vip}
-                                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-semibold transition-all duration-200 min-w-[80px] justify-center ${!session?.user?.is_vip
+                                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-semibold transition-all duration-200 min-w-[80px] justify-center cursor-pointer ${!session?.user?.is_vip
                                             ? 'bg-gray-500 text-gray-300 opacity-50 cursor-not-allowed'
                                             : likedTracksSet.has(track.id)
-                                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                                : 'bg-gray-600 text-white hover:bg-blue-600'
+                                                ? 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-500'
+                                                : 'bg-gray-600 text-white hover:bg-blue-600 border border-gray-500'
                                             }`}
                                         title={
                                             !session?.user?.is_vip
@@ -414,7 +407,7 @@ const MusicTable = ({ tracks }: MusicTableProps) => {
                                                     : 'Adicionar aos favoritos'
                                         }
                                     >
-                                        <Heart size={12} className={likedTracksSet.has(track.id) ? 'fill-current' : ''} />
+                                        <Heart size={12} className={likedTracksSet.has(track.id) ? 'fill-blue-200 text-blue-200' : 'text-gray-300'} />
                                         {!session?.user?.is_vip
                                             ? 'VIP'
                                             : likedTracksSet.has(track.id)
@@ -425,7 +418,7 @@ const MusicTable = ({ tracks }: MusicTableProps) => {
 
                                     <button
                                         onClick={() => handleCopyrightClick(track)}
-                                        className="inline-flex items-center justify-center w-8 h-8 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-all duration-200"
+                                        className="inline-flex items-center justify-center w-8 h-8 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-all duration-200 cursor-pointer"
                                         title="Report Copyright"
                                     >
                                         <Copyright size={12} />
@@ -433,7 +426,7 @@ const MusicTable = ({ tracks }: MusicTableProps) => {
 
                                     <button
                                         onClick={() => handleReportClick(track)}
-                                        className="inline-flex items-center justify-center w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded transition-all duration-200"
+                                        className="inline-flex items-center justify-center w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded transition-all duration-200 cursor-pointer"
                                         title="Report Offline"
                                     >
                                         <AlertTriangle size={12} />

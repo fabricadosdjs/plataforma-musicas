@@ -11,18 +11,46 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const userId = session.user.id;
 
+    // Verificar se é um usuário admin especial (usar comportamento especial se necessário)
+    const isAdmin = userId === 'admin-nextor-001' || (session.user as any).benefits?.adminAccess;
+    
+    // Verificar se o userId é um UUID válido antes de fazer consultas
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!isAdmin && !uuidRegex.test(userId)) {
+      console.error('UUID inválido detectado na API de likes:', userId);
+      return NextResponse.json(
+        { error: "ID de usuário inválido" },
+        { status: 400 }
+      );
+    }
+
     const { trackId } = await req.json();
     if (!trackId) {
-      return new NextResponse("ID da música é obrigatório", { status: 400 });
+      return NextResponse.json(
+        { error: "ID da música é obrigatório" },
+        { status: 400 }
+      );
     }
 
     // Converter trackId para número se necessário
     const numericTrackId = parseInt(trackId.toString());
+
+    // Se for admin, retornar comportamento simulado sem acessar banco
+    if (isAdmin) {
+      return NextResponse.json({
+        message: 'Like processado (Admin)',
+        liked: true,
+        trackId: numericTrackId
+      });
+    }
 
     const existingLike = await prisma.like.findFirst({
       where: {
@@ -53,7 +81,10 @@ export async function POST(req: Request) {
     }
   } catch (error) {
     console.error("[LIKES_POST_ERROR]", error);
-    return new NextResponse("Erro Interno do Servidor", { status: 500 });
+    return NextResponse.json(
+      { error: "Erro Interno do Servidor" },
+      { status: 500 }
+    );
   }
 }
 
@@ -63,10 +94,31 @@ export async function GET(req: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const userId = session.user.id;
+
+    // Verificar se é um usuário admin especial
+    const isAdmin = userId === 'admin-nextor-001' || (session.user as any).benefits?.adminAccess;
+    
+    // Se for admin, retornar array vazio ou comportamento especial
+    if (isAdmin) {
+      return NextResponse.json({ likes: [] });
+    }
+    
+    // Verificar se o userId é um UUID válido antes de fazer consultas
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      console.error('UUID inválido detectado na API de likes GET:', userId);
+      return NextResponse.json(
+        { error: "ID de usuário inválido" },
+        { status: 400 }
+      );
+    }
 
     const likes = await prisma.like.findMany({
       where: {
@@ -82,6 +134,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ likedTracks: likedTrackIds });
   } catch (error) {
     console.error("[LIKES_GET_ERROR]", error);
-    return new NextResponse("Erro Interno do Servidor", { status: 500 });
+    return NextResponse.json(
+      { error: "Erro Interno do Servidor" },
+      { status: 500 }
+    );
   }
 }

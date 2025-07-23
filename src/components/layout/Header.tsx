@@ -1,15 +1,45 @@
 // Header.tsx
 "use client";
 
-import { LogOut, Music, Search } from 'lucide-react';
+import { Bell, LogOut } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function Header({ onSearchChange }: { onSearchChange?: (query: string) => void }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const isSignedIn = status === 'authenticated';
+  const [showNotification, setShowNotification] = useState(false);
+  const [daysUntilExpiry, setDaysUntilExpiry] = useState<number | null>(null);
+
+  // Verificar vencimento do usuário
+  useEffect(() => {
+    console.log('🔔 Verificando vencimento:', session?.user?.vencimento);
+    console.log('🔔 User VIP:', session?.user?.is_vip);
+    console.log('🔔 Session completa:', session?.user);
+
+    if (session?.user?.is_vip) {
+      if (session?.user?.vencimento) {
+        const expiryDate = new Date(session.user.vencimento);
+        const today = new Date();
+        const diffTime = expiryDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        console.log(`⏰ Data de hoje: ${today.toISOString()}`);
+        console.log(`⏰ Data de vencimento: ${expiryDate.toISOString()}`);
+        console.log(`⏰ Dias até vencimento: ${diffDays}`);
+        setDaysUntilExpiry(diffDays);
+      } else {
+        console.log('🔔 VIP sem data de vencimento definida');
+        setDaysUntilExpiry(999); // Valor alto para indicar sem vencimento
+      }
+    } else {
+      console.log('🔔 Usuário não é VIP');
+      setDaysUntilExpiry(null);
+    }
+  }, [session?.user?.vencimento, session?.user?.is_vip, session]);
 
   const navLinks = [
     { href: '/new', label: 'New' },
@@ -22,25 +52,15 @@ export default function Header({ onSearchChange }: { onSearchChange?: (query: st
     <header className="w-full p-4 flex justify-between items-center border-b border-gray-700 sticky top-0 z-30" style={{ background: '#202124', color: 'var(--foreground)' }}>
       <div className="flex items-center gap-4">
         <Link href="/new" className="flex items-center gap-4">
-          <div className="w-8 h-8 bg-blue-900 rounded-full flex items-center justify-center">
-            <Music size={16} className="text-white" />
-          </div>
-          {/* A fonte Dosis será aplicada globalmente via CSS */}
-          <h1 className="text-xl font-bold text-white hidden sm:block">
-            DJ Pool
-          </h1>
+          <img
+            src="https://i.ibb.co/Y7WKPY57/logo-nexor.png"
+            alt="Nextor Records"
+            className="h-8 w-auto"
+          />
         </Link>
       </div>
 
-      <div className="relative w-full max-w-md mx-4 hidden lg:block">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-        <input
-          type="text"
-          placeholder="Pesquisar por música ou artista..."
-          onChange={(e) => onSearchChange?.(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-600 bg-gray-800 text-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-        />
-      </div>
+      {/* Área onde estava a busca - removida conforme solicitado */}
 
       <nav className="hidden md:flex items-center space-x-8">
         {navLinks.map((link) => (
@@ -66,6 +86,128 @@ export default function Header({ onSearchChange }: { onSearchChange?: (query: st
         )}
       </nav>
       <div className="flex items-center gap-4">
+        {/* Sininho de notificação para usuários VIP - SEMPRE VISÍVEL */}
+        {isSignedIn && session?.user?.is_vip && (
+          <div className="relative">
+            <button
+              onClick={() => setShowNotification(!showNotification)}
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors relative text-white shadow-lg ${daysUntilExpiry === null || daysUntilExpiry === 999
+                ? 'bg-gray-600 hover:bg-gray-700' // Sem data de vencimento
+                : daysUntilExpiry <= 0
+                  ? 'bg-red-600 hover:bg-red-700' // Vencido
+                  : daysUntilExpiry <= 3
+                    ? 'bg-red-500 hover:bg-red-600' // Crítico (0-3 dias)
+                    : daysUntilExpiry <= 7
+                      ? 'bg-yellow-500 hover:bg-yellow-600' // Alerta (4-7 dias)
+                      : daysUntilExpiry <= 30
+                        ? 'bg-green-500 hover:bg-green-600' // OK (8-30 dias)
+                        : 'bg-blue-500 hover:bg-blue-600' // Muito longe (30+ dias)
+                }`}
+              title={
+                daysUntilExpiry === null || daysUntilExpiry === 999
+                  ? 'Plano VIP ativo - sem data de vencimento'
+                  : daysUntilExpiry <= 0
+                    ? '🚨 Plano vencido!'
+                    : daysUntilExpiry <= 3
+                      ? `🚨 CRÍTICO: Plano vence em ${daysUntilExpiry} ${daysUntilExpiry === 1 ? 'dia' : 'dias'}!`
+                      : daysUntilExpiry <= 7
+                        ? `⚠️ ATENÇÃO: Plano vence em ${daysUntilExpiry} dias`
+                        : daysUntilExpiry <= 30
+                          ? `✅ Plano OK - vence em ${daysUntilExpiry} dias`
+                          : `✅ Plano em dia - vence em ${daysUntilExpiry} dias`
+              }
+            >
+              <Bell size={16} />
+              {/* Ponto de alerta para situações críticas */}
+              {daysUntilExpiry !== null && daysUntilExpiry !== 999 && daysUntilExpiry <= 7 && (
+                <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full animate-pulse ${daysUntilExpiry <= 0
+                  ? 'bg-white' // Vencido - ponto branco
+                  : daysUntilExpiry <= 3
+                    ? 'bg-white' // Crítico - ponto branco
+                    : 'bg-red-500' // Alerta - ponto vermelho
+                  }`}></span>
+              )}
+            </button>
+
+            {/* Popup de informações */}
+            {showNotification && (
+              <div className="absolute right-0 top-10 bg-gray-800 border border-gray-600 rounded-lg p-4 w-72 shadow-xl z-50">
+                {daysUntilExpiry === null || daysUntilExpiry === 999 ? (
+                  <>
+                    <p className="text-sm text-blue-400 font-medium">
+                      ✅ Plano VIP Ativo
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Sem data de vencimento definida. Aproveite todos os benefícios!
+                    </p>
+                  </>
+                ) : daysUntilExpiry <= 0 ? (
+                  <>
+                    <p className="text-sm text-red-400 font-medium">
+                      🚨 SEU PLANO VENCEU!
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Renove agora para continuar aproveitando os benefícios VIP.
+                    </p>
+                    <div className="mt-2 p-2 bg-red-900/30 rounded text-xs text-red-300">
+                      ⚠️ Acesso aos downloads pode estar limitado
+                    </div>
+                  </>
+                ) : daysUntilExpiry <= 3 ? (
+                  <>
+                    <p className="text-sm text-red-400 font-medium">
+                      🚨 RENOVAÇÃO URGENTE!
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Seu plano vence em {daysUntilExpiry} {daysUntilExpiry === 1 ? 'dia' : 'dias'}!
+                    </p>
+                    <div className="mt-2 p-2 bg-red-900/30 rounded text-xs text-red-300">
+                      🔥 Renove hoje para evitar interrupção
+                    </div>
+                  </>
+                ) : daysUntilExpiry <= 7 ? (
+                  <>
+                    <p className="text-sm text-yellow-400 font-medium">
+                      ⚠️ ATENÇÃO: Vencimento próximo
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Seu plano vence em {daysUntilExpiry} dias
+                    </p>
+                    <div className="mt-2 p-2 bg-yellow-900/30 rounded text-xs text-yellow-300">
+                      💡 Considere renovar em breve
+                    </div>
+                  </>
+                ) : daysUntilExpiry <= 30 ? (
+                  <>
+                    <p className="text-sm text-green-400 font-medium">
+                      ✅ Plano em dia!
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Vence em {daysUntilExpiry} dias. Tudo funcionando perfeitamente!
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-blue-400 font-medium">
+                      💎 Plano Premium
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Vence em {daysUntilExpiry} dias. Aproveite todos os benefícios!
+                    </p>
+                  </>
+                )}
+
+                <button
+                  onClick={() => setShowNotification(false)}
+                  className="text-xs text-blue-400 hover:text-blue-300 mt-3 underline"
+                >
+                  Fechar
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {isSignedIn ? (
           <>
             <span className="text-sm font-medium text-gray-300 hidden sm:block">

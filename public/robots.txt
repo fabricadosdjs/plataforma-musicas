@@ -1,0 +1,12 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+
+# Host
+Host: https://your-site.netlify.app
+
+# Sitemaps
+Sitemap: https://your-site.netlify.app/sitemap.xml

@@ -2,29 +2,85 @@
 
 import Header from '@/components/layout/Header';
 import MusicTable from '@/components/music/MusicTable';
-import UserBenefits from '@/components/ui/UserBenefits';
 import { Track } from '@/types/track';
 import { Calendar, ChevronLeft, ChevronRight, Filter, Loader2, Music, Search } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 
-export default function NewPage() {
+function NewPageContent() {
   const { data: session } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('all');
-  const [selectedArtist, setSelectedArtist] = useState('all');
-  const [selectedDateRange, setSelectedDateRange] = useState('all');
-  const [selectedMonth, setSelectedMonth] = useState('all');
-  const [selectedVersion, setSelectedVersion] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
   const [genres, setGenres] = useState<string[]>([]);
   const [artists, setArtists] = useState<string[]>([]);
   const [versions, setVersions] = useState<string[]>([]);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Estados derivados dos parâmetros da URL
+  const searchQuery = searchParams?.get('search') || '';
+  const selectedGenre = searchParams?.get('genre') || 'all';
+  const selectedArtist = searchParams?.get('artist') || 'all';
+  const selectedDateRange = searchParams?.get('dateRange') || 'all';
+  const selectedVersion = searchParams?.get('version') || 'all';
+  const selectedMonth = searchParams?.get('month') || 'all';
+  const currentPage = parseInt(searchParams?.get('page') || '1');
+
   const ITEMS_PER_PAGE = 6;
+
+  // Função para atualizar URL com novos parâmetros
+  const updateURL = (newParams: Record<string, string | number>) => {
+    const params = new URLSearchParams(searchParams?.toString() || '');
+
+    // Atualizar ou remover parâmetros
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value === 'all' || value === '' || value === 1) {
+        params.delete(key);
+      } else {
+        params.set(key, value.toString());
+      }
+    });
+
+    // Se estamos mudando filtros (não página), resetar para página 1
+    if (Object.keys(newParams).some(key => key !== 'page')) {
+      params.delete('page');
+    }
+
+    const newURL = params.toString() ? `/new?${params.toString()}` : '/new';
+    router.push(newURL, { scroll: false });
+  };
+
+  // Handlers para mudanças de filtros
+  const handleSearchChange = (search: string) => {
+    updateURL({ search });
+  };
+
+  const handleGenreChange = (genre: string) => {
+    updateURL({ genre });
+  };
+
+  const handleArtistChange = (artist: string) => {
+    updateURL({ artist });
+  };
+
+  const handleDateRangeChange = (dateRange: string) => {
+    updateURL({ dateRange });
+  };
+
+  const handleVersionChange = (version: string) => {
+    updateURL({ version });
+  };
+
+  const handleMonthChange = (month: string) => {
+    updateURL({ month });
+  };
+
+  const handlePageChange = (page: number) => {
+    updateURL({ page });
+  };
 
   // Função para buscar tracks do banco
   const fetchTracks = async () => {
@@ -121,23 +177,19 @@ export default function NewPage() {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleSearchChange(query);
   };
 
   const clearFilters = () => {
-    setSearchQuery('');
-    setSelectedGenre('all');
-    setSelectedArtist('all');
-    setSelectedVersion('all');
-    setSelectedDateRange('all');
-    setSelectedMonth('all');
-    setCurrentPage(1);
+    updateURL({
+      search: '',
+      genre: 'all',
+      artist: 'all',
+      version: 'all',
+      dateRange: 'all',
+      month: 'all',
+      page: 1
+    });
   };
 
   if (loading) {
@@ -157,12 +209,9 @@ export default function NewPage() {
         {/* Sidebar de Filtros */}
         <div className="w-80 min-h-screen bg-[#202124] border-r border-gray-800 p-6">
           <div className="sticky top-6">
-            {/* Benefícios do Usuário */}
-            {session?.user && <UserBenefits />}
-
             {/* Cabeçalho do Widget */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-green-800 rounded-lg flex items-center justify-center">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, #1a1a1a, #0d0d0d)' }}>
                 <Filter className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -171,22 +220,8 @@ export default function NewPage() {
               </div>
             </div>
 
-            {/* Estatísticas Rápidas */}
-            <div className="bg-gray-900 rounded-xl p-4 mb-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-300">{tracks.length}</div>
-                  <div className="text-gray-400 text-xs">Total</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{tracks.length}</div>
-                  <div className="text-gray-400 text-xs">Filtradas</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Busca Rápida */}
-            <div className="mb-6">
+            {/* Busca Rápida - Próxima ao cabeçalho */}
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Busca Rápida
               </label>
@@ -196,21 +231,23 @@ export default function NewPage() {
                   type="text"
                   placeholder="Música, artista..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-3 py-2 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="w-full border border-gray-700 rounded-lg pl-10 pr-3 py-2 text-white placeholder-gray-400 focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                  style={{ backgroundColor: '#202124' }}
                 />
               </div>
             </div>
 
             {/* Filtro por Gênero */}
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Gênero Musical
               </label>
               <select
                 value={selectedGenre}
-                onChange={(e) => setSelectedGenre(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                onChange={(e) => handleGenreChange(e.target.value)}
+                className="w-full border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                style={{ backgroundColor: '#202124' }}
               >
                 <option value="all">Todos os Gêneros</option>
                 {genres.map((genre) => (
@@ -222,14 +259,15 @@ export default function NewPage() {
             </div>
 
             {/* Filtro por Artista */}
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Artista
               </label>
               <select
                 value={selectedArtist}
-                onChange={(e) => setSelectedArtist(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                onChange={(e) => handleArtistChange(e.target.value)}
+                className="w-full border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                style={{ backgroundColor: '#202124' }}
               >
                 <option value="all">Todos os Artistas</option>
                 {artists.map((artist) => (
@@ -241,14 +279,15 @@ export default function NewPage() {
             </div>
 
             {/* Filtro por Versão */}
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Versão
               </label>
               <select
                 value={selectedVersion}
-                onChange={(e) => setSelectedVersion(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                onChange={(e) => handleVersionChange(e.target.value)}
+                className="w-full border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                style={{ backgroundColor: '#202124' }}
               >
                 <option value="all">Todas as Versões</option>
                 {versions.map((version) => (
@@ -260,15 +299,16 @@ export default function NewPage() {
             </div>
 
             {/* Filtro por Data */}
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 <Calendar className="inline w-4 h-4 mr-1" />
                 Período de Lançamento
               </label>
               <select
                 value={selectedDateRange}
-                onChange={(e) => setSelectedDateRange(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                onChange={(e) => handleDateRangeChange(e.target.value)}
+                className="w-full border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                style={{ backgroundColor: '#202124' }}
               >
                 <option value="all">Qualquer período</option>
                 <option value="week">Última semana</option>
@@ -280,15 +320,16 @@ export default function NewPage() {
             </div>
 
             {/* Filtro por Mês Específico */}
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 <Calendar className="inline w-4 h-4 mr-1" />
                 Mês Específico
               </label>
               <select
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                onChange={(e) => handleMonthChange(e.target.value)}
+                className="w-full border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                style={{ backgroundColor: '#202124' }}
               >
                 <option value="all">Todos os Meses</option>
                 {months.map((month) => (
@@ -302,7 +343,8 @@ export default function NewPage() {
             {/* Botão Limpar Filtros */}
             <button
               onClick={clearFilters}
-              className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              className="w-full hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              style={{ backgroundColor: '#1a1a1a' }}
             >
               Limpar Filtros
             </button>
@@ -314,7 +356,7 @@ export default function NewPage() {
           <div className="max-w-6xl mx-auto">
             {/* Cabeçalho da página */}
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-800 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, #1a1a1a, #0d0d0d)' }}>
                 <Music className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -322,31 +364,6 @@ export default function NewPage() {
                 <p className="text-gray-400 mt-1">Descubra os lançamentos mais recentes da plataforma</p>
               </div>
             </div>
-
-            {/* Mensagem de boas-vindas */}
-            <div className="mb-8 bg-green-600 rounded-xl p-6 text-white">
-              <h2 className="text-xl font-semibold mb-3">Bem-vindo à nossa plataforma de música! 🎵</h2>
-              <p className="text-justify leading-relaxed">
-                Explore nossa vasta coleção de músicas dos mais variados gêneros e artistas.
-                Aqui você encontra desde os lançamentos mais recentes até clássicos atemporais.
-                Nossa plataforma oferece uma experiência musical única, com funcionalidades de
-                curtir suas músicas favoritas e fazer downloads para ouvir offline.
-                Navegue pelas categorias, use os filtros para encontrar exatamente o que procura
-                e descubra novos artistas que podem se tornar seus favoritos.
-              </p>
-            </div>
-
-            {/* Mensagem para usuários não VIP */}
-            {(!session || !session.user?.is_vip) && (
-              <div className="mb-8 bg-yellow-600 rounded-xl p-6 text-white">
-                <h3 className="text-lg font-semibold mb-2">🔒 Torne-se VIP para acesso completo</h3>
-                <p className="text-justify leading-relaxed">
-                  Para curtir músicas, fazer downloads e ter acesso a todas as funcionalidades da plataforma,
-                  você precisa ser um usuário VIP. Assine agora e desfrute de uma experiência musical
-                  completa e sem limitações!
-                </p>
-              </div>
-            )}
 
             {/* Músicas organizadas por data */}
             <div className="space-y-8 mb-8">
@@ -364,7 +381,7 @@ export default function NewPage() {
                 Object.entries(tracksByDate).slice(startIndex, startIndex + ITEMS_PER_PAGE).map(([date, dateTracks]) => (
                   <div key={date} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
                     {/* Cabeçalho da data */}
-                    <div className="bg-gradient-to-r from-green-600 to-green-800 px-6 py-4">
+                    <div className="px-6 py-4" style={{ background: 'linear-gradient(to right, #1a1a1a, #0d0d0d)' }}>
                       <h2 className="text-xl font-bold text-white">
                         {formatDateExtended(date)}
                       </h2>
@@ -392,7 +409,8 @@ export default function NewPage() {
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-800 disabled:opacity-50 text-white rounded-lg transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-700 disabled:bg-gray-800 disabled:opacity-50 text-white rounded-lg transition-colors"
+                      style={{ backgroundColor: currentPage === 1 ? undefined : '#1a1a1a' }}
                     >
                       <ChevronLeft className="w-4 h-4" />
                       Anterior
@@ -404,9 +422,10 @@ export default function NewPage() {
                           key={page}
                           onClick={() => handlePageChange(page)}
                           className={`w-10 h-10 rounded-lg font-medium transition-colors ${currentPage === page
-                            ? 'bg-green-600 text-white'
+                            ? 'text-white'
                             : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
                             }`}
+                          style={currentPage === page ? { backgroundColor: '#1a1a1a' } : undefined}
                         >
                           {page}
                         </button>
@@ -416,7 +435,8 @@ export default function NewPage() {
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalDatePages}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-800 disabled:opacity-50 text-white rounded-lg transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-700 disabled:bg-gray-800 disabled:opacity-50 text-white rounded-lg transition-colors"
+                      style={{ backgroundColor: currentPage === totalDatePages ? undefined : '#1a1a1a' }}
                     >
                       Próxima
                       <ChevronRight className="w-4 h-4" />
@@ -429,5 +449,20 @@ export default function NewPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function NewPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+        <Header />
+        <div className="flex justify-center items-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-white" />
+        </div>
+      </div>
+    }>
+      <NewPageContent />
+    </Suspense>
   );
 }

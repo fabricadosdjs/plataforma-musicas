@@ -18,6 +18,23 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'trackId é obrigatório' }, { status: 400 });
         }
 
+        // Verificar se é um usuário admin especial (não precisa de controle de download)
+        if (session.user.id === 'admin-nextor-001' || (session.user as any).benefits?.adminAccess) {
+            return NextResponse.json({
+                canDownload: true,
+                hasDownloaded: false,
+                nextAllowedDownload: null,
+                isAdmin: true
+            });
+        }
+
+        // Verificar se o userId é um UUID válido antes de fazer a consulta
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(session.user.id)) {
+            console.error('UUID inválido detectado:', session.user.id);
+            return NextResponse.json({ error: 'ID de usuário inválido' }, { status: 400 });
+        }
+
         const download = await prisma.download.findFirst({
             where: {
                 userId: session.user.id,

@@ -1,18 +1,20 @@
 // src/components/player/FooterPlayer.tsx
 "use client";
 
-import { ChevronDown, ChevronUp, Download, Pause, Play, SkipBack, SkipForward, ThumbsUp } from 'lucide-react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
+import { ChevronDown, ChevronUp, Download, Pause, Play, SkipBack, SkipForward, ThumbsUp } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 const FooterPlayer = memo(function FooterPlayer() {
-    const { 
-        currentTrack, 
-        isPlaying, 
-        togglePlayPause, 
-        nextTrack, 
-        previousTrack, 
-        handleLike, 
+    const { data: session } = useSession();
+    const {
+        currentTrack,
+        isPlaying,
+        togglePlayPause,
+        nextTrack,
+        previousTrack,
+        handleLike,
         handleDownload,
         likedTracks,
         downloadedTracks,
@@ -22,6 +24,12 @@ const FooterPlayer = memo(function FooterPlayer() {
     const waveformRef = useRef<HTMLDivElement>(null);
     const wavesurfer = useRef<any>(null);
     const [isMinimized, setIsMinimized] = useState(false);
+
+    // Verificar se o usuário está logado e é VIP
+    const isUserLoggedAndVip = session?.user && session.user.is_vip;
+
+    // Se não estiver logado ou não for VIP, não renderizar o player
+    if (!isUserLoggedAndVip || !currentTrack) return null;
 
     const initializeWavesurfer = useCallback(async () => {
         if (waveformRef.current && currentTrack) {
@@ -48,7 +56,7 @@ const FooterPlayer = memo(function FooterPlayer() {
             wavesurfer.current.on('finish', nextTrack);
 
             wavesurfer.current.load(currentTrack.previewUrl);
-            
+
             // Sincroniza o estado de play/pause do contexto com o wavesurfer
             if (isPlaying) {
                 wavesurfer.current.play();
@@ -77,8 +85,6 @@ const FooterPlayer = memo(function FooterPlayer() {
             }
         }
     }, [isPlaying]);
-
-    if (!currentTrack) return null;
 
     const isLiked = likedTracks.includes(currentTrack.id);
     const isDownloaded = downloadedTracks.includes(currentTrack.id);

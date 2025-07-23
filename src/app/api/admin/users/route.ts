@@ -1,8 +1,10 @@
 // src/app/api/admin/users/route.ts
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 import { getServerSession } from 'next-auth/next';
 import { NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,7 +76,7 @@ export async function POST(req: Request) {
 
         // TODO: Implementar verificação de admin
 
-        const { name, whatsapp, email, valor, vencimento, dataPagamento, status, deemix, is_vip } = await req.json();
+        const { name, whatsapp, email, password, valor, vencimento, dataPagamento, status, deemix, is_vip } = await req.json();
 
         if (!name || !email) {
             return new NextResponse("Nome e email são obrigatórios", { status: 400 });
@@ -89,11 +91,19 @@ export async function POST(req: Request) {
             return new NextResponse("Email já está em uso", { status: 400 });
         }
 
+        // Hash da senha se fornecida
+        let hashedPassword = null;
+        if (password && password.trim()) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
+
         const newUser = await prisma.user.create({
             data: {
+                id: uuidv4(),
                 name,
                 whatsapp: whatsapp || null,
                 email,
+                password: hashedPassword,
                 valor: valor || null,
                 vencimento: vencimento ? new Date(vencimento) : null,
                 dataPagamento: dataPagamento ? new Date(dataPagamento) : null,
@@ -132,7 +142,7 @@ export async function PATCH(req: Request) {
 
         // TODO: Implementar verificação de admin
 
-        const { userId, name, whatsapp, email, valor, vencimento, dataPagamento, status, deemix, is_vip, dailyDownloadCount } = await req.json();
+        const { userId, name, whatsapp, email, password, valor, vencimento, dataPagamento, status, deemix, is_vip, dailyDownloadCount } = await req.json();
 
         if (!userId) {
             return new NextResponse("UserId é obrigatório", { status: 400 });
@@ -143,6 +153,9 @@ export async function PATCH(req: Request) {
         if (name !== undefined) updateData.name = name;
         if (whatsapp !== undefined) updateData.whatsapp = whatsapp;
         if (email !== undefined) updateData.email = email;
+        if (password !== undefined && password.trim()) {
+            updateData.password = await bcrypt.hash(password, 10);
+        }
         if (valor !== undefined) updateData.valor = valor;
         if (vencimento !== undefined) updateData.vencimento = vencimento ? new Date(vencimento) : null;
         if (dataPagamento !== undefined) updateData.dataPagamento = dataPagamento ? new Date(dataPagamento) : null;

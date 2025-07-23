@@ -40,6 +40,29 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [downloadedTracks, setDownloadedTracks] = useState<number[]>([]);
   const [isUserDataLoaded, setIsUserDataLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playStartTime, setPlayStartTime] = useState<number | null>(null);
+
+  // Função para registrar conclusão da reprodução
+  const logPlayEnd = async (track: Track, duration: number, completed: boolean) => {
+    try {
+      if (!user || !user.is_vip) return;
+
+      await fetch('/api/play', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trackId: track.id,
+          duration: Math.round(duration),
+          completed: completed,
+          deviceInfo: navigator.userAgent
+        }),
+      });
+    } catch (error) {
+      console.error('Erro ao registrar conclusão da reprodução:', error);
+    }
+  };
 
   // Inicializar elemento de áudio
   useEffect(() => {
@@ -47,11 +70,31 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
     const handleEnded = () => {
       setIsPlaying(false);
+
+      // Registrar conclusão da reprodução
+      if (currentTrack && playStartTime) {
+        const duration = (Date.now() - playStartTime) / 1000;
+        logPlayEnd(currentTrack, duration, true);
+      }
+
+      setPlayStartTime(null);
       // Auto-próxima música será implementada depois
     };
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const handlePlay = () => {
+      setIsPlaying(true);
+      setPlayStartTime(Date.now());
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
+
+      // Registrar pausa da reprodução (não completada)
+      if (currentTrack && playStartTime) {
+        const duration = (Date.now() - playStartTime) / 1000;
+        logPlayEnd(currentTrack, duration, false);
+      }
+    };
 
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
@@ -104,13 +147,43 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [status, fetchUserData]);
 
+  // Função para registrar reprodução no banco
+  const logPlayStart = async (track: Track) => {
+    try {
+      if (!user || !user.is_vip) return;
+
+      await fetch('/api/play', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trackId: track.id,
+          deviceInfo: navigator.userAgent,
+          completed: false
+        }),
+      });
+    } catch (error) {
+      console.error('Erro ao registrar reprodução:', error);
+    }
+  };
+
   const playTrack = (track: Track, trackList: Track[] = []) => {
+    // Verificar se o usuário está logado e é VIP
+    if (!user || !user.is_vip) {
+      console.warn('Player restrito a usuários VIP logados');
+      return;
+    }
+
     setCurrentTrack(track);
     if (trackList.length > 0) {
       setPlaylist(trackList);
     } else {
       setPlaylist([track]);
     }
+
+    // Registrar início da reprodução
+    logPlayStart(track);
 
     if (audioElement) {
       audioElement.src = track.previewUrl;
@@ -171,6 +244,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       showAlert('Você precisa estar logado para curtir músicas.');
       return;
     }
+
+    // Atualizar UI imediatamente para melhor experiência
+    const isCurrentlyLiked = likedTracks.includes(trackId);
+    if (isCurrentlyLiked) {
+      setLikedTracks(prev => prev.filter(id => id !== trackId));
+    } else {
+      setLikedTracks(prev => [...prev, trackId]);
+    }
+
     try {
       const response = await fetch('/api/likes', {
         method: 'POST',
@@ -178,13 +260,26 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         body: JSON.stringify({ trackId }),
       });
 
-      if (!response.ok) throw new Error('Failed to like track');
+      if (!response.ok) {
+        // Reverter mudança se falhou
+        if (isCurrentlyLiked) {
+          setLikedTracks(prev => [...prev, trackId]);
+        } else {
+          setLikedTracks(prev => prev.filter(id => id !== trackId));
+        }
+        throw new Error('Failed to like track');
+      }
 
       const data = await response.json();
 
-      // Atualizar estado baseado na resposta da API
+      // Confirmar o estado baseado na resposta da API
       if (data.liked) {
-        setLikedTracks(prev => [...prev, trackId]);
+        setLikedTracks(prev => {
+          if (!prev.includes(trackId)) {
+            return [...prev, trackId];
+          }
+          return prev;
+        });
         showAlert('Música curtida!');
       } else {
         setLikedTracks(prev => prev.filter(id => id !== trackId));

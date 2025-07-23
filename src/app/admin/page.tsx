@@ -53,11 +53,13 @@ export default function AdminPage() {
             <p className="text-gray-400">Promover usuários para VIP e gerenciar permissões</p>
           </Link>
 
-          <div className="bg-gray-800 p-6 rounded-lg">
+          <Link href="/admin/dashboard" className="p-6 rounded-lg transition-colors" style={{ backgroundColor: '#2d2f32' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#374151'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2d2f32'}>
             <LayoutDashboard size={48} className="mb-4 text-purple-400" />
             <h2 className="text-xl font-semibold mb-2">Dashboard</h2>
-            <p className="text-gray-400">Estatísticas e relatórios (em breve)</p>
-          </div>
+            <p className="text-gray-400">Estatísticas completas e relatórios em tempo real</p>
+          </Link>
         </div>
       </div>
     </div>

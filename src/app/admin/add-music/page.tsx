@@ -123,14 +123,24 @@ export default function AddMusicPage() {
                     <pre className="text-xs text-gray-300 bg-gray-800 p-3 rounded overflow-auto">
                       {`[
   {
-    "songName": "Nome da Música",
-    "artist": "Nome do Artista", 
-    "style": "Gênero Musical",
-    "version": "Versão da Música",
-    "imageUrl": "URL da Capa",
-    "previewUrl": "URL do Preview",
-    "downloadUrl": "URL do Download",
-    "releaseDate": "YYYY-MM-DD"
+    "songName": "La Dolce Vita",
+    "artist": "DJ Il Cubano", 
+    "style": "House",
+    "version": "Extended Mix",
+    "imageUrl": "https://files.catbox.moe/cover.jpg",
+    "previewUrl": "https://files.catbox.moe/preview.mp3",
+    "downloadUrl": "https://files.catbox.moe/track.mp3",
+    "releaseDate": "2025-07-22"
+  },
+  {
+    "songName": "Summer Vibes",
+    "artist": "Electronic Artist", 
+    "style": "Deep House",
+    "version": null,
+    "imageUrl": "https://files.catbox.moe/cover2.jpg",
+    "previewUrl": "https://files.catbox.moe/preview2.mp3",
+    "downloadUrl": "https://files.catbox.moe/track2.mp3",
+    "releaseDate": "2025-07-22"
   }
 ]`}
                     </pre>
@@ -142,11 +152,17 @@ export default function AddMusicPage() {
                       <li>• <code className="bg-gray-800 px-1 rounded">songName</code> - Nome da música</li>
                       <li>• <code className="bg-gray-800 px-1 rounded">artist</code> - Nome do artista</li>
                       <li>• <code className="bg-gray-800 px-1 rounded">style</code> - Gênero musical</li>
-                      <li>• <code className="bg-gray-800 px-1 rounded">version</code> - Versão (Original Mix, Extended, etc.)</li>
                       <li>• <code className="bg-gray-800 px-1 rounded">imageUrl</code> - URL da imagem da capa</li>
                       <li>• <code className="bg-gray-800 px-1 rounded">previewUrl</code> - URL para preview da música</li>
-                      <li>• <code className="bg-gray-800 px-1 rounded">downloadUrl</code> - URL para download</li>
+                      <li>• <code className="bg-gray-800 px-1 rounded">downloadUrl</code> - URL para download (preferencialmente Catbox)</li>
                       <li>• <code className="bg-gray-800 px-1 rounded">releaseDate</code> - Data no formato YYYY-MM-DD</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h5 className="font-semibold text-white mb-2">3. Campos Opcionais:</h5>
+                    <ul className="text-gray-300 space-y-1 ml-4">
+                      <li>• <code className="bg-gray-800 px-1 rounded">version</code> - Versão (Original Mix, Extended, etc.) - pode ser <code>null</code></li>
                     </ul>
                   </div>
 
@@ -184,6 +200,8 @@ export default function AddMusicPage() {
                       <li>• URLs devem ser válidas e acessíveis</li>
                       <li>• Data deve estar no formato YYYY-MM-DD</li>
                       <li>• JSON deve estar bem formatado (sem erros de sintaxe)</li>
+                      <li>• Use preferencialmente <strong>files.catbox.moe</strong> para downloads</li>
+                      <li>• Campo <code className="bg-gray-800 px-1 rounded">version</code> pode ser <code>null</code> se não houver versão específica</li>
                       <li>• Você pode adicionar múltiplas músicas de uma vez</li>
                       <li>• Verifique o arquivo <code className="bg-gray-800 px-1 rounded">exemplo-musicas.json</code> na raiz do projeto</li>
                     </ul>

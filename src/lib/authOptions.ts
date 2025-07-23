@@ -4,6 +4,16 @@ import bcrypt from 'bcryptjs';
 import { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
+// Lista de administradores especiais (não ficam na tabela VIP)
+const ADMIN_USERS = [
+    {
+        email: 'admin@nextor.com',
+        password: 'admin123', // Senha padrão - será hasheada automaticamente
+        name: 'Administrador Nextor',
+        id: 'admin-nextor-001'
+    }
+];
+
 // Função para obter benefícios do usuário
 function getUserBenefits(user: any) {
     const VIP_BENEFITS = {
@@ -11,7 +21,7 @@ function getUserBenefits(user: any) {
             priceRange: '30-35',
             packRequestsPerWeek: 8,
             playlistsPerWeek: 3,
-            downloadsPerDay: 30,
+            downloadsPerDay: 50,
             directDownload: true,
             deemixAccess: true,
             trackRequest: true,
@@ -22,7 +32,7 @@ function getUserBenefits(user: any) {
             priceRange: '36-42',
             packRequestsPerWeek: 15,
             playlistsPerWeek: 6,
-            downloadsPerDay: 50,
+            downloadsPerDay: 100,
             directDownload: true,
             deemixAccess: true,
             trackRequest: true,
@@ -33,7 +43,7 @@ function getUserBenefits(user: any) {
             priceRange: '43-60',
             packRequestsPerWeek: 999,
             playlistsPerWeek: 999,
-            downloadsPerDay: 999,
+            downloadsPerDay: 150,
             directDownload: true,
             deemixAccess: true,
             trackRequest: true,
@@ -64,7 +74,42 @@ export const authOptions: AuthOptions = {
                     throw new Error('Credenciais inválidas');
                 }
 
-                // Buscar usuário no nosso banco
+                // Verificar se é um admin especial primeiro
+                const adminUser = ADMIN_USERS.find(admin => admin.email === credentials.email);
+                if (adminUser) {
+                    // Verificar senha do admin
+                    if (credentials.password === adminUser.password) {
+                        // Retornar dados do admin com privilégios máximos
+                        return {
+                            id: adminUser.id,
+                            email: adminUser.email,
+                            name: adminUser.name,
+                            is_vip: true,
+                            valor: '999',
+                            benefits: {
+                                plan: 'ADMIN',
+                                packRequestsPerWeek: 999999,
+                                playlistsPerWeek: 999999,
+                                downloadsPerDay: 999999,
+                                directDownload: true,
+                                deemixAccess: true,
+                                trackRequest: true,
+                                exclusiveGenres: true,
+                                prioritySupport: true,
+                                adminAccess: true
+                            },
+                            status: 'ativo',
+                            dailyDownloadCount: 0,
+                            weeklyPackRequests: 0,
+                            weeklyPlaylistDownloads: 0,
+                            vencimento: null,
+                        };
+                    } else {
+                        throw new Error('Senha incorreta');
+                    }
+                }
+
+                // Buscar usuário no nosso banco (usuários VIP normais)
                 const dbUser = await prisma.user.findUnique({
                     where: { email: credentials.email }
                 }) as any;
@@ -107,6 +152,7 @@ export const authOptions: AuthOptions = {
                     dailyDownloadCount: dbUser.dailyDownloadCount || 0,
                     weeklyPackRequests: dbUser.weeklyPackRequests || 0,
                     weeklyPlaylistDownloads: dbUser.weeklyPlaylistDownloads || 0,
+                    vencimento: dbUser.vencimento?.toISOString() || null,
                 };
             },
         }),
@@ -125,6 +171,7 @@ export const authOptions: AuthOptions = {
                 token.dailyDownloadCount = (user as any).dailyDownloadCount;
                 token.weeklyPackRequests = (user as any).weeklyPackRequests;
                 token.weeklyPlaylistDownloads = (user as any).weeklyPlaylistDownloads;
+                token.vencimento = (user as any).vencimento;
             }
             return token;
         },
@@ -138,6 +185,7 @@ export const authOptions: AuthOptions = {
                 (session.user as any).dailyDownloadCount = token.dailyDownloadCount as number;
                 (session.user as any).weeklyPackRequests = token.weeklyPackRequests as number;
                 (session.user as any).weeklyPlaylistDownloads = token.weeklyPlaylistDownloads as number;
+                (session.user as any).vencimento = token.vencimento as string;
             }
             return session;
         },
