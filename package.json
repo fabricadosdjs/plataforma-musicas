@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "DATABASE_URL='postgresql://dummy:dummy@localhost:5432/dummy' prisma generate && next build",
+    "build": "cross-env DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:seed": "node prisma/seed.js",
@@ -51,6 +51,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^7.0.3",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.1",
