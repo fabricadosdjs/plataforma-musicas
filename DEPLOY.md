@@ -13,8 +13,10 @@
 ```bash
 git add .
 git commit -m "Preparar para deploy na Netlify"
-git push origin main
+git push origin master
 ```
+
+**Nota**: Este repositório usa a branch `master` como padrão.
 
 ### 2. Conectar na Netlify
 
