@@ -1,6 +1,18 @@
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 export default function Custom404() {
+  useEffect(() => {
+    // Redirecionamento automático após 5 segundos
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#202124] text-white flex flex-col items-center justify-center">
       <div className="text-center">
@@ -20,22 +32,9 @@ export default function Custom404() {
         </div>
         
         <p className="text-sm text-gray-500 mt-6">
-          Você será redirecionado automaticamente em alguns segundos...
+          Você será redirecionado automaticamente em 5 segundos...
         </p>
       </div>
-      
-      {/* Client-side redirect script */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            if (typeof window !== 'undefined') {
-              setTimeout(function() {
-                window.location.href = '/';
-              }, 5000);
-            }
-          `
-        }}
-      />
     </div>
   );
 }
