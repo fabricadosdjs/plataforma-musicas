@@ -819,25 +819,25 @@ export default function AdminUsersPage() {
                         <table className="w-full min-w-full">
                             <thead className="bg-[#5a6b4a]">
                                 <tr>
-                                    <th className="w-[18%] px-4 py-3 text-left text-xs text-gray-300">
+                                    <th className="w-[16%] px-4 py-3 text-left text-xs text-gray-300">
                                         Nome
                                     </th>
-                                    <th className="w-[14%] px-3 py-3 text-left text-xs text-gray-300">
+                                    <th className="w-[13%] px-3 py-3 text-left text-xs text-gray-300">
                                         WhatsApp
                                     </th>
-                                    <th className="w-[15%] px-3 py-3 text-left text-xs text-gray-300">
+                                    <th className="w-[14%] px-3 py-3 text-left text-xs text-gray-300">
                                         E-mail
                                     </th>
-                                    <th className="w-[10%] px-3 py-3 text-left text-xs text-gray-300">
+                                    <th className="w-[12%] px-3 py-3 text-left text-xs text-gray-300 whitespace-nowrap">
                                         Valor
                                     </th>
-                                    <th className="w-[12%] px-3 py-3 text-left text-xs text-gray-300">
+                                    <th className="w-[11%] px-3 py-3 text-left text-xs text-gray-300">
                                         Plano
                                     </th>
                                     <th className="w-[10%] px-3 py-3 text-left text-xs text-gray-300">
                                         Venc.
                                     </th>
-                                    <th className="w-[12%] px-3 py-3 text-left text-xs text-gray-300">
+                                    <th className="w-[11%] px-3 py-3 text-left text-xs text-gray-300">
                                         Data Pag.
                                     </th>
                                     <th className="w-[8%] px-3 py-3 text-left text-xs text-gray-300">
@@ -888,7 +888,7 @@ export default function AdminUsersPage() {
                                                 </button>
                                             </div>
                                         </td>
-                                        <td className="px-3 py-3">
+                                        <td className="px-3 py-3 whitespace-nowrap">
                                             <span className="text-sm font-bold text-green-400">
                                                 {user.valor ? `R$ ${Number(user.valor).toFixed(2)}` : '-'}
                                             </span>
