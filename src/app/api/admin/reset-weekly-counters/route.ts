@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Resetar contadores semanais
-        const updatedUser = await prisma.user.update({
+        const updatedProfile = await prisma.profile.update({
             where: { id: userId },
             data: {
                 weeklyPackRequests: 0,
@@ -22,17 +22,16 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        console.log(`✅ Contadores semanais resetados para usuário ${userId}`);
+        console.log(`✅ Contadores semanais resetados para perfil ${userId}`);
 
         return NextResponse.json({
             success: true,
             message: 'Contadores semanais resetados com sucesso',
-            user: {
-                id: updatedUser.id,
-                email: updatedUser.email,
-                weeklyPackRequests: updatedUser.weeklyPackRequests,
-                weeklyPlaylistDownloads: updatedUser.weeklyPlaylistDownloads,
-                lastWeekReset: updatedUser.lastWeekReset
+            profile: {
+                id: updatedProfile.id,
+                weeklyPackRequests: updatedProfile.weeklyPackRequests,
+                weeklyPlaylistDownloads: updatedProfile.weeklyPlaylistDownloads,
+                lastWeekReset: updatedProfile.lastWeekReset
             }
         });
 

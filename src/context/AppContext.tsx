@@ -10,18 +10,21 @@ interface AppContextType {
   currentTrack: Track | null;
   playlist: Track[];
   isPlaying: boolean;
+  setIsPlaying: (playing: boolean) => void;
   playTrack: (track: Track, trackList?: Track[]) => void;
   togglePlayPause: () => void;
   nextTrack: () => void;
   previousTrack: () => void;
   likedTracks: number[];
   downloadedTracks: number[];
-  handleLike: (trackId: number) => void;
-  handleDownload: (track: Track) => void;
+  handleLike: (trackId: number) => Promise<void>;
+  handleDownload: (track: Track) => Promise<void>;
   alertMessage: string;
+  alertType: 'default' | 'vip' | 'access-check';
+  showAlert: (message: string, duration?: number) => void;
+  showVipAlert: (message: string) => void;
+  showAccessCheckAlert: (message: string) => void;
   closeAlert: () => void;
-  isUserDataLoaded: boolean;
-  setIsPlaying: (state: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -34,6 +37,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [playlist, setPlaylist] = useState<Track[]>([]);
   const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState<'default' | 'vip' | 'access-check'>('default');
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
 
   const [likedTracks, setLikedTracks] = useState<number[]>([]);
@@ -109,9 +113,22 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const showAlert = useCallback((message: string) => {
+  const showAlert = useCallback((message: string, duration: number = 5000) => {
     setAlertMessage(message);
-    setTimeout(() => setAlertMessage(''), 5000);
+    setAlertType('default');
+    setTimeout(() => setAlertMessage(''), duration);
+  }, []);
+
+  const showVipAlert = useCallback((message: string) => {
+    setAlertMessage(message);
+    setAlertType('vip');
+    setTimeout(() => setAlertMessage(''), 15000); // 15 segundos para alertas VIP
+  }, []);
+
+  const showAccessCheckAlert = useCallback((message: string) => {
+    setAlertMessage(message);
+    setAlertType('access-check');
+    setTimeout(() => setAlertMessage(''), 15000); // 15 segundos para verificação de perfil
   }, []);
 
   const fetchUserData = useCallback(async () => {
@@ -146,6 +163,41 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       fetchUserData();
     }
   }, [status, fetchUserData]);
+
+  // Atualizar título da aba do navegador quando música muda
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const baseTitle = 'DJ Pool Platform';
+
+    if (currentTrack) {
+      const trackInfo = `${currentTrack.artist} - ${currentTrack.songName}`;
+      const playingIndicator = isPlaying ? "🎵 " : "⏸️ ";
+      document.title = `${playingIndicator}${trackInfo} • ${baseTitle}`;
+    } else {
+      // Restaurar título original quando não há música
+      const currentPath = window.location.pathname;
+      switch (currentPath) {
+        case '/new':
+          document.title = `Novas Músicas • ${baseTitle}`;
+          break;
+        case '/trending':
+          document.title = `Trending • ${baseTitle}`;
+          break;
+        case '/charts':
+          document.title = `Charts • ${baseTitle}`;
+          break;
+        case '/featured':
+          document.title = `Featured • ${baseTitle}`;
+          break;
+        case '/pro':
+          document.title = `Pro • ${baseTitle}`;
+          break;
+        default:
+          document.title = baseTitle;
+      }
+    }
+  }, [currentTrack, isPlaying]);
 
   // Função para registrar reprodução no banco
   const logPlayStart = async (track: Track) => {
@@ -344,6 +396,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
 
+      // Mostrar alerta de verificação de perfil
+      showAccessCheckAlert('Verificando perfil e permissões VIP...');
+
       // Verificar permissão VIP na API original
       const vipResponse = await fetch('/api/downloads', {
         method: 'POST',
@@ -364,7 +419,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           setDownloadedTracks(prev => [...prev, track.id]);
         }
 
-        showAlert('Download iniciado!');
+        showVipAlert('✨ Download VIP autorizado! Seu arquivo está sendo preparado...');
 
         // Usar utilitário robusto de download
         await forceDownload(track.downloadUrl, `${track.songName} - ${track.artist}.mp3`);
@@ -392,6 +447,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     handleLike,
     handleDownload,
     alertMessage,
+    alertType,
+    showAlert,
+    showVipAlert,
+    showAccessCheckAlert,
     closeAlert,
     isUserDataLoaded,
     setIsPlaying,

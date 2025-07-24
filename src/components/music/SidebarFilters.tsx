@@ -1,7 +1,8 @@
 // src/components/SidebarFilters.tsx
 "use client";
 
-import React, { memo, useMemo } from 'react';
+import { Search } from 'lucide-react';
+import React, { memo, useMemo, useState } from 'react';
 
 // Tipos para este componente
 type Track = {
@@ -17,9 +18,18 @@ type Track = {
   isCopyrightProtected?: boolean;
 };
 
-const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange }: { tracks: Track[], onFilterChange: (filters: any) => void }) {
+const SidebarFilters = memo(function SidebarFilters({
+  tracks,
+  onFilterChange,
+  onSearchChange
+}: {
+  tracks: Track[],
+  onFilterChange: (filters: any) => void,
+  onSearchChange?: (query: string) => void
+}) {
   // Adicionar verificação para garantir que 'tracks' é um array antes de usar .map
   const safeTracks = tracks || []; // Garante que tracks é um array vazio se for null/undefined
+  const [searchQuery, setSearchQuery] = useState('');
 
   const availableGenres = useMemo(() => [...new Set(safeTracks.map(t => t.style))], [safeTracks]);
   const availableVersions = useMemo(() => [...new Set(safeTracks.map(t => t.version))], [safeTracks]);
@@ -50,12 +60,33 @@ const SidebarFilters = memo(function SidebarFilters({ tracks, onFilterChange }: 
 
   const handleClearFilters = () => {
     onFilterChange({ genres: [], versions: [], artists: [], date: { from: '', to: '' } });
+    setSearchQuery('');
+    onSearchChange?.('');
+  };
+
+  const handleSearchInput = (value: string) => {
+    setSearchQuery(value);
+    onSearchChange?.(value);
   };
 
   return (
     <aside className="w-72 flex-shrink-0 border-r border-gray-700 p-6 hidden lg:block text-white min-h-screen" style={{ backgroundColor: '#202124' }}>
       <h2 className="text-xl font-bold text-white mb-6 tracking-tight">Filtros</h2>
       <div className="space-y-8">
+        {/* Campo de Busca */}
+        <div>
+          <h3 className="font-semibold text-white mb-3">Buscar</h3>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Música, artista..."
+              value={searchQuery}
+              onChange={(e) => handleSearchInput(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        </div>
         <div>
           <h3 className="font-semibold text-white mb-3">Estilo</h3>
           <div className="space-y-2">

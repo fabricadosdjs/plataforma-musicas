@@ -22,6 +22,7 @@ interface User {
     lastDownloadReset: string | null;
     downloadsCount: number;
     likesCount: number;
+    password?: string;
 }
 
 export default function AdminUsersPage() {
@@ -47,7 +48,8 @@ export default function AdminUsersPage() {
         status: 'ativo',
         deemix: true,
         is_vip: true,
-        dailyDownloadCount: 0
+        dailyDownloadCount: 0,
+        password: '' // novo campo para edição de senha
     });
 
     useEffect(() => {
@@ -219,7 +221,8 @@ export default function AdminUsersPage() {
             status: user.status,
             deemix: user.deemix,
             is_vip: user.is_vip,
-            dailyDownloadCount: user.dailyDownloadCount || 0
+            dailyDownloadCount: user.dailyDownloadCount || 0,
+            password: '' // senha em branco por padrão ao editar
         });
     };
 
@@ -236,7 +239,8 @@ export default function AdminUsersPage() {
             status: 'ativo',
             deemix: true,
             is_vip: true,
-            dailyDownloadCount: 0
+            dailyDownloadCount: 0,
+            password: ''
         });
     };
 
@@ -252,7 +256,8 @@ export default function AdminUsersPage() {
             status: 'ativo',
             deemix: true,
             is_vip: true,
-            dailyDownloadCount: 0
+            dailyDownloadCount: 0,
+            password: ''
         });
     };
 
@@ -666,6 +671,35 @@ export default function AdminUsersPage() {
                                         className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                                         placeholder="email@exemplo.com"
                                     />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Senha {editingUser ? '(preencha para alterar)' : '(defina a senha do novo usuário)'}
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={editForm.password}
+                                            onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
+                                            className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                                            placeholder={editingUser ? "Nova senha (deixe em branco para não alterar)" : "Senha forte para novo usuário"}
+                                            autoComplete="new-password"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="px-3 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg"
+                                            onClick={() => {
+                                                const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
+                                                let password = "";
+                                                for (let i = 0, n = charset.length; i < 14; ++i) {
+                                                    password += charset.charAt(Math.floor(Math.random() * n));
+                                                }
+                                                setEditForm(prev => ({ ...prev, password }));
+                                            }}
+                                        >
+                                            Gerar senha forte
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div>

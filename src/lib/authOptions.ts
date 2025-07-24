@@ -1,5 +1,5 @@
 // src/lib/authOptions.ts
-import prisma from '@/lib/prisma';
+import prisma, { safeQuery } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -70,90 +70,99 @@ export const authOptions: AuthOptions = {
                 password: { label: 'Password', type: 'password' },
             },
             async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
-                    throw new Error('Credenciais inválidas');
-                }
+                try {
+                    if (!credentials?.email || !credentials?.password) {
+                        return null; // Mudado de throw para return null
+                    }
 
-                // Verificar se é um admin especial primeiro
-                const adminUser = ADMIN_USERS.find(admin => admin.email === credentials.email);
-                if (adminUser) {
-                    // Verificar senha do admin
-                    if (credentials.password === adminUser.password) {
-                        // Retornar dados do admin com privilégios máximos
-                        return {
-                            id: adminUser.id,
-                            email: adminUser.email,
-                            name: adminUser.name,
-                            is_vip: true,
-                            valor: '999',
-                            benefits: {
-                                plan: 'ADMIN',
-                                packRequestsPerWeek: 999999,
-                                playlistsPerWeek: 999999,
-                                downloadsPerDay: 999999,
-                                directDownload: true,
-                                deemixAccess: true,
-                                trackRequest: true,
-                                exclusiveGenres: true,
-                                prioritySupport: true,
-                                adminAccess: true
-                            },
-                            status: 'ativo',
-                            dailyDownloadCount: 0,
-                            weeklyPackRequests: 0,
-                            weeklyPlaylistDownloads: 0,
-                            vencimento: null,
-                        };
+                    // Verificar se é um admin especial primeiro
+                    const adminUser = ADMIN_USERS.find(admin => admin.email === credentials.email);
+                    if (adminUser) {
+                        // Verificar senha do admin
+                        if (credentials.password === adminUser.password) {
+                            // Retornar dados do admin com privilégios máximos
+                            return {
+                                id: adminUser.id,
+                                email: adminUser.email,
+                                name: adminUser.name,
+                                is_vip: true,
+                                valor: '999',
+                                benefits: {
+                                    plan: 'ADMIN',
+                                    packRequestsPerWeek: 999999,
+                                    playlistsPerWeek: 999999,
+                                    downloadsPerDay: 999999,
+                                    directDownload: true,
+                                    deemixAccess: true,
+                                    trackRequest: true,
+                                    exclusiveGenres: true,
+                                    prioritySupport: true,
+                                    adminAccess: true
+                                },
+                                status: 'ativo',
+                                dailyDownloadCount: 0,
+                                weeklyPackRequests: 0,
+                                weeklyPlaylistDownloads: 0,
+                                vencimento: null,
+                            };
+                        } else {
+                            return null; // Senha incorreta
+                        }
+                    }
+
+                    // Buscar usuário no nosso banco (usuários VIP normais)
+                    const dbUser = await safeQuery(
+                        () => prisma.profile.findFirst({
+                            where: { name: credentials.email }
+                        }),
+                        null
+                    ) as any;
+
+                    if (!dbUser) {
+                        return null; // Usuário não encontrado
+                    }
+
+                    // Verificar senha (se não tiver senha, permitir qualquer senha temporariamente)
+                    if (dbUser.password) {
+                        const isPasswordValid = await bcrypt.compare(credentials.password, dbUser.password);
+                        if (!isPasswordValid) {
+                            return null; // Senha incorreta
+                        }
                     } else {
-                        throw new Error('Senha incorreta');
+                        // Se não tem senha cadastrada, aceitar qualquer senha e definir a senha
+                        const hashedPassword = await bcrypt.hash(credentials.password, 10);
+                        await prisma.profile.update({
+                            where: { id: dbUser.id },
+                            data: { password: hashedPassword } as any
+                        });
                     }
-                }
 
-                // Buscar usuário no nosso banco (usuários VIP normais)
-                const dbUser = await prisma.user.findUnique({
-                    where: { email: credentials.email }
-                }) as any;
-
-                if (!dbUser) {
-                    throw new Error('Usuário não encontrado');
-                }
-
-                // Verificar senha (se não tiver senha, permitir qualquer senha temporariamente)
-                if (dbUser.password) {
-                    const isPasswordValid = await bcrypt.compare(credentials.password, dbUser.password);
-                    if (!isPasswordValid) {
-                        throw new Error('Senha incorreta');
+                    // Verificar se o usuário está ativo
+                    if (dbUser.status !== 'ativo') {
+                        return null; // Conta inativa
                     }
-                } else {
-                    // Se não tem senha cadastrada, aceitar qualquer senha e definir a senha
-                    const hashedPassword = await bcrypt.hash(credentials.password, 10);
-                    await prisma.user.update({
-                        where: { id: dbUser.id },
-                        data: { password: hashedPassword } as any
-                    });
+
+                    // Obter benefícios do usuário
+                    const benefits = getUserBenefits(dbUser);
+
+                    return {
+                        id: dbUser.id,
+                        email: dbUser.email,
+                        name: dbUser.name,
+                        is_vip: dbUser.is_vip,
+                        valor: dbUser.valor?.toString() || '0',
+                        benefits: benefits,
+                        status: dbUser.status,
+                        dailyDownloadCount: dbUser.dailyDownloadCount || 0,
+                        weeklyPackRequests: dbUser.weeklyPackRequests || 0,
+                        weeklyPlaylistDownloads: dbUser.weeklyPlaylistDownloads || 0,
+                        vencimento: dbUser.vencimento?.toISOString() || null,
+                    };
+
+                } catch (error) {
+                    console.error('[AUTH_ERROR]', error);
+                    return null; // Retornar null em caso de erro
                 }
-
-                // Verificar se o usuário está ativo
-                if (dbUser.status !== 'ativo') {
-                    throw new Error('Conta inativa. Entre em contato com o suporte.');
-                }
-
-                // Obter benefícios do usuário
-                const benefits = getUserBenefits(dbUser);
-
-                return {
-                    id: dbUser.id,
-                    email: dbUser.email,
-                    name: dbUser.name,
-                    is_vip: dbUser.is_vip,
-                    valor: dbUser.valor?.toString() || '0',
-                    benefits: benefits,
-                    status: dbUser.status,
-                    dailyDownloadCount: dbUser.dailyDownloadCount || 0,
-                    weeklyPackRequests: dbUser.weeklyPackRequests || 0,
-                    weeklyPlaylistDownloads: dbUser.weeklyPlaylistDownloads || 0,
-                    vencimento: dbUser.vencimento?.toISOString() || null,
-                };
             },
         }),
     ],

@@ -20,12 +20,11 @@ export async function GET() {
         // TODO: Implementar verificação de admin quando tivermos o campo
         // Por enquanto, qualquer usuário logado pode ver
 
-        const users = await prisma.user.findMany({
+        const users = await prisma.profile.findMany({
             select: {
                 id: true,
                 name: true,
                 whatsapp: true,
-                email: true,
                 valor: true,
                 vencimento: true,
                 dataPagamento: true,
@@ -83,13 +82,8 @@ export async function POST(req: Request) {
         }
 
         // Verificar se o email já existe
-        const existingUser = await prisma.user.findUnique({
-            where: { email }
-        });
-
-        if (existingUser) {
-            return new NextResponse("Email já está em uso", { status: 400 });
-        }
+        // Não é possível buscar por email diretamente em Profile, pois o campo não existe
+        // Se necessário, buscar por id ou implementar lógica diferente
 
         // Hash da senha se fornecida
         let hashedPassword = null;
@@ -97,13 +91,11 @@ export async function POST(req: Request) {
             hashedPassword = await bcrypt.hash(password, 10);
         }
 
-        const newUser = await prisma.user.create({
+        const newProfile = await prisma.profile.create({
             data: {
                 id: uuidv4(),
                 name,
                 whatsapp: whatsapp || null,
-                email,
-                password: hashedPassword,
                 valor: valor || null,
                 vencimento: vencimento ? new Date(vencimento) : null,
                 dataPagamento: dataPagamento ? new Date(dataPagamento) : null,
@@ -116,14 +108,13 @@ export async function POST(req: Request) {
             select: {
                 id: true,
                 name: true,
-                email: true,
                 is_vip: true,
             }
         });
 
         return NextResponse.json({
             message: "Usuário criado com sucesso",
-            user: newUser
+            profile: newProfile
         });
     } catch (error) {
         console.error("[USERS_POST_ERROR]", error);
@@ -164,12 +155,11 @@ export async function PATCH(req: Request) {
         if (typeof is_vip === 'boolean') updateData.is_vip = is_vip;
         if (typeof dailyDownloadCount === 'number') updateData.dailyDownloadCount = dailyDownloadCount;
 
-        const updatedUser = await prisma.user.update({
+        const updatedProfile = await prisma.profile.update({
             where: { id: userId },
             data: updateData,
             select: {
                 id: true,
-                email: true,
                 name: true,
                 is_vip: true,
             }
@@ -177,7 +167,7 @@ export async function PATCH(req: Request) {
 
         return NextResponse.json({
             message: `Usuário atualizado com sucesso`,
-            user: updatedUser
+            profile: updatedProfile
         });
     } catch (error) {
         console.error("[USERS_PATCH_ERROR]", error);

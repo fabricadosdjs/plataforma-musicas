@@ -4,9 +4,14 @@
 import { ArrowLeft, Lock, MessageCircle, Music } from 'lucide-react';
 import Link from 'next/link';
 
+// Note: Metadata não pode ser exportada de componentes "use client"
+
 const SignUpPage = () => {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center p-4">
+        <div
+            className="min-h-screen flex items-center justify-center p-4"
+            style={{ backgroundColor: '#212121' }}
+        >
             <div className="w-full max-w-lg">
                 {/* Logo/Header */}
                 <div className="text-center mb-8">
@@ -18,12 +23,24 @@ const SignUpPage = () => {
                 </div>
 
                 {/* Info Card */}
-                <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 shadow-2xl">
+                <div
+                    className="backdrop-blur-sm rounded-2xl p-8 shadow-2xl border"
+                    style={{
+                        backgroundColor: '#2a2a2a',
+                        borderColor: '#3a3a3a'
+                    }}
+                >
                     <div className="text-center mb-6">
                         <h2 className="text-2xl font-bold text-white mb-4">Cadastro Não Disponível</h2>
 
                         <div className="space-y-4 text-left">
-                            <div className="flex items-start gap-3 p-4 bg-blue-900/20 border border-blue-700/30 rounded-lg">
+                            <div
+                                className="flex items-start gap-3 p-4 rounded-lg border"
+                                style={{
+                                    backgroundColor: '#1a2332',
+                                    borderColor: '#2563eb50'
+                                }}
+                            >
                                 <MessageCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                                 <div>
                                     <h4 className="text-blue-300 font-medium text-sm mb-1">Como obter acesso VIP?</h4>
@@ -33,7 +50,13 @@ const SignUpPage = () => {
                                 </div>
                             </div>
 
-                            <div className="flex items-start gap-3 p-4 bg-green-900/20 border border-green-700/30 rounded-lg">
+                            <div
+                                className="flex items-start gap-3 p-4 rounded-lg border"
+                                style={{
+                                    backgroundColor: '#1a3021',
+                                    borderColor: '#16a34a50'
+                                }}
+                            >
                                 <Music className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                                 <div>
                                     <h4 className="text-green-300 font-medium text-sm mb-1">Benefícios VIP</h4>
@@ -46,7 +69,13 @@ const SignUpPage = () => {
                                 </div>
                             </div>
 
-                            <div className="flex items-start gap-3 p-4 bg-purple-900/20 border border-purple-700/30 rounded-lg">
+                            <div
+                                className="flex items-start gap-3 p-4 rounded-lg border"
+                                style={{
+                                    backgroundColor: '#2d1b33',
+                                    borderColor: '#8b5cf650'
+                                }}
+                            >
                                 <Lock className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                                 <div>
                                     <h4 className="text-purple-300 font-medium text-sm mb-1">Já é VIP?</h4>

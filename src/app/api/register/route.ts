@@ -11,20 +11,19 @@ export async function POST(request: Request) {
             return new NextResponse('Email e senha são obrigatórios', { status: 400 });
         }
 
-        // Com Supabase Auth, o usuário deve ser criado primeiro no Supabase
-        // Este endpoint agora só cria o registro no nosso banco após autenticação
+        // Criação de usuário no banco de dados usando NextAuth
+        // Este endpoint cria o registro no banco após autenticação
 
-        const user = await prisma.user.create({
+        const profile = await prisma.profile.create({
             data: {
                 id: crypto.randomUUID(),
-                email,
                 name,
                 is_vip: false,
                 status: 'ativo',
             },
         });
 
-        return NextResponse.json(user);
+        return NextResponse.json(profile);
     } catch (error) {
         console.error('REGISTRATION_ERROR', error);
         return new NextResponse('Erro interno', { status: 500 });

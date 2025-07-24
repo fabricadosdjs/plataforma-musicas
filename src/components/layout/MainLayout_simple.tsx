@@ -20,17 +20,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
         handleLike,
         handleDownload,
         isPlaying,
-        setIsPlaying,
         likedTracks,
         downloadedTracks,
         alertMessage,
+        alertType,
         closeAlert
     } = useAppContext();
 
     return (
         <div className="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
-            <Header onSearchChange={() => { }} />
-            <Alert message={alertMessage} onClose={closeAlert} />
+            <Header />
+            <Alert message={alertMessage} type={alertType} onClose={closeAlert} />
 
             <main className="flex-grow">
                 {children}

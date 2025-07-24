@@ -43,10 +43,12 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Verificar se o userId é um UUID válido antes de fazer a inserção
+        // Verificar se o userId é válido (UUID ou CUID)
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(session.user.id)) {
-            console.error('UUID inválido detectado na API de play:', session.user.id);
+        const cuidRegex = /^[a-z0-9]{25}$/i; // CUID format: 25 caracteres alfanuméricos
+
+        if (!uuidRegex.test(session.user.id) && !cuidRegex.test(session.user.id)) {
+            console.error('ID de usuário inválido detectado na API de play:', session.user.id);
             return NextResponse.json(
                 { error: "ID de usuário inválido" },
                 { status: 400 }

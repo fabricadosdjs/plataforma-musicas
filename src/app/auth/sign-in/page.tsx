@@ -6,6 +6,8 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+// Note: Metadata não pode ser exportada de componentes "use client"
+
 export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -40,7 +42,10 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center p-4 overflow-hidden">
+    <div
+      className="min-h-screen flex items-center justify-center p-4 overflow-hidden"
+      style={{ backgroundColor: '#212121' }}
+    >
       <div className="w-full max-w-xl">
         {/* Logo/Header */}
         <div className="text-center mb-4">
@@ -58,7 +63,13 @@ export default function SignInPage() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 shadow-2xl">
+        <div
+          className="backdrop-blur-sm rounded-xl p-6 shadow-2xl border"
+          style={{
+            backgroundColor: '#2a2a2a',
+            borderColor: '#3a3a3a'
+          }}
+        >
           <div className="text-center mb-4">
             <h2 className="text-lg font-bold text-white mb-1">Bem-vindo de volta</h2>
             <p className="text-gray-400 text-sm">Entre com suas credenciais VIP</p>
@@ -86,7 +97,11 @@ export default function SignInPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="seu.email@exemplo.com"
-                  className="w-full pl-9 pr-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full pl-9 pr-3 py-2.5 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  style={{
+                    backgroundColor: '#1a1a1a',
+                    borderColor: '#3a3a3a'
+                  }}
                 />
               </div>
             </div>
@@ -105,7 +120,11 @@ export default function SignInPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full pl-9 pr-3 py-2.5 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  style={{
+                    backgroundColor: '#1a1a1a',
+                    borderColor: '#3a3a3a'
+                  }}
                 />
               </div>
             </div>

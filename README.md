@@ -20,11 +20,38 @@ Autenticação: Clerk
 
 Hospedagem: Vercel
 
-Armazenamento de Músicas: MediaFire (URLs de Play/Download)
+Armazenamento de Músicas: Contabo Object Storage (S3-compatible) + MediaFire (URLs de Play/Download)
 
 Modo de Pagamento: Pix Manual (com verificação administrativa)
 
-Ferramentas Adicionais: classnames, date-fns
+Ferramentas Adicionais: classnames, date-fns, AWS SDK v3
+
+## 🌥️ Integração Contabo Object Storage
+
+Este projeto inclui integração completa com Contabo Object Storage para gerenciamento automatizado de arquivos de música:
+
+### Recursos da Integração:
+- **Upload automático** de arquivos de música
+- **Listagem e navegação** de arquivos no bucket
+- **Importação automática** para o banco de dados
+- **Geração de links diretos** para streaming/download
+- **Interface administrativa** completa
+- **Análise inteligente** de metadados dos arquivos
+
+### Configuração Rápida:
+```bash
+# 1. Copie o arquivo de exemplo
+cp .env.contabo.example .env.local
+
+# 2. Configure suas credenciais no .env.local
+# 3. Teste a conexão
+node test-contabo-connection.js
+
+# 4. Importe suas músicas automaticamente
+node import-contabo-music.js
+```
+
+📖 **Documentação completa**: Veja `CONTABO_STORAGE.md` para configuração detalhada.
 
 Funcionalidades Principais
 Páginas de Navegação:

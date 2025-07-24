@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Music, PlusCircle, Users } from 'lucide-react';
+import { Brain, Cloud, LayoutDashboard, Music, PlusCircle, Users } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -59,6 +59,22 @@ export default function AdminPage() {
             <LayoutDashboard size={48} className="mb-4 text-purple-400" />
             <h2 className="text-xl font-semibold mb-2">Dashboard</h2>
             <p className="text-gray-400">Estatísticas completas e relatórios em tempo real</p>
+          </Link>
+
+          <Link href="/admin/contabo" className="p-6 rounded-lg transition-colors" style={{ backgroundColor: '#2d2f32' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#374151'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2d2f32'}>
+            <Cloud size={48} className="mb-4 text-cyan-400" />
+            <h2 className="text-xl font-semibold mb-2">Contabo Storage</h2>
+            <p className="text-gray-400">Gerenciar arquivos e importar músicas automaticamente</p>
+          </Link>
+
+          <Link href="/admin/contabo-smart" className="p-6 rounded-lg transition-colors" style={{ backgroundColor: '#2d2f32' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#374151'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2d2f32'}>
+            <Brain size={48} className="mb-4 text-purple-400" />
+            <h2 className="text-xl font-semibold mb-2">Importação Inteligente</h2>
+            <p className="text-gray-400">IA detecta e importa músicas automaticamente com metadados</p>
           </Link>
         </div>
       </div>

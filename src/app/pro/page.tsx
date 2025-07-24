@@ -1,84 +1,11 @@
 "use client";
 
-import { Facebook, Info, Instagram, Music, Twitter, X } from 'lucide-react';
-import { signOut, useSession } from 'next-auth/react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Header from '@/components/layout/Header';
+import { Facebook, Info, Instagram, Twitter, X } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import { memo, useState } from 'react';
 
-const Header = memo(function Header() {
-  const pathname = usePathname();
-  const { data: session } = useSession();
-  const user = session?.user;
-
-  const navLinks = [
-    { href: '/new', label: 'New' },
-    { href: '/featured', label: 'Featured' },
-    { href: '/trending', label: 'Trending' },
-    { href: '/charts', label: 'Charts' },
-  ];
-
-  return (
-    <header className="w-full bg-white/80 backdrop-blur-sm p-4 flex justify-between items-center border-b border-gray-200 sticky top-0 z-30">
-      <div className="flex items-center gap-4">
-        <Link href="/new" className="flex items-center gap-4">
-          <div className="w-8 h-8 bg-[#202124] rounded-full flex items-center justify-center">
-            <Music size={16} className="text-white" />
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 hidden sm:block">DJ Pool</h1>
-        </Link>
-      </div>
-      <div className="flex items-center gap-8">
-        <nav className="hidden md:flex items-center space-x-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`font-semibold transition-colors pb-2 ${pathname === link.href
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-blue-600'
-                }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-          {user && (
-            <Link
-              href="/profile"
-              className={`font-semibold transition-colors pb-2 ${pathname === '/profile'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-blue-600'
-                }`}
-            >
-              Meu Perfil
-            </Link>
-          )}
-        </nav>
-        <div className="flex items-center gap-4">
-          {user ? (
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-700">{user.name || user.email}</span>
-              <button onClick={() => signOut()} className="text-sm text-gray-600 hover:text-gray-800">Sair</button>
-            </div>
-          ) : (
-            <>
-              <Link href="/auth/sign-in">
-                <button className="font-semibold px-3 py-2 rounded-md transition-colors text-gray-600 hover:text-blue-600">
-                  Entrar
-                </button>
-              </Link>
-              <Link href="/auth/sign-up">
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
-                  Cadastrar
-                </button>
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
-    </header>
-  );
-});
+// Note: Metadata não pode ser exportada de componentes "use client"
 
 const SiteFooter = memo(function SiteFooter() {
   return (
@@ -129,7 +56,7 @@ export default function ProPage() {
       <main className="flex-grow">
         <div className="container mx-auto px-8 py-16">
           <div className="text-center mb-16">
-            <h1 className="text-5xl font-extrabold text-gray-900 mb-4">
+            <h1 className="text-5xl font-sans font-extrabold text-gray-900 mb-4 tracking-wide">
               DJ Pool <span className="text-blue-600">Pro</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">

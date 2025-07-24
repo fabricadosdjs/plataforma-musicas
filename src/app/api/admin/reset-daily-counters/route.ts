@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
-const prisma = new PrismaClient();
+
 
 export async function POST(request: NextRequest) {
     try {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Resetar contadores diários
-        await prisma.user.update({
+        await prisma.profile.update({
             where: { id: userId },
             data: {
                 dailyDownloadCount: 0,

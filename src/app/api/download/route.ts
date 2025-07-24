@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Buscar dados atualizados do usuário
-        const user = await prisma.user.findUnique({
+        const user = await prisma.profile.findUnique({
             where: { id: (session.user as any).id }
         }) as any;
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
         if (!lastReset ||
             (now.getTime() - lastReset.getTime()) > (24 * 60 * 60 * 1000)) {
-            await prisma.user.update({
+            await prisma.profile.update({
                 where: { id: user.id },
                 data: {
                     dailyDownloadCount: 0,
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
             });
 
             // Incrementar contador
-            await prisma.user.update({
+            await prisma.profile.update({
                 where: { id: user.id },
                 data: {
                     dailyDownloadCount: user.dailyDownloadCount + 1

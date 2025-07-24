@@ -1,6 +1,6 @@
 // src/app/api/likes/route.ts
 import { authOptions } from '@/lib/authOptions';
-import prisma from '@/lib/prisma';
+import prisma, { safeQuery } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { NextResponse } from 'next/server';
 
@@ -22,10 +22,12 @@ export async function POST(req: Request) {
     // Verificar se é um usuário admin especial (usar comportamento especial se necessário)
     const isAdmin = userId === 'admin-nextor-001' || (session.user as any).benefits?.adminAccess;
 
-    // Verificar se o userId é um UUID válido antes de fazer consultas
+    // Verificar se o userId é válido (UUID ou CUID)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!isAdmin && !uuidRegex.test(userId)) {
-      console.error('UUID inválido detectado na API de likes:', userId);
+    const cuidRegex = /^[a-z0-9]{25}$/i; // CUID format: 25 caracteres alfanuméricos
+
+    if (!isAdmin && !uuidRegex.test(userId) && !cuidRegex.test(userId)) {
+      console.error('ID de usuário inválido detectado na API de likes:', userId);
       return NextResponse.json(
         { error: "ID de usuário inválido" },
         { status: 400 }
@@ -110,24 +112,29 @@ export async function GET(req: Request) {
       return NextResponse.json({ likes: [] });
     }
 
-    // Verificar se o userId é um UUID válido antes de fazer consultas
+    // Verificar se o userId é válido (UUID ou CUID)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(userId)) {
-      console.error('UUID inválido detectado na API de likes GET:', userId);
+    const cuidRegex = /^[a-z0-9]{25}$/i; // CUID format: 25 caracteres alfanuméricos
+
+    if (!uuidRegex.test(userId) && !cuidRegex.test(userId)) {
+      console.error('ID de usuário inválido detectado na API de likes GET:', userId);
       return NextResponse.json(
         { error: "ID de usuário inválido" },
         { status: 400 }
       );
     }
 
-    const likes = await prisma.like.findMany({
-      where: {
-        userId: userId,
-      },
-      select: {
-        trackId: true,
-      },
-    });
+    const likes = await safeQuery(
+      () => prisma.like.findMany({
+        where: {
+          userId: userId,
+        },
+        select: {
+          trackId: true,
+        },
+      }),
+      []
+    );
 
     const likedTrackIds = likes.map(like => like.trackId);
 

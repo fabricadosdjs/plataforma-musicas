@@ -2,26 +2,31 @@
   "name": "plataforma-musicas",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "cross-env DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:seed": "node prisma/seed.js",
-    "postbuild": "next-sitemap"
+    "postbuild": "next-sitemap",
+    "contabo:test": "npx tsx test-contabo-connection.js",
+    "contabo:import": "npx tsx import-contabo-music.js",
+    "contabo:smart": "npx tsx test-smart-import.js",
+    "contabo:style": "npx tsx test-style-detector.js",
+    "contabo:setup": "echo 'Configurando Contabo...' && cp .env.contabo.example .env.local && echo 'Configure suas credenciais no .env.local e execute: npm run contabo:test'"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
-    "@auth/supabase-adapter": "^1.10.0",
+    "@aws-sdk/client-s3": "^3.850.0",
+    "@aws-sdk/s3-request-presigner": "^3.850.0",
     "@prisma/client": "^6.12.0",
     "@stripe/stripe-js": "^7.5.0",
-    "@supabase/auth-helpers-nextjs": "^0.10.0",
-    "@supabase/supabase-js": "^2.52.0",
     "@types/bcryptjs": "^2.4.6",
-    "axios": "^1.10.0",
+    "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.1.0",
@@ -31,6 +36,7 @@
     "lucide-react": "^0.525.0",
     "next": "15.4.1",
     "next-auth": "^4.24.11",
+    "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.8",
     "oci-sdk": "^2.112.2",
     "postgres": "^3.4.7",
@@ -39,6 +45,7 @@
     "react-dom": "^18.2.0",
     "resend": "^4.7.0",
     "stripe": "^18.3.0",
+    "tsx": "^4.20.3",
     "uuid": "^11.1.0",
     "wavesurfer.js": "^7.10.0"
   },

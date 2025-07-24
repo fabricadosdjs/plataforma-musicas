@@ -1,30 +1,40 @@
 /* globals.css */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #202124;
+  --background: #212121;
   --foreground: #ffffff;
-  /* A variável --font-montserrat será gerada automaticamente pelo Next.js com base no layout.tsx */
+  --card-background: #2a2a2a;
+  --border-color: #3a3a3a;
+  --muted-background: #1a1a1a;
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  /* A variável --font-poppins será gerada automaticamente pelo Next.js com base no layout.tsx */
 }
 
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #202124;
+    --background: #212121;
     --foreground: #ededed;
+    --card-background: #2a2a2a;
+    --border-color: #3a3a3a;
+    --muted-background: #1a1a1a;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-montserrat), 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: var(--font-poppins), 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   font-weight: 400;
   letter-spacing: -0.01em;
+  min-height: 100vh;
 }
 
-/* Estilos específicos para melhorar a legibilidade com Montserrat */
+/* Estilos específicos para melhorar a legibilidade com Poppins */
 h1,
 h2,
 h3,
@@ -48,4 +58,112 @@ h6 {
 pre,
 code {
   font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+}
+
+/* Tema Azul e Rosa para Tabela de Usuários */
+.users-table-container {
+  font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 300;
+}
+
+.users-table-header {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #ec4899 100%);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.users-table-row-even {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.users-table-row-odd {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.users-table-row:hover {
+  background: linear-gradient(135deg, #1e40af 0%, #3730a3 50%, #be185d 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.users-table-cell {
+  font-family: 'Ubuntu', sans-serif;
+  font-weight: 300;
+  color: #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.users-table-header-cell {
+  font-family: 'Ubuntu', sans-serif;
+  font-weight: 400;
+  color: #f1f5f9;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pink-gradient-button {
+  background: linear-gradient(135deg, #ec4899 0%, #be185d 50%, #9d174d 100%);
+  transition: all 0.3s ease;
+}
+
+.pink-gradient-button:hover {
+  background: linear-gradient(135deg, #be185d 0%, #9d174d 50%, #831843 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(236, 72, 153, 0.4);
+}
+
+.blue-gradient-accent {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+}
+
+/* Animações suaves para a tabela */
+.users-table-row {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.users-table-row:hover .users-table-cell {
+  color: #f8fafc;
+  text-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Efeito de brilho nas bordas ao hover */
+.users-table-container:hover {
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.2), 0 0 60px rgba(236, 72, 153, 0.1);
+}
+
+/* Efeito glassmorphism */
+.users-table-container {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Animações para alertas VIP */
+@keyframes fade-in-down {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
 }

@@ -10,12 +10,12 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const user = await prisma.profile.findUnique({
+      where: { id: session.user.id },
       include: {
         downloads: {
           select: {
@@ -61,8 +61,8 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString()
     });
 
-    let user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+    let user = await prisma.profile.findUnique({
+      where: { id: session.user.id }
     });
 
     if (!user) {
@@ -72,14 +72,13 @@ export async function POST(req: NextRequest) {
 
     console.log('👤 Usuário encontrado:', {
       id: user.id,
-      email: user.email,
       isVip: user.is_vip,
       name: user.name
     });
 
     // Check if user is VIP
     if (!user.is_vip) {
-      console.log('🚫 Usuário não é VIP:', user.email);
+      console.log('🚫 Usuário não é VIP:', user.id);
       return NextResponse.json({
         error: 'VIP membership required',
         message: 'Apenas usuários VIP podem baixar músicas'
@@ -131,7 +130,7 @@ export async function POST(req: NextRequest) {
 
       // Lógica para verificar e resetar o contador diário ANTES de verificar o limite
       if (!user.lastDownloadReset || user.lastDownloadReset < twentyFourHoursAgo) {
-        user = await prisma.user.update({
+        user = await prisma.profile.update({
           where: { id: userId },
           data: {
             dailyDownloadCount: 0,
@@ -181,7 +180,7 @@ export async function POST(req: NextRequest) {
     let updatedUser = user;
     if (shouldIncrementDailyCount) {
       // Incrementa o contador diário apenas se for a primeira vez que o usuário baixa esta música
-      updatedUser = await prisma.user.update({
+      updatedUser = await prisma.profile.update({
         where: { id: userId },
         data: {
           dailyDownloadCount: {
@@ -192,7 +191,7 @@ export async function POST(req: NextRequest) {
       });
     } else {
       // Se a música já foi baixada, apenas garante que o 'user' no retorno esteja atualizado
-      const foundUser = await prisma.user.findUnique({ where: { id: userId } });
+      const foundUser = await prisma.profile.findUnique({ where: { id: userId } });
       if (foundUser) {
         updatedUser = foundUser;
       }

@@ -90,12 +90,12 @@ export async function GET() {
 
         // Estatísticas de usuários
         const [totalUsers, vipUsers, activeUsers, newUsersToday, newUsersWeek, expiringUsersWeek] = await Promise.all([
-            prisma.user.count(),
-            prisma.user.count({ where: { is_vip: true } }),
-            prisma.user.count({ where: { status: 'ativo' } }),
-            prisma.user.count({ where: { createdAt: { gte: today } } }),
-            prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
-            prisma.user.count({
+            prisma.profile.count(),
+            prisma.profile.count({ where: { is_vip: true } }),
+            prisma.profile.count({ where: { status: 'ativo' } }),
+            prisma.profile.count({ where: { createdAt: { gte: today } } }),
+            prisma.profile.count({ where: { createdAt: { gte: weekAgo } } }),
+            prisma.profile.count({
                 where: {
                     is_vip: true,
                     vencimento: {
@@ -133,9 +133,9 @@ export async function GET() {
             take: 1,
         }).then(async (result) => {
             if (result[0]) {
-                const user = await prisma.user.findUnique({
+                const user = await prisma.profile.findUnique({
                     where: { id: result[0].userId },
-                    select: { name: true, email: true, is_vip: true },
+                    select: { name: true, is_vip: true },
                 });
                 return { ...user, downloadCount: result[0]._count.userId };
             }
@@ -150,9 +150,9 @@ export async function GET() {
             take: 1,
         }).then(async (result) => {
             if (result[0]) {
-                const user = await prisma.user.findUnique({
+                const user = await prisma.profile.findUnique({
                     where: { id: result[0].userId },
-                    select: { name: true, email: true, is_vip: true },
+                    select: { name: true, is_vip: true },
                 });
                 return { ...user, downloadCount: result[0]._count.userId };
             }
@@ -167,9 +167,9 @@ export async function GET() {
             take: 1,
         }).then(async (result) => {
             if (result[0]) {
-                const user = await prisma.user.findUnique({
+                const user = await prisma.profile.findUnique({
                     where: { id: result[0].userId },
-                    select: { name: true, email: true, is_vip: true },
+                    select: { name: true, is_vip: true },
                 });
                 return { ...user, downloadCount: result[0]._count.userId };
             }
@@ -265,9 +265,9 @@ export async function GET() {
             take: 1,
         }).then(async (result) => {
             if (result[0]) {
-                const user = await prisma.user.findUnique({
+                const user = await prisma.profile.findUnique({
                     where: { id: result[0].userId },
-                    select: { name: true, email: true, is_vip: true },
+                    select: { name: true, is_vip: true },
                 });
                 return { ...user, likeCount: result[0]._count.userId };
             }
@@ -282,7 +282,7 @@ export async function GET() {
         };
 
         // Estatísticas de receita
-        const vipUsers_full = await prisma.user.findMany({
+        const vipUsers_full = await prisma.profile.findMany({
             where: { is_vip: true, valor: { not: null } },
             select: { valor: true },
         });
@@ -293,7 +293,7 @@ export async function GET() {
         }, 0);
         const averageUserValue = vipUsers_full.length > 0 ? totalRevenue / vipUsers_full.length : 0;
 
-        const vipPlansDistribution = await prisma.user.groupBy({
+        const vipPlansDistribution = await prisma.profile.groupBy({
             by: ['valor'],
             where: { is_vip: true, valor: { not: null } },
             _count: { valor: true },

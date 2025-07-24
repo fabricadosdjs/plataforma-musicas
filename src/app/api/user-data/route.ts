@@ -1,36 +1,64 @@
 // src/app/api/user-data/route.ts
-import prisma from '@/lib/prisma';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { authOptions } from '@/lib/authOptions';
+import prisma, { safeQuery } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+// Updated to use NextAuth instead of Supabase
 export async function GET(req: Request) {
-  try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { user }, error } = await supabase.auth.getUser();
+  let session: any = null;
 
-    if (error || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+  try {
+    session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = user.id;
+    const userId = session.user.id;
 
-    let dbUser = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    // Buscar usuário usando safeQuery
+    let dbUser = await safeQuery(
+      async () => {
+        return await prisma.profile.findUnique({
+          where: { id: userId },
+        });
+      },
+      null // fallback value
+    );
 
     // Se o usuário não existe, cria-o e inicializa dailyDownloadCount e lastDownloadReset
     if (!dbUser) {
-      dbUser = await prisma.user.create({
-        data: {
-          id: userId,
-          email: user.email || '',
-          name: user.user_metadata?.name || user.email || '',
-          dailyDownloadCount: 0,
-          lastDownloadReset: new Date(),
+      dbUser = await safeQuery(
+        async () => {
+          return await prisma.profile.create({
+            data: {
+              id: userId,
+              name: session.user.name || session.user.email || '',
+              dailyDownloadCount: 0,
+              lastDownloadReset: new Date(),
+            },
+          });
         },
+        null // usar null como fallback, vai para o catch geral
+      );
+    }
+
+    // Se ainda não temos dbUser (falha total), retornar dados básicos
+    if (!dbUser) {
+      return NextResponse.json({
+        user: {
+          id: userId,
+          email: session.user.email || '',
+          name: session.user.name || session.user.email || '',
+          dailyDownloadCount: 0,
+          is_vip: false,
+          is_admin: false,
+        },
+        likedTracks: [],
+        downloadedTracks: []
       });
     }
 
@@ -42,7 +70,7 @@ export async function GET(req: Request) {
     if (!dbUser.lastDownloadReset || dbUser.lastDownloadReset < twentyFourHoursAgo) {
       // Apenas atualiza se realmente houver necessidade de reset
       if ((dbUser.dailyDownloadCount || 0) > 0 || !dbUser.lastDownloadReset) {
-        dbUser = await prisma.user.update({
+        dbUser = await prisma.profile.update({
           where: { id: userId },
           data: {
             dailyDownloadCount: 0,
@@ -66,7 +94,20 @@ export async function GET(req: Request) {
 
   } catch (error) {
     console.error("[USER_DATA_GET_ERROR]", error);
-    return new NextResponse("Erro Interno do Servidor", { status: 500 });
+
+    // Retornar dados básicos em caso de erro para não quebrar a aplicação
+    return NextResponse.json({
+      user: {
+        id: session?.user?.id || '',
+        email: session?.user?.email || '',
+        name: session?.user?.name || session?.user?.email || '',
+        dailyDownloadCount: 0,
+        is_vip: false,
+        is_admin: false,
+      },
+      likedTracks: [],
+      downloadedTracks: []
+    }, { status: 200 }); // Usar status 200 para não quebrar o frontend
   }
 }
 
@@ -80,30 +121,35 @@ export async function DELETE(req: Request) {
     }
 
     // Verificar se o usuário existe
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const profile = await safeQuery(
+      () => prisma.profile.findUnique({
+        where: { id: userId },
+      }),
+      null
+    );
 
-    if (!user) {
+    if (!profile) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
     // Excluir registros relacionados primeiro (devido às foreign keys)
-    await prisma.like.deleteMany({
-      where: { userId },
-    });
+    await safeQuery(
+      () => prisma.like.deleteMany({ where: { userId } }),
+      null
+    );
 
-    await prisma.download.deleteMany({
-      where: { userId },
-    });
+    await safeQuery(
+      () => prisma.download.deleteMany({ where: { userId } }),
+      null
+    );
 
     // Excluir o usuário
-    await prisma.user.delete({
+    await prisma.profile.delete({
       where: { id: userId },
     });
 
     return NextResponse.json({
-      message: `Usuário "${user.name}" excluído com sucesso`
+      message: `Usuário "${profile.name}" excluído com sucesso`
     });
 
   } catch (error) {

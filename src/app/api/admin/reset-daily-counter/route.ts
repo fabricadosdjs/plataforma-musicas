@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Resetar o contador diário do usuário
-        const updatedUser = await prisma.user.update({
+        const updatedUser = await prisma.profile.update({
             where: { id: userId },
             data: {
                 dailyDownloadCount: 0,
@@ -29,7 +29,6 @@ export async function POST(request: NextRequest) {
             message: 'Contador diário resetado com sucesso',
             user: {
                 id: updatedUser.id,
-                email: updatedUser.email,
                 dailyDownloadCount: updatedUser.dailyDownloadCount,
                 lastDownloadReset: updatedUser.lastDownloadReset
             }

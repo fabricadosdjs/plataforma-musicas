@@ -1,0 +1,16 @@
+{
+    "name": "DJ Pool Platform",
+    "short_name": "DJ Pool",
+    "description": "Plataforma de músicas para DJs profissionais",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#1e40af",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "any",
+            "type": "image/x-icon"
+        }
+    ]
+}

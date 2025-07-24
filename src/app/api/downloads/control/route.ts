@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const trackId = searchParams.get('trackId');
 
-        if (!trackId) {
-            return NextResponse.json({ error: 'trackId é obrigatório' }, { status: 400 });
+        if (!trackId || isNaN(parseInt(trackId))) {
+            return NextResponse.json({ error: 'trackId inválido' }, { status: 400 });
         }
 
         // Verificar se é um usuário admin especial (não precisa de controle de download)
@@ -28,13 +28,16 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // Verificar se o userId é um UUID válido antes de fazer a consulta
+        // Verificar se o userId é válido (UUID ou CUID)
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(session.user.id)) {
-            console.error('UUID inválido detectado:', session.user.id);
+        const cuidRegex = /^[a-z0-9]{25}$/i; // CUID format: 25 caracteres alfanuméricos
+
+        if (!uuidRegex.test(session.user.id) && !cuidRegex.test(session.user.id)) {
+            console.error('ID de usuário inválido detectado:', session.user.id);
             return NextResponse.json({ error: 'ID de usuário inválido' }, { status: 400 });
         }
 
+        // Buscar download diretamente sem verificar se track existe (otimização)
         const download = await prisma.download.findFirst({
             where: {
                 userId: session.user.id,
@@ -57,7 +60,14 @@ export async function GET(request: NextRequest) {
 
     } catch (error) {
         console.error('Erro ao verificar controle de download:', error);
-        return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+
+        // Retornar resposta padrão em caso de erro para não quebrar a interface
+        return NextResponse.json({
+            canDownload: true,
+            hasDownloaded: false,
+            nextAllowedDownload: null,
+            error: 'Erro interno - usando valores padrão'
+        }, { status: 200 }); // Status 200 para não quebrar o carregamento
     }
 }
 

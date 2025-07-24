@@ -78,7 +78,7 @@ export default function NewPage() {
 
   return (
     <div className="min-h-screen bg-[#090A15] text-white">
-      <Header onSearchChange={handleSearch} />
+      <Header />
 
       <main className="p-6 pb-32">
         <div className="max-w-7xl mx-auto">

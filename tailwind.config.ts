@@ -18,9 +18,9 @@ const config: Config = {
                 text: '#ffffff', // Cor padrão do texto branco
             },
             fontFamily: {
-                // Definindo Montserrat como fonte principal (similar ao Spotify)
-                sans: ['Montserrat', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-                mono: ['Montserrat', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                // Definindo Ubuntu Light como fonte principal
+                sans: ['Ubuntu', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                mono: ['Ubuntu', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
             },
         },
     },
