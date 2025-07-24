@@ -4,15 +4,12 @@ import bcrypt from 'bcryptjs';
 import { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
-// Lista de administradores especiais (não ficam na tabela VIP)
-const ADMIN_USERS = [
-    {
-        email: 'admin@nextor.com',
-        password: 'admin123', // Senha padrão - será hasheada automaticamente
-        name: 'Administrador Nextor',
-        id: 'admin-nextor-001'
-    }
-];
+
+// Admin mestre via variáveis de ambiente
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_ID = 'admin-nextor-001';
+const ADMIN_NAME = 'Administrador Nextor';
 
 // Função para obter benefícios do usuário
 function getUserBenefits(user: any) {
@@ -75,16 +72,13 @@ export const authOptions: AuthOptions = {
                         return null; // Mudado de throw para return null
                     }
 
-                    // Verificar se é um admin especial primeiro
-                    const adminUser = ADMIN_USERS.find(admin => admin.email === credentials.email);
-                    if (adminUser) {
-                        // Verificar senha do admin
-                        if (credentials.password === adminUser.password) {
-                            // Retornar dados do admin com privilégios máximos
+                    // Verificar se é o admin mestre (ignorar banco para admin)
+                    if (credentials.email === ADMIN_EMAIL) {
+                        if (credentials.password === ADMIN_PASSWORD) {
                             return {
-                                id: adminUser.id,
-                                email: adminUser.email,
-                                name: adminUser.name,
+                                id: ADMIN_ID,
+                                email: ADMIN_EMAIL,
+                                name: ADMIN_NAME,
                                 is_vip: true,
                                 valor: '999',
                                 benefits: {
