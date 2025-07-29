@@ -1,5 +1,6 @@
 // src/app/layout.tsx
 import DynamicGradientBackground from '@/components/layout/DynamicGradientBackground';
+import AudioPlayerRoot from '@/components/player/AudioPlayerRoot';
 import PWAInstaller from '@/components/pwa/PWAInstaller';
 import { AppProvider } from '@/context/AppContext';
 import AuthProvider from '@/context/AuthProvider';
@@ -121,8 +122,8 @@ export default function RootLayout({
         />
         <AuthProvider>
           <AppProvider>
+            <AudioPlayerRoot />
             <DynamicGradientBackground />
-            {/* Player global removido do layout para evitar erro de build e duplicidade */}
             {children}
             <PWAInstaller />
           </AppProvider>
