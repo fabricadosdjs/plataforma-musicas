@@ -80,10 +80,66 @@ export default function ContaboSmartAdmin() {
     const [importDate, setImportDate] = useState('current');
     const [customDate, setCustomDate] = useState('2024-12-01');
 
-    // Dummy implementations for missing functions/variables to avoid errors
-    const smartImport = () => { };
-    const loadFiles = () => { };
-    const filteredFiles = files;
+    // Carrega arquivos do storage e detecta novas músicas
+    const loadFiles = async () => {
+        setLoading(true);
+        setDetectionResult(null);
+        setNewTracks([]);
+        try {
+            const response = await fetch('/api/contabo/detect-new');
+            const data = await response.json();
+            if (data.success) {
+                setFiles(data.allFiles || []);
+                setDetectionResult(data);
+                setNewTracks(data.newTracks || []);
+            } else {
+                alert(data.error || 'Erro ao detectar novas músicas');
+            }
+        } catch (err) {
+            alert('Erro ao buscar arquivos do storage');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Importa as músicas novas usando a API smart-import
+    const smartImport = async () => {
+        if (newTracks.length === 0) return;
+        setImporting(true);
+        setImportResult(null);
+        try {
+            const dateToSend = importDate === 'custom' ? customDate : undefined;
+            const response = await fetch('/api/contabo/smart-import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tracks: newTracks,
+                    importDate: dateToSend,
+                    useSpotifyMetadata: spotifyEnhanceEnabled
+                })
+            });
+            const data = await response.json();
+            setImportResult(data);
+            if (data.success) {
+                setNewTracks([]);
+                loadFiles();
+            }
+        } catch (err) {
+            alert('Erro ao importar músicas');
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    // Filtro de busca
+    const filteredFiles = files.filter(f =>
+        f.filename.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Carregar arquivos ao montar
+    useEffect(() => {
+        loadFiles();
+    }, []);
 
 
     return (
