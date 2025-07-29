@@ -71,6 +71,9 @@ export default function ContaboStoragePage() {
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState<'success' | 'error'>('success');
     const [currentView, setCurrentView] = useState<'files' | 'import'>('files');
+    
+    // REMOVIDO: O estado de paginação foi removido.
+    // const [page, setPage] = useState(0);
 
     if (isLoaded && !user) {
         redirect('/auth/sign-in');
@@ -644,18 +647,18 @@ export default function ContaboStoragePage() {
                                 });
                                 // Ordena as datas decrescente
                                 const allDays = Object.keys(groupedByDay).sort((a, b) => b.localeCompare(a));
-                                // Paginação: 7 tabelas (dias) por página
-                                const [page, setPage] = useState(0);
-                                const tablesPerPage = 7;
-                                const pagedDays = allDays.slice(page * tablesPerPage, (page + 1) * tablesPerPage);
+                                
+                                // REMOVIDO: Lógica de paginação foi removida.
+                                
                                 return (
                                     <div>
-                                        {pagedDays.map((day) => (
+                                        {/* ATERADO: Mapeia sobre allDays diretamente */}
+                                        {allDays.map((day) => (
                                             <div key={day} className="mb-8">
-                                                <h4 className="text-lg font-bold text-purple-300 mb-2">{day === 'sem-data' ? 'Sem Data' : new Date(day).toLocaleDateString('pt-BR')}</h4>
-                                                <div className="divide-y divide-gray-700 rounded-xl overflow-hidden border border-gray-700">
+                                                <h4 className="text-lg font-bold text-purple-300 mb-2 px-4 pt-4">{day === 'sem-data' ? 'Sem Data' : new Date(day).toLocaleDateString('pt-BR')}</h4>
+                                                <div className="divide-y divide-gray-700">
                                                     {groupedByDay[day].map((item, index) => (
-                                                        <div key={item.file.key} className="p-4 flex items-start gap-4">
+                                                        <div key={item.file.key} className="p-4 flex items-start gap-4 hover:bg-gray-700/50">
                                                             {/* Checkbox para seleção */}
                                                             <input
                                                                 type="checkbox"
@@ -669,7 +672,7 @@ export default function ContaboStoragePage() {
                                                                     );
                                                                 }}
                                                             />
-                                                            <div className="p-2 bg-purple-600/20 rounded-lg">
+                                                            <div className="p-2 bg-purple-600/20 rounded-lg mt-1">
                                                                 <Music className="w-5 h-5 text-purple-400" />
                                                             </div>
                                                             <div className="flex-1">
@@ -695,40 +698,44 @@ export default function ContaboStoragePage() {
                                                                         <h4 className="font-medium text-white mb-2">Dados Detectados</h4>
                                                                         <div className="space-y-1 text-sm">
                                                                             <div className="flex items-center gap-2">
-                                                                                <span className="text-gray-500">Música:</span>
+                                                                                <span className="text-gray-500 w-16">Música:</span>
                                                                                 <input
                                                                                     type="text"
-                                                                                    className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white w-48"
+                                                                                    className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white flex-1"
                                                                                     value={item.importData.songName}
                                                                                     onChange={e => {
                                                                                         const newName = e.target.value;
                                                                                         setImportableFiles((prev) => {
                                                                                             const updated = [...prev];
-                                                                                            updated[index] = {
-                                                                                                ...updated[index],
-                                                                                                importData: {
-                                                                                                    ...updated[index].importData,
-                                                                                                    songName: newName
-                                                                                                }
-                                                                                            };
+                                                                                            const fileIndex = prev.findIndex(p => p.file.key === item.file.key);
+                                                                                            if(fileIndex > -1){
+                                                                                                updated[fileIndex] = {
+                                                                                                    ...updated[fileIndex],
+                                                                                                    importData: {
+                                                                                                        ...updated[fileIndex].importData,
+                                                                                                        songName: newName
+                                                                                                    }
+                                                                                                };
+                                                                                            }
                                                                                             return updated;
                                                                                         });
                                                                                     }}
                                                                                 />
                                                                             </div>
-                                                                            <p className="text-gray-300">
-                                                                                <span className="text-gray-500">Artista:</span> {item.parsed.artist}
+                                                                            <p className="text-gray-300 flex items-center gap-2">
+                                                                                <span className="text-gray-500 w-16">Artista:</span> {item.parsed.artist}
                                                                             </p>
                                                                             <div className="flex items-center gap-2">
-                                                                                <span className="text-gray-500">Versão:</span>
+                                                                                <span className="text-gray-500 w-16">Versão:</span>
                                                                                 <select
                                                                                     className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
                                                                                     value={item.importData.version && item.importData.version !== "__new" ? item.importData.version : versionOptions[0]}
                                                                                     onChange={e => {
+                                                                                        const fileIndex = importableFiles.findIndex(p => p.file.key === item.file.key);
                                                                                         if (e.target.value === "__new") {
-                                                                                            handleVersionChange(index, "__new");
+                                                                                            handleVersionChange(fileIndex, "__new");
                                                                                         } else {
-                                                                                            handleVersionChange(index, e.target.value);
+                                                                                            handleVersionChange(fileIndex, e.target.value);
                                                                                         }
                                                                                     }}
                                                                                 >
@@ -744,20 +751,22 @@ export default function ContaboStoragePage() {
                                                                                         placeholder="Nova versão"
                                                                                         autoFocus
                                                                                         onBlur={e => {
+                                                                                            const fileIndex = importableFiles.findIndex(p => p.file.key === item.file.key);
                                                                                             const val = e.target.value.trim();
                                                                                             if (val) {
                                                                                                 handleAddNewVersion(val);
-                                                                                                handleVersionChange(index, val);
+                                                                                                handleVersionChange(fileIndex, val);
                                                                                             } else {
-                                                                                                handleVersionChange(index, versionOptions[0] || "");
+                                                                                                handleVersionChange(fileIndex, versionOptions[0] || "");
                                                                                             }
                                                                                         }}
                                                                                         onKeyDown={e => {
                                                                                             if (e.key === 'Enter') {
+                                                                                                const fileIndex = importableFiles.findIndex(p => p.file.key === item.file.key);
                                                                                                 const val = (e.target as HTMLInputElement).value.trim();
                                                                                                 if (val) {
                                                                                                     handleAddNewVersion(val);
-                                                                                                    handleVersionChange(index, val);
+                                                                                                    handleVersionChange(fileIndex, val);
                                                                                                     (e.target as HTMLInputElement).blur();
                                                                                                 }
                                                                                             }
@@ -766,15 +775,16 @@ export default function ContaboStoragePage() {
                                                                                 )}
                                                                             </div>
                                                                             <div className="flex items-center gap-2">
-                                                                                <span className="text-gray-500">Estilo:</span>
+                                                                                <span className="text-gray-500 w-16">Estilo:</span>
                                                                                 <select
                                                                                     className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
                                                                                     value={item.importData.style && item.importData.style !== "__new" ? item.importData.style : styleOptions[0]}
                                                                                     onChange={e => {
+                                                                                        const fileIndex = importableFiles.findIndex(p => p.file.key === item.file.key);
                                                                                         if (e.target.value === "__new") {
-                                                                                            handleStyleChange(index, "__new");
+                                                                                            handleStyleChange(fileIndex, "__new");
                                                                                         } else {
-                                                                                            handleStyleChange(index, e.target.value);
+                                                                                            handleStyleChange(fileIndex, e.target.value);
                                                                                         }
                                                                                     }}
                                                                                 >
@@ -790,20 +800,22 @@ export default function ContaboStoragePage() {
                                                                                         placeholder="Novo estilo"
                                                                                         autoFocus
                                                                                         onBlur={e => {
+                                                                                            const fileIndex = importableFiles.findIndex(p => p.file.key === item.file.key);
                                                                                             const val = e.target.value.trim();
                                                                                             if (val) {
                                                                                                 handleAddNewStyle(val);
-                                                                                                handleStyleChange(index, val);
+                                                                                                handleStyleChange(fileIndex, val);
                                                                                             } else {
-                                                                                                handleStyleChange(index, styleOptions[0] || "Club");
+                                                                                                handleStyleChange(fileIndex, styleOptions[0] || "Club");
                                                                                             }
                                                                                         }}
                                                                                         onKeyDown={e => {
                                                                                             if (e.key === 'Enter') {
+                                                                                                const fileIndex = importableFiles.findIndex(p => p.file.key === item.file.key);
                                                                                                 const val = (e.target as HTMLInputElement).value.trim();
                                                                                                 if (val) {
                                                                                                     handleAddNewStyle(val);
-                                                                                                    handleStyleChange(index, val);
+                                                                                                    handleStyleChange(fileIndex, val);
                                                                                                     (e.target as HTMLInputElement).blur();
                                                                                                 }
                                                                                             }
@@ -820,20 +832,7 @@ export default function ContaboStoragePage() {
                                                 </div>
                                             </div>
                                         ))}
-                                        {/* Paginação */}
-                                        <div className="flex justify-center gap-2 mt-6">
-                                            <button
-                                                onClick={() => setPage(page - 1)}
-                                                disabled={page === 0}
-                                                className="px-4 py-2 rounded bg-gray-700 text-white disabled:opacity-40"
-                                            >Anterior</button>
-                                            <span className="text-white font-bold">Página {page + 1}</span>
-                                            <button
-                                                onClick={() => setPage(page + 1)}
-                                                disabled={(page + 1) * tablesPerPage >= allDays.length}
-                                                className="px-4 py-2 rounded bg-gray-700 text-white disabled:opacity-40"
-                                            >Próxima</button>
-                                        </div>
+                                        {/* REMOVIDO: Bloco de botões de paginação */}
                                     </div>
                                 );
                             })()

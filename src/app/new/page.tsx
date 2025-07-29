@@ -177,6 +177,8 @@ function NewPageContent() {
   const monthOptions = generateMonthOptions();
   const hasActiveFilters = !!(searchQuery || selectedGenre !== 'all' || selectedArtist !== 'all' || selectedDateRange !== 'all' || selectedVersion !== 'all' || selectedMonth !== 'all');
 
+  // Exibir todos os dias disponíveis, sem paginação
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#212121' }}>
       <Header showSearchAndFilters={true} searchQuery={searchQuery} onSearchChange={setSearchQuery} onSearchSubmit={handleSearch} onFiltersClick={() => setShowFiltersModal(true)} hasActiveFilters={hasActiveFilters} />
@@ -202,14 +204,38 @@ function NewPageContent() {
           </div>
         )}
 
-        {loading ? (<div className="flex items-center justify-center py-32"><div className="text-center"><div className="relative"><div className="w-20 h-20 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin mx-auto mb-6"></div><Music className="h-8 w-8 text-blue-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" /></div><h3 className="text-xl font-semibold text-white mb-2">Carregando Músicas</h3><p className="text-gray-400">Aguarde enquanto buscamos as melhores faixas para você...</p></div></div>) : tracks.length === 0 ? (<div className="text-center py-32"><div className="p-6 bg-gray-800/50 rounded-2xl inline-block mb-6"><Search className="h-16 w-16 text-gray-400 mx-auto" /></div><h3 className="text-2xl font-bold text-white mb-4">Nenhuma música encontrada</h3><p className="text-gray-400 mb-8">Tente ajustar seus filtros ou fazer uma nova busca.</p><button onClick={handleClearFilters} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">Limpar Filtros</button></div>) : (
+        {loading ? (
+          <div className="flex items-center justify-center py-32">
+            <div className="text-center">
+              <div className="relative">
+                <div className="w-20 h-20 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin mx-auto mb-6"></div>
+                <Music className="h-8 w-8 text-blue-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Carregando Músicas</h3>
+              <p className="text-gray-400">Aguarde enquanto buscamos as melhores faixas para você...</p>
+            </div>
+          </div>
+        ) : tracks.length === 0 ? (
+          <div className="text-center py-32">
+            <div className="p-6 bg-gray-800/50 rounded-2xl inline-block mb-6">
+              <Search className="h-16 w-16 text-gray-400 mx-auto" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-4">Nenhuma música encontrada</h3>
+            <p className="text-gray-400 mb-8">Tente ajustar seus filtros ou fazer uma nova busca.</p>
+            <button onClick={handleClearFilters} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">Limpar Filtros</button>
+          </div>
+        ) : (
           <>
             {sortedDates.length > 0 ? (
               <div className="space-y-8">
                 {sortedDates.map((date) => (
                   <div key={date} className="space-y-4">
-                    <div className="flex items-center space-x-4"><div className="flex items-center space-x-3"><div className="w-3 h-3 bg-blue-500 rounded-full"></div><h2 className="text-2xl font-bold text-white capitalize">{formatDate(date)}</h2></div></div>
-
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <h2 className="text-2xl font-bold text-white capitalize">{formatDate(date)}</h2>
+                      </div>
+                    </div>
                     <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
                       <MusicTable
                         tracks={tracksByDate[date] || []}
@@ -222,7 +248,6 @@ function NewPageContent() {
               </div>
             ) : (
               <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-
                 <MusicTable
                   tracks={tracks}
                   onDownload={handleDownloadTracks}
@@ -230,7 +255,6 @@ function NewPageContent() {
                 />
               </div>
             )}
-            {totalPages > 1 && (<div className="flex items-center justify-between mt-8 p-6 bg-black/20 backdrop-blur-sm rounded-xl border border-white/10"><div className="text-gray-300"><span className="text-sm">Exibindo página {currentPage} de {totalPages}<span className="text-blue-400 font-medium">{" "}({((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} de {totalCount.toLocaleString()})</span></span></div><div className="flex items-center space-x-2"><button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1 || searchLoading} className="flex items-center space-x-2 px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 disabled:bg-gray-800/50 disabled:opacity-50 text-white rounded-lg transition-all duration-200 border border-gray-600/30"><ChevronLeft className="h-4 w-4" /><span>Anterior</span></button><div className="flex items-center space-x-1">{Array.from({ length: Math.min(5, totalPages) }, (_, i) => { let pageNum; if (totalPages <= 5) pageNum = i + 1; else if (currentPage <= 3) pageNum = i + 1; else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i; else pageNum = currentPage - 2 + i; return (<button key={pageNum} onClick={() => handlePageChange(pageNum)} disabled={searchLoading} className={`w-10 h-10 rounded-lg font-medium transition-all duration-200 ${pageNum === currentPage ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'}`}>{pageNum}</button>); })}</div><button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages || searchLoading} className="flex items-center space-x-2 px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 disabled:bg-gray-800/50 disabled:opacity-50 text-white rounded-lg transition-all duration-200 border border-gray-600/30"><span>Próxima</span><ChevronRight className="h-4 w-4" /></button></div></div>)}
           </>
         )}
         <FiltersModal isOpen={showFiltersModal} onClose={() => setShowFiltersModal(false)} genres={genres} artists={artists} versions={versions} monthOptions={monthOptions} selectedGenre={selectedGenre} selectedArtist={selectedArtist} selectedDateRange={selectedDateRange} selectedVersion={selectedVersion} selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} onApplyFilters={handleSearch} onClearFilters={handleClearFilters} isLoading={searchLoading} hasActiveFilters={hasActiveFilters} onVersionChange={setSelectedVersion} onDateRangeChange={setSelectedDateRange} onArtistChange={setSelectedArtist} onGenreChange={setSelectedGenre} />
