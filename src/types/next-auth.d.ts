@@ -7,6 +7,7 @@ declare module 'next-auth' {
             id: string;
             is_vip: boolean;
             vencimento?: string | null;
+            isAdmin?: boolean;
         } & DefaultSession['user'];
     }
 }

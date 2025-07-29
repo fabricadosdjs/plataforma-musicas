@@ -28,7 +28,11 @@ export default function SignInPage() {
       });
 
       if (result?.error) {
-        setError(result.error);
+        if (result.error === 'CredentialsSignin') {
+          setError('Parece que não encontramos os seus dados');
+        } else {
+          setError(result.error);
+        }
       } else {
         router.push('/new');
         router.refresh();

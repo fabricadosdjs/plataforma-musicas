@@ -1,0 +1,72 @@
+/* Visual ainda mais bonito para a seção Arquivos no Storage */
+.contabo-storage-list {
+    background: linear-gradient(135deg, #232526 0%, #2a2a2a 100%);
+    border-radius: 1.2rem;
+    border: 1.5px solid #3a3a3a;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+    padding: 2rem 1.5rem;
+    min-height: 420px;
+    max-height: 420px;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.contabo-storage-scroll {
+    flex: 1 1 0%;
+    overflow-y: auto;
+    min-height: 0;
+    max-height: 320px;
+    scrollbar-width: thin;
+    scrollbar-color: #8b5cf6 #232526;
+}
+
+.contabo-storage-scroll::-webkit-scrollbar {
+    width: 8px;
+    background: #232526;
+    border-radius: 8px;
+}
+
+.contabo-storage-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+    border-radius: 8px;
+}
+
+.contabo-storage-item {
+    background: linear-gradient(90deg, #232526 0%, #2a2a2a 100%);
+    border: 1px solid #333;
+    border-radius: 0.8rem;
+    transition: box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.10);
+}
+
+.contabo-storage-item:hover {
+    background: #23233a;
+    box-shadow: 0 4px 16px 0 rgba(80, 70, 255, 0.10);
+}
+
+.contabo-storage-btn {
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.7rem;
+    display: flex;
+    align-items: center;
+    transition: background 0.2s, color 0.2s;
+    font-size: 1rem;
+}
+
+.contabo-storage-btn:hover {
+    background: linear-gradient(135deg, #a78bfa 0%, #60a5fa 100%);
+    color: #fff;
+}
+
+.contabo-storage-btn.delete {
+    background: linear-gradient(135deg, #ef4444 0%, #f59e42 100%);
+    color: #fff;
+}
+
+.contabo-storage-btn.delete:hover {
+    background: linear-gradient(135deg, #f87171 0%, #fbbf24 100%);
+}

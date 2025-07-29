@@ -1,0 +1,70 @@
+/* Importação Inteligente custom dark section */
+
+.contabo-inteligente-section {
+    background: #232323;
+    border-radius: 0.75rem;
+    border: 1px solid #333;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.18);
+    color: #fff;
+    min-height: 420px;
+    max-height: 420px;
+    display: flex;
+    flex-direction: column;
+}
+
+.contabo-inteligente-scroll {
+    flex: 1 1 0%;
+    overflow-y: auto;
+    min-height: 0;
+    max-height: 320px;
+    scrollbar-width: thin;
+    scrollbar-color: #8b5cf6 #232323;
+}
+
+.contabo-inteligente-scroll::-webkit-scrollbar {
+    width: 8px;
+    background: #232323;
+    border-radius: 8px;
+}
+
+.contabo-inteligente-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+    border-radius: 8px;
+}
+
+.contabo-inteligente-title {
+    color: #fff;
+    font-weight: 700;
+}
+
+.contabo-inteligente-linkbox {
+    background: #181818;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+    word-break: break-all;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.contabo-inteligente-copybtn {
+    background: #333;
+    color: #fff;
+    border: none;
+    border-radius: 0.4rem;
+    padding: 0.25rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+}
+
+.contabo-inteligente-copybtn:hover {
+    background: #444;
+}
+
+.contabo-inteligente-checkbox {
+    accent-color: #8b5cf6;
+}

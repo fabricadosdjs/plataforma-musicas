@@ -5,31 +5,30 @@ import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+// Corrected: Interface definition should only contain properties.
 interface User {
     id: string;
     name: string;
     whatsapp?: string;
     email: string;
-    password?: string;
     valor?: number;
     vencimento?: string;
     dataPagamento?: string;
     status: string;
     deemix: boolean;
     is_vip: boolean;
-    createdAt: string;
-    updatedAt: string;
     dailyDownloadCount: number | null;
-    lastDownloadReset: string | null;
     weeklyPackRequests?: number;
     weeklyPlaylistDownloads?: number;
+    lastDownloadReset?: string | null;
     lastWeekReset?: string | null;
-    customBenefits?: any;
     downloadsCount: number;
     likesCount: number;
+    password?: string;
+    customBenefits?: any;
 }
 
-// Definição dos benefícios padrão dos planos VIP
+// ...existing code (VIP_BENEFITS, VIP_PLANS, BENEFIT_LABELS, getUserPlan, getUserBenefits) should remain outside the component, as constants/helpers
 const VIP_BENEFITS = {
     BASICO: {
         driveAccess: { enabled: true, description: 'Ilimitado' },
@@ -147,6 +146,7 @@ const getUserBenefits = (user: User, customBenefits: { [userId: string]: any }) 
 
     return finalBenefits;
 };
+
 
 export default function AdminUsersPage() {
     const { data: session, status } = useSession();
@@ -396,7 +396,7 @@ export default function AdminUsersPage() {
                 showMessage(data.message, 'success');
                 setUsers(prev => prev.map(user =>
                     user.id === userId
-                        ? { ...user, deemix: !currentDeemix }
+                        ? { ...user, deemix: !user.deemix }
                         : user
                 ));
             } else {
@@ -419,7 +419,7 @@ export default function AdminUsersPage() {
 
         setDeleting(userToDelete.id);
         try {
-            const response = await fetch(`/api/user-data?id=${userToDelete.id}`, {
+            const response = await fetch(`/api/admin/users?id=${userToDelete.id}`, {
                 method: 'DELETE',
             });
 
@@ -461,7 +461,7 @@ export default function AdminUsersPage() {
                 showMessage(data.message, 'success');
                 setUsers(prev => prev.map(user =>
                     user.id === userId
-                        ? { ...user, is_vip: !currentVipStatus }
+                        ? { ...user, deemix: !user.deemix }
                         : user
                 ));
             } else {
@@ -578,7 +578,7 @@ export default function AdminUsersPage() {
                 fetchUsers();
                 closeEditModal();
             } else {
-                throw new Error('Falha ao adicionar usuário');
+                showMessage('Falha ao adicionar usuário', 'error');
             }
         } catch (error) {
             console.error('Erro ao adicionar usuário:', error);
@@ -630,7 +630,7 @@ export default function AdminUsersPage() {
 
     if (status === 'loading' || loading) {
         return (
-            <div className="min-h-screen bg-[#202124] flex flex-col items-center justify-center">
+            <div className="min-h-screen bg-[#1B1C1D] flex flex-col items-center justify-center text-white">
                 <Loader2 className="w-8 h-8 text-green-600 animate-spin mb-4" />
                 <div className="text-white text-lg">Carregando...</div>
             </div>
@@ -638,7 +638,7 @@ export default function AdminUsersPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#202124] text-white">
+        <div className="min-h-screen bg-[#1B1C1D] text-white">
             <div className="container mx-auto px-6 py-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
@@ -767,38 +767,6 @@ export default function AdminUsersPage() {
                     </div>
                 </div>
 
-                {/* Estatísticas dos Planos VIP */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    {Object.entries(VIP_PLANS).map(([key, plan]) => {
-                        const planUsers = users.filter(user => {
-                            const userPlan = getUserPlan(user.valor || null);
-                            return userPlan?.name === plan.name;
-                        });
-                        const planRevenue = planUsers.reduce((acc, user) => acc + Number(user.valor || 0), 0);
-
-                        return (
-                            <div key={key} className="bg-gray-800 rounded-xl p-6">
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-3 ${plan.color}/20 rounded-lg`}>
-                                        <span className="text-2xl">{plan.icon}</span>
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-sm text-gray-400">{plan.name}</p>
-                                        <p className="text-2xl font-bold text-white">{planUsers.length}</p>
-                                        <p className="text-xs text-gray-500">usuários</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-sm text-gray-400">Receita</p>
-                                        <p className="text-lg font-bold text-green-400">
-                                            R$ {planRevenue.toFixed(2)}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
                 {/* Add User Button */}
                 <div className="mb-6 flex justify-end">
                     <button
@@ -810,10 +778,10 @@ export default function AdminUsersPage() {
                     </button>
                 </div>
 
-                {/* Modern Users Table with Blue/Pink Theme */}
-                <div className="users-table-container bg-gradient-to-br from-slate-900/90 to-slate-800/80 rounded-3xl border border-blue-500/20 backdrop-blur-sm overflow-hidden shadow-2xl">
+                {/* Modern Users Table with Dark Theme */}
+                <div className="users-table-container bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl border border-blue-500/20 backdrop-blur-sm overflow-hidden shadow-2xl">
                     {/* Table Header */}
-                    <div className="users-table-header px-6 py-4 border-b border-blue-400/30">
+                    <div className="px-6 py-4 border-b border-gray-700 bg-gray-950">
                         <h3 className="text-lg font-medium text-white flex items-center gap-2">
                             <Users className="w-5 h-5 text-pink-300" />
                             Usuários Cadastrados ({filteredUsers.length})
@@ -821,49 +789,49 @@ export default function AdminUsersPage() {
                     </div>
                     <div className="w-full">
                         <table className="w-full min-w-full">
-                            <thead className="users-table-header">
+                            <thead>
                                 <tr>
-                                    <th className="w-[16%] px-4 py-4 text-left text-sm users-table-header-cell">
+                                    <th className="w-[16%] px-4 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                         Nome
                                     </th>
-                                    <th className="w-[13%] px-3 py-4 text-left text-sm users-table-header-cell">
+                                    <th className="w-[13%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                         WhatsApp
                                     </th>
-                                    <th className="w-[14%] px-3 py-4 text-left text-sm users-table-header-cell">
+                                    <th className="w-[14%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                         E-mail
                                     </th>
-                                    <th className="w-[12%] px-3 py-4 text-left text-sm users-table-header-cell whitespace-nowrap">
+                                    <th className="w-[12%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                         Valor
                                     </th>
-                                    <th className="w-[11%] px-3 py-4 text-left text-sm users-table-header-cell">
+                                    <th className="w-[11%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                         Plano
                                     </th>
-                                    <th className="w-[10%] px-3 py-4 text-left text-sm users-table-header-cell">
+                                    <th className="w-[10%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                         Venc.
                                     </th>
-                                    <th className="w-[11%] px-3 py-4 text-left text-sm users-table-header-cell">
+                                    <th className="w-[11%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                         Data Pag.
                                     </th>
-                                    <th className="w-[8%] px-3 py-4 text-left text-sm users-table-header-cell">
+                                    <th className="w-[8%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                         Status
                                     </th>
-                                    <th className="w-[6%] px-3 py-4 text-left text-sm users-table-header-cell">
+                                    <th className="w-[6%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                         Deemix
                                     </th>
-                                    <th className="w-[7%] px-3 py-4 text-center text-sm users-table-header-cell">
+                                    <th className="w-[7%] px-3 py-4 text-center text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                         Ações
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-blue-500/20">
+                            <tbody className="divide-y divide-gray-700">
                                 {filteredUsers.map((user, index) => (
-                                    <tr key={user.id} className={`users-table-row transition-all duration-300 ${index % 2 === 0 ? 'users-table-row-even' : 'users-table-row-odd'}`}>
+                                    <tr key={user.id} className={`transition-all duration-300 ${index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-800/80'} hover:bg-gray-700`}>
                                         <td className="px-4 py-4">
-                                            <div className="text-sm users-table-cell font-medium" title={user.name}>{user.name}</div>
+                                            <div className="text-xs font-light whitespace-nowrap text-gray-200" title={user.name}>{user.name}</div>
                                         </td>
                                         <td className="px-3 py-4">
                                             <div className="flex items-center gap-1 group">
-                                                <span className="text-sm users-table-cell truncate flex-1" title={user.whatsapp || ''}>
+                                                <span className="text-xs font-light truncate flex-1 whitespace-nowrap text-gray-200" title={user.whatsapp || ''}>
                                                     {user.whatsapp || '-'}
                                                 </span>
                                                 {user.whatsapp && user.whatsapp.trim() && (
@@ -879,7 +847,7 @@ export default function AdminUsersPage() {
                                         </td>
                                         <td className="px-3 py-4">
                                             <div className="flex items-center gap-1 group">
-                                                <span className="text-xs users-table-cell truncate flex-1" title={user.email}>
+                                                <span className="text-xs font-light truncate flex-1 whitespace-nowrap text-gray-200" title={user.email}>
                                                     {user.email}
                                                 </span>
                                                 <button
@@ -893,7 +861,7 @@ export default function AdminUsersPage() {
                                             </div>
                                         </td>
                                         <td className="px-3 py-4 whitespace-nowrap">
-                                            <span className="text-sm font-semibold text-emerald-300 bg-emerald-500/10 px-2 py-1 rounded-lg">
+                                            <span className="text-xs font-light text-emerald-300 bg-emerald-500/10 px-2 py-1 rounded-lg">
                                                 {user.valor ? `R$ ${Number(user.valor).toFixed(2)}` : '-'}
                                             </span>
                                         </td>
@@ -903,19 +871,12 @@ export default function AdminUsersPage() {
                                                 const hasCustomBenefits = customBenefits[user.id] && Object.keys(customBenefits[user.id]).length > 0;
 
                                                 if (!userPlan) {
-                                                    return <span className="text-xs text-gray-400">Sem plano</span>;
+                                                    return <span className="text-xs text-gray-400 font-light whitespace-nowrap">Sem plano</span>;
                                                 }
-
-                                                // Extrair apenas o tipo do plano (BÁSICO, PADRÃO, COMPLETO)
-                                                const planType = userPlan.name.includes('BÁSICO') ? 'BÁSICO' :
-                                                    userPlan.name.includes('PADRÃO') ? 'PADRÃO' : 'COMPLETO';
 
                                                 return (
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-lg">{userPlan.icon}</span>
-                                                        <div className="flex flex-col flex-1">
-                                                            <span className="text-sm font-medium text-gray-200">{planType}</span>
-                                                        </div>
                                                         {hasCustomBenefits && (
                                                             <div className="ml-1" title="Benefícios personalizados">
                                                                 <span className="text-xs bg-gray-600/30 text-gray-300 px-1 py-0.5 rounded border border-gray-500/30">
@@ -928,7 +889,7 @@ export default function AdminUsersPage() {
                                             })()}
                                         </td>
                                         <td className="px-3 py-4">
-                                            <span className={`text-sm font-medium px-2 py-1 rounded-lg ${user.vencimento
+                                            <span className={`text-xs font-light px-2 py-1 rounded-lg whitespace-nowrap ${user.vencimento
                                                 ? isVencido(user.vencimento)
                                                     ? 'text-red-300 bg-red-500/20 border border-red-400/30'
                                                     : isVencimentoProximo(user.vencimento)
@@ -940,7 +901,7 @@ export default function AdminUsersPage() {
                                             </span>
                                         </td>
                                         <td className="px-3 py-4">
-                                            <span className="text-sm users-table-cell">
+                                            <span className="text-xs font-light whitespace-nowrap text-gray-200">
                                                 {user.dataPagamento ? formatDate(user.dataPagamento) : '-'}
                                             </span>
                                         </td>
@@ -951,7 +912,7 @@ export default function AdminUsersPage() {
                                                 className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${user.status === 'ativo'
                                                     ? 'bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-300 border border-emerald-400/30 hover:from-emerald-500/30 hover:to-green-500/30 shadow-emerald-500/20 shadow-lg'
                                                     : 'bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-300 border border-red-400/30 hover:from-red-500/30 hover:to-pink-500/30 shadow-red-500/20 shadow-lg'
-                                                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                    } disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
                                             >
                                                 {updating === user.id ? (
                                                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -1016,24 +977,24 @@ export default function AdminUsersPage() {
                     </div>
 
                     {filteredUsers.length === 0 && users.length > 0 && (
-                        <div className="text-center py-12 bg-gradient-to-br from-slate-900/50 to-slate-800/30">
+                        <div className="text-center py-12 bg-gray-900/50">
                             <Search className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-                            <h3 className="text-xl font-medium text-blue-200 mb-2 users-table-cell">
+                            <h3 className="text-xl font-medium text-blue-200 mb-2">
                                 Nenhum usuário encontrado
                             </h3>
-                            <p className="text-pink-300 users-table-cell">
+                            <p className="text-pink-300">
                                 Tente ajustar os filtros de busca
                             </p>
                         </div>
                     )}
 
                     {users.length === 0 && (
-                        <div className="text-center py-12 bg-gradient-to-br from-slate-900/50 to-slate-800/30">
+                        <div className="text-center py-12 bg-gray-900/50">
                             <Users className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-                            <h3 className="text-xl font-medium text-blue-200 mb-2 users-table-cell">
+                            <h3 className="text-xl font-medium text-blue-200 mb-2">
                                 Nenhum usuário cadastrado
                             </h3>
-                            <p className="text-pink-300 users-table-cell mb-6">
+                            <p className="text-pink-300 mb-6">
                                 Comece adicionando seu primeiro usuário VIP
                             </p>
                             <button
@@ -1048,8 +1009,8 @@ export default function AdminUsersPage() {
                 </div>
 
                 {/* Seção de Benefícios por Valor */}
-                <div className="mt-8 bg-gray-800 rounded-xl overflow-hidden">
-                    <div className="px-6 py-4 bg-gray-700 border-b border-gray-600">
+                <div className="mt-8 bg-gray-900 rounded-xl overflow-hidden border border-gray-700">
+                    <div className="px-6 py-4 bg-gray-950 border-b border-gray-700">
                         <h2 className="text-xl font-semibold text-white flex items-center gap-2">
                             <Crown className="w-6 h-6 text-yellow-400" />
                             Benefícios por Valor Mensal
@@ -1059,11 +1020,11 @@ export default function AdminUsersPage() {
                         </p>
                     </div>
 
-                    <div className="p-6">
+                    <div className="p-6 bg-gray-900">
                         {/* Cards dos Planos VIP */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                             {Object.entries(VIP_PLANS).map(([key, plan]) => (
-                                <div key={key} className="bg-gray-700 rounded-xl p-6 border-2 border-gray-600 hover:border-gray-500 transition-colors">
+                                <div key={key} className="bg-gray-800 rounded-xl p-6 border-2 border-gray-700 hover:border-gray-600 transition-colors">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className={`w-12 h-12 ${plan.color} rounded-lg flex items-center justify-center text-2xl`}>
                                             {plan.icon}
@@ -1077,14 +1038,14 @@ export default function AdminUsersPage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <div className="bg-gray-600 rounded-lg p-3">
+                                        <div className="bg-gray-700 rounded-lg p-3">
                                             <h4 className="font-semibold text-white mb-2">Valor Mensal</h4>
                                             <p className="text-2xl font-bold text-green-400">
                                                 R$ {plan.minValue} - R$ {plan.maxValue}
                                             </p>
                                         </div>
 
-                                        <div className="bg-gray-600 rounded-lg p-3">
+                                        <div className="bg-gray-700 rounded-lg p-3">
                                             <h4 className="font-semibold text-white mb-2">Benefícios Inclusos</h4>
                                             <p className="text-sm text-gray-300">
                                                 {key === 'BASICO' && 'Acesso básico à plataforma + downloads limitados'}
@@ -1098,35 +1059,35 @@ export default function AdminUsersPage() {
                         </div>
 
                         {/* Tabela de Benefícios Detalhados */}
-                        <div className="bg-gray-700 rounded-xl overflow-hidden">
-                            <div className="px-6 py-4 bg-gray-600 border-b border-gray-500">
+                        <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-700">
+                            <div className="px-6 py-4 bg-gray-950 border-b border-gray-700">
                                 <h4 className="text-lg font-semibold text-white">Comparativo de Benefícios</h4>
                                 <p className="text-sm text-gray-300 mt-1">Veja o que cada plano oferece em detalhes</p>
                             </div>
 
                             <div className="overflow-x-auto">
                                 <table className="w-full">
-                                    <thead className="bg-gray-600">
+                                    <thead className="bg-gray-950">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-sm font-semibold text-white">Benefício</th>
-                                            <th className="px-6 py-3 text-center text-sm font-semibold text-white">
+                                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Benefício</th>
+                                            <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
                                                 🥉 VIP BÁSICO<br />
-                                                <span className="text-xs text-gray-300">R$ 30-35</span>
+                                                <span className="text-xs text-gray-400">R$ 30-35</span>
                                             </th>
-                                            <th className="px-6 py-3 text-center text-sm font-semibold text-white">
+                                            <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
                                                 🥈 VIP PADRÃO<br />
-                                                <span className="text-xs text-gray-300">R$ 36-42</span>
+                                                <span className="text-xs text-gray-400">R$ 36-42</span>
                                             </th>
-                                            <th className="px-6 py-3 text-center text-sm font-semibold text-white">
+                                            <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
                                                 🥇 VIP COMPLETO<br />
-                                                <span className="text-xs text-gray-300">R$ 43-60</span>
+                                                <span className="text-xs text-gray-400">R$ 43-60</span>
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-600">
+                                    <tbody className="divide-y divide-gray-700">
                                         {Object.entries(BENEFIT_LABELS).map(([key, label]) => (
-                                            <tr key={key}>
-                                                <td className="px-6 py-4 text-sm text-gray-300">{label}</td>
+                                            <tr key={key} className="bg-gray-900 hover:bg-gray-800">
+                                                <td className="px-6 py-4 text-sm text-gray-200">{label}</td>
                                                 {Object.entries(VIP_PLANS).map(([planKey, plan]) => {
                                                     const benefit = (plan.benefits as any)[key];
                                                     return (
@@ -1141,7 +1102,7 @@ export default function AdminUsersPage() {
                                                             ) : (
                                                                 <div className="flex flex-col items-center">
                                                                     <span className="text-red-400 font-medium">✗</span>
-                                                                    <span className="text-xs text-gray-500 mt-1">
+                                                                    <span className="text-xs text-gray-400 mt-1">
                                                                         {benefit.description}
                                                                     </span>
                                                                 </div>
@@ -1155,79 +1116,39 @@ export default function AdminUsersPage() {
                                 </table>
                             </div>
                         </div>
-
-                        {/* Informações sobre Implementação */}
-                        <div className="mt-6 bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-                            <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                                <AlertCircle className="w-5 h-5 text-blue-400" />
-                                Como os Planos Funcionam
-                            </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
-                                <div>
-                                    <p className="mb-2">
-                                        <span className="font-medium text-blue-400">•</span>
-                                        Os planos são automaticamente determinados pelo valor mensal do usuário
-                                    </p>
-                                    <p className="mb-2">
-                                        <span className="font-medium text-green-400">•</span>
-                                        Usuários VIP têm acesso aos benefícios do seu plano e inferiores
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="mb-2">
-                                        <span className="font-medium text-purple-400">•</span>
-                                        Valores fora das faixas serão considerados como plano mais próximo
-                                    </p>
-                                    <p className="mb-2">
-                                        <span className="font-medium text-pink-400">•</span>
-                                        Configure os benefícios específicos na próxima etapa
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
                 {/* Modal de Confirmação de Exclusão */}
                 {userToDelete && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
-                                    <AlertCircle className="w-6 h-6 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-semibold text-white">Confirmar Exclusão</h3>
-                                    <p className="text-gray-400 text-sm">Esta ação não pode ser desfeita</p>
-                                </div>
-                            </div>
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="bg-gradient-to-br from-[#1B1C1D] to-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-md text-white">
+                            <h3 className="text-xl font-medium mb-6">
+                                Confirmar Exclusão
+                            </h3>
 
-                            <div className="bg-gray-700 rounded-lg p-4 mb-6">
-                                <p className="text-gray-300 mb-2">
-                                    Tem certeza que deseja excluir o usuário:
+                            <div className="text-center">
+                                <User className="w-16 h-16 mx-auto text-red-400 mb-4" />
+                                <p className="text-sm mb-4">
+                                    Tem certeza que deseja excluir o usuário <strong>{userToDelete.name}</strong>?
                                 </p>
-                                <div className="bg-gray-600 rounded-lg p-3">
-                                    <p className="font-semibold text-white">{userToDelete.name}</p>
-                                    <p className="text-gray-300 text-sm">{userToDelete.email}</p>
-                                    {userToDelete.valor && (
-                                        <p className="text-green-400 text-sm font-medium">
-                                            R$ {Number(userToDelete.valor).toFixed(2)}/mês
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="mt-3 p-3 bg-red-900/20 border border-red-700 rounded-lg">
-                                    <p className="text-red-300 text-sm flex items-center gap-2">
-                                        <AlertCircle className="w-4 h-4" />
-                                        Todos os dados, likes e downloads serão permanentemente removidos
+                                {userToDelete.valor && (
+                                    <p className="text-green-400 text-sm font-medium">
+                                        R$ {Number(userToDelete.valor).toFixed(2)}/mês
                                     </p>
-                                </div>
+                                )}
                             </div>
-
-                            <div className="flex gap-3">
+                            <div className="mt-4 p-3 bg-red-900/20 border border-red-700 rounded-lg">
+                                <p className="text-red-300 text-sm flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4" />
+                                    Todos os dados, likes e downloads serão permanentemente removidos
+                                </p>
+                            </div>
+                            <div className="flex gap-3 mt-8">
                                 <button
                                     onClick={cancelDelete}
                                     disabled={deleting === userToDelete.id}
-                                    className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                    className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors disabled:opacity-50"
                                 >
                                     Cancelar
                                 </button>
@@ -1256,47 +1177,47 @@ export default function AdminUsersPage() {
                 {/* Modal de Edição/Adição - Tema Escuro */}
                 {(editingUser || showAddModal) && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                        <div className="bg-gradient-to-br from-black to-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-                            <h3 className="text-2xl font-medium text-gray-100 mb-8 users-table-header-cell">
+                        <div className="bg-gradient-to-br from-[#1B1C1D] to-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto text-white shadow-2xl">
+                            <h3 className="text-2xl font-medium mb-8">
                                 {editingUser ? 'Editar Usuário' : 'Adicionar Novo Usuário'}
                             </h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-3 users-table-cell">
+                                    <label className="block text-sm font-medium text-gray-300 mb-3">
                                         Nome *
                                     </label>
                                     <input
                                         type="text"
                                         value={editForm.name}
                                         onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200 users-table-cell"
+                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                         placeholder="Nome completo"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-3 users-table-cell">
+                                    <label className="block text-sm font-medium text-gray-300 mb-3">
                                         WhatsApp
                                     </label>
                                     <input
                                         type="text"
                                         value={editForm.whatsapp}
                                         onChange={(e) => setEditForm(prev => ({ ...prev, whatsapp: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200 users-table-cell"
+                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                         placeholder="(11) 99999-9999"
                                     />
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-300 mb-3 users-table-cell">
+                                    <label className="block text-sm font-medium text-gray-300 mb-3">
                                         Email *
                                     </label>
                                     <input
                                         type="email"
                                         value={editForm.email}
                                         onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200 users-table-cell"
+                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                         placeholder="email@exemplo.com"
                                     />
                                 </div>
@@ -1304,16 +1225,16 @@ export default function AdminUsersPage() {
                                 {/* Campo de senha - só aparece quando estiver adicionando novo usuário */}
                                 {showAddModal && (
                                     <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-300 mb-3 users-table-cell">
-                                            Senha {editingUser ? '(deixe em branco para não alterar)' : '*'}
+                                        <label className="block text-sm font-medium text-gray-300 mb-3">
+                                            Senha *
                                         </label>
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
                                                 value={editForm.password}
                                                 onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
-                                                className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200 users-table-cell"
-                                                placeholder={editingUser ? "Nova senha (opcional)" : "Senha forte para novo usuário"}
+                                                className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                placeholder="Senha forte para novo usuário"
                                                 autoComplete="new-password"
                                             />
                                             <button
@@ -1335,7 +1256,7 @@ export default function AdminUsersPage() {
                                 )}
                                 {editingUser && (
                                     <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-300 mb-3 users-table-cell">
+                                        <label className="block text-sm font-medium text-gray-300 mb-3">
                                             Senha (deixe em branco para não alterar)
                                         </label>
                                         <div className="flex gap-2">
@@ -1343,7 +1264,7 @@ export default function AdminUsersPage() {
                                                 type="text"
                                                 value={editForm.password}
                                                 onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
-                                                className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200 users-table-cell"
+                                                className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                                 placeholder="Nova senha (opcional)"
                                                 autoComplete="new-password"
                                             />
@@ -1366,7 +1287,7 @@ export default function AdminUsersPage() {
                                 )}
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-3 users-table-cell">
+                                    <label className="block text-sm font-medium text-gray-300 mb-3">
                                         Valor da Assinatura (R$)
                                     </label>
                                     <input
@@ -1374,19 +1295,19 @@ export default function AdminUsersPage() {
                                         step="0.01"
                                         value={editForm.valor}
                                         onChange={(e) => setEditForm(prev => ({ ...prev, valor: parseFloat(e.target.value) || 0 }))}
-                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200 users-table-cell"
+                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                         placeholder="0.00"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-3 users-table-cell">
+                                    <label className="block text-sm font-medium text-gray-300 mb-3">
                                         Status
                                     </label>
                                     <select
                                         value={editForm.status}
                                         onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200 users-table-cell"
+                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                     >
                                         <option value="ativo" className="bg-gray-900">Ativo</option>
                                         <option value="inativo" className="bg-gray-900">Inativo</option>
@@ -1394,33 +1315,33 @@ export default function AdminUsersPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-3 users-table-cell">
+                                    <label className="block text-sm font-medium text-gray-300 mb-3">
                                         Data de Vencimento
                                     </label>
                                     <input
                                         type="date"
                                         value={editForm.vencimento}
                                         onChange={(e) => setEditForm(prev => ({ ...prev, vencimento: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200 users-table-cell"
+                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-3 users-table-cell">
+                                    <label className="block text-sm font-medium text-gray-300 mb-3">
                                         Data do Pagamento
                                     </label>
                                     <input
                                         type="date"
                                         value={editForm.dataPagamento}
                                         onChange={(e) => setEditForm(prev => ({ ...prev, dataPagamento: e.target.value }))}
-                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200 users-table-cell"
+                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                     />
                                 </div>
 
                                 <div className="md:col-span-2">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-300 mb-3 users-table-cell">
+                                            <label className="block text-sm font-medium text-gray-300 mb-3">
                                                 Deemix Ativo
                                             </label>
                                             <select
@@ -1429,18 +1350,18 @@ export default function AdminUsersPage() {
                                                     ...prev,
                                                     deemix: e.target.value === 'sim'
                                                 }))}
-                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200 users-table-cell"
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                             >
                                                 <option value="sim" className="bg-gray-900">Sim</option>
                                                 <option value="nao" className="bg-gray-900">Não</option>
                                             </select>
-                                            <p className="text-xs text-gray-400 mt-2 users-table-cell">
+                                            <p className="text-xs text-gray-400 mt-2">
                                                 {editForm.deemix ? 'Usuário pode acessar o sistema Deemix' : 'Usuário não tem acesso ao Deemix'}
                                             </p>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-300 mb-3 users-table-cell">
+                                            <label className="block text-sm font-medium text-gray-300 mb-3">
                                                 Usuário VIP
                                             </label>
                                             <select
@@ -1449,12 +1370,12 @@ export default function AdminUsersPage() {
                                                     ...prev,
                                                     is_vip: e.target.value === 'sim'
                                                 }))}
-                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200 users-table-cell"
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                             >
                                                 <option value="sim" className="bg-gray-900">Sim</option>
                                                 <option value="nao" className="bg-gray-900">Não</option>
                                             </select>
-                                            <p className="text-xs text-gray-400 mt-2 users-table-cell">
+                                            <p className="text-xs text-gray-400 mt-2">
                                                 {editForm.is_vip ? 'Usuário tem acesso VIP às músicas' : 'Usuário sem acesso às músicas'}
                                             </p>
                                         </div>
@@ -1465,7 +1386,7 @@ export default function AdminUsersPage() {
                             <div className="flex gap-4 mt-10 pt-6 border-t border-gray-700">
                                 <button
                                     onClick={closeEditModal}
-                                    className="flex-1 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-xl transition-all duration-200 font-medium users-table-cell border border-gray-600 hover:border-gray-500"
+                                    className="flex-1 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-xl transition-all duration-200 font-medium border border-gray-600 hover:border-gray-500"
                                 >
                                     Cancelar
                                 </button>
@@ -1490,13 +1411,13 @@ export default function AdminUsersPage() {
 
                 {/* Modal de Personalização de Benefícios */}
                 {showBenefitsModal && userForBenefits && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-gray-800 rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="bg-gray-900 rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto text-white border border-gray-700">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
                                     <Crown className="w-8 h-8 text-purple-400" />
                                     <div>
-                                        <h3 className="text-xl font-semibold text-white">Personalizar Benefícios</h3>
+                                        <h3 className="text-xl font-semibold">Personalizar Benefícios</h3>
                                         <p className="text-sm text-gray-400">
                                             {userForBenefits.name} - {getUserPlan(userForBenefits.valor || null)?.name || 'Sem plano'}
                                         </p>
@@ -1519,7 +1440,7 @@ export default function AdminUsersPage() {
                             </div>
 
                             {/* Seção de Uso Atual dos Benefícios */}
-                            <div className="mb-6 bg-gray-700 rounded-lg p-4">
+                            <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
                                 <div className="flex items-center justify-between mb-3">
                                     <h4 className="font-semibold text-white flex items-center gap-2">
                                         📊 Uso Atual dos Benefícios
@@ -1533,7 +1454,7 @@ export default function AdminUsersPage() {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="bg-gray-600 rounded-lg p-3">
+                                    <div className="bg-gray-700 rounded-lg p-3">
                                         <div className="flex items-center justify-between mb-1">
                                             <span className="text-xs text-gray-300">🎚️ Packs Semanais</span>
                                             <span className="text-xs text-gray-400">Esta semana</span>
@@ -1559,7 +1480,7 @@ export default function AdminUsersPage() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-gray-600 rounded-lg p-3">
+                                    <div className="bg-gray-700 rounded-lg p-3">
                                         <div className="flex items-center justify-between mb-1">
                                             <span className="text-xs text-gray-300">🎵 Playlists Semanais</span>
                                             <span className="text-xs text-gray-400">Esta semana</span>
@@ -1588,7 +1509,7 @@ export default function AdminUsersPage() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-gray-600 rounded-lg p-3">
+                                    <div className="bg-gray-700 rounded-lg p-3">
                                         <div className="flex items-center justify-between mb-1">
                                             <span className="text-xs text-gray-300">⬇️ Downloads Diários</span>
                                             <span className="text-xs text-gray-400">Hoje</span>
@@ -1655,135 +1576,9 @@ export default function AdminUsersPage() {
                                             }
                                         }
                                     }}
-                                    className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm transition-colors"
+                                    className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg"
                                 >
-                                    📅 Resetar Contador Diário
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {Object.entries(BENEFIT_LABELS).map(([key, label]) => {
-                                    const currentPlan = getUserPlan(userForBenefits.valor || null);
-                                    const defaultBenefit = currentPlan ? (currentPlan.benefits as any)[key] : null;
-                                    const customBenefit = customBenefits[userForBenefits.id]?.[key] || defaultBenefit;
-
-                                    return (
-                                        <div key={key} className="bg-gray-700 rounded-lg p-4">
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className="text-2xl">
-                                                    {label.split(' ')[0]}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h4 className="font-semibold text-white text-sm">
-                                                        {label.replace(/^[^\s]+\s/, '')}
-                                                    </h4>
-                                                    {defaultBenefit && (
-                                                        <p className="text-xs text-gray-400">
-                                                            Padrão: {defaultBenefit.description}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-3">
-                                                <div className="flex items-center gap-3">
-                                                    <input
-                                                        type="checkbox"
-                                                        id={`${key}-enabled`}
-                                                        checked={customBenefit?.enabled || false}
-                                                        onChange={(e) => {
-                                                            const newCustomBenefits = { ...customBenefits };
-                                                            if (!newCustomBenefits[userForBenefits.id]) {
-                                                                newCustomBenefits[userForBenefits.id] = {};
-                                                            }
-                                                            newCustomBenefits[userForBenefits.id][key] = {
-                                                                ...customBenefit,
-                                                                enabled: e.target.checked
-                                                            };
-                                                            setCustomBenefits(newCustomBenefits);
-                                                        }}
-                                                        className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500"
-                                                    />
-                                                    <label htmlFor={`${key}-enabled`} className="text-sm text-gray-300">
-                                                        Ativado para este usuário
-                                                    </label>
-                                                </div>
-
-                                                {customBenefit?.enabled && (
-                                                    <div>
-                                                        <label className="block text-xs text-gray-400 mb-1">
-                                                            Descrição personalizada
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={customBenefit?.description || ''}
-                                                            onChange={(e) => {
-                                                                const newCustomBenefits = { ...customBenefits };
-                                                                if (!newCustomBenefits[userForBenefits.id]) {
-                                                                    newCustomBenefits[userForBenefits.id] = {};
-                                                                }
-                                                                newCustomBenefits[userForBenefits.id][key] = {
-                                                                    ...customBenefit,
-                                                                    description: e.target.value
-                                                                };
-                                                                setCustomBenefits(newCustomBenefits);
-                                                            }}
-                                                            className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                            placeholder={defaultBenefit?.description || 'Descrição do benefício'}
-                                                        />
-                                                    </div>
-                                                )}
-
-                                                {(key === 'packRequests' || key === 'playlistDownloads' || key === 'deemixDiscount') && customBenefit?.enabled && (
-                                                    <div>
-                                                        <label className="block text-xs text-gray-400 mb-1">
-                                                            {key === 'packRequests' && 'Limite por semana'}
-                                                            {key === 'playlistDownloads' && 'Limite (-1 = ilimitado)'}
-                                                            {key === 'deemixDiscount' && 'Porcentagem de desconto'}
-                                                        </label>
-                                                        <input
-                                                            type="number"
-                                                            value={customBenefit?.limit || customBenefit?.percentage || 0}
-                                                            onChange={(e) => {
-                                                                const newCustomBenefits = { ...customBenefits };
-                                                                if (!newCustomBenefits[userForBenefits.id]) {
-                                                                    newCustomBenefits[userForBenefits.id] = {};
-                                                                }
-                                                                const field = key === 'deemixDiscount' ? 'percentage' : 'limit';
-                                                                newCustomBenefits[userForBenefits.id][key] = {
-                                                                    ...customBenefit,
-                                                                    [field]: parseInt(e.target.value) || 0
-                                                                };
-                                                                setCustomBenefits(newCustomBenefits);
-                                                            }}
-                                                            className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                            min="0"
-                                                            max={key === 'deemixDiscount' ? 100 : undefined}
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            <div className="flex gap-3 mt-8">
-                                <button
-                                    onClick={closeBenefitsModal}
-                                    className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        // Aqui você pode implementar a lógica para salvar os benefícios personalizados
-                                        showMessage('Benefícios personalizados salvos com sucesso!', 'success');
-                                        closeBenefitsModal();
-                                    }}
-                                    className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                                >
-                                    Salvar Benefícios
+                                    ⬇️ Resetar Contador Diário
                                 </button>
                             </div>
                         </div>

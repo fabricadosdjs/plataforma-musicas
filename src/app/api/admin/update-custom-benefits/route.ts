@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Atualizar benefícios customizados
-        await prisma.profile.update({
+        await prisma.user.update({
             where: { id: userId },
             data: {
                 customBenefits: customBenefits as any

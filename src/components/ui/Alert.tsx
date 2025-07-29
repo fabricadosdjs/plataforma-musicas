@@ -1,6 +1,7 @@
+// src/components/ui/Alert.tsx
 "use client";
 
-import { Crown, Info, Loader2, Shield, X } from 'lucide-react';
+import { Crown, Info, Loader2, Shield, X } from 'lucide-react'; // Certifique-se de que todos os ícones usados estão importados
 import { memo, useEffect, useState } from 'react';
 
 interface AlertProps {

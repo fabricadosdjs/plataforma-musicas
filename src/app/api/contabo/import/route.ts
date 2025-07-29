@@ -203,6 +203,15 @@ function parseAudioFileName(filename: string) {
     // Remove extensão
     const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
 
+    // Extrair variação (CLEAN, DIRTY, EXPLICIT, etc) ao final
+    let variation = null;
+    let name = nameWithoutExt;
+    const variationMatch = name.match(/\((CLEAN|DIRTY|EXPLICIT|INSTRUMENTAL|RADIO EDIT|CLUB MIX)\)$/i);
+    if (variationMatch) {
+        variation = variationMatch[1].toUpperCase();
+        name = name.replace(/\s*\((CLEAN|DIRTY|EXPLICIT|INSTRUMENTAL|RADIO EDIT|CLUB MIX)\)$/i, '').trim();
+    }
+
     // Padrões comuns de nomenclatura
     const patterns = [
         // "Artist - Song Name (Version) [Style]"
@@ -214,7 +223,7 @@ function parseAudioFileName(filename: string) {
     ];
 
     for (const pattern of patterns) {
-        const match = nameWithoutExt.match(pattern);
+        const match = name.match(pattern);
         if (match) {
             if (match[2]) {
                 // Tem artista
@@ -222,7 +231,8 @@ function parseAudioFileName(filename: string) {
                     artist: match[1].trim(),
                     songName: match[2].trim(),
                     version: match[3]?.trim() || null,
-                    style: match[4]?.trim() || null
+                    style: match[4]?.trim() || null,
+                    variation
                 };
             } else {
                 // Só tem nome da música
@@ -230,7 +240,8 @@ function parseAudioFileName(filename: string) {
                     artist: 'Artista Desconhecido',
                     songName: match[1].trim(),
                     version: match[2]?.trim() || null,
-                    style: null
+                    style: null,
+                    variation
                 };
             }
         }
@@ -239,9 +250,10 @@ function parseAudioFileName(filename: string) {
     // Fallback: usa o nome do arquivo como nome da música
     return {
         artist: 'Artista Desconhecido',
-        songName: nameWithoutExt,
+        songName: name,
         version: null,
-        style: null
+        style: null,
+        variation
     };
 }
 

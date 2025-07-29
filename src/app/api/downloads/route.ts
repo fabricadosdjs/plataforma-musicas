@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.profile.findUnique({
+    // Changed prisma.profile to prisma.user
+    const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
         downloads: {
@@ -32,9 +33,10 @@ export async function GET(request: NextRequest) {
 
     const downloadedTrackIds = user.downloads.map(download => download.trackId);
 
+    // Ensure isVip reflects the actual field name in the User model
     return NextResponse.json({
       downloads: downloadedTrackIds,
-      isVip: user.is_vip
+      isVip: user.is_vip // Changed from user.isPro or previous logic to user.is_vip
     });
   } catch (error) {
     console.error('Error fetching downloads:', error);
@@ -61,7 +63,8 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString()
     });
 
-    let user = await prisma.profile.findUnique({
+    // Changed prisma.profile to prisma.user
+    let user = await prisma.user.findUnique({
       where: { id: session.user.id }
     });
 
@@ -72,11 +75,11 @@ export async function POST(req: NextRequest) {
 
     console.log('👤 Usuário encontrado:', {
       id: user.id,
-      isVip: user.is_vip,
+      isVip: user.is_vip, // Changed from isPro
       name: user.name
     });
 
-    // Check if user is VIP
+    // Check if user is VIP (using user.is_vip)
     if (!user.is_vip) {
       console.log('🚫 Usuário não é VIP:', user.id);
       return NextResponse.json({
@@ -85,9 +88,10 @@ export async function POST(req: NextRequest) {
       }, { status: 403 });
     }
 
-    console.log('✅ Usuário VIP confirmado, processando download...'); const userId = user.id;
+    console.log('✅ Usuário VIP confirmado, processando download...');
+    const userId = user.id; // Correct variable declaration
 
-    const DOWNLOAD_LIMIT = 15;
+    const DOWNLOAD_LIMIT = 15; // Consider fetching this from user.benefits or plan config
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
@@ -125,76 +129,85 @@ export async function POST(req: NextRequest) {
     }
 
     // Se é um download novo (nunca baixado antes) OU um re-download confirmado
-    if (!existingDownload) { // Se esta música NUNCA foi baixada por este usuário (primeiro download dela)
-      shouldIncrementDailyCount = true;
+    // The logic here is a bit tricky. If existingDownload is null, it's a new download.
+    // If existingDownload exists but not a recent one (older than 24h), it's also a new "daily" download.
+    // If it's a recent download AND confirmReDownload is true, it's a re-download that should NOT increment daily count again.
 
-      // Lógica para verificar e resetar o contador diário ANTES de verificar o limite
-      if (!user.lastDownloadReset || user.lastDownloadReset < twentyFourHoursAgo) {
-        user = await prisma.profile.update({
-          where: { id: userId },
-          data: {
-            dailyDownloadCount: 0,
-            lastDownloadReset: now,
-          },
-        });
-      }
+    if (!existingDownload || (existingDownload && !recentDownload)) {
+        shouldIncrementDailyCount = true;
+    } else if (existingDownload && recentDownload && confirmReDownload) {
+        // This is a confirmed re-download within 24h. We should NOT increment the daily count.
+        shouldIncrementDailyCount = false;
+    }
 
-      // Verificar se o limite de downloads diários foi atingido
-      if ((user.dailyDownloadCount || 0) >= DOWNLOAD_LIMIT) {
+
+    // Lógica para verificar e resetar o contador diário ANTES de verificar o limite
+    // This logic should be here to ensure user.dailyDownloadCount and lastDownloadReset are fresh
+    if (!user.lastDownloadReset || user.lastDownloadReset < twentyFourHoursAgo) {
+      user = await prisma.user.update({ // Changed from prisma.profile to prisma.user
+        where: { id: userId },
+        data: {
+          dailyDownloadCount: 0,
+          lastDownloadReset: now,
+        },
+      });
+    }
+
+    // Verificar se o limite de downloads diários foi atingido
+    // Use actual benefit limit if available, otherwise default to DOWNLOAD_LIMIT
+    const maxDailyDownloads = (user as any).benefits?.downloadsPerDay || DOWNLOAD_LIMIT;
+    if ((user.dailyDownloadCount || 0) >= maxDailyDownloads && shouldIncrementDailyCount) {
         const resetTime = new Date((user.lastDownloadReset || new Date()).getTime() + 24 * 60 * 60 * 1000);
         return NextResponse.json({
-          message: `Você atingiu seu limite de ${DOWNLOAD_LIMIT} downloads diários para músicas novas. Tente novamente após ${resetTime.toLocaleString('pt-BR')}.`,
+          message: `Você atingiu seu limite de ${maxDailyDownloads} downloads diários. Tente novamente após ${resetTime.toLocaleString('pt-BR')}.`,
           dailyDownloadCount: user.dailyDownloadCount || 0,
           lastDownloadReset: (user.lastDownloadReset || new Date()).toISOString(),
-          isExistingDownload: false,
-          needsConfirmation: false, // Não precisa de confirmação aqui
-        }, { status: 429 }); // 429 Too Many Requests
-      }
+          isExistingDownload: !!existingDownload,
+          needsConfirmation: false,
+        }, { status: 429 });
     }
 
-    // Se a música nunca foi baixada, cria o registro de download
-    // Se já foi baixada (existingDownload é true), não cria um novo registro, apenas atualiza o `downloadedAt` se quiser um log de re-downloads.
-    // Para este caso, vamos apenas garantir que o registro exista.
-    if (!existingDownload) {
-      await prisma.download.create({
-        data: {
-          userId,
-          trackId,
-          downloadedAt: now, // Registra a data do download
-        },
-      });
-    } else {
-      // Opcional: Atualizar 'downloadedAt' para o registro existente para marcar a última vez que foi baixado
-      await prisma.download.updateMany({
-        where: {
-          userId: userId,
-          trackId: trackId,
-        },
-        data: {
-          downloadedAt: now,
-        },
-      });
-    }
+
+    // Use upsert to create or update the download record
+    const download = await prisma.download.upsert({
+      where: {
+        userId_trackId: { // Use the compound unique field name
+            userId: userId,
+            trackId: trackId, // Ensure trackId is a number if it's Int in schema
+        }
+      },
+      update: {
+        downloadedAt: now,
+        nextAllowedDownload: new Date(now.getTime() + 24 * 60 * 60 * 1000), // Set next allowed download
+      },
+      create: {
+        userId: userId,
+        trackId: trackId, // Ensure trackId is a number if it's Int in schema
+        downloadedAt: now,
+        nextAllowedDownload: new Date(now.getTime() + 24 * 60 * 60 * 1000), // Set next allowed download
+      }
+    });
 
 
     let updatedUser = user;
     if (shouldIncrementDailyCount) {
-      // Incrementa o contador diário apenas se for a primeira vez que o usuário baixa esta música
-      updatedUser = await prisma.profile.update({
+      // Incrementa o contador diário apenas se for a primeira vez que o usuário baixa esta música HOJE
+      updatedUser = await prisma.user.update({ // Changed from prisma.profile to prisma.user
         where: { id: userId },
         data: {
           dailyDownloadCount: {
             increment: 1,
           },
-          lastDownloadReset: user.lastDownloadReset || now,
+          // lastDownloadReset should already be set above if it needed resetting
         }
       });
     } else {
-      // Se a música já foi baixada, apenas garante que o 'user' no retorno esteja atualizado
-      const foundUser = await prisma.profile.findUnique({ where: { id: userId } });
-      if (foundUser) {
-        updatedUser = foundUser;
-      }
+        // If not incrementing, ensure we have the most up-to-date user object
+        // This findUnique call might be redundant if 'user' is already up-to-date from above ops
+        const foundUser = await prisma.user.findUnique({ where: { id: userId } });
+        if (foundUser) {
+            updatedUser = foundUser;
+        }
     }
 
     const allDownloadedTracks = await prisma.download.findMany({ where: { userId } });

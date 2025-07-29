@@ -40,6 +40,7 @@ export async function POST(req: Request) {
       console.log('✅ Todas as músicas passaram na validação');
 
       // 4. Prepara os dados para o banco de dados (formato JSON)
+      const now = new Date();
       const tracksToCreate = tracks.map((track: any) => ({
         songName: track.songName,
         artist: track.artist,
@@ -49,6 +50,8 @@ export async function POST(req: Request) {
         version: track.version,
         imageUrl: track.imageUrl,
         releaseDate: new Date(track.releaseDate),
+        createdAt: now,
+        updatedAt: now,
       }));
 
       // 5. Insere as novas músicas no banco de dados

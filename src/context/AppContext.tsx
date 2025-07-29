@@ -1,10 +1,15 @@
 // src/context/AppContext.tsx
-"use client";
+"use client"; // Esta linha DEVE ser a primeira!
 
 import { Track } from '@/types/track';
 import forceDownload from '@/utils/downloadUtils';
 import { useSession } from 'next-auth/react';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import Alert from '@/components/ui/Alert'; // Importar o componente Alert
+
+// Simplificando: agora DownloadedTrackInfo é apenas um ID, para indicar que foi baixado alguma vez
+// A lógica de "próximo download permitido" será tratada internamente em handleDownload e não no estado visível.
+type DownloadedTrackInfo = number;
 
 interface AppContextType {
   currentTrack: Track | null;
@@ -16,9 +21,11 @@ interface AppContextType {
   nextTrack: () => void;
   previousTrack: () => void;
   likedTracks: number[];
-  downloadedTracks: number[];
+  downloadedTracks: DownloadedTrackInfo[]; // Volta a ser array de IDs
   handleLike: (trackId: number) => Promise<void>;
   handleDownload: (track: Track) => Promise<void>;
+
+  // FUNÇÕES DE ALERTA RESTAURADAS DIRETAMENTE NO CONTEXTO
   alertMessage: string;
   alertType: 'default' | 'vip' | 'access-check';
   showAlert: (message: string, duration?: number) => void;
@@ -36,12 +43,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [playlist, setPlaylist] = useState<Track[]>([]);
+  // ESTADOS PARA O SISTEMA DE ALERTA LOCAL DO CONTEXTO
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState<'default' | 'vip' | 'access-check'>('default');
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+
+  // Removido audioElement - agora o controle é direto na thumbnail
+  // const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
 
   const [likedTracks, setLikedTracks] = useState<number[]>([]);
-  const [downloadedTracks, setDownloadedTracks] = useState<number[]>([]);
+  // Estado para downloadedTracks agora armazena apenas IDs
+  const [downloadedTracks, setDownloadedTracks] = useState<DownloadedTrackInfo[]>([]);
   const [isUserDataLoaded, setIsUserDataLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playStartTime, setPlayStartTime] = useState<number | null>(null);
@@ -68,51 +79,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Inicializar elemento de áudio
-  useEffect(() => {
-    const audio = new Audio();
+  // Removido - controle direto na thumbnail
+  // useEffect(() => {
+  //   // Inicialização do áudio movida para thumbnail
+  // }, [currentTrack, playStartTime]);
 
-    const handleEnded = () => {
-      setIsPlaying(false);
-
-      // Registrar conclusão da reprodução
-      if (currentTrack && playStartTime) {
-        const duration = (Date.now() - playStartTime) / 1000;
-        logPlayEnd(currentTrack, duration, true);
-      }
-
-      setPlayStartTime(null);
-      // Auto-próxima música será implementada depois
-    };
-
-    const handlePlay = () => {
-      setIsPlaying(true);
-      setPlayStartTime(Date.now());
-    };
-
-    const handlePause = () => {
-      setIsPlaying(false);
-
-      // Registrar pausa da reprodução (não completada)
-      if (currentTrack && playStartTime) {
-        const duration = (Date.now() - playStartTime) / 1000;
-        logPlayEnd(currentTrack, duration, false);
-      }
-    };
-
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('play', handlePlay);
-    audio.addEventListener('pause', handlePause);
-    setAudioElement(audio);
-
-    return () => {
-      audio.pause();
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('play', handlePlay);
-      audio.removeEventListener('pause', handlePause);
-    };
-  }, []);
-
+  // FUNÇÕES DE ALERTA RESTAURADAS NO CONTEXTO
   const showAlert = useCallback((message: string, duration: number = 5000) => {
     setAlertMessage(message);
     setAlertType('default');
@@ -131,32 +103,36 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setTimeout(() => setAlertMessage(''), 15000); // 15 segundos para verificação de perfil
   }, []);
 
+  const closeAlert = () => {
+    setAlertMessage('');
+  };
+
+  // Função para buscar dados do usuário, populando downloadedTracks apenas com IDs
   const fetchUserData = useCallback(async () => {
     if (!user) return;
     try {
-      // Buscar likes
       const likesResponse = await fetch('/api/likes');
       if (likesResponse.ok) {
         const likesData = await likesResponse.json();
         setLikedTracks(likesData.likedTracks || []);
       }
 
-      // Buscar dados do usuário (downloads, etc)
       const userResponse = await fetch('/api/user-data');
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        setDownloadedTracks(userData.downloads?.map((download: any) => download.trackId) || []);
-
-        // Downloads são gerenciados pelo banco de dados, não precisamos de estado local
-        const downloads = userData.downloads?.map((download: any) => download.trackId) || [];
-        setDownloadedTracks(downloads);
+        const downloadedIds = userData.downloadedTrackIds || [];
+        console.log('--- DEBUG: AppContext -> downloadedIds from API:', downloadedIds);
+        console.log('--- DEBUG: AppContext -> downloadedIds type:', typeof downloadedIds);
+        console.log('--- DEBUG: AppContext -> downloadedIds is array:', Array.isArray(downloadedIds));
+        setDownloadedTracks(downloadedIds); // Agora é um array de números
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
+      showAlert("Erro ao carregar dados do usuário."); // Usando a função de alerta restaurada
     } finally {
       setIsUserDataLoaded(true);
     }
-  }, [user]);
+  }, [user, showAlert]); // Dependência showAlert adicionada
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -175,7 +151,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       const playingIndicator = isPlaying ? "🎵 " : "⏸️ ";
       document.title = `${playingIndicator}${trackInfo} • ${baseTitle}`;
     } else {
-      // Restaurar título original quando não há música
       const currentPath = window.location.pathname;
       switch (currentPath) {
         case '/new':
@@ -221,8 +196,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const playTrack = (track: Track, trackList: Track[] = []) => {
-    // Verificar se o usuário está logado e é VIP
     if (!user || !user.is_vip) {
+      showVipAlert('Apenas usuários VIP logados podem reproduzir músicas.'); // Usando função restaurada
       console.warn('Player restrito a usuários VIP logados');
       return;
     }
@@ -234,70 +209,47 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setPlaylist([track]);
     }
 
-    // Registrar início da reprodução
     logPlayStart(track);
 
-    if (audioElement) {
-      audioElement.src = track.previewUrl;
-      audioElement.play().catch(error => {
-        console.error('Erro ao reproduzir:', error);
-        setIsPlaying(false);
-      });
-    }
+    // Definir como playing para controle direto
+    setIsPlaying(true);
   };
 
   const togglePlayPause = () => {
-    if (currentTrack && audioElement) {
-      if (isPlaying) {
-        audioElement.pause();
-      } else {
-        audioElement.play().catch(error => {
-          console.error('Erro ao reproduzir:', error);
-          setIsPlaying(false);
-        });
-      }
-    }
+    // Controle direto na thumbnail
+    setIsPlaying(!isPlaying);
   };
 
   const nextTrack = () => {
     if (!currentTrack) return;
     const currentIndex = playlist.findIndex(t => t.id === currentTrack.id);
+    if (playlist.length === 0) return;
+
     const nextIndex = (currentIndex + 1) % playlist.length;
     const nextTrackData = playlist[nextIndex];
     setCurrentTrack(nextTrackData);
 
-    if (audioElement) {
-      audioElement.src = nextTrackData.previewUrl;
-      audioElement.play().catch(error => {
-        console.error('Erro ao reproduzir:', error);
-        setIsPlaying(false);
-      });
-    }
+    // Controle direto na thumbnail
   };
 
   const previousTrack = () => {
     if (!currentTrack) return;
     const currentIndex = playlist.findIndex(t => t.id === currentTrack.id);
+    if (playlist.length === 0) return;
+
     const prevIndex = (currentIndex - 1 + playlist.length) % playlist.length;
     const prevTrackData = playlist[prevIndex];
     setCurrentTrack(prevTrackData);
 
-    if (audioElement) {
-      audioElement.src = prevTrackData.previewUrl;
-      audioElement.play().catch(error => {
-        console.error('Erro ao reproduzir:', error);
-        setIsPlaying(false);
-      });
-    }
+    // Controle direto na thumbnail
   };
 
   const handleLike = async (trackId: number) => {
     if (!user) {
-      showAlert('Você precisa estar logado para curtir músicas.');
+      showAlert('Você precisa estar logado para curtir músicas.'); // Usando função restaurada
       return;
     }
 
-    // Atualizar UI imediatamente para melhor experiência
     const isCurrentlyLiked = likedTracks.includes(trackId);
     if (isCurrentlyLiked) {
       setLikedTracks(prev => prev.filter(id => id !== trackId));
@@ -313,7 +265,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       if (!response.ok) {
-        // Reverter mudança se falhou
         if (isCurrentlyLiked) {
           setLikedTracks(prev => [...prev, trackId]);
         } else {
@@ -324,7 +275,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
       const data = await response.json();
 
-      // Confirmar o estado baseado na resposta da API
+      const track = playlist.find(t => t.id === trackId) || currentTrack;
+      const trackName = track ? `${track.artist} - ${track.songName}` : 'Música';
+
       if (data.liked) {
         setLikedTracks(prev => {
           if (!prev.includes(trackId)) {
@@ -332,106 +285,115 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           }
           return prev;
         });
-        showAlert('Música curtida!');
+        showAlert(`Música "${trackName}" curtida!`); // Usando função restaurada
       } else {
         setLikedTracks(prev => prev.filter(id => id !== trackId));
-        showAlert('Música descurtida.');
+        showAlert(`Música "${trackName}" descurtida.`); // Usando função restaurada
       }
     } catch (error) {
       console.error("Error liking track:", error);
-      showAlert('Erro ao curtir a música.');
+      showAlert('Erro ao curtir a música.'); // Usando função restaurada
     }
   };
 
   const handleDownload = async (track: Track) => {
     if (!user) {
-      showAlert('Você precisa estar logado para baixar músicas.');
+      showAlert('Você precisa estar logado para baixar músicas.'); // Usando função restaurada
+      return;
+    }
+
+    if (!user.is_vip) {
+      showVipAlert('Apenas usuários VIP podem baixar músicas.'); // Usando função restaurada
       return;
     }
 
     try {
-      // Primeiro verificar se pode baixar via API
+      showAccessCheckAlert('Verificando permissões de download...'); // Usando função restaurada
+
       const checkResponse = await fetch(`/api/downloads/control?trackId=${track.id}`);
       const checkData = await checkResponse.json();
 
       if (!checkData.canDownload) {
         const nextAllowed = new Date(checkData.nextAllowedDownload);
-        const hoursLeft = Math.ceil((nextAllowed.getTime() - new Date().getTime()) / (1000 * 60 * 60));
+        const now = new Date();
+        const diffTime = nextAllowed.getTime() - now.getTime();
+        const hoursLeft = Math.ceil(diffTime / (1000 * 60 * 60));
 
+        const errorMessage = checkData.error || `Você já baixou esta música recentemente. Poderá baixar novamente em ${hoursLeft} horas.`;
+
+        // Usando o window.confirm nativo novamente, já que useNotifications foi removido
         const confirmed = window.confirm(
-          `Você já baixou esta música recentemente. ` +
-          `Poderá baixar novamente em ${hoursLeft} horas. ` +
-          'Deseja baixar mesmo assim?'
+          `Download Restrito\n${errorMessage}\n\nDeseja baixar mesmo assim?`
         );
 
         if (!confirmed) {
           showAlert(`Download cancelado. Você poderá baixar novamente em ${hoursLeft} horas.`);
+          closeAlert();
           return;
         }
 
-        // Se confirmou, tentar baixar com flag de confirmação
-        const confirmResponse = await fetch('/api/downloads/control', {
+        const confirmDownloadResponse = await fetch('/api/downloads/control', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ trackId: track.id, confirm: true }),
         });
 
-        if (!confirmResponse.ok) {
-          const errorData = await confirmResponse.json();
-          showAlert(errorData.error || 'Erro ao processar download.');
+        if (!confirmDownloadResponse.ok) {
+          const errorData = await confirmDownloadResponse.json();
+          showAlert(errorData.error || 'Erro ao processar o re-download.');
           return;
         }
-      } else {
-        // Registrar o download normalmente
-        const downloadResponse = await fetch('/api/downloads/control', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ trackId: track.id }),
-        });
 
-        if (!downloadResponse.ok) {
-          const errorData = await downloadResponse.json();
-          showAlert(errorData.error || 'Erro ao processar download.');
-          return;
+        const finalApiResponse = await confirmDownloadResponse.json();
+        if (finalApiResponse.success) {
+          setDownloadedTracks(prev => {
+            if (!prev.includes(track.id)) {
+              return [...prev, track.id];
+            }
+            return prev;
+          });
+          showVipAlert('✨ Download VIP autorizado! Seu arquivo está sendo preparado...');
+          await forceDownload(track.downloadUrl, `${track.songName} - ${track.artist}.mp3`);
+          showAlert(`Download de "${track.songName}" - "${track.artist}" concluído!`, 5000); // Alerta simples de sucesso
+        } else {
+          showAlert(finalApiResponse.error || 'Erro ao registrar o download.');
         }
+        return; // Retorna após processar a confirmação
       }
 
-      // Mostrar alerta de verificação de perfil
-      showAccessCheckAlert('Verificando perfil e permissões VIP...');
-
-      // Verificar permissão VIP na API original
-      const vipResponse = await fetch('/api/downloads', {
+      // Se pode baixar normalmente (não precisa de confirmação)
+      const downloadResponse = await fetch('/api/downloads/control', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ trackId: track.id }),
       });
 
-      const vipData = await vipResponse.json();
-
-      if (vipResponse.status === 403) {
-        showAlert('Apenas usuários VIP podem baixar músicas.');
+      if (!downloadResponse.ok) {
+        const errorData = await downloadResponse.json();
+        showAlert(errorData.error || 'Erro ao registrar o download.');
         return;
       }
 
-      if (vipResponse.ok) {
-        // Atualizar estado local
-        if (!downloadedTracks.includes(track.id)) {
-          setDownloadedTracks(prev => [...prev, track.id]);
-        }
+      const finalApiResponse = await downloadResponse.json();
 
+      if (finalApiResponse.success) {
+        setDownloadedTracks(prev => {
+          if (!prev.includes(track.id)) {
+            return [...prev, track.id];
+          }
+          return prev;
+        });
         showVipAlert('✨ Download VIP autorizado! Seu arquivo está sendo preparado...');
-
-        // Usar utilitário robusto de download
         await forceDownload(track.downloadUrl, `${track.songName} - ${track.artist}.mp3`);
+        showAlert(`Download de "${track.songName}" - "${track.artist}" concluído!`, 5000); // Alerta simples de sucesso
       } else {
-        showAlert(vipData.message || 'Erro ao registrar o download.');
+        showAlert(finalApiResponse.error || 'Erro ao registrar o download.');
       }
     } catch (error) {
       console.error("Error downloading track:", error);
       showAlert('Erro ao iniciar o download.');
+      closeAlert();
     }
-  }; const closeAlert = () => {
-    setAlertMessage('');
   };
 
   const contextValue = {
@@ -446,12 +408,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     downloadedTracks,
     handleLike,
     handleDownload,
+
+    // Funções de alerta restauradas no contexto
     alertMessage,
     alertType,
     showAlert,
     showVipAlert,
     showAccessCheckAlert,
     closeAlert,
+
     isUserDataLoaded,
     setIsPlaying,
   };
@@ -459,6 +424,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <AppContext.Provider value={contextValue}>
       {children}
+      {/* Aqui é onde o Alert será renderizado. Ele é o único responsável pela exibição global. */}
+      {/* Ele será fixo no canto inferior/superior direito. */}
+      {alertMessage && <Alert message={alertMessage} type={alertType} onClose={closeAlert} />}
     </AppContext.Provider>
   );
 };

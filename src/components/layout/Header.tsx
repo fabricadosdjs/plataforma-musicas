@@ -1,334 +1,190 @@
-// Header.tsx
+// src/components/layout/Header.tsx
 "use client";
 
-import MobileMenu from '@/components/layout/MobileMenu';
-import { Bell, Filter, Menu, Search, User, X } from 'lucide-react';
-import { signOut, useSession } from 'next-auth/react';
+import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useAppContext } from '@/context/AppContext';
+import { Filter } from 'lucide-react'; // Certifique-se de que Filter está importado aqui
 
 interface HeaderProps {
-  // Props para pesquisa e filtros (opcionais)
   showSearchAndFilters?: boolean;
   searchQuery?: string;
-  onSearchChange?: (value: string) => void;
+  onSearchChange?: (query: string) => void;
   onSearchSubmit?: () => void;
   onFiltersClick?: () => void;
   hasActiveFilters?: boolean;
 }
 
-export default function Header({
+const NEW_LOGO_URL = 'https://i.ibb.co/Y7WKPY57/logo-nexor.png';
+
+const Header = ({
   showSearchAndFilters = false,
-  searchQuery = '',
+  searchQuery,
   onSearchChange,
   onSearchSubmit,
   onFiltersClick,
-  hasActiveFilters = false
-}: HeaderProps) {
-  const pathname = usePathname();
-  const { data: session, status } = useSession();
-  const isSignedIn = status === 'authenticated';
-  const [showNotification, setShowNotification] = useState(false);
-  const [daysUntilExpiry, setDaysUntilExpiry] = useState<number | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const router = useRouter();
-
-  // Verificar vencimento do usuário
+  hasActiveFilters = false, // Garante que hasActiveFilters sempre seja um booleano
+}: HeaderProps) => {
+  const { data: session } = useSession();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  // Fecha o menu ao clicar fora
   useEffect(() => {
-    console.log('🔔 Verificando vencimento:', session?.user?.vencimento);
-    console.log('🔔 User VIP:', session?.user?.is_vip);
-    console.log('🔔 Session completa:', session?.user);
-
-    if (session?.user?.is_vip) {
-      if (session?.user?.vencimento) {
-        const expiryDate = new Date(session.user.vencimento);
-        const today = new Date();
-        const diffTime = expiryDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        console.log(`⏰ Data de hoje: ${today.toISOString()}`);
-        console.log(`⏰ Data de vencimento: ${expiryDate.toISOString()}`);
-        console.log(`⏰ Dias até vencimento: ${diffDays}`);
-        setDaysUntilExpiry(diffDays);
-      } else {
-        console.log('🔔 VIP sem data de vencimento definida');
-        setDaysUntilExpiry(999); // Valor alto para indicar sem vencimento
+    function handleClickOutside(event: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
       }
-    } else {
-      console.log('🔔 Usuário não é VIP');
-      setDaysUntilExpiry(null);
     }
-  }, [session?.user?.vencimento, session?.user?.is_vip, session]);
+    if (showProfileMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileMenu]);
 
-  const navLinks = [
-    { href: '/new', label: 'New' },
-    { href: '/featured', label: 'Featured' },
-    { href: '/trending', label: 'Trending' },
-    { href: '/charts', label: 'Charts' },
-  ];
+  // Usando as funções de alerta do AppContext
+  const { showAlert, showVipAlert } = useAppContext();
+
+  const formatDate = (dateString: string | Date): string => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  // Verificar vencimento do usuário e usar o sistema de alerta do AppContext
+  useEffect(() => {
+    if (session?.user?.is_vip && session.user.vencimento) {
+      const vencimentoDate = new Date(session.user.vencimento);
+      const now = new Date();
+      const diffTime = vencimentoDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 3 && diffDays >= 0) {
+        showVipAlert(`Sua assinatura VIP vence em ${diffDays} dias!`);
+      } else if (diffDays < 0) {
+        showAlert(`Sua assinatura VIP venceu em ${formatDate(vencimentoDate)}!`, 15000);
+      }
+    }
+  }, [session, showAlert, showVipAlert]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onSearchSubmit) {
+      onSearchSubmit();
+    }
+  };
 
   return (
-    <>
-      <header className="w-full p-4 flex justify-between items-center border-b border-gray-700/50 sticky top-0 z-30 bg-black/20 backdrop-blur-md" style={{ color: 'var(--foreground)' }}>
-        <div className="flex items-center gap-6">
-          {/* Logo */}
-          <Link href="/new" className="flex items-center">
-            <img
-              src="https://i.ibb.co/Y7WKPY57/logo-nexor.png"
-              alt="Nextor Records"
-              className="h-8 w-auto"
-            />
-          </Link>
-
-          {/* Navegação ao lado da logo - desktop */}
-          <nav className="hidden md:flex items-center space-x-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`font-light font-semibold transition-colors pb-2 tracking-wide text-sm ${pathname === link.href
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-400 hover:text-blue-500'
-                  }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-            {/* Link de Perfil para usuários logados */}
-            {isSignedIn && (
-              <Link href="/profile-manager" className={`font-sans font-semibold transition-colors pb-2 tracking-wide ${pathname === '/profile-manager'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-400 hover:text-blue-500'
-                }`}>
-                Meu Perfil
-              </Link>
-            )}
-          </nav>
-
-          {/* Barra de Pesquisa e Filtros - quando habilitada */}
-          {showSearchAndFilters && (
-            <div className="hidden lg:flex items-center space-x-3 ml-8">
-              {/* Campo de Pesquisa */}
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange?.(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && onSearchSubmit?.()}
-                  placeholder="Buscar músicas..."
-                  className="w-64 px-3 py-2 pl-9 border rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  style={{
-                    backgroundColor: '#1a1a1a',
-                    borderColor: '#3a3a3a'
-                  }}
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                {searchQuery && (
-                  <button
-                    onClick={() => onSearchChange?.('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-
-              {/* Botão de Filtros */}
-              <button
-                onClick={onFiltersClick}
-                className={`p-2 rounded-lg transition-colors ${hasActiveFilters
-                  ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30'
-                  : 'bg-gray-800/50 text-gray-400 hover:text-white hover:bg-gray-700/50'
-                  }`}
-                title="Filtros"
-              >
-                <Filter className="h-4 w-4" />
-              </button>
+    <header className="fixed top-0 left-0 w-full z-40 bg-gradient-to-r from-[#1B1C1D] to-[#2a2a2e] shadow-lg border-b border-gray-700/50 py-3 font-bebas-neue">
+      <div className="container mx-auto px-4 flex items-center justify-between">
+        <div className="flex items-center space-x-6">
+          <Link href="/">
+            <div className="relative h-10 w-auto">
+              <Image
+                src={NEW_LOGO_URL}
+                alt="NextorDJ Logo"
+                width={150} // Ajuste conforme necessário
+                height={40} // Ajuste conforme necessário
+                priority
+                className="h-full w-auto object-contain"
+              />
             </div>
-          )}
+          </Link>
+          <nav className="hidden md:flex space-x-6 text-gray-300 font-medium items-center">
+            <Link href="/new" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><CheckCircle className="h-4 w-4" />Novidades</Link>
+            <Link href="/trending" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Star className="h-4 w-4" />Trending</Link>
+            <Link href="/charts" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Crown className="h-4 w-4" />Charts</Link>
+            <Link href="/featured" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><AlertCircle className="h-4 w-4" />Featured</Link>
+            <Link href="/pro" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><User className="h-4 w-4" />Pro</Link>
+            <Link href="/relatorios" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Search className="h-4 w-4" />Relatórios</Link>
+            {session?.user?.isAdmin && (
+              <Link href="/admin/users" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Crown className="h-4 w-4" />Admin</Link>
+            )}
+            {/* Ferramentas Dropdown */}
+            <div className="relative group" tabIndex={0}>
+              <button className="flex items-center gap-1 hover:text-green-400 transition-colors focus:outline-none" tabIndex={-1}>
+                <Wrench className="h-4 w-4" /> Ferramentas
+                <svg className="ml-1 h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              <div className="absolute left-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-200 pointer-events-none" tabIndex={0} onMouseDown={e => e.preventDefault()}>
+                <Link href="/debridlink" className="flex items-center gap-2 px-4 py-2 text-gray-200 hover:bg-gray-800 rounded-t-lg"><Link2 className="h-4 w-4 text-green-400" />DebridLink</Link>
+                <Link href="/allavsoft" className="flex items-center gap-2 px-4 py-2 text-gray-200 hover:bg-gray-800 rounded-b-lg"><Download className="h-4 w-4 text-blue-400" />Allavsoft</Link>
+              </div>
+            </div>
+          </nav>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Botão do Menu Mobile */}
-          <button
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="md:hidden p-2 hover:bg-gray-800/50 rounded-lg transition-colors"
-          >
-            <Menu className="w-6 h-6 text-white" />
-          </button>
-
-          {/* Sininho de notificação para usuários VIP - SEMPRE VISÍVEL */}
-          {isSignedIn && session?.user?.is_vip && (
-            <div className="relative">
-              <button
-                onClick={() => setShowNotification(!showNotification)}
-                className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors relative text-white shadow-lg ${daysUntilExpiry === null || daysUntilExpiry === 999
-                  ? 'bg-gray-600 hover:bg-gray-700' // Sem data de vencimento
-                  : daysUntilExpiry <= 0
-                    ? 'bg-red-600 hover:bg-red-700' // Vencido
-                    : daysUntilExpiry <= 3
-                      ? 'bg-red-500 hover:bg-red-600' // Crítico (0-3 dias)
-                      : daysUntilExpiry <= 7
-                        ? 'bg-yellow-500 hover:bg-yellow-600' // Alerta (4-7 dias)
-                        : daysUntilExpiry <= 30
-                          ? 'bg-green-500 hover:bg-green-600' // OK (8-30 dias)
-                          : 'bg-blue-500 hover:bg-blue-600' // Muito longe (30+ dias)
-                  }`}
-                title={
-                  daysUntilExpiry === null || daysUntilExpiry === 999
-                    ? 'Plano VIP ativo - sem data de vencimento'
-                    : daysUntilExpiry <= 0
-                      ? '🚨 Plano vencido!'
-                      : daysUntilExpiry <= 3
-                        ? `🚨 CRÍTICO: Plano vence em ${daysUntilExpiry} ${daysUntilExpiry === 1 ? 'dia' : 'dias'}!`
-                        : daysUntilExpiry <= 7
-                          ? `⚠️ ATENÇÃO: Plano vence em ${daysUntilExpiry} dias`
-                          : daysUntilExpiry <= 30
-                            ? `✅ Plano OK - vence em ${daysUntilExpiry} dias`
-                            : `✅ Plano em dia - vence em ${daysUntilExpiry} dias`
-                }
-              >
-                <Bell size={16} />
-                {/* Ponto de alerta para situações críticas */}
-                {daysUntilExpiry !== null && daysUntilExpiry !== 999 && daysUntilExpiry <= 7 && (
-                  <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full animate-pulse ${daysUntilExpiry <= 0
-                    ? 'bg-white' // Vencido - ponto branco
-                    : daysUntilExpiry <= 3
-                      ? 'bg-white' // Crítico - ponto branco
-                      : 'bg-red-500' // Alerta - ponto vermelho
-                    }`}></span>
+        {showSearchAndFilters && (
+          <form onSubmit={handleSearchSubmit} className="flex items-center w-full max-w-md mx-4 bg-gray-800 rounded-full px-4 py-2 border border-gray-700 focus-within:border-blue-500 transition-all duration-200">
+            <Search className="h-5 w-5 text-gray-400 mr-3" />
+            <input
+              type="text"
+              placeholder="Buscar músicas, artistas, estilos..."
+              className="flex-grow bg-transparent outline-none text-white placeholder-gray-400 text-sm"
+              value={searchQuery}
+              onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+            />
+            {onFiltersClick && (
+              <button type="button" onClick={onFiltersClick} className="ml-3 p-2 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors relative">
+                {/* O componente Filter é importado do lucide-react - SEM COMENTÁRIOS DE LINHA JS AQUI */}
+                <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-blue-400' : 'text-gray-300'}`} />
+                {hasActiveFilters && (
+                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-blue-500 ring-2 ring-gray-800"></span>
                 )}
               </button>
+            )}
+          </form>
+        )}
 
-              {/* Popup de informações */}
-              {showNotification && (
-                <div className="absolute right-0 top-10 bg-gray-800 border border-gray-600 rounded-lg p-4 w-72 shadow-xl z-50">
-                  {daysUntilExpiry === null || daysUntilExpiry === 999 ? (
-                    <>
-                      <p className="text-sm text-blue-400 font-medium">
-                        ✅ Plano VIP Ativo
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Sem data de vencimento definida. Aproveite todos os benefícios!
-                      </p>
-                    </>
-                  ) : daysUntilExpiry <= 0 ? (
-                    <>
-                      <p className="text-sm text-red-400 font-medium">
-                        🚨 SEU PLANO VENCEU!
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Renove agora para continuar aproveitando os benefícios VIP.
-                      </p>
-                      <div className="mt-2 p-2 bg-red-900/30 rounded text-xs text-red-300">
-                        ⚠️ Acesso aos downloads pode estar limitado
-                      </div>
-                    </>
-                  ) : daysUntilExpiry <= 3 ? (
-                    <>
-                      <p className="text-sm text-red-400 font-medium">
-                        🚨 RENOVAÇÃO URGENTE!
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Seu plano vence em {daysUntilExpiry} {daysUntilExpiry === 1 ? 'dia' : 'dias'}!
-                      </p>
-                      <div className="mt-2 p-2 bg-red-900/30 rounded text-xs text-red-300">
-                        🔥 Renove hoje para evitar interrupção
-                      </div>
-                    </>
-                  ) : daysUntilExpiry <= 7 ? (
-                    <>
-                      <p className="text-sm text-yellow-400 font-medium">
-                        ⚠️ ATENÇÃO: Vencimento próximo
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Seu plano vence em {daysUntilExpiry} dias
-                      </p>
-                      <div className="mt-2 p-2 bg-yellow-900/30 rounded text-xs text-yellow-300">
-                        💡 Considere renovar em breve
-                      </div>
-                    </>
-                  ) : daysUntilExpiry <= 30 ? (
-                    <>
-                      <p className="text-sm text-green-400 font-medium">
-                        ✅ Plano em dia!
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Vence em {daysUntilExpiry} dias. Tudo funcionando perfeitamente!
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm text-blue-400 font-medium">
-                        💎 Plano Premium
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Vence em {daysUntilExpiry} dias. Aproveite todos os benefícios!
-                      </p>
-                    </>
-                  )}
-
-                  <button
-                    onClick={() => setShowNotification(false)}
-                    className="text-xs text-blue-400 hover:text-blue-300 mt-3 underline"
-                  >
-                    Fechar
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {isSignedIn ? (
-            <div className="relative">
+        <div className="flex items-center space-x-4">
+          {session?.user ? (
+            <div className="relative" ref={profileMenuRef}>
               <button
-                onClick={() => setShowUserMenu((v) => !v)}
-                className="flex items-center gap-2 font-sans font-semibold px-3 py-2 rounded-full transition-colors text-gray-300 hover:text-white hover:bg-gray-800/80 tracking-wide bg-gray-900"
-                title="Menu do usuário"
+                className="flex items-center space-x-2 text-white font-medium hover:text-blue-400 transition-colors focus:outline-none"
+                onClick={() => setShowProfileMenu((prev) => !prev)}
+                aria-label="Abrir menu de perfil"
               >
-                <User size={20} />
+                <User className="h-8 w-8" />
+                {session.user.is_vip && <Crown className="h-5 w-5 text-yellow-400 ml-1" />}
               </button>
-              {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-40 bg-[#18181b] border border-gray-700 rounded-xl shadow-lg z-50">
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50 p-4">
+                  <div className="mb-2 text-white text-sm">
+                    <div className="font-bold text-base mb-1">{session.user.name || 'Usuário'}</div>
+                    <div className="text-gray-400 mb-1">{session.user.email}</div>
+                    <div className="flex items-center gap-2 mb-1">
+                      {session.user.is_vip ? (
+                        <><Crown className="h-4 w-4 text-yellow-400" /> <span className="text-yellow-300 font-semibold">VIP</span></>
+                      ) : (
+                        <><AlertCircle className="h-4 w-4 text-red-400" /> <span className="text-red-300 font-semibold">Free</span></>
+                      )}
+                    </div>
+                    {session.user.vencimento && (
+                      <div className="text-gray-400 text-xs">Vencimento: <span className="text-white font-semibold">{formatDate(session.user.vencimento)}</span></div>
+                    )}
+                  </div>
+                  <Link href="/profile/page.tsx" className="block px-4 py-2 text-white hover:bg-gray-800 rounded-lg mb-2">Perfil</Link>
                   <button
-                    onClick={() => { setShowUserMenu(false); router.push('/profile'); }}
-                    className="w-full text-left px-4 py-3 text-gray-200 hover:bg-gray-800 hover:text-white rounded-t-xl transition-colors"
-                  >
-                    Perfil
-                  </button>
-                  <button
-                    onClick={() => { setShowUserMenu(false); signOut({ callbackUrl: '/auth/sign-in' }); }}
-                    className="w-full text-left px-4 py-3 text-gray-200 hover:bg-red-600/60 hover:text-white rounded-b-xl transition-colors"
-                  >
-                    Sair
-                  </button>
+                    className="block w-full text-left px-4 py-2 text-white hover:bg-gray-800 rounded-lg"
+                    onClick={() => signOut()}
+                  >Sair</button>
                 </div>
               )}
             </div>
           ) : (
-            <>
-              <Link href="/auth/sign-in">
-                <button className="font-sans font-semibold px-3 py-2 rounded-md transition-colors text-gray-400 hover:text-white tracking-wide">
-                  Entrar
-                </button>
-              </Link>
-              <Link href="/auth/sign-up">
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-sans font-medium tracking-wide">
-                  Cadastrar
-                </button>
-              </Link>
-            </>
+            <Link href="/auth/sign-in" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow">Entrar</Link>
           )}
         </div>
-      </header>
+      </div>
 
-      {/* Menu Mobile */}
-      <MobileMenu
-        isOpen={isMobileMenuOpen}
-        onClose={() => setIsMobileMenuOpen(false)}
-      />
-    </>
+      {/* Não há notificações locais aqui, elas são gerenciadas pelo AppContext */}
+    </header>
   );
-}
+};
+
+export default Header;

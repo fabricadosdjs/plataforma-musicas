@@ -1,25 +1,90 @@
 "use client";
 
-import { UserCircle2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  User,
+  Mail,
+  CreditCard,
+  Shield,
+  Loader2,
+  LogOut,
+  MessageCircle,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Copy,
+  Download,
+  Music,
+  Star,
+  Crown,
+  TrendingUp,
+  BellRing,
+  Phone,
+  AtSign,
+  Check,
+  QrCode,
+  ExternalLink,
+  Settings,
+  MoveUpIcon as Upgrade,
+  Key,
+  Calendar,
+} from "lucide-react";
 
 export default function ProfilePage() {
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-black">
-            <div className="max-w-md w-full bg-gray-900 border border-gray-800 rounded-xl p-8 text-center shadow-lg">
-                <div className="flex justify-center mb-6">
-                    <UserCircle2 className="w-20 h-20 text-blue-500" />
-                </div>
-                <h1 className="text-2xl font-bold text-white mb-2">Perfil do Usuário</h1>
-                <p className="text-gray-400 mb-6">Gerencie suas informações e benefícios VIP.</p>
-                <div className="space-y-4">
-                    <div className="bg-gray-800 rounded-lg p-4 text-left">
-                        <p className="text-gray-300"><span className="font-semibold text-white">Nome:</span> Seu Nome</p>
-                        <p className="text-gray-300"><span className="font-semibold text-white">Email:</span> seuemail@exemplo.com</p>
-                        <p className="text-gray-300"><span className="font-semibold text-white">Status:</span> VIP</p>
-                    </div>
-                    <button className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">Editar Perfil</button>
-                </div>
-            </div>
-        </div>
-    );
+  const { data: session, status } = useSession();
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [showNotification, setShowNotification] = useState(false);
+  const [copiedStates, setCopiedStates] = useState<{ [key: string]: boolean }>({});
+  const [showPixModal, setShowPixModal] = useState(false);
+
+  useEffect(() => {
+    async function fetchUserDetails() {
+      if (!session?.user) return;
+      try {
+        const res = await fetch("/api/user-data");
+        if (res.ok) {
+          const data = await res.json();
+          setUserData(data);
+        }
+      } catch (err) {
+        setUserData(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUserDetails();
+  }, [session?.user]);
+
+
+  // Funções utilitárias
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Não definido";
+    return new Date(dateString).toLocaleDateString("pt-BR");
+  };
+  const getVencimentoStatus = (vencimento: string | null, status: string) => {
+    if (!vencimento || status === "CANCELADO") return "normal";
+    const hoje = new Date();
+    const dataVencimento = new Date(vencimento);
+    const diffTime = dataVencimento.getTime() - hoje.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return "vencido";
+    if (diffDays <= 5) return "vencendo";
+    return "normal";
+  };
+
+  // ...restante do componente, return JSX...
+
 }

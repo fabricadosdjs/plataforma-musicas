@@ -4,6 +4,42 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Helper function to parse dates, considering potential custom object format and problematic year prefixes
+function parseDateInput(dateInput: any): Date | null {
+    if (!dateInput) return null;
+
+    let dateString: string | null = null;
+
+    // Handle the specific BSON/EJSON-like date object format
+    if (typeof dateInput === 'object' && dateInput.$type === 'DateTime' && typeof dateInput.value === 'string') {
+        dateString = dateInput.value;
+    }
+    // Handle standard string
+    else if (typeof dateInput === 'string') {
+        dateString = dateInput;
+    }
+    // Handle Date object directly
+    else if (dateInput instanceof Date) {
+        // Ensure it's a valid date object before returning
+        return isNaN(dateInput.getTime()) ? null : dateInput;
+    }
+
+    if (dateString) {
+        // Attempt to clean the string if it contains problematic prefixes like '+'
+        // This is a speculative fix for "+272025-08-21T03:00:00.000Z"
+        // It tries to remove the leading '+' if it seems to be part of an invalid large year format.
+        if (dateString.startsWith('+') && dateString.length > 5 && !isNaN(parseInt(dateString.substring(1,5)))) {
+             dateString = dateString.substring(1);
+        }
+
+        const parsedDate = new Date(dateString);
+        return isNaN(parsedDate.getTime()) ? null : parsedDate;
+    }
+
+    return null;
+}
+
+
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
@@ -38,6 +74,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Buscar download diretamente sem verificar se track existe (otimização)
+        // Incluindo nextAllowedDownload no select para a lógica de canDownload
         const download = await prisma.download.findFirst({
             where: {
                 userId: session.user.id,
@@ -45,6 +82,14 @@ export async function GET(request: NextRequest) {
             },
             orderBy: {
                 downloadedAt: 'desc'
+            },
+            select: { // Garantir que nextAllowedDownload seja selecionado
+                id: true,
+                trackId: true,
+                userId: true,
+                downloadedAt: true,
+                createdAt: true,
+                nextAllowedDownload: true, // <-- ADICIONADO AQUI
             }
         });
 
@@ -79,28 +124,61 @@ export async function POST(request: NextRequest) {
         }
 
         const { trackId, confirm } = await request.json();
-
         if (!trackId) {
             return NextResponse.json({ error: 'trackId é obrigatório' }, { status: 400 });
+        }
+
+        // Buscar dados do usuário
+        const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+        if (!user) {
+            return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+        }
+        if (!user.is_vip) {
+            return NextResponse.json({ error: 'Apenas usuários VIP podem baixar músicas.' }, { status: 403 });
+        }
+
+        // Resetar contador diário se passou 24h
+        const now = new Date();
+        let dailyCount = user.dailyDownloadCount || 0;
+        let lastReset = user.lastDownloadReset ? new Date(user.lastDownloadReset) : null;
+        if (!lastReset || now.getTime() - lastReset.getTime() > 24 * 60 * 60 * 1000) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { dailyDownloadCount: 0, lastDownloadReset: now }
+            });
+            dailyCount = 0;
+            lastReset = now;
+        }
+
+        // Verificar limite diário
+        const maxDailyDownloads = (user as any).benefits?.downloadsPerDay || 50;
+        if (dailyCount >= maxDailyDownloads) {
+            const resetTime = new Date(lastReset.getTime() + 24 * 60 * 60 * 1000);
+            return NextResponse.json({
+                error: `Limite diário de ${maxDailyDownloads} downloads atingido. Tente novamente após ${resetTime.toLocaleString('pt-BR')}.`,
+                dailyDownloadCount: dailyCount,
+                lastDownloadReset: lastReset.toISOString(),
+                needsConfirmation: false
+            }, { status: 429 });
         }
 
         // Verificar se já existe um download recente
         const existingDownload = await prisma.download.findFirst({
             where: {
-                userId: session.user.id,
+                userId: user.id,
                 trackId: parseInt(trackId)
             },
-            orderBy: {
-                downloadedAt: 'desc'
+            orderBy: { downloadedAt: 'desc' },
+            select: { // Garantir que nextAllowedDownload seja selecionado AQUI TAMBÉM
+                id: true,
+                trackId: true,
+                userId: true,
+                downloadedAt: true,
+                createdAt: true,
+                nextAllowedDownload: true, // <-- ADICIONADO AQUI PARA O POST TAMBÉM
             }
         });
-
-        const now = new Date();
-        const canDownload = !existingDownload ||
-            !existingDownload.nextAllowedDownload ||
-            now >= existingDownload.nextAllowedDownload;
-
-        // Se não pode baixar e não confirmou, retornar erro
+        const canDownload = !existingDownload || !existingDownload.nextAllowedDownload || now >= existingDownload.nextAllowedDownload;
         if (!canDownload && !confirm) {
             return NextResponse.json({
                 error: 'Você precisa aguardar 24 horas para baixar novamente',
@@ -109,36 +187,40 @@ export async function POST(request: NextRequest) {
             }, { status: 403 });
         }
 
-        // Se confirmou ou pode baixar, registrar o download
-        const nextAllowedDownload = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 horas
+        // Registrar download e incrementar contador
+        const nextAllowedDownload = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const downloadedAt = now;
 
         const download = await prisma.download.upsert({
             where: {
                 userId_trackId: {
-                    userId: session.user.id,
+                    userId: user.id,
                     trackId: parseInt(trackId)
                 }
             },
             update: {
-                downloadedAt: now,
+                downloadedAt: downloadedAt,
                 nextAllowedDownload: nextAllowedDownload
             },
             create: {
-                userId: session.user.id,
+                userId: user.id,
                 trackId: parseInt(trackId),
-                downloadedAt: now,
+                downloadedAt: downloadedAt,
                 nextAllowedDownload: nextAllowedDownload
             }
+        });
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { dailyDownloadCount: dailyCount + 1 }
         });
 
         return NextResponse.json({
             success: true,
             download,
-            canDownloadAgainAt: nextAllowedDownload
+            dailyDownloadCount: dailyCount + 1
         });
-
     } catch (error) {
         console.error('Erro ao registrar download:', error);
-        return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+        return NextResponse.json({ error: 'Erro interno ao registrar download' }, { status: 500 });
     }
 }

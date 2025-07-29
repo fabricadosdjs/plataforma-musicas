@@ -15,7 +15,7 @@ export async function GET() {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        const user = await prisma.profile.findUnique({
+        const user = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: {
                 name: true,

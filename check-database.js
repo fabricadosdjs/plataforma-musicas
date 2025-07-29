@@ -23,7 +23,7 @@ async function checkDatabase() {
 
         // Listar algumas músicas
         console.log('\n🎵 Músicas encontradas:');
-        const tracks = await prisma.track.findMany({
+        const tracks = await prisma.track.findMany({        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js        node create-user.js
             take: 10,
             select: {
                 id: true,

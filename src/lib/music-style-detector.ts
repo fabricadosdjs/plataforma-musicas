@@ -8,6 +8,11 @@ export interface StyleDetectionResult {
     mood?: string;
 }
 
+// Export all style names for use in dropdowns, etc.
+export function getAllStyleNames(): string[] {
+    return Object.keys(MusicStyleDetector["stylePatterns"]);
+}
+
 export class MusicStyleDetector {
     private static readonly stylePatterns: Record<string, {
         keywords: string[];

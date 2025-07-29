@@ -61,15 +61,22 @@ export async function POST(request: NextRequest) {
         const realIp = request.headers.get('x-real-ip');
         const ipAddress = forwarded?.split(',')[0] || realIp || 'Unknown';
 
-        // Registrar a reprodução
-        const play = await prisma.$executeRaw`
-            INSERT INTO "public"."play" (
-                "trackId", "userId", "duration", "completed", "deviceInfo", "ipAddress", "createdAt"
-            ) VALUES (
-                ${parseInt(trackId)}, ${session.user.id}, ${duration || null}, ${completed || false}, 
-                ${deviceInfo || userAgent}, ${ipAddress}, NOW()
-            ) RETURNING *
-        `;
+        // Registrar a reprodução usando raw SQL
+        try {
+            await prisma.$executeRaw`
+                INSERT INTO "Play" (
+                    "trackId", "userId", "duration", "completed", "deviceInfo", "ipAddress", "createdAt"
+                ) VALUES (
+                    ${parseInt(trackId)}, ${session.user.id}, ${duration || null}, ${completed || false}, 
+                    ${deviceInfo || userAgent}, ${ipAddress}, NOW()
+                )
+            `;
+        } catch (insertError) {
+            console.error('Erro ao inserir na tabela Play:', insertError);
+            return NextResponse.json({
+                error: 'Erro ao registrar reprodução no banco de dados'
+            }, { status: 500 });
+        }
 
         return NextResponse.json({
             success: true,

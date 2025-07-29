@@ -20,6 +20,7 @@ import {
     Volume2
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { getAllStyleNames } from '@/lib/music-style-detector';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -60,6 +61,8 @@ export default function ContaboStoragePage() {
 
     const [files, setFiles] = useState<StorageFile[]>([]);
     const [importableFiles, setImportableFiles] = useState<ImportableFile[]>([]);
+    const [styleOptions, setStyleOptions] = useState<string[]>([]);
+    const [versionOptions, setVersionOptions] = useState<string[]>(["Original", "Extended Mix", "Radio Edit", "Club Mix", "Vocal Mix", "Instrumental", "Dub Mix", "Remix", "VIP Mix", "Acoustic"]);
     const [loading, setLoading] = useState(false);
     const [importing, setImporting] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -73,8 +76,10 @@ export default function ContaboStoragePage() {
         redirect('/auth/sign-in');
     }
 
+
     useEffect(() => {
         loadFiles();
+        setStyleOptions(getAllStyleNames());
     }, []);
 
     const loadFiles = async () => {
@@ -151,8 +156,9 @@ export default function ContaboStoragePage() {
     };
 
     const importSelectedFiles = async () => {
-        if (importableFiles.length === 0) {
-            showMessage('Nenhum arquivo para importar', 'error');
+        const filesToImport = importableFiles.filter(item => selectedFiles.includes(item.file.key));
+        if (filesToImport.length === 0) {
+            showMessage('Selecione pelo menos um arquivo para importar', 'error');
             return;
         }
 
@@ -162,7 +168,7 @@ export default function ContaboStoragePage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    files: importableFiles
+                    files: filesToImport
                 })
             });
 
@@ -172,6 +178,7 @@ export default function ContaboStoragePage() {
                 showMessage(data.message, 'success');
                 setImportableFiles([]); // Limpa a lista após importação
                 setCurrentView('files'); // Volta para a lista de arquivos
+                setSelectedFiles([]);
             } else {
                 showMessage(data.error || 'Erro na importação', 'error');
             }
@@ -232,6 +239,51 @@ export default function ContaboStoragePage() {
     const audioFiles = filteredFiles.filter(f => f.isAudio);
     const otherFiles = filteredFiles.filter(f => !f.isAudio);
 
+
+    // Handler to update style for a specific importable file
+    const handleStyleChange = (index: number, newStyle: string) => {
+        setImportableFiles((prev) => {
+            const updated = [...prev];
+            updated[index] = {
+                ...updated[index],
+                importData: {
+                    ...updated[index].importData,
+                    style: newStyle
+                }
+            };
+            return updated;
+        });
+    };
+
+    // Handler to update version for a specific importable file
+    const handleVersionChange = (index: number, newVersion: string) => {
+        setImportableFiles((prev) => {
+            const updated = [...prev];
+            updated[index] = {
+                ...updated[index],
+                importData: {
+                    ...updated[index].importData,
+                    version: newVersion
+                }
+            };
+            return updated;
+        });
+    };
+
+    // Handler to add a new style to the dropdown
+    const handleAddNewStyle = (newStyle: string) => {
+        if (newStyle && !styleOptions.includes(newStyle)) {
+            setStyleOptions((prev) => [...prev, newStyle]);
+        }
+    };
+
+    // Handler to add a new version to the dropdown
+    const handleAddNewVersion = (newVersion: string) => {
+        if (newVersion && !versionOptions.includes(newVersion)) {
+            setVersionOptions((prev) => [...prev, newVersion]);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#202124] text-white">
             <div className="container mx-auto px-6 py-8">
@@ -257,8 +309,8 @@ export default function ContaboStoragePage() {
                 {/* Message Alert */}
                 {message && (
                     <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${messageType === 'success'
-                            ? 'bg-green-600/20 border border-green-600/30 text-green-400'
-                            : 'bg-red-600/20 border border-red-600/30 text-red-400'
+                        ? 'bg-green-600/20 border border-green-600/30 text-green-400'
+                        : 'bg-red-600/20 border border-red-600/30 text-red-400'
                         }`}>
                         {messageType === 'success' ? (
                             <CheckCircle className="w-5 h-5" />
@@ -336,8 +388,8 @@ export default function ContaboStoragePage() {
                             <label
                                 htmlFor="file-upload"
                                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors ${uploading
-                                        ? 'bg-gray-600 cursor-not-allowed'
-                                        : 'bg-blue-600 hover:bg-blue-700'
+                                    ? 'bg-gray-600 cursor-not-allowed'
+                                    : 'bg-blue-600 hover:bg-blue-700'
                                     } text-white`}
                             >
                                 {uploading ? (
@@ -364,8 +416,8 @@ export default function ContaboStoragePage() {
                             <button
                                 onClick={() => setCurrentView('files')}
                                 className={`px-4 py-2 rounded-md transition-colors ${currentView === 'files'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'text-gray-300 hover:text-white'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-gray-300 hover:text-white'
                                     }`}
                             >
                                 <File className="w-4 h-4 inline mr-2" />
@@ -379,8 +431,8 @@ export default function ContaboStoragePage() {
                                     }
                                 }}
                                 className={`px-4 py-2 rounded-md transition-colors ${currentView === 'import'
-                                        ? 'bg-purple-600 text-white'
-                                        : 'text-gray-300 hover:text-white'
+                                    ? 'bg-purple-600 text-white'
+                                    : 'text-gray-300 hover:text-white'
                                     }`}
                             >
                                 <Import className="w-4 h-4 inline mr-2" />
@@ -438,8 +490,8 @@ export default function ContaboStoragePage() {
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3 flex-1">
                                                 <div className={`p-2 rounded-lg ${file.isAudio
-                                                        ? 'bg-purple-600/20 text-purple-400'
-                                                        : 'bg-gray-600/20 text-gray-400'
+                                                    ? 'bg-purple-600/20 text-purple-400'
+                                                    : 'bg-gray-600/20 text-gray-400'
                                                     }`}>
                                                     {file.isAudio ? (
                                                         <Volume2 className="w-5 h-5" />
@@ -505,18 +557,32 @@ export default function ContaboStoragePage() {
                             </h3>
 
                             {importableFiles.length > 0 && (
-                                <button
-                                    onClick={importSelectedFiles}
-                                    disabled={importing}
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
-                                >
-                                    {importing ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={importSelectedFiles}
+                                        disabled={importing || selectedFiles.length === 0}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                        {importing ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Import className="w-4 h-4" />
+                                        )}
+                                        {importing ? 'Importando...' : `Importar (marcadas)`}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            // Importar todas
+                                            setSelectedFiles(importableFiles.map(f => f.file.key));
+                                            setTimeout(importSelectedFiles, 0);
+                                        }}
+                                        disabled={importing}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg transition-colors disabled:opacity-50"
+                                    >
                                         <Import className="w-4 h-4" />
-                                    )}
-                                    {importing ? 'Importando...' : 'Importar Todas'}
-                                </button>
+                                        Importar Todas
+                                    </button>
+                                </div>
                             )}
                         </div>
 
@@ -545,40 +611,131 @@ export default function ContaboStoragePage() {
                         ) : (
                             <div className="divide-y divide-gray-700">
                                 {importableFiles.map((item, index) => (
-                                    <div key={item.file.key} className="p-4">
-                                        <div className="flex items-start gap-4">
-                                            <div className="p-2 bg-purple-600/20 rounded-lg">
-                                                <Music className="w-5 h-5 text-purple-400" />
-                                            </div>
-
-                                            <div className="flex-1">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <h4 className="font-medium text-white mb-2">Arquivo Original</h4>
-                                                        <p className="text-sm text-gray-300">{item.file.filename}</p>
-                                                        <p className="text-xs text-gray-500">
-                                                            {formatFileSize(item.file.size)} •
-                                                            {new Date(item.file.lastModified).toLocaleDateString('pt-BR')}
+                                    <div key={item.file.key} className="p-4 flex items-start gap-4">
+                                        {/* Checkbox para seleção */}
+                                        <input
+                                            type="checkbox"
+                                            className="mt-2 mr-2 w-5 h-5 accent-purple-600"
+                                            checked={selectedFiles.includes(item.file.key)}
+                                            onChange={e => {
+                                                setSelectedFiles(prev =>
+                                                    e.target.checked
+                                                        ? [...prev, item.file.key]
+                                                        : prev.filter(k => k !== item.file.key)
+                                                );
+                                            }}
+                                        />
+                                        <div className="p-2 bg-purple-600/20 rounded-lg">
+                                            <Music className="w-5 h-5 text-purple-400" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <h4 className="font-medium text-white mb-2">Arquivo Original</h4>
+                                                    <p className="text-sm text-gray-300">{item.file.filename}</p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {formatFileSize(item.file.size)} •
+                                                        {new Date(item.file.lastModified).toLocaleDateString('pt-BR')}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-medium text-white mb-2">Dados Detectados</h4>
+                                                    <div className="space-y-1 text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-gray-500">Música:</span>
+                                                            <input
+                                                                type="text"
+                                                                className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white w-48"
+                                                                value={item.importData.songName}
+                                                                onChange={e => {
+                                                                    const newName = e.target.value;
+                                                                    setImportableFiles((prev) => {
+                                                                        const updated = [...prev];
+                                                                        updated[index] = {
+                                                                            ...updated[index],
+                                                                            importData: {
+                                                                                ...updated[index].importData,
+                                                                                songName: newName
+                                                                            }
+                                                                        };
+                                                                        return updated;
+                                                                    });
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <p className="text-gray-300">
+                                                            <span className="text-gray-500">Artista:</span> {item.parsed.artist}
                                                         </p>
-                                                    </div>
-
-                                                    <div>
-                                                        <h4 className="font-medium text-white mb-2">Dados Detectados</h4>
-                                                        <div className="space-y-1 text-sm">
-                                                            <p className="text-gray-300">
-                                                                <span className="text-gray-500">Música:</span> {item.parsed.songName}
-                                                            </p>
-                                                            <p className="text-gray-300">
-                                                                <span className="text-gray-500">Artista:</span> {item.parsed.artist}
-                                                            </p>
-                                                            {item.parsed.version && (
-                                                                <p className="text-gray-300">
-                                                                    <span className="text-gray-500">Versão:</span> {item.parsed.version}
-                                                                </p>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-gray-500">Versão:</span>
+                                                            <select
+                                                                className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                                                                value={item.importData.version || versionOptions[0]}
+                                                                onChange={e => handleVersionChange(index, e.target.value)}
+                                                            >
+                                                                {versionOptions.map((ver) => (
+                                                                    <option key={ver} value={ver}>{ver}</option>
+                                                                ))}
+                                                                <option value="__new">Adicionar novo...</option>
+                                                            </select>
+                                                            {item.importData.version === "__new" && (
+                                                                <input
+                                                                    type="text"
+                                                                    className="ml-2 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                                                                    placeholder="Nova versão"
+                                                                    autoFocus
+                                                                    onBlur={e => {
+                                                                        if (e.target.value.trim()) {
+                                                                            handleAddNewVersion(e.target.value.trim());
+                                                                            handleVersionChange(index, e.target.value.trim());
+                                                                        } else {
+                                                                            handleVersionChange(index, versionOptions[0] || "");
+                                                                        }
+                                                                    }}
+                                                                />
                                                             )}
-                                                            <p className="text-gray-300">
-                                                                <span className="text-gray-500">Estilo:</span> {item.importData.style}
-                                                            </p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-gray-500">Estilo:</span>
+                                                            <select
+                                                                className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                                                                value={item.importData.style}
+                                                                onChange={e => handleStyleChange(index, e.target.value)}
+                                                            >
+                                                                {styleOptions.map((style) => (
+                                                                    <option key={style} value={style}>{style}</option>
+                                                                ))}
+                                                                {/* Option for custom/new style */}
+                                                                <option value="__new">Adicionar novo...</option>
+                                                            </select>
+                                                            {item.importData.style === "__new" && (
+                                                                <input
+                                                                    type="text"
+                                                                    className="ml-2 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                                                                    placeholder="Novo estilo"
+                                                                    autoFocus
+                                                                    onBlur={e => {
+                                                                        const val = e.target.value.trim();
+                                                                        if (val) {
+                                                                            handleAddNewStyle(val);
+                                                                            handleStyleChange(index, val);
+                                                                        } else {
+                                                                            // Se não digitou nada, volta para o primeiro estilo disponível
+                                                                            handleStyleChange(index, styleOptions[0] || "Club");
+                                                                        }
+                                                                    }}
+                                                                    onKeyDown={e => {
+                                                                        if (e.key === 'Enter') {
+                                                                            const val = (e.target as HTMLInputElement).value.trim();
+                                                                            if (val) {
+                                                                                handleAddNewStyle(val);
+                                                                                handleStyleChange(index, val);
+                                                                                (e.target as HTMLInputElement).blur();
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>

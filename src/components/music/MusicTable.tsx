@@ -1,504 +1,495 @@
 // src/components/music/MusicTable.tsx
 "use client";
-
-import { useAppContext } from '@/context/AppContext';
+import React, { useState, useEffect } from 'react';
 import { Track } from '@/types/track';
+import Link from 'next/link';
 import { AlertTriangle, Copyright, Download, Heart, Music, Pause, Play } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useAppContext } from '@/context/AppContext';
+import GlobalAudioPlayer from '@/components/player/GlobalAudioPlayer';
 
 interface MusicTableProps {
     tracks: Track[];
+    onDownload?: (tracks: Track[]) => void;
+    isDownloading?: boolean;
 }
 
-const MusicTable = ({ tracks }: MusicTableProps) => {
-    const { playTrack, currentTrack, isPlaying, togglePlayPause, handleDownload, downloadedTracks, handleLike, likedTracks: contextLikedTracks } = useAppContext();
-    const { data: session } = useSession();
-    const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
-    const [loadingDownloadStatus, setLoadingDownloadStatus] = useState(true);
-
-    const user = session?.user;
-
-    // Estados para controle de download
-    const [downloadStatus, setDownloadStatus] = useState<{ [trackId: number]: { canDownload: boolean; hasDownloaded: boolean; nextAllowedDownload?: string } }>({});
-    const [timeLeft, setTimeLeft] = useState<{ [trackId: number]: string }>({});
-
-    // Converter array do contexto para Set para facilitar verificações
-    const likedTracksSet = new Set(contextLikedTracks);
-    const downloadedTracksSet = new Set(downloadedTracks);
-
-    // Memoizar IDs dos tracks para evitar loops infinitos no useEffect
-    const trackIds = useMemo(() =>
-        tracks.map(track => track.id).join(','),
-        [tracks]
-    );
-
-    // Função para calcular tempo restante
-    const calculateTimeLeft = (nextAllowedDownload: string): string => {
-        const now = new Date().getTime();
-        const nextAllowed = new Date(nextAllowedDownload).getTime();
-        const diff = nextAllowed - now;
-
-        if (diff <= 0) return "Disponível";
-
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-        // Mostrar apenas o maior valor para economizar espaço
-        if (hours > 0) {
-            return `${hours}h`;
+const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
+    // Função para texto do botão de download
+    const getDownloadButtonText = (trackId: number) => {
+        if (hasDownloadedBefore(trackId)) {
+            return 'BAIXADO';
         }
-        return `${minutes}m`;
+        return 'Download';
     };
+    // Simula status de carregamento dos downloads
+    const [loadingDownloadStatus, setLoadingDownloadStatus] = useState(false);
+    // Tracks curtidas (persistente)
+    const [likedTracksSet, setLikedTracksSet] = useState<Set<number>>(new Set());
 
-    // Atualizar timer a cada minuto
-
+    // Função para buscar likes do backend
+    const fetchLikes = async () => {
+        if (!user?.id) return;
+        try {
+            const res = await fetch('/api/likes');
+            if (!res.ok) return;
+            const data = await res.json();
+            // Corrigido: backend retorna 'likedTracks', não 'likedTrackIds'
+            if (Array.isArray(data.likedTracks)) {
+                setLikedTracksSet(new Set(data.likedTracks));
+            }
+        } catch (err) { }
+    };
+    // Estado para forçar atualização do timer a cada segundo
+    const [, forceUpdate] = useState(0);
+    // Atualiza o timer a cada segundo para feedback visual
     useEffect(() => {
         const interval = setInterval(() => {
-            const newTimeLeft: { [trackId: number]: string } = {};
-            Object.entries(downloadStatus).forEach(([trackId, status]) => {
-                if (!status.canDownload && status.nextAllowedDownload) {
-                    newTimeLeft[parseInt(trackId)] = calculateTimeLeft(status.nextAllowedDownload);
-                }
-            });
-            setTimeLeft(newTimeLeft);
-        }, 60000); // Atualizar a cada minuto
+            forceUpdate((v) => v + 1);
+        }, 1000);
         return () => clearInterval(interval);
-    }, [downloadStatus]);
+    }, []);
+    // Estado para controle de "curtir"
+    const [liking, setLiking] = useState<number | null>(null);
+    // Estado para modal estiloso de download restrito 24h
+    const [showRestrict24hModal, setShowRestrict24hModal] = useState<{ track: Track | null, open: boolean }>({ track: null, open: false });
+    // Limite de downloads por dia
+    const DAILY_DOWNLOAD_LIMIT = 50;
+    const { data: session } = useSession();
+    const user = session?.user;
 
-    // Carregar status de download para cada track
+    // Carrega likes do usuário ao montar (deve vir após a declaração de user)
     useEffect(() => {
-        const loadDownloadStatus = async () => {
-            if (!session?.user) {
-                setLoadingDownloadStatus(false);
+        if (!user?.id) return;
+        fetchLikes();
+    }, [user?.id]);
+    // Quantos downloads o usuário já fez hoje (do contexto, ou do status)
+    const [downloadsToday, setDownloadsToday] = useState(0);
+    const downloadsLeft = Math.max(DAILY_DOWNLOAD_LIMIT - downloadsToday, 0);
+    // Set de IDs de músicas já baixadas
+    const [downloadedTracksSet, setDownloadedTracksSet] = useState<Set<number>>(new Set());
+
+    // Estado para guardar tempo restante para cada track (em segundos)
+    const [downloadedTracksTime, setDownloadedTracksTime] = useState<{ [trackId: number]: number }>({});
+
+    // Função para formatar tempo restante
+    const formatTimeLeft = (seconds: number) => {
+        if (seconds <= 0) return '';
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        if (h > 0) return `${h}h ${m}m`;
+        if (m > 0) return `${m}m ${s}s`;
+        return `${s}s`;
+    };
+
+
+    // Função real para baixar música
+    const handleDownload = async (track: Track, confirmReDownload = false) => {
+        try {
+            // Chama a API para registrar o download e validar VIP/limite
+            const res = await fetch('/api/downloads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ trackId: track.id, confirmReDownload })
+            });
+            const data = await res.json();
+            if (res.status === 202 && data.needsConfirmation) {
+                // Precisa de confirmação para re-download
+                if (window.confirm(data.message || 'Você já baixou esta música hoje. Deseja baixar novamente?')) {
+                    await handleDownload(track, true);
+                }
                 return;
             }
-
-            // Se não há tracks, limpar estados e finalizar
-            if (!tracks || tracks.length === 0) {
-                setDownloadStatus({});
-                setTimeLeft({});
-                setLoadingDownloadStatus(false);
+            if (res.status === 429) {
+                setNotification({ message: data?.message || 'Limite diário de downloads atingido.', type: 'error' });
                 return;
             }
-
-            setLoadingDownloadStatus(true);
-
-            try {
-                // Usar API otimizada para verificar múltiplos tracks de uma vez
-                const trackIds = tracks.map(track => track.id);
-
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-                const response = await fetch('/api/downloads/batch-control', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ trackIds }),
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    console.warn(`Erro ${response.status} ao verificar status dos tracks`);
-                    // Fallback: usar valores padrão
-                    const fallbackStatus: any = {};
-                    tracks.forEach(track => {
-                        fallbackStatus[track.id] = {
-                            canDownload: true,
-                            hasDownloaded: false,
-                            nextAllowedDownload: undefined
-                        };
-                    });
-                    setDownloadStatus(fallbackStatus);
+            if (!res.ok) {
+                setNotification({ message: data?.message || data?.error || 'Erro ao baixar música.', type: 'error' });
+                return;
+            }
+            // Se permitido, faz o download forçado via fetch blob
+            if (track.downloadUrl) {
+                const fileRes = await fetch(track.downloadUrl);
+                if (!fileRes.ok) {
+                    setNotification({ message: 'Erro ao baixar arquivo da música.', type: 'error' });
                     return;
                 }
-
-                const batchResult = await response.json();
-
-                // Converter para o formato esperado
-                const statusMap: any = {};
-                Object.entries(batchResult).forEach(([trackId, status]: [string, any]) => {
-                    statusMap[parseInt(trackId)] = {
-                        canDownload: status.canDownload ?? true,
-                        hasDownloaded: status.hasDownloaded ?? false,
-                        nextAllowedDownload: status.nextAllowedDownload
-                    };
-                });
-
-                setDownloadStatus(statusMap);
-
-                // Calcular tempo inicial
-                const initialTimeLeft: { [trackId: number]: string } = {};
-                Object.entries(batchResult).forEach(([trackId, status]: [string, any]) => {
-                    if (!status.canDownload && status.nextAllowedDownload) {
-                        initialTimeLeft[parseInt(trackId)] = calculateTimeLeft(status.nextAllowedDownload);
-                    }
-                });
-                setTimeLeft(initialTimeLeft);
-
-            } catch (error) {
-                if (error instanceof Error && error.name === 'AbortError') {
-                    console.warn('Timeout ao verificar status dos tracks');
-                } else {
-                    console.error('Erro geral ao carregar status de downloads:', error);
-                }
-
-                // Fallback: usar valores padrão para todos os tracks
-                const fallbackStatus: any = {};
-                tracks.forEach(track => {
-                    fallbackStatus[track.id] = {
-                        canDownload: true,
-                        hasDownloaded: false,
-                        nextAllowedDownload: undefined
-                    };
-                });
-                setDownloadStatus(fallbackStatus);
-            } finally {
-                setLoadingDownloadStatus(false);
+                const blob = await fileRes.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `${track.artist} - ${track.songName}.mp3`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } else {
+                setNotification({ message: 'URL de download não disponível.', type: 'error' });
             }
-        };
-
-        loadDownloadStatus();
-    }, [trackIds, session?.user?.id]);    // Função para verificar se pode baixar usando o estado do banco
-    const canDownload = (trackId: number) => {
-        return downloadStatus[trackId]?.canDownload ?? true;
-    };
-
-    // Função para verificar se já foi baixado
-    const hasDownloaded = (trackId: number) => {
-        return downloadStatus[trackId]?.hasDownloaded ?? false;
-    };
-
-    // Função para obter o texto do timer
-    const getTimerText = (trackId: number) => {
-        if (canDownload(trackId)) return 'Baixar';
-        return timeLeft[trackId] || 'Calculando...';
-    }; const showNotification = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
-        setNotification({ message, type });
-        setTimeout(() => setNotification(null), 3000);
-    };
-
-    const handlePlayClick = (track: Track) => {
-        if (!session) {
-            showNotification('Você precisa estar logado para usar o player', 'warning');
-            return;
+            // Atualiza contadores locais após sucesso
+            setDownloadsToday((prev: number) => Math.min((data.dailyDownloadCount ?? prev + 1), DAILY_DOWNLOAD_LIMIT));
+            if (data.downloadedTrackIds) {
+                setDownloadedTracksSet(new Set(data.downloadedTrackIds));
+            }
+        } catch (err) {
+            setNotification({ message: 'Erro ao baixar música.', type: 'error' });
         }
+    };
 
-        if (!session.user.is_vip) {
-            showNotification('Apenas usuários VIP podem usar o player', 'warning');
-            return;
-        }
+    // Toast visual para notificações
+    const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
+    const setNotification = (notif: { message: string; type: string }) => {
+        setToast(notif);
+        setTimeout(() => setToast(null), 4000);
+    };
 
-        if (currentTrack?.id === track.id) {
+    // Função para tocar/pausar música usando o contexto global
+    const { playTrack: playTrackContext, togglePlayPause, currentTrack, isPlaying } = useAppContext();
+    const handlePlayPauseClick = (track: Track) => {
+        if (currentTrack?.id === track.id && isPlaying) {
             togglePlayPause();
         } else {
-            playTrack(track, tracks);
+            playTrackContext(track);
         }
     };
 
+    // Função para verificar se pode baixar agora (restrição de 24h)
+    const canDownloadNow = (trackId: number) => {
+        if (!downloadedTracksTime[trackId]) return true;
+        return downloadedTracksTime[trackId] <= 0;
+    };
+
+    // Função para download
+    const handleDownloadClick = (track: Track) => {
+        if (hasDownloadedBefore(track.id) && !canDownloadNow(track.id)) {
+            setNotification({
+                message: `Você já baixou esta música nas últimas 24h. Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente!`,
+                type: 'error'
+            });
+            return;
+        }
+        if (downloadsLeft <= 0) {
+            setNotification({ message: 'Limite diário de downloads atingido. Tente novamente amanhã.', type: 'error' });
+            return;
+        }
+        if (!canDownloadNow(track.id)) {
+            setNotification({
+                message: `Você já baixou esta música nas últimas 24h. Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente!`,
+                type: 'error'
+            });
+            return;
+        }
+        if (onDownload) {
+            onDownload([track]);
+        }
+    };
+
+    // Função para baixar novamente
+    const downloadTrack = async (track: Track) => {
+        if (hasDownloadedBefore(track.id) && !canDownloadNow(track.id)) {
+            setNotification({
+                message: `Você já baixou esta música nas últimas 24h. Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente!`,
+                type: 'error'
+            });
+            setShowRestrict24hModal({ track: null, open: false });
+            return;
+        }
+        await handleDownload(track);
+        setDownloadsToday((prev: number) => Math.min(prev + 1, DAILY_DOWNLOAD_LIMIT));
+        setNotification({
+            message: `Música "${track.songName}" baixada com sucesso!\nVocê pode baixar até ${DAILY_DOWNLOAD_LIMIT} músicas por dia. Restam ${Math.max(downloadsLeft - 1, 0)} downloads hoje.`,
+            type: 'success'
+        });
+        setShowRestrict24hModal({ track: null, open: false });
+    };
+
+    // Função para curtir/descurtir (persistente)
     const handleLikeClick = async (trackId: number) => {
-        if (!session) {
-            showNotification('Você precisa estar logado para curtir músicas', 'warning');
-            return;
-        }
-
+        if (!user?.id || liking) return;
+        setLiking(trackId);
+        const alreadyLiked = likedTracksSet.has(trackId);
         try {
-            // Usar apenas a função do contexto que já faz a chamada da API
-            await handleLike(trackId);
-        } catch (error) {
-            console.error('Erro ao processar like:', error);
-            showNotification('Erro ao processar like', 'error');
-        }
-    }; const handleDownloadClick = async (track: Track) => {
-        if (!session) {
-            showNotification('Você precisa estar logado para baixar músicas', 'warning');
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/download', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    trackId: track.id
-                }),
+            const res = await fetch('/api/likes', {
+                method: alreadyLiked ? 'DELETE' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ trackId: Number(trackId) })
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                showNotification(`Download autorizado! ${data.remainingDownloads} downloads restantes hoje.`, 'success');
-
-                // Atualizar o estado local
-                setDownloadStatus(prev => ({
-                    ...prev,
-                    [track.id]: {
-                        canDownload: true,
-                        hasDownloaded: true
-                    }
-                }));
-
-                // Iniciar o download real
-                await handleDownload(track);
+            const data = await res.json();
+            if (res.ok) {
+                await fetchLikes();
+                setNotification({ message: data?.message || (alreadyLiked ? 'Like removido' : 'Like adicionado'), type: 'success' });
             } else {
-                if (response.status === 429) {
-                    showNotification(`Limite diário atingido: ${data.used}/${data.limit} downloads`, 'warning');
-                } else {
-                    showNotification(data.error || 'Erro ao processar download', 'error');
+                setNotification({ message: data?.error || 'Erro ao atualizar favorito.', type: 'error' });
+            }
+        } catch (err) {
+            setNotification({ message: 'Erro ao atualizar favorito.', type: 'error' });
+        }
+        setTimeout(() => setLiking(null), 400);
+    };
+
+    // Função para reportar
+    const handleReportClick = (track: Track) => {
+        setNotification({ message: `Reportado problema na música: ${track.songName}`, type: 'info' });
+    };
+
+    // Função para copyright
+    const handleCopyrightClick = (track: Track) => {
+        setNotification({ message: `Reportado copyright na música: ${track.songName}`, type: 'info' });
+    };
+
+    // Função para verificar se já baixou
+    const hasDownloadedBefore = (trackId: number) => {
+        return downloadedTracksSet.has(trackId);
+    };
+
+    // Buscar contador real do backend ao carregar ou trocar de usuário
+    useEffect(() => {
+        let cancelled = false;
+        if (!user?.id) return;
+        const fetchDailyDownloadCount = async () => {
+            try {
+                const res = await fetch('/api/user-data');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (cancelled) return;
+                if (data.user && typeof data.user.dailyDownloadCount === 'number') {
+                    setDownloadsToday(data.user.dailyDownloadCount);
+                } else if (typeof data.downloadedTrackIds?.length === 'number') {
+                    setDownloadsToday(data.downloadedTrackIds.length);
                 }
-            }
-        } catch (error) {
-            console.error('Erro no download:', error);
-            showNotification('Erro ao processar download', 'error');
-        }
-    };
-
-    const handleCopyrightClick = async (track: Track) => {
-        try {
-            const response = await fetch('/api/report-copyright', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    track: {
-                        id: track.id,
-                        songName: track.songName,
-                        artist: track.artist,
-                        imageUrl: track.imageUrl
-                    },
-                    user: user?.email || 'Anonymous',
-                    timestamp: new Date().toISOString()
-                }),
-            });
-
-            if (response.ok) {
-                showNotification('Denúncia de direitos autorais enviada com sucesso!', 'success');
-            } else {
-                showNotification('Falha ao enviar denúncia de direitos autorais', 'error');
-            }
-        } catch (error) {
-            console.error('Error submitting copyright report:', error);
-            showNotification('Erro ao enviar denúncia de direitos autorais', 'error');
-        }
-    };
-
-    const handleReportClick = async (track: Track) => {
-        try {
-            const response = await fetch('/api/report-bug', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    track: {
-                        id: track.id,
-                        songName: track.songName,
-                        artist: track.artist,
-                        imageUrl: track.imageUrl
-                    },
-                    user: user?.email || 'Anonymous',
-                    timestamp: new Date().toISOString(),
-                    issue: 'Track offline/not working'
-                }),
-            });
-
-            if (response.ok) {
-                showNotification('Relatório enviado com sucesso!', 'success');
-            } else {
-                showNotification('Falha ao enviar relatório', 'error');
-            }
-        } catch (error) {
-            console.error('Error submitting report:', error);
-            showNotification('Erro ao enviar relatório', 'error');
-        }
-    };
+                if (Array.isArray(data.downloadedTrackIds)) {
+                    setDownloadedTracksSet(new Set(data.downloadedTrackIds.map((t: any) => typeof t === 'object' ? t.id : t)));
+                    const now = Date.now();
+                    const times: { [trackId: number]: number } = {};
+                    data.downloadedTrackIds.forEach((t: any) => {
+                        if (typeof t === 'object' && t.lastDownloadedAt) {
+                            const last = new Date(t.lastDownloadedAt).getTime();
+                            const left = Math.max(0, Math.floor((last + 86400000 - now) / 1000));
+                            times[t.id] = left;
+                        }
+                    });
+                    setDownloadedTracksTime(times);
+                } else {
+                    setDownloadedTracksSet(new Set());
+                    setDownloadedTracksTime({});
+                }
+            } catch (err) { }
+        };
+        fetchDailyDownloadCount();
+        return () => { cancelled = true; }
+    }, [user?.id]);
 
     return (
-        <>
-                <div className="w-full overflow-hidden">
-                    {notification && (
-                        <div className={`w-full mb-4 px-4 py-3 rounded-lg shadow text-white text-center font-semibold ${notification.type === 'success' ? 'bg-blue-600' : notification.type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`}
-                            style={{ position: 'relative', top: 0, left: 0, zIndex: 10 }}>
-                            {notification.message}
-                        </div>
+        <div className="relative w-full h-full">
+            <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+            `}</style>
+
+            {session?.user?.is_vip && (
+                <div
+                    className="w-full flex items-center justify-center py-3 px-4 mb-2 rounded-xl shadow-md"
+                    style={{
+                        background: '#47191C',
+                        color: '#e53935',
+                        fontFamily: 'Lato, sans-serif',
+                        fontWeight: 700,
+                        fontSize: 15,
+                        letterSpacing: 0.5,
+                        textAlign: 'center',
+                    }}
+                >
+                    <span style={{ fontSize: 20, marginRight: 10 }}>⬇️</span>
+                    {downloadsLeft > 0 ? (
+                        <>
+                            <span style={{ color: '#fff' }}>Você pode baixar até {DAILY_DOWNLOAD_LIMIT} músicas por dia. </span>
+                            <span style={{ color: '#39FF14', marginLeft: 6 }}>Restam {downloadsLeft} downloads hoje.</span>
+                        </>
+                    ) : (
+                        <span>Limite diário de downloads atingido. Tente novamente amanhã.</span>
                     )}
-                    <table className="min-w-full text-left text-sm text-gray-200 table-fixed" style={{ backgroundColor: '#202124' }}>
-                    <thead style={{ backgroundColor: '#2d2f32' }} className="text-gray-300 uppercase text-xs tracking-wider border-b border-gray-600">
+                </div>
+            )}
+
+            {toast && (
+                <div
+                    className={`fixed top-4 left-1/2 z-50 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg text-white font-semibold text-sm flex items-center gap-3
+                        ${toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-700' : 'bg-blue-600'}`}
+                    style={{ minWidth: 260, maxWidth: 400, letterSpacing: 0.2, fontFamily: 'Inter, sans-serif' }}
+                >
+                    {toast.type === 'success' && <span style={{ fontSize: 18 }}>✔️</span>}
+                    {toast.type === 'error' && <span style={{ fontSize: 18 }}>❌</span>}
+                    {toast.type === 'info' && <span style={{ fontSize: 18 }}>ℹ️</span>}
+                    <span style={{ whiteSpace: 'pre-line' }}>{toast.message}</span>
+                </div>
+            )}
+
+            <GlobalAudioPlayer />
+
+            <div
+                className="bg-black rounded-2xl overflow-auto shadow-2xl border border-gray-800 mt-2 custom-scrollbar"
+                style={{
+                    maxHeight: '70vh',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#3b82f6 #18181b',
+                    fontFamily: "'Inter', sans-serif"
+                }}
+            >
+                <table className="min-w-full text-left text-sm text-gray-200 table-fixed" style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px' }}>
+                    <thead className="sticky top-0 z-40 bg-gradient-to-r from-gray-900 to-black text-gray-300 uppercase text-xs tracking-wider border-b border-gray-700" style={{ fontFamily: "'Inter', sans-serif" }}>
                         <tr>
-                            <th className="px-4 py-3 font-sans font-semibold tracking-wide w-1/3">Música</th>
-                            <th className="px-4 py-3 font-sans font-semibold tracking-wide w-1/3">Artista</th>
-                            <th className="px-4 py-3 font-sans font-semibold tracking-wide w-1/3">Gênero</th>
-                            <th className="px-4 py-3 text-right font-sans font-semibold tracking-wide w-[120px]">Ações</th>
+                            <th className="px-6 py-4 font-bold tracking-wide w-[44%] text-white">
+                                <div className="flex items-center space-x-2">
+                                    <Music className="h-4 w-4 text-blue-400" />
+                                    <span>MÚSICA</span>
+                                </div>
+                            </th>
+                            <th className="px-6 py-4 font-bold tracking-wide w-1/3 text-white">
+                                <span>ARTISTA</span>
+                            </th>
+                            <th className="px-6 py-4 font-bold tracking-wide w-1/3 text-white">
+                                <span>GÊNERO</span>
+                            </th>
+                            <th className="px-6 py-4 text-right font-bold tracking-wide w-[140px] text-white">
+                                <span>AÇÕES</span>
+                            </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-700">
-                        {/* Estado de carregamento */}
-                        {loadingDownloadStatus && tracks.length > 0 && (
+                    <tbody className="divide-y divide-gray-800" style={{ fontFamily: "'Inter', sans-serif" }}>
+                        {tracks.length === 0 && (
                             <tr>
-                                <td colSpan={2} className="text-center py-8 text-gray-400">
-                                    <div className="flex flex-col items-center gap-3">
-                                        <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                                        <p className="text-sm">Carregando informações de download...</p>
-                                    </div>
+                                <td colSpan={4} className="text-center py-16 text-gray-400">
+                                    <p>Nenhuma música encontrada.</p>
                                 </td>
                             </tr>
                         )}
-
-                        {/* Mensagem quando não há tracks */}
-                        {tracks.length === 0 && !loadingDownloadStatus && (
-                            <tr>
-                                <td colSpan={2} className="text-center py-12 text-gray-400">
-                                    <div className="flex flex-col items-center gap-3">
-                                        <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center">
-                                            <Music size={24} className="text-gray-600" />
-                                        </div>
-                                        <div>
-                                            <p className="text-lg font-medium">Nenhuma música encontrada</p>
-                                            <p className="text-sm text-gray-500">Tente ajustar os filtros de busca ou aguarde o carregamento</p>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        )}
-
-                        {/* Renderizar tracks apenas quando não está carregando */}
-                        {!loadingDownloadStatus && tracks.map((track, index) => (
+                        {tracks.map((track: Track) => (
                             <tr
                                 key={track.id}
-                                className={`transition-all duration-200 group border-b border-gray-700/50 ${currentTrack?.id === track.id ? 'bg-green-600/10' : ''}`}
-                                style={{ backgroundColor: currentTrack?.id === track.id ? 'rgba(34, 197, 94, 0.1)' : '#202124' }}
+                                className={`${currentTrack?.id === track.id ? 'bg-blue-900/20 border-l-4 border-l-blue-500' : 'hover:border-l-4 hover:border-l-gray-600'}`}
                             >
-                                {/* Música */}
-                                <td className="px-4 py-3 align-middle w-1/3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="relative w-12 h-12">
-                                            {track.imageUrl && (
-                                                <img
-                                                    src={track.imageUrl}
-                                                    alt={track.songName + ' thumbnail'}
-                                                    className="w-12 h-12 rounded-lg object-cover border border-gray-700 shadow"
-                                                />
-                                            )}
+                                <td className="px-6 py-4 align-middle w-[50%]">
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative w-14 h-14 group">
+                                            <img
+                                                src="https://i.ibb.co/FL1rxTtx/20250526-1938-Sound-Cloud-Cover-Design-remix-01jw7bwxq6eqj8sqztah5n296g.png"
+                                                alt={track.songName + ' thumbnail'}
+                                                className="w-14 h-14 rounded-xl object-cover border border-gray-700 shadow-lg group-hover:border-blue-500 transition-all duration-300"
+                                            />
                                             <button
-                                                onClick={() => handlePlayClick(track)}
-                                                className={`absolute inset-0 flex items-center justify-center rounded-lg transition-all duration-200 cursor-pointer bg-black/40 hover:bg-green-700/60 ${currentTrack?.id === track.id && isPlaying
-                                                    ? 'text-white'
-                                                    : 'text-gray-200'
+                                                onClick={() => handlePlayPauseClick(track)}
+                                                className={`absolute inset-0 flex items-center justify-center rounded-xl transition-all duration-300 cursor-pointer bg-black/60 hover:bg-blue-600/80 backdrop-blur-sm ${currentTrack?.id === track.id && isPlaying
+                                                    ? 'text-white bg-blue-600/80'
+                                                    : 'text-gray-200 hover:text-white'
                                                     }`}
                                                 style={{ zIndex: 2 }}
                                             >
                                                 {isPlaying && currentTrack?.id === track.id ?
-                                                    <Pause size={20} /> :
-                                                    <Play size={20} className="ml-0.5" />
+                                                    <Pause size={24} /> :
+                                                    <Play size={24} className="ml-1" />
                                                 }
                                             </button>
                                         </div>
-                                        <span className="font-normal text-white tracking-wide" style={{ fontSize: '13px', fontWeight: 400 }}>
-                                            {track.songName}
-                                        </span>
+                                        <div className="flex flex-col">
+                                            <span className="font-semibold text-white tracking-wide" style={{ fontSize: '11px' }}>
+                                                {track.songName}
+                                            </span>
+                                        </div>
                                     </div>
                                 </td>
-                                {/* Artista */}
-                                <td className="px-4 py-3 align-middle w-1/3">
-                                    <span className="text-gray-300 font-light tracking-wide block" style={{ fontSize: '12px', fontWeight: 300 }}>
+                                <td className="px-6 py-4 align-middle w-[30%]">
+                                    <span className="text-gray-300 font-medium tracking-wide block" style={{ fontSize: '11px' }}>
                                         {track.artist}
                                     </span>
                                 </td>
-                                {/* Gênero */}
-                                <td className="px-4 py-3 align-middle w-1/3">
-                                    <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-sans font-bold bg-gray-800 text-gray-300 border border-gray-700 tracking-wide">
+                                <td className="px-6 py-4 align-middle w-1/3">
+                                    <span className="inline-flex items-center px-3 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white border border-purple-500/30 tracking-wide shadow-lg" style={{ fontSize: '11px' }}>
                                         {track.style}
                                     </span>
                                 </td>
-                                {/* Ações */}
-                                <td className="px-4 py-3 align-middle w-[120px]">
-                                    <div className="flex items-center justify-end gap-2">
-                                        {/* Botão de download */}
-                                        <button
-                                            onClick={() => handleDownload(track)}
-                                            disabled={!downloadStatus[track.id]?.canDownload}
-                                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-sans font-semibold transition-all duration-200 min-w-[75px] justify-center cursor-pointer tracking-wide ${downloadStatus[track.id]?.hasDownloaded
-                                                ? downloadStatus[track.id]?.canDownload
-                                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                                    : 'bg-blue-400 text-white opacity-50 cursor-not-allowed'
-                                                : 'bg-gray-600 text-white hover:bg-green-700'
-                                                }`}
-                                            title={
-                                                !session?.user?.is_vip
-                                                    ? 'Apenas usuários VIP podem fazer downloads'
-                                                    : downloadStatus[track.id]?.hasDownloaded
-                                                        ? downloadStatus[track.id]?.canDownload
-                                                            ? "Clique para baixar novamente"
-                                                            : `Aguarde ${timeLeft[track.id] || 'calculando...'} para baixar novamente`
-                                                        : "Download disponível"
-                                            }
-                                        >
-                                            <Download size={12} />
-                                            {!session?.user?.is_vip
-                                                ? 'VIP'
-                                                : downloadStatus[track.id]?.hasDownloaded
-                                                    ? timeLeft[track.id] || 'Baixar'
-                                                    : 'Baixar'
-                                            }
-                                        </button>
-                                        {/* Botão de curtir */}
-                                        <button
-                                            onClick={() => handleLike(track.id)}
-                                            disabled={!session?.user?.is_vip}
-                                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-sans font-semibold transition-all duration-200 min-w-[80px] justify-center cursor-pointer tracking-wide ${!session?.user?.is_vip
-                                                ? 'bg-gray-500 text-gray-300 opacity-50 cursor-not-allowed'
-                                                : likedTracksSet.has(track.id)
-                                                    ? 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-500'
-                                                    : 'bg-gray-600 text-white hover:bg-blue-600 border border-gray-500'
-                                                }`}
-                                            title={
-                                                !session?.user?.is_vip
-                                                    ? 'Apenas usuários VIP podem curtir músicas'
-                                                    : likedTracksSet.has(track.id)
-                                                        ? 'Remover dos favoritos'
-                                                        : 'Adicionar aos favoritos'
-                                            }
-                                        >
-                                            <Heart size={12} className={likedTracksSet.has(track.id) ? 'fill-blue-200 text-blue-200' : 'text-gray-300'} />
-                                            {!session?.user?.is_vip
-                                                ? 'VIP'
-                                                : likedTracksSet.has(track.id)
-                                                    ? 'Favorito'
-                                                    : 'Curtir'
-                                            }
-                                        </button>
-                                        {/* Botão de reportar */}
-                                        <button
-                                            onClick={() => handleReportClick(track)}
-                                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-sans font-semibold transition-all duration-200 min-w-[40px] justify-center cursor-pointer tracking-wide bg-green-600 text-white hover:bg-green-700 border border-green-500`}
-                                            title="Reportar problema com a música"
-                                        >
-                                            <AlertTriangle size={14} />
-                                        </button>
-                                        {/* Botão de copyright */}
-                                        <button
-                                            onClick={() => handleCopyrightClick(track)}
-                                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-sans font-semibold transition-all duration-200 min-w-[40px] justify-center cursor-pointer tracking-wide bg-gray-700 text-gray-100 hover:bg-gray-800 border border-gray-600`}
-                                            title="Reportar problema de copyright"
-                                        >
-                                            <Copyright size={14} />
-                                        </button>
-                                    </div>
+
+                                {/* CORREÇÃO APLICADA AQUI */}
+                                <td className="px-6 py-4 align-middle w-[180px]">
+                                    {session ? (
+                                        <div className="flex flex-row flex-nowrap items-center justify-end gap-2 min-w-[170px] space-x-2">
+                                            {/* Download */}
+                                            <button
+                                                onClick={() => handleDownload(track)}
+                                                disabled={
+                                                    !session?.user?.is_vip ||
+                                                    (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)
+                                                }
+                                                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all duration-300 min-w-[85px] justify-center cursor-pointer tracking-wide shadow-lg
+                                                    ${!session?.user?.is_vip
+                                                        ? 'bg-gray-700 text-gray-400 opacity-50 cursor-not-allowed'
+                                                        : hasDownloadedBefore(track.id)
+                                                            ? downloadedTracksTime[track.id] > 0
+                                                                ? 'bg-blue-600 text-white border border-blue-500 shadow-blue-500/25 opacity-60 cursor-not-allowed'
+                                                                : 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 shadow-blue-500/25'
+                                                            : 'bg-green-600 text-white hover:bg-green-700 border border-green-500 shadow-green-500/25'
+                                                    }`}
+                                                style={{ fontSize: '11px' }}
+                                                title={
+                                                    !session?.user?.is_vip ? 'Apenas usuários VIP podem fazer downloads'
+                                                        : hasDownloadedBefore(track.id)
+                                                            ? downloadedTracksTime[track.id] > 0
+                                                                ? `Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente`
+                                                                : 'Baixar novamente'
+                                                            : "Download disponível"
+                                                }
+                                            >
+                                                <Download size={16} />
+                                                <span>{getDownloadButtonText(track.id)}</span>
+                                            </button>
+                                            {/* Curtir */}
+                                            <button
+                                                onClick={() => handleLikeClick(track.id)}
+                                                disabled={!session?.user?.is_vip || liking === track.id}
+                                                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all duration-300 min-w-[60px] justify-center cursor-pointer tracking-wide shadow-lg
+                                                    ${likedTracksSet.has(track.id)
+                                                        ? 'bg-pink-600 text-white border border-pink-500 shadow-pink-500/25'
+                                                        : 'bg-gray-700 text-gray-200 hover:bg-pink-700 border border-gray-500 shadow-gray-500/25'
+                                                    }`}
+                                                style={{ fontSize: '11px' }}
+                                                title={likedTracksSet.has(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                                            >
+                                                <Heart size={16} className={likedTracksSet.has(track.id) ? 'fill-pink-400 text-pink-200' : 'text-gray-300'} />
+                                                <span>{likedTracksSet.has(track.id) ? 'Curtido' : 'Curtir'}</span>
+                                            </button>
+                                            {/* Reportar erro */}
+                                            <button
+                                                onClick={() => handleReportClick(track)}
+                                                className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-bold transition-all duration-300 min-w-[38px] cursor-pointer tracking-wide shadow-lg bg-yellow-700 text-white hover:bg-yellow-800 border border-yellow-500 shadow-yellow-500/25"
+                                                style={{ fontSize: '11px' }}
+                                                title="Reportar problema com a música"
+                                            >
+                                                <AlertTriangle size={16} />
+                                            </button>
+                                            {/* Copyright */}
+                                            <button
+                                                onClick={() => handleCopyrightClick(track)}
+                                                className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-bold transition-all duration-300 min-w-[38px] cursor-pointer tracking-wide shadow-lg bg-gray-800 text-white hover:bg-purple-800 border border-purple-500 shadow-purple-500/25"
+                                                style={{ fontSize: '11px' }}
+                                                title="Reportar copyright"
+                                            >
+                                                <Copyright size={16} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <Link href="/planos" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 shadow-blue-500/25">
+                                            ASSINAR PLANO
+                                        </Link>
+                                    )}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
-        </>
+        </div>
     );
-};
+}
 
 export default MusicTable;

@@ -41,13 +41,22 @@ export async function GET(request: NextRequest) {
         const previewTracks = newFiles.map(file => {
             const nameWithoutExt = file.filename.replace(/\.(mp3|wav|flac|m4a|aac|ogg)$/i, '');
 
+            // Extrair variação (CLEAN, DIRTY, EXPLICIT, etc) ao final
+            let variation = null;
+            let name = nameWithoutExt;
+            const variationMatch = name.match(/\((CLEAN|DIRTY|EXPLICIT|INSTRUMENTAL|RADIO EDIT|CLUB MIX)\)$/i);
+            if (variationMatch) {
+                variation = variationMatch[1].toUpperCase();
+                name = name.replace(/\s*\((CLEAN|DIRTY|EXPLICIT|INSTRUMENTAL|RADIO EDIT|CLUB MIX)\)$/i, '').trim();
+            }
+
             let artist = 'Artista Desconhecido';
-            let title = nameWithoutExt;
+            let title = name;
             let version = 'Original';
 
             // Análise básica do nome
-            if (nameWithoutExt.includes(' - ')) {
-                const parts = nameWithoutExt.split(' - ');
+            if (name.includes(' - ')) {
+                const parts = name.split(' - ');
                 artist = parts[0].trim();
                 title = parts.slice(1).join(' - ').trim();
 
@@ -59,6 +68,9 @@ export async function GET(request: NextRequest) {
                 }
             }
 
+            // Se houver variação, adiciona ao version
+            const finalVersion = variation ? `${version} - ${variation}` : version;
+
             return {
                 filename: file.filename,
                 size: file.size,
@@ -67,7 +79,7 @@ export async function GET(request: NextRequest) {
                 preview: {
                     artist: artist.replace(/[\[\]]/g, '').trim(),
                     title: title.replace(/[\[\]]/g, '').trim(),
-                    version: version.replace(/[\[\]]/g, '').trim()
+                    version: finalVersion.replace(/[\[\]]/g, '').trim()
                 }
             };
         });
