@@ -122,6 +122,8 @@ export default function RootLayout({
         <AuthProvider>
           <AppProvider>
             <DynamicGradientBackground />
+            {/* Player global para toda a aplicação */}
+            {require('@/components/player/GlobalAudioPlayer').default()}
             {children}
             <PWAInstaller />
           </AppProvider>

@@ -326,7 +326,6 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                 </div>
             )}
 
-            <GlobalAudioPlayer />
 
             <div
                 className="bg-black rounded-2xl overflow-auto shadow-2xl border border-gray-800 mt-2 custom-scrollbar"
