@@ -9,7 +9,6 @@
     "start": "next start",
     "lint": "next lint",
     "db:seed": "node prisma/seed.js",
-    "postbuild": "next-sitemap",
     "contabo:test": "npx tsx test-contabo-connection.js",
     "contabo:import": "npx tsx import-contabo-music.js",
     "contabo:smart": "npx tsx test-smart-import.js",
