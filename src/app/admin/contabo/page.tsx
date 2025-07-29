@@ -670,8 +670,14 @@ export default function ContaboStoragePage() {
                                                             <span className="text-gray-500">Versão:</span>
                                                             <select
                                                                 className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
-                                                                value={item.importData.version || versionOptions[0]}
-                                                                onChange={e => handleVersionChange(index, e.target.value)}
+                                                                value={item.importData.version && item.importData.version !== "__new" ? item.importData.version : versionOptions[0]}
+                                                                onChange={e => {
+                                                                    if (e.target.value === "__new") {
+                                                                        handleVersionChange(index, "__new");
+                                                                    } else {
+                                                                        handleVersionChange(index, e.target.value);
+                                                                    }
+                                                                }}
                                                             >
                                                                 {versionOptions.map((ver) => (
                                                                     <option key={ver} value={ver}>{ver}</option>
@@ -685,11 +691,22 @@ export default function ContaboStoragePage() {
                                                                     placeholder="Nova versão"
                                                                     autoFocus
                                                                     onBlur={e => {
-                                                                        if (e.target.value.trim()) {
-                                                                            handleAddNewVersion(e.target.value.trim());
-                                                                            handleVersionChange(index, e.target.value.trim());
+                                                                        const val = e.target.value.trim();
+                                                                        if (val) {
+                                                                            handleAddNewVersion(val);
+                                                                            handleVersionChange(index, val);
                                                                         } else {
                                                                             handleVersionChange(index, versionOptions[0] || "");
+                                                                        }
+                                                                    }}
+                                                                    onKeyDown={e => {
+                                                                        if (e.key === 'Enter') {
+                                                                            const val = (e.target as HTMLInputElement).value.trim();
+                                                                            if (val) {
+                                                                                handleAddNewVersion(val);
+                                                                                handleVersionChange(index, val);
+                                                                                (e.target as HTMLInputElement).blur();
+                                                                            }
                                                                         }
                                                                     }}
                                                                 />
@@ -699,13 +716,18 @@ export default function ContaboStoragePage() {
                                                             <span className="text-gray-500">Estilo:</span>
                                                             <select
                                                                 className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
-                                                                value={item.importData.style}
-                                                                onChange={e => handleStyleChange(index, e.target.value)}
+                                                                value={item.importData.style && item.importData.style !== "__new" ? item.importData.style : styleOptions[0]}
+                                                                onChange={e => {
+                                                                    if (e.target.value === "__new") {
+                                                                        handleStyleChange(index, "__new");
+                                                                    } else {
+                                                                        handleStyleChange(index, e.target.value);
+                                                                    }
+                                                                }}
                                                             >
                                                                 {styleOptions.map((style) => (
                                                                     <option key={style} value={style}>{style}</option>
                                                                 ))}
-                                                                {/* Option for custom/new style */}
                                                                 <option value="__new">Adicionar novo...</option>
                                                             </select>
                                                             {item.importData.style === "__new" && (
@@ -720,7 +742,6 @@ export default function ContaboStoragePage() {
                                                                             handleAddNewStyle(val);
                                                                             handleStyleChange(index, val);
                                                                         } else {
-                                                                            // Se não digitou nada, volta para o primeiro estilo disponível
                                                                             handleStyleChange(index, styleOptions[0] || "Club");
                                                                         }
                                                                     }}
