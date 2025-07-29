@@ -3,7 +3,7 @@ import { useAppContext } from '@/context/AppContext';
 import { useEffect, useRef } from 'react';
 
 export default function GlobalAudioPlayer() {
-    const { currentTrack, isPlaying } = useAppContext();
+    const { currentTrack, isPlaying, nextTrack } = useAppContext();
     const audioRef = useRef<HTMLAudioElement>(null);
 
     useEffect(() => {
@@ -24,6 +24,11 @@ export default function GlobalAudioPlayer() {
             src={currentTrack.previewUrl || currentTrack.downloadUrl}
             autoPlay={isPlaying}
             style={{ display: 'none' }}
+            onEnded={() => {
+                if (isPlaying && typeof nextTrack === 'function') {
+                    nextTrack();
+                }
+            }}
         />
     );
 }

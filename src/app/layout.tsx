@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     'streaming dj',
     'house music',
     'techno',
-    'eletrônica',
+    'big room',
     'remix',
     'versão club',
     'dj pool',

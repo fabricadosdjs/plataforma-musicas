@@ -557,7 +557,21 @@ export default function ContaboStoragePage() {
                             </h3>
 
                             {importableFiles.length > 0 && (
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-wrap items-center">
+                                    <button
+                                        onClick={() => {
+                                            if (selectedFiles.length === importableFiles.length) {
+                                                setSelectedFiles([]);
+                                            } else {
+                                                setSelectedFiles(importableFiles.map(f => f.file.key));
+                                            }
+                                        }}
+                                        disabled={importing}
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg transition-colors disabled:opacity-50 border border-gray-600"
+                                        title={selectedFiles.length === importableFiles.length ? 'Desmarcar todas' : 'Marcar todas'}
+                                    >
+                                        {selectedFiles.length === importableFiles.length ? 'Desmarcar Todas' : 'Marcar Todas'}
+                                    </button>
                                     <button
                                         onClick={importSelectedFiles}
                                         disabled={importing || selectedFiles.length === 0}
@@ -572,7 +586,6 @@ export default function ContaboStoragePage() {
                                     </button>
                                     <button
                                         onClick={() => {
-                                            // Importar todas
                                             setSelectedFiles(importableFiles.map(f => f.file.key));
                                             setTimeout(importSelectedFiles, 0);
                                         }}
@@ -581,6 +594,17 @@ export default function ContaboStoragePage() {
                                     >
                                         <Import className="w-4 h-4" />
                                         Importar Todas
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const selected = importableFiles.filter(item => selectedFiles.includes(item.file.key));
+                                            const text = selected.map(item => `${item.importData.songName} - ${item.importData.artist}\n${item.file.url}`).join('\n\n');
+                                            navigator.clipboard.writeText(text);
+                                        }}
+                                        disabled={selectedFiles.length === 0}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                        Copiar Todas
                                     </button>
                                 </div>
                             )}
@@ -609,162 +633,210 @@ export default function ContaboStoragePage() {
                                 </button>
                             </div>
                         ) : (
-                            <div className="divide-y divide-gray-700">
-                                {importableFiles.map((item, index) => (
-                                    <div key={item.file.key} className="p-4 flex items-start gap-4">
-                                        {/* Checkbox para seleção */}
-                                        <input
-                                            type="checkbox"
-                                            className="mt-2 mr-2 w-5 h-5 accent-purple-600"
-                                            checked={selectedFiles.includes(item.file.key)}
-                                            onChange={e => {
-                                                setSelectedFiles(prev =>
-                                                    e.target.checked
-                                                        ? [...prev, item.file.key]
-                                                        : prev.filter(k => k !== item.file.key)
-                                                );
-                                            }}
-                                        />
-                                        <div className="p-2 bg-purple-600/20 rounded-lg">
-                                            <Music className="w-5 h-5 text-purple-400" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <h4 className="font-medium text-white mb-2">Arquivo Original</h4>
-                                                    <p className="text-sm text-gray-300">{item.file.filename}</p>
-                                                    <p className="text-xs text-gray-500">
-                                                        {formatFileSize(item.file.size)} •
-                                                        {new Date(item.file.lastModified).toLocaleDateString('pt-BR')}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-medium text-white mb-2">Dados Detectados</h4>
-                                                    <div className="space-y-1 text-sm">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-gray-500">Música:</span>
+                            (() => {
+                                // Agrupa por dia (YYYY-MM-DD)
+                                const groupedByDay: { [date: string]: ImportableFile[] } = {};
+                                importableFiles.forEach((item) => {
+                                    const date = item.importData.releaseDate ? new Date(item.importData.releaseDate) : null;
+                                    const dayKey = date ? date.toISOString().split('T')[0] : 'sem-data';
+                                    if (!groupedByDay[dayKey]) groupedByDay[dayKey] = [];
+                                    groupedByDay[dayKey].push(item);
+                                });
+                                // Ordena as datas decrescente
+                                const allDays = Object.keys(groupedByDay).sort((a, b) => b.localeCompare(a));
+                                // Paginação: 7 tabelas (dias) por página
+                                const [page, setPage] = useState(0);
+                                const tablesPerPage = 7;
+                                const pagedDays = allDays.slice(page * tablesPerPage, (page + 1) * tablesPerPage);
+                                return (
+                                    <div>
+                                        {pagedDays.map((day) => (
+                                            <div key={day} className="mb-8">
+                                                <h4 className="text-lg font-bold text-purple-300 mb-2">{day === 'sem-data' ? 'Sem Data' : new Date(day).toLocaleDateString('pt-BR')}</h4>
+                                                <div className="divide-y divide-gray-700 rounded-xl overflow-hidden border border-gray-700">
+                                                    {groupedByDay[day].map((item, index) => (
+                                                        <div key={item.file.key} className="p-4 flex items-start gap-4">
+                                                            {/* Checkbox para seleção */}
                                                             <input
-                                                                type="text"
-                                                                className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white w-48"
-                                                                value={item.importData.songName}
+                                                                type="checkbox"
+                                                                className="mt-2 mr-2 w-5 h-5 accent-purple-600"
+                                                                checked={selectedFiles.includes(item.file.key)}
                                                                 onChange={e => {
-                                                                    const newName = e.target.value;
-                                                                    setImportableFiles((prev) => {
-                                                                        const updated = [...prev];
-                                                                        updated[index] = {
-                                                                            ...updated[index],
-                                                                            importData: {
-                                                                                ...updated[index].importData,
-                                                                                songName: newName
-                                                                            }
-                                                                        };
-                                                                        return updated;
-                                                                    });
+                                                                    setSelectedFiles(prev =>
+                                                                        e.target.checked
+                                                                            ? [...prev, item.file.key]
+                                                                            : prev.filter(k => k !== item.file.key)
+                                                                    );
                                                                 }}
                                                             />
+                                                            <div className="p-2 bg-purple-600/20 rounded-lg">
+                                                                <Music className="w-5 h-5 text-purple-400" />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    <div>
+                                                                        <h4 className="font-medium text-white mb-2">Arquivo Original</h4>
+                                                                        <p className="text-sm text-gray-300">{item.file.filename}</p>
+                                                                        <p className="text-xs text-gray-500">
+                                                                            {formatFileSize(item.file.size)} •
+                                                                            {new Date(item.file.lastModified).toLocaleDateString('pt-BR')}
+                                                                        </p>
+                                                                        <div className="mt-2">
+                                                                            <input
+                                                                                type="text"
+                                                                                readOnly
+                                                                                value={item.file.url}
+                                                                                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-green-400 font-mono cursor-pointer select-all"
+                                                                                onClick={e => (e.target as HTMLInputElement).select()}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-medium text-white mb-2">Dados Detectados</h4>
+                                                                        <div className="space-y-1 text-sm">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-gray-500">Música:</span>
+                                                                                <input
+                                                                                    type="text"
+                                                                                    className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white w-48"
+                                                                                    value={item.importData.songName}
+                                                                                    onChange={e => {
+                                                                                        const newName = e.target.value;
+                                                                                        setImportableFiles((prev) => {
+                                                                                            const updated = [...prev];
+                                                                                            updated[index] = {
+                                                                                                ...updated[index],
+                                                                                                importData: {
+                                                                                                    ...updated[index].importData,
+                                                                                                    songName: newName
+                                                                                                }
+                                                                                            };
+                                                                                            return updated;
+                                                                                        });
+                                                                                    }}
+                                                                                />
+                                                                            </div>
+                                                                            <p className="text-gray-300">
+                                                                                <span className="text-gray-500">Artista:</span> {item.parsed.artist}
+                                                                            </p>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-gray-500">Versão:</span>
+                                                                                <select
+                                                                                    className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                                                                                    value={item.importData.version && item.importData.version !== "__new" ? item.importData.version : versionOptions[0]}
+                                                                                    onChange={e => {
+                                                                                        if (e.target.value === "__new") {
+                                                                                            handleVersionChange(index, "__new");
+                                                                                        } else {
+                                                                                            handleVersionChange(index, e.target.value);
+                                                                                        }
+                                                                                    }}
+                                                                                >
+                                                                                    {versionOptions.map((ver) => (
+                                                                                        <option key={ver} value={ver}>{ver}</option>
+                                                                                    ))}
+                                                                                    <option value="__new">Adicionar novo...</option>
+                                                                                </select>
+                                                                                {item.importData.version === "__new" && (
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        className="ml-2 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                                                                                        placeholder="Nova versão"
+                                                                                        autoFocus
+                                                                                        onBlur={e => {
+                                                                                            const val = e.target.value.trim();
+                                                                                            if (val) {
+                                                                                                handleAddNewVersion(val);
+                                                                                                handleVersionChange(index, val);
+                                                                                            } else {
+                                                                                                handleVersionChange(index, versionOptions[0] || "");
+                                                                                            }
+                                                                                        }}
+                                                                                        onKeyDown={e => {
+                                                                                            if (e.key === 'Enter') {
+                                                                                                const val = (e.target as HTMLInputElement).value.trim();
+                                                                                                if (val) {
+                                                                                                    handleAddNewVersion(val);
+                                                                                                    handleVersionChange(index, val);
+                                                                                                    (e.target as HTMLInputElement).blur();
+                                                                                                }
+                                                                                            }
+                                                                                        }}
+                                                                                    />
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-gray-500">Estilo:</span>
+                                                                                <select
+                                                                                    className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                                                                                    value={item.importData.style && item.importData.style !== "__new" ? item.importData.style : styleOptions[0]}
+                                                                                    onChange={e => {
+                                                                                        if (e.target.value === "__new") {
+                                                                                            handleStyleChange(index, "__new");
+                                                                                        } else {
+                                                                                            handleStyleChange(index, e.target.value);
+                                                                                        }
+                                                                                    }}
+                                                                                >
+                                                                                    {styleOptions.map((style) => (
+                                                                                        <option key={style} value={style}>{style}</option>
+                                                                                    ))}
+                                                                                    <option value="__new">Adicionar novo...</option>
+                                                                                </select>
+                                                                                {item.importData.style === "__new" && (
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        className="ml-2 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                                                                                        placeholder="Novo estilo"
+                                                                                        autoFocus
+                                                                                        onBlur={e => {
+                                                                                            const val = e.target.value.trim();
+                                                                                            if (val) {
+                                                                                                handleAddNewStyle(val);
+                                                                                                handleStyleChange(index, val);
+                                                                                            } else {
+                                                                                                handleStyleChange(index, styleOptions[0] || "Club");
+                                                                                            }
+                                                                                        }}
+                                                                                        onKeyDown={e => {
+                                                                                            if (e.key === 'Enter') {
+                                                                                                const val = (e.target as HTMLInputElement).value.trim();
+                                                                                                if (val) {
+                                                                                                    handleAddNewStyle(val);
+                                                                                                    handleStyleChange(index, val);
+                                                                                                    (e.target as HTMLInputElement).blur();
+                                                                                                }
+                                                                                            }
+                                                                                        }}
+                                                                                    />
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <p className="text-gray-300">
-                                                            <span className="text-gray-500">Artista:</span> {item.parsed.artist}
-                                                        </p>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-gray-500">Versão:</span>
-                                                            <select
-                                                                className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
-                                                                value={item.importData.version && item.importData.version !== "__new" ? item.importData.version : versionOptions[0]}
-                                                                onChange={e => {
-                                                                    if (e.target.value === "__new") {
-                                                                        handleVersionChange(index, "__new");
-                                                                    } else {
-                                                                        handleVersionChange(index, e.target.value);
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {versionOptions.map((ver) => (
-                                                                    <option key={ver} value={ver}>{ver}</option>
-                                                                ))}
-                                                                <option value="__new">Adicionar novo...</option>
-                                                            </select>
-                                                            {item.importData.version === "__new" && (
-                                                                <input
-                                                                    type="text"
-                                                                    className="ml-2 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
-                                                                    placeholder="Nova versão"
-                                                                    autoFocus
-                                                                    onBlur={e => {
-                                                                        const val = e.target.value.trim();
-                                                                        if (val) {
-                                                                            handleAddNewVersion(val);
-                                                                            handleVersionChange(index, val);
-                                                                        } else {
-                                                                            handleVersionChange(index, versionOptions[0] || "");
-                                                                        }
-                                                                    }}
-                                                                    onKeyDown={e => {
-                                                                        if (e.key === 'Enter') {
-                                                                            const val = (e.target as HTMLInputElement).value.trim();
-                                                                            if (val) {
-                                                                                handleAddNewVersion(val);
-                                                                                handleVersionChange(index, val);
-                                                                                (e.target as HTMLInputElement).blur();
-                                                                            }
-                                                                        }
-                                                                    }}
-                                                                />
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-gray-500">Estilo:</span>
-                                                            <select
-                                                                className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
-                                                                value={item.importData.style && item.importData.style !== "__new" ? item.importData.style : styleOptions[0]}
-                                                                onChange={e => {
-                                                                    if (e.target.value === "__new") {
-                                                                        handleStyleChange(index, "__new");
-                                                                    } else {
-                                                                        handleStyleChange(index, e.target.value);
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {styleOptions.map((style) => (
-                                                                    <option key={style} value={style}>{style}</option>
-                                                                ))}
-                                                                <option value="__new">Adicionar novo...</option>
-                                                            </select>
-                                                            {item.importData.style === "__new" && (
-                                                                <input
-                                                                    type="text"
-                                                                    className="ml-2 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
-                                                                    placeholder="Novo estilo"
-                                                                    autoFocus
-                                                                    onBlur={e => {
-                                                                        const val = e.target.value.trim();
-                                                                        if (val) {
-                                                                            handleAddNewStyle(val);
-                                                                            handleStyleChange(index, val);
-                                                                        } else {
-                                                                            handleStyleChange(index, styleOptions[0] || "Club");
-                                                                        }
-                                                                    }}
-                                                                    onKeyDown={e => {
-                                                                        if (e.key === 'Enter') {
-                                                                            const val = (e.target as HTMLInputElement).value.trim();
-                                                                            if (val) {
-                                                                                handleAddNewStyle(val);
-                                                                                handleStyleChange(index, val);
-                                                                                (e.target as HTMLInputElement).blur();
-                                                                            }
-                                                                        }
-                                                                    }}
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    </div>
+                                                    ))}
                                                 </div>
                                             </div>
+                                        ))}
+                                        {/* Paginação */}
+                                        <div className="flex justify-center gap-2 mt-6">
+                                            <button
+                                                onClick={() => setPage(page - 1)}
+                                                disabled={page === 0}
+                                                className="px-4 py-2 rounded bg-gray-700 text-white disabled:opacity-40"
+                                            >Anterior</button>
+                                            <span className="text-white font-bold">Página {page + 1}</span>
+                                            <button
+                                                onClick={() => setPage(page + 1)}
+                                                disabled={(page + 1) * tablesPerPage >= allDays.length}
+                                                className="px-4 py-2 rounded bg-gray-700 text-white disabled:opacity-40"
+                                            >Próxima</button>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+                                );
+                            })()
                         )}
                     </div>
                 )}
