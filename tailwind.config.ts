@@ -18,9 +18,9 @@ const config: Config = {
                 text: '#ffffff', // Cor padrão do texto branco
             },
             fontFamily: {
-                // Definindo Ubuntu Light como fonte principal
-                sans: ['Ubuntu', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-                mono: ['Ubuntu', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                // Definindo Lato como fonte principal
+                sans: ['Lato', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                mono: ['Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'monospace'],
             },
         },
     },

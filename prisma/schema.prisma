@@ -31,6 +31,8 @@ model User {
   downloads               Download[]
   likes                   Like[]
   plays                   Play[]
+  uploadedTracks          Track[]    // Músicas enviadas pelo usuário
+  customItems             CustomItem[] // Items personalizados criados pelo admin
 }
 
 model Track {
@@ -39,15 +41,19 @@ model Track {
   artist      String
   style       String
   version     String?
+  pool        String?    @default("Nexor Records")  // Pool da música
   imageUrl    String
   previewUrl  String
   downloadUrl String
   releaseDate DateTime
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  isCommunity Boolean    @default(false)  // Identifica se é música da comunidade
+  uploadedBy  String?    // ID do usuário que enviou a música
   downloads   Download[]
   likes       Like[]
   plays       Play[]
+  uploader    User?      @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
 }
 
 model Like {
@@ -89,4 +95,19 @@ model Play {
   @@index([userId])
   @@index([trackId])
   @@index([createdAt])
+}
+
+model CustomItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  type        String   // 'benefit', 'feature', 'tool', etc.
+  isActive    Boolean  @default(true)
+  icon        String?  // Icon name or URL
+  color       String?  // Color theme
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String   // Admin user ID
+  user        User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 }

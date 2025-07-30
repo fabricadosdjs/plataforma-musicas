@@ -32,7 +32,7 @@ export default function MusicTableModern({
 
     return (
         <div className="overflow-x-auto w-full">
-            <table className="min-w-full text-left rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-[#18181b] via-[#232526] to-[#18181b]" style={{ fontFamily: 'Ubuntu, Segoe UI, sans-serif', fontWeight: 300, fontSize: 15 }}>
+            <table className="min-w-full text-left rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-[#18181b] via-[#232526] to-[#18181b]" style={{ fontFamily: 'Lato, sans-serif', fontWeight: 300, fontSize: 15 }}>
                 <thead className="bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white">
                     <tr>
                         <th className="px-6 py-4 font-bold uppercase border-b border-gray-700">Música</th>
@@ -70,7 +70,7 @@ export default function MusicTableModern({
                                     onMouseEnter={() => setHoveredRow(track.id)}
                                     onMouseLeave={() => setHoveredRow(null)}
                                     className={`transition-all duration-300 border-b border-gray-700/50 ${isDownloaded ? 'bg-green-600/10' : (index % 2 === 0 ? 'bg-black/60' : 'bg-gray-900/60')}`}
-                                    style={{ fontFamily: 'Ubuntu, Segoe UI, sans-serif', fontWeight: 300 }}
+                                    style={{ fontFamily: 'Lato, sans-serif', fontWeight: 300 }}
                                 >
                                     <td className="px-6 py-4 align-middle">
                                         <div className="flex items-center gap-4">

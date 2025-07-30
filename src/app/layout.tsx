@@ -1,18 +1,21 @@
 // src/app/layout.tsx
 import DynamicGradientBackground from '@/components/layout/DynamicGradientBackground';
+import MusicRouteHandler from '@/components/layout/MusicRouteHandler';
 import AudioPlayerRoot from '@/components/player/AudioPlayerRoot';
 import PWAInstaller from '@/components/pwa/PWAInstaller';
 import { AppProvider } from '@/context/AppContext';
 import AuthProvider from '@/context/AuthProvider';
 import type { Metadata } from 'next';
-import { Ubuntu } from 'next/font/google'; // Ubuntu Light como fonte principal
+import { Lato } from 'next/font/google'; // Lato como fonte principal
 import './globals.css';
+import { ExtensionDetector } from '@/components/layout/ExtensionDetector';
+import { GlobalToastManager } from '@/components/layout/GlobalToastManager';
 
-// Configura a fonte Ubuntu Light como a fonte principal
-const ubuntu = Ubuntu({
+// Configura a fonte Lato como a fonte principal
+const lato = Lato({
   subsets: ['latin'],
-  weight: ['300', '400', '500'], // Incluindo light (300), regular (400) e medium (500)
-  variable: '--font-ubuntu', // Define uma variável CSS para Ubuntu
+  weight: ['300', '400', '700', '900'], // Incluindo light (300), regular (400), bold (700) e black (900)
+  variable: '--font-lato', // Define uma variável CSS para Lato
 });
 
 export const metadata: Metadata = {
@@ -101,31 +104,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={ubuntu.className}>
+    <html lang="pt-BR" className={lato.className}>
       <body>
         {/* Meta tags para melhorar downloads - movido para head.tsx ou metadata */}
-        <script
-          type="text/javascript"
-          dangerouslySetInnerHTML={{
-            __html: `
-              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-              (function(){
-              var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-              s1.async=true;
-              s1.src='https://embed.tawk.to/6872e7e08a0a5f1914737f11/1j00dji02';
-              s1.charset='UTF-8';
-              s1.setAttribute('crossorigin','*');
-              s0.parentNode.insertBefore(s1,s0);
-              })();
-            `,
-          }}
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
         />
         <AuthProvider>
           <AppProvider>
-            <AudioPlayerRoot />
+            <MusicRouteHandler />
+            <ExtensionDetector />
+            <GlobalToastManager />
             <DynamicGradientBackground />
-            {children}
+            <AudioPlayerRoot />
             <PWAInstaller />
+            {children}
           </AppProvider>
         </AuthProvider>
       </body>

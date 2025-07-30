@@ -129,7 +129,7 @@ export default function SEOHead({
             />
 
             {/* Preload importantes */}
-            <link rel="preload" href="/fonts/poppins.woff2" as="font" type="font/woff2" crossOrigin="" />
+            <link rel="preload" href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap" as="style" />
             <link rel="dns-prefetch" href="//fonts.googleapis.com" />
             <link rel="dns-prefetch" href="//fonts.gstatic.com" />
 

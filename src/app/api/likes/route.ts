@@ -26,8 +26,9 @@ export async function POST(req: Request) {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     const cuidRegex = /^[a-z0-9]{25}$/i; // CUID format: 25 caracteres alfanuméricos
 
-    if (!isAdmin && !uuidRegex.test(userId) && !cuidRegex.test(userId)) {
-      console.error('ID de usuário inválido detectado na API de likes:', userId);
+    // Permitir qualquer ID de usuário válido (não vazio)
+    if (!isAdmin && (!userId || userId.trim() === '')) {
+      console.error('ID de usuário vazio detectado na API de likes:', userId);
       return NextResponse.json(
         { error: "ID de usuário inválido" },
         { status: 400 }
@@ -116,8 +117,9 @@ export async function GET(req: Request) {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     const cuidRegex = /^[a-z0-9]{25}$/i; // CUID format: 25 caracteres alfanuméricos
 
-    if (!uuidRegex.test(userId) && !cuidRegex.test(userId)) {
-      console.error('ID de usuário inválido detectado na API de likes GET:', userId);
+    // Permitir qualquer ID de usuário válido (não vazio)
+    if (!userId || userId.trim() === '') {
+      console.error('ID de usuário vazio detectado na API de likes GET:', userId);
       return NextResponse.json(
         { error: "ID de usuário inválido" },
         { status: 400 }

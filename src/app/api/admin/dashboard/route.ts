@@ -8,61 +8,233 @@ import os from 'os';
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.user) {
-            return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+        if (!session?.user?.isAdmin) {
+            return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
         }
 
-        // Estatísticas de usuários
-        const totalUsers = await prisma.user.count();
-        const vipUsers = await prisma.user.count({ where: { is_vip: true } });
-        const freeUsers = totalUsers - vipUsers;
-        const activeUsers = await prisma.user.count({ where: { status: 'ativo' } });
-        const newUsersToday = await prisma.user.count({ where: { createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } } });
-        const newUsersWeek = await prisma.user.count({ where: { createdAt: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) } } });
-        const expiringUsersWeek = await prisma.user.count({ where: { vencimento: { gte: new Date(), lte: new Date(new Date().setDate(new Date().getDate() + 7)) } } });
+        // Data de hoje às 00:00
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Data de 7 dias atrás
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+
+        // Data de 30 dias atrás
+        const monthAgo = new Date();
+        monthAgo.setDate(monthAgo.getDate() - 30);
+
+        // Estatísticas básicas de usuários
+        const [totalUsers, vipUsers, activeUsers, newUsersToday, newUsersWeek] = await Promise.all([
+            prisma.user.count(),
+            prisma.user.count({ where: { is_vip: true } }),
+            prisma.user.count({ where: { status: 'ativo' } }),
+            prisma.user.count({ where: { createdAt: { gte: today } } }),
+            prisma.user.count({ where: { createdAt: { gte: weekAgo } } })
+        ]);
+
+        // Usuários vencendo em 7 dias
+        const expiringDate = new Date();
+        expiringDate.setDate(expiringDate.getDate() + 7);
+        const expiringUsersWeek = await prisma.user.count({
+            where: {
+                vencimento: {
+                    gte: new Date(),
+                    lte: expiringDate
+                }
+            }
+        });
 
         // Estatísticas de downloads
-        const totalDownloads = await prisma.download.count();
-        const downloadsToday = await prisma.download.count({ where: { downloadedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } } });
-        const downloadsWeek = await prisma.download.count({ where: { downloadedAt: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) } } });
-        const downloadsMonth = await prisma.download.count({ where: { downloadedAt: { gte: new Date(new Date().setDate(new Date().getDate() - 30)) } } });
+        const [totalDownloads, downloadsToday, downloadsWeek, downloadsMonth] = await Promise.all([
+            prisma.download.count(),
+            prisma.download.count({ where: { downloadedAt: { gte: today } } }),
+            prisma.download.count({ where: { downloadedAt: { gte: weekAgo } } }),
+            prisma.download.count({ where: { downloadedAt: { gte: monthAgo } } })
+        ]);
 
-        // Top downloaders
+        // Top downloaders (simplificado)
         const topDownloaderToday = await prisma.user.findFirst({
-            orderBy: { downloads: { _count: 'desc' } },
-            where: { downloads: { some: { downloadedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } } } },
-            include: { downloads: true }
+            where: {
+                downloads: {
+                    some: {
+                        downloadedAt: { gte: today }
+                    }
+                }
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                is_vip: true,
+                _count: {
+                    select: {
+                        downloads: {
+                            where: {
+                                downloadedAt: { gte: today }
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                downloads: {
+                    _count: 'desc'
+                }
+            }
         });
+
         const topDownloaderWeek = await prisma.user.findFirst({
-            orderBy: { downloads: { _count: 'desc' } },
-            where: { downloads: { some: { downloadedAt: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) } } } },
-            include: { downloads: true }
+            where: {
+                downloads: {
+                    some: {
+                        downloadedAt: { gte: weekAgo }
+                    }
+                }
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                is_vip: true,
+                _count: {
+                    select: {
+                        downloads: {
+                            where: {
+                                downloadedAt: { gte: weekAgo }
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                downloads: {
+                    _count: 'desc'
+                }
+            }
         });
+
         const topDownloaderMonth = await prisma.user.findFirst({
-            orderBy: { downloads: { _count: 'desc' } },
-            where: { downloads: { some: { downloadedAt: { gte: new Date(new Date().setDate(new Date().getDate() - 30)) } } } },
-            include: { downloads: true }
+            where: {
+                downloads: {
+                    some: {
+                        downloadedAt: { gte: monthAgo }
+                    }
+                }
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                is_vip: true,
+                _count: {
+                    select: {
+                        downloads: {
+                            where: {
+                                downloadedAt: { gte: monthAgo }
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                downloads: {
+                    _count: 'desc'
+                }
+            }
         });
 
         // Estatísticas de músicas
-        const totalTracks = await prisma.track.count();
-        const tracksAddedToday = await prisma.track.count({ where: { createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } } });
-        const tracksAddedWeek = await prisma.track.count({ where: { createdAt: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) } } });
-        const mostDownloadedTrack = await prisma.track.findFirst({ orderBy: { downloads: { _count: 'desc' } }, include: { downloads: true } });
-        const mostLikedTrack = await prisma.track.findFirst({ orderBy: { likes: { _count: 'desc' } }, include: { likes: true } });
-        const recentTracks = await prisma.track.findMany({ orderBy: { createdAt: 'desc' }, take: 10, include: { downloads: true, likes: true } });
+        const [totalTracks, tracksAddedToday, tracksAddedWeek] = await Promise.all([
+            prisma.track.count(),
+            prisma.track.count({ where: { createdAt: { gte: today } } }),
+            prisma.track.count({ where: { createdAt: { gte: weekAgo } } })
+        ]);
+
+        // Música mais baixada
+        const mostDownloadedTrack = await prisma.track.findFirst({
+            select: {
+                id: true,
+                songName: true,
+                artist: true,
+                _count: {
+                    select: {
+                        downloads: true
+                    }
+                }
+            },
+            orderBy: {
+                downloads: {
+                    _count: 'desc'
+                }
+            }
+        });
+
+        // Música mais curtida
+        const mostLikedTrack = await prisma.track.findFirst({
+            select: {
+                id: true,
+                songName: true,
+                artist: true,
+                _count: {
+                    select: {
+                        likes: true
+                    }
+                }
+            },
+            orderBy: {
+                likes: {
+                    _count: 'desc'
+                }
+            }
+        });
+
+        // Músicas recentes (limitado a 5 para performance)
+        const recentTracks = await prisma.track.findMany({
+            select: {
+                id: true,
+                songName: true,
+                artist: true,
+                createdAt: true,
+                _count: {
+                    select: {
+                        downloads: true,
+                        likes: true
+                    }
+                }
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 5
+        });
 
         // Estatísticas de likes
-        const totalLikes = await prisma.like.count();
-        const likesToday = await prisma.like.count({ where: { createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } } });
-        const likesWeek = await prisma.like.count({ where: { createdAt: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) } } });
+        const [totalLikes, likesToday, likesWeek] = await Promise.all([
+            prisma.like.count(),
+            prisma.like.count({ where: { createdAt: { gte: today } } }),
+            prisma.like.count({ where: { createdAt: { gte: weekAgo } } })
+        ]);
 
-        // Receita (exemplo simples)
-        const totalRevenue = await prisma.user.aggregate({ _sum: { valor: true } });
-        const averageUserValue = await prisma.user.aggregate({ _avg: { valor: true } });
-        const vipPlansDistribution = await prisma.user.groupBy({ by: ['valor'], _count: { valor: true } });
+        // Receita
+        const [totalRevenue, averageUserValue, vipPlansDistribution] = await Promise.all([
+            prisma.user.aggregate({
+                _sum: { valor: true }
+            }),
+            prisma.user.aggregate({
+                _avg: { valor: true }
+            }),
+            prisma.user.groupBy({
+                by: ['valor'],
+                _count: { valor: true },
+                where: {
+                    valor: { not: null }
+                },
+                orderBy: {
+                    valor: 'asc'
+                }
+            })
+        ]);
 
-        // Informações do servidor (mock, pode ser ajustado para dados reais)
+        // Informações do servidor
         const serverInfo = {
             platform: process.platform,
             hostname: process.env.HOSTNAME || 'localhost',
@@ -75,12 +247,23 @@ export async function GET(request: NextRequest) {
             cpus: os.cpus().length
         };
 
+        // Processar dados dos top downloaders
+        const processTopDownloader = (user: any) => {
+            if (!user) return null;
+            return {
+                name: user.name || 'Usuário',
+                email: user.email,
+                downloadCount: user._count.downloads,
+                is_vip: user.is_vip
+            };
+        };
+
         return NextResponse.json({
             serverInfo,
             userStats: {
                 total: totalUsers,
                 vipUsers,
-                freeUsers,
+                freeUsers: totalUsers - vipUsers,
                 activeUsers,
                 newUsersToday,
                 newUsersWeek,
@@ -91,17 +274,31 @@ export async function GET(request: NextRequest) {
                 downloadsToday,
                 downloadsWeek,
                 downloadsMonth,
-                topDownloaderToday,
-                topDownloaderWeek,
-                topDownloaderMonth
+                topDownloaderToday: processTopDownloader(topDownloaderToday),
+                topDownloaderWeek: processTopDownloader(topDownloaderWeek),
+                topDownloaderMonth: processTopDownloader(topDownloaderMonth)
             },
             trackStats: {
                 totalTracks,
                 tracksAddedToday,
                 tracksAddedWeek,
-                mostDownloadedTrack,
-                mostLikedTrack,
-                recentTracks
+                mostDownloadedTrack: mostDownloadedTrack ? {
+                    songName: mostDownloadedTrack.songName,
+                    artist: mostDownloadedTrack.artist,
+                    downloadCount: mostDownloadedTrack._count.downloads
+                } : null,
+                mostLikedTrack: mostLikedTrack ? {
+                    songName: mostLikedTrack.songName,
+                    artist: mostLikedTrack.artist,
+                    likeCount: mostLikedTrack._count.likes
+                } : null,
+                recentTracks: recentTracks.map(track => ({
+                    id: track.id,
+                    songName: track.songName,
+                    artist: track.artist,
+                    createdAt: track.createdAt,
+                    _count: track._count
+                }))
             },
             likeStats: {
                 totalLikes,
@@ -111,7 +308,10 @@ export async function GET(request: NextRequest) {
             revenueStats: {
                 totalRevenue: totalRevenue._sum.valor || 0,
                 averageUserValue: averageUserValue._avg.valor || 0,
-                vipPlansDistribution
+                vipPlansDistribution: vipPlansDistribution.map(plan => ({
+                    valor: plan.valor,
+                    _count: plan._count.valor
+                }))
             }
         });
     } catch (error) {

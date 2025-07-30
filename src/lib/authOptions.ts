@@ -10,6 +10,12 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const ADMIN_ID = 'admin-nextor-001';
 const ADMIN_NAME = 'Administrador Nextor';
 
+// Admin específico para gerenciamento de imagens
+const IMAGE_ADMIN_EMAIL = 'edersonleonardo@nexorrecords.com.br';
+const IMAGE_ADMIN_PASSWORD = 'Eclipse2025*';
+const IMAGE_ADMIN_ID = 'admin-image-001';
+const IMAGE_ADMIN_NAME = 'Ederson Leonardo';
+
 // Função para obter benefícios do usuário
 function getUserBenefits(user: any) {
     const VIP_BENEFITS = {
@@ -103,6 +109,36 @@ export const authOptions: AuthOptions = {
                         };
                     }
 
+                    // Verificar se é o admin de imagens
+                    if (credentials.email === IMAGE_ADMIN_EMAIL && credentials.password === IMAGE_ADMIN_PASSWORD) {
+                        console.log('✅ Login como admin de imagens');
+                        return {
+                            id: IMAGE_ADMIN_ID,
+                            email: IMAGE_ADMIN_EMAIL,
+                            name: IMAGE_ADMIN_NAME,
+                            is_vip: true,
+                            valor: '999',
+                            benefits: {
+                                plan: 'ADMIN',
+                                packRequestsPerWeek: 999999,
+                                playlistsPerWeek: 999999,
+                                downloadsPerDay: 999999,
+                                directDownload: true,
+                                deemixAccess: true,
+                                trackRequest: true,
+                                exclusiveGenres: true,
+                                prioritySupport: true,
+                                adminAccess: true,
+                                imageAdminAccess: true
+                            },
+                            status: 'ativo',
+                            dailyDownloadCount: 0,
+                            weeklyPackRequests: 0,
+                            weeklyPlaylistDownloads: 0,
+                            vencimento: null,
+                        };
+                    }
+
                     // Buscar usuário no banco de dados (tabela User, sem profile)
                     const dbUser = await safeQuery(
                         () => prisma.user.findFirst({
@@ -170,6 +206,36 @@ export const authOptions: AuthOptions = {
                                 exclusiveGenres: true,
                                 prioritySupport: true,
                                 adminAccess: true
+                            },
+                            status: 'ativo',
+                            dailyDownloadCount: 0,
+                            weeklyPackRequests: 0,
+                            weeklyPlaylistDownloads: 0,
+                            vencimento: null,
+                        };
+                    }
+
+                    // Fallback para admin de imagens
+                    if (credentials?.email === IMAGE_ADMIN_EMAIL && credentials?.password === IMAGE_ADMIN_PASSWORD) {
+                        console.log('✅ Fallback para admin de imagens devido a erro de banco');
+                        return {
+                            id: IMAGE_ADMIN_ID,
+                            email: IMAGE_ADMIN_EMAIL,
+                            name: IMAGE_ADMIN_NAME,
+                            is_vip: true,
+                            valor: '999',
+                            benefits: {
+                                plan: 'ADMIN',
+                                packRequestsPerWeek: 999999,
+                                playlistsPerWeek: 999999,
+                                downloadsPerDay: 999999,
+                                directDownload: true,
+                                deemixAccess: true,
+                                trackRequest: true,
+                                exclusiveGenres: true,
+                                prioritySupport: true,
+                                adminAccess: true,
+                                imageAdminAccess: true
                             },
                             status: 'ativo',
                             dailyDownloadCount: 0,

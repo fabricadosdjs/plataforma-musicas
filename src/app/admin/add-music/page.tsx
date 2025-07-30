@@ -96,6 +96,35 @@ export default function AddMusicPage() {
             <label className="block text-sm font-medium mb-2">
               JSON das Músicas
             </label>
+            <div className="mb-4 p-4 bg-gray-800 rounded-lg">
+              <h3 className="text-sm font-medium mb-2 text-gray-300">Exemplo de JSON com campo pool:</h3>
+              <pre className="text-xs text-gray-400 overflow-x-auto">
+                {`[
+  {
+    "songName": "Midnight Groove",
+    "artist": "DJ Tech",
+    "style": "House",
+    "version": "Original Mix",
+    "pool": "Nexor Records",
+    "imageUrl": "https://i.ibb.co/abc123/cover1.jpg",
+    "previewUrl": "https://example.com/preview1.mp3",
+    "downloadUrl": "https://example.com/download1.mp3",
+    "releaseDate": "2024-01-15"
+  },
+  {
+    "songName": "Deep Vibes",
+    "artist": "Progressive Master",
+    "style": "Progressive House",
+    "version": "Club Mix",
+    "pool": "Deep House Records",
+    "imageUrl": "https://i.ibb.co/def456/cover2.jpg",
+    "previewUrl": "https://example.com/preview2.mp3",
+    "downloadUrl": "https://example.com/download2.mp3",
+    "releaseDate": "2024-01-20"
+  }
+]`}
+              </pre>
+            </div>
             <textarea
               value={formData.jsonData}
               onChange={(e) => setFormData({ ...formData, jsonData: e.target.value })}

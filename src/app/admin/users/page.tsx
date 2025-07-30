@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle, Copy, Crown, DollarSign, Edit, Filter, Loader2, Plus, Search, Trash, User, Users, X } from 'lucide-react';
+import { AlertCircle, CheckCircle, Copy, Crown, DollarSign, Edit, Filter, Loader2, Plus, Search, Settings, Trash, User, Users, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -31,37 +31,37 @@ interface User {
 // ...existing code (VIP_BENEFITS, VIP_PLANS, BENEFIT_LABELS, getUserPlan, getUserBenefits) should remain outside the component, as constants/helpers
 const VIP_BENEFITS = {
     BASICO: {
-        driveAccess: { enabled: true, description: 'Ilimitado' },
-        packRequests: { enabled: true, limit: 4, description: 'Até 4 estilos por semana' },
-        individualContent: { enabled: true, description: 'Downloads ilimitados' },
-        extraPacks: { enabled: true, description: 'Downloads ilimitados' },
-        playlistDownloads: { enabled: true, limit: 7, description: 'Até 7 por semana' },
+        driveAccess: { enabled: true, description: 'Acesso Mensal' },
+        packRequests: { enabled: true, limit: 4, minLimit: 4, maxLimit: 10, description: 'Até 4 estilos por semana' },
+        individualContent: { enabled: true, description: 'Sim' },
+        extraPacks: { enabled: true, description: 'Sim' },
+        playlistDownloads: { enabled: true, limit: 7, minLimit: 7, maxLimit: 15, description: 'Até 7 por semana' },
         deezerPremium: { enabled: false, description: 'Não disponível' },
         deemixDiscount: { enabled: false, percentage: 0, description: 'Não disponível' },
         arlPremium: { enabled: false, description: 'Não disponível' },
         musicProduction: { enabled: false, description: 'Não disponível' }
     },
     PADRAO: {
-        driveAccess: { enabled: true, description: 'Ilimitado' },
-        packRequests: { enabled: true, limit: 6, description: 'Até 6 estilos por semana' },
-        individualContent: { enabled: true, description: 'Downloads ilimitados' },
-        extraPacks: { enabled: true, description: 'Downloads ilimitados' },
-        playlistDownloads: { enabled: true, limit: 9, description: 'Até 9 por semana' },
-        deezerPremium: { enabled: false, description: 'Não disponível' },
-        deemixDiscount: { enabled: true, percentage: 15, description: 'Incluso' },
-        arlPremium: { enabled: false, description: 'Não disponível' },
+        driveAccess: { enabled: true, description: 'Acesso Mensal' },
+        packRequests: { enabled: true, limit: 6, minLimit: 4, maxLimit: 10, description: 'Até 6 estilos por semana' },
+        individualContent: { enabled: true, description: 'Sim' },
+        extraPacks: { enabled: true, description: 'Sim' },
+        playlistDownloads: { enabled: true, limit: 9, minLimit: 7, maxLimit: 15, description: 'Até 9 por semana' },
+        deezerPremium: { enabled: true, description: 'Sim' },
+        deemixDiscount: { enabled: true, percentage: 15, description: 'Sim' },
+        arlPremium: { enabled: true, description: 'Sim (automático se Deemix)' },
         musicProduction: { enabled: false, description: 'Não disponível' }
     },
     COMPLETO: {
-        driveAccess: { enabled: true, description: 'Ilimitado' },
-        packRequests: { enabled: true, limit: 8, description: 'Até 8 estilos por semana' },
-        individualContent: { enabled: true, description: 'Downloads ilimitados' },
-        extraPacks: { enabled: true, description: 'Downloads ilimitados' },
-        playlistDownloads: { enabled: true, limit: -1, description: 'Ilimitado (máx. 4 por dia)' },
-        deezerPremium: { enabled: true, description: 'Incluso' },
-        deemixDiscount: { enabled: true, percentage: 15, description: 'Incluso' },
-        arlPremium: { enabled: true, description: 'Incluso' },
-        musicProduction: { enabled: true, description: 'Incluso' }
+        driveAccess: { enabled: true, description: 'Acesso Mensal' },
+        packRequests: { enabled: true, limit: 8, minLimit: 4, maxLimit: 10, description: 'Até 8 estilos por semana' },
+        individualContent: { enabled: true, description: 'Sim' },
+        extraPacks: { enabled: true, description: 'Sim' },
+        playlistDownloads: { enabled: true, limit: -1, minLimit: 7, maxLimit: 15, description: 'Ilimitado (máx. 4 por dia)' },
+        deezerPremium: { enabled: true, description: 'Sim' },
+        deemixDiscount: { enabled: true, percentage: 15, description: 'Sim' },
+        arlPremium: { enabled: true, description: 'Sim (automático se Deemix)' },
+        musicProduction: { enabled: true, description: 'Sim' }
     }
 } as const;
 
@@ -650,6 +650,15 @@ export default function AdminUsersPage() {
                             <h1 className="text-3xl font-bold text-white">Usuários VIP</h1>
                             <p className="text-gray-400 mt-1">Gerencie assinaturas e permissões dos usuários</p>
                         </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <a
+                            href="/admin/custom-items"
+                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+                        >
+                            <Settings className="h-4 w-4" />
+                            Itens Personalizados
+                        </a>
                     </div>
                 </div>
 
@@ -1524,6 +1533,303 @@ export default function AdminUsersPage() {
                                             }
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Personalização de Benefícios */}
+                            <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                <h4 className="font-semibold text-white flex items-center gap-2 mb-4">
+                                    ⚙️ Personalizar Benefícios
+                                </h4>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {/* Acesso ao Drive */}
+                                    <div className="bg-gray-700 rounded-lg p-3">
+                                        <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                            📁 Acesso ao Drive Mensal (desde 2023)
+                                        </label>
+                                        <select
+                                            value={customBenefits[userForBenefits.id]?.driveAccess?.enabled !== undefined
+                                                ? customBenefits[userForBenefits.id].driveAccess.enabled.toString()
+                                                : getUserBenefits(userForBenefits, customBenefits).driveAccess.enabled.toString()}
+                                            onChange={(e) => {
+                                                const newValue = e.target.value === 'true';
+                                                setCustomBenefits(prev => ({
+                                                    ...prev,
+                                                    [userForBenefits.id]: {
+                                                        ...prev[userForBenefits.id],
+                                                        driveAccess: { ...prev[userForBenefits.id]?.driveAccess, enabled: newValue }
+                                                    }
+                                                }));
+                                            }}
+                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                        >
+                                            <option value="true">Sim</option>
+                                            <option value="false">Não</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Solicitação de Packs */}
+                                    <div className="bg-gray-700 rounded-lg p-3">
+                                        <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                            🎚️ Solicitação de Packs (4 a 10)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="4"
+                                            max="10"
+                                            value={customBenefits[userForBenefits.id]?.packRequests?.limit !== undefined
+                                                ? customBenefits[userForBenefits.id].packRequests.limit
+                                                : getUserBenefits(userForBenefits, customBenefits).packRequests.limit}
+                                            onChange={(e) => {
+                                                const newValue = parseInt(e.target.value);
+                                                setCustomBenefits(prev => ({
+                                                    ...prev,
+                                                    [userForBenefits.id]: {
+                                                        ...prev[userForBenefits.id],
+                                                        packRequests: { ...prev[userForBenefits.id]?.packRequests, limit: newValue, enabled: true }
+                                                    }
+                                                }));
+                                            }}
+                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                        />
+                                    </div>
+
+                                    {/* Conteúdos Avulsos */}
+                                    <div className="bg-gray-700 rounded-lg p-3">
+                                        <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                            📦 Conteúdos Avulsos
+                                        </label>
+                                        <select
+                                            value={customBenefits[userForBenefits.id]?.individualContent?.enabled !== undefined
+                                                ? customBenefits[userForBenefits.id].individualContent.enabled.toString()
+                                                : getUserBenefits(userForBenefits, customBenefits).individualContent.enabled.toString()}
+                                            onChange={(e) => {
+                                                const newValue = e.target.value === 'true';
+                                                setCustomBenefits(prev => ({
+                                                    ...prev,
+                                                    [userForBenefits.id]: {
+                                                        ...prev[userForBenefits.id],
+                                                        individualContent: { ...prev[userForBenefits.id]?.individualContent, enabled: newValue }
+                                                    }
+                                                }));
+                                            }}
+                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                        >
+                                            <option value="true">Sim</option>
+                                            <option value="false">Não</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Packs Extras */}
+                                    <div className="bg-gray-700 rounded-lg p-3">
+                                        <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                            🔥 Packs Extras
+                                        </label>
+                                        <select
+                                            value={customBenefits[userForBenefits.id]?.extraPacks?.enabled !== undefined
+                                                ? customBenefits[userForBenefits.id].extraPacks.enabled.toString()
+                                                : getUserBenefits(userForBenefits, customBenefits).extraPacks.enabled.toString()}
+                                            onChange={(e) => {
+                                                const newValue = e.target.value === 'true';
+                                                setCustomBenefits(prev => ({
+                                                    ...prev,
+                                                    [userForBenefits.id]: {
+                                                        ...prev[userForBenefits.id],
+                                                        extraPacks: { ...prev[userForBenefits.id]?.extraPacks, enabled: newValue }
+                                                    }
+                                                }));
+                                            }}
+                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                        >
+                                            <option value="true">Sim</option>
+                                            <option value="false">Não</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Download de Playlists */}
+                                    <div className="bg-gray-700 rounded-lg p-3">
+                                        <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                            🎵 Download de Playlists (7 a 15/semana)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="7"
+                                            max="15"
+                                            value={customBenefits[userForBenefits.id]?.playlistDownloads?.limit !== undefined
+                                                ? (customBenefits[userForBenefits.id].playlistDownloads.limit === -1 ? 15 : customBenefits[userForBenefits.id].playlistDownloads.limit)
+                                                : (getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit === -1 ? 15 : getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit)}
+                                            onChange={(e) => {
+                                                const newValue = parseInt(e.target.value);
+                                                setCustomBenefits(prev => ({
+                                                    ...prev,
+                                                    [userForBenefits.id]: {
+                                                        ...prev[userForBenefits.id],
+                                                        playlistDownloads: { ...prev[userForBenefits.id]?.playlistDownloads, limit: newValue, enabled: true }
+                                                    }
+                                                }));
+                                            }}
+                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                        />
+                                    </div>
+
+                                    {/* Deezer Premium */}
+                                    <div className="bg-gray-700 rounded-lg p-3">
+                                        <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                            🎁 Deezer Premium Grátis
+                                        </label>
+                                        <select
+                                            value={customBenefits[userForBenefits.id]?.deezerPremium?.enabled !== undefined
+                                                ? customBenefits[userForBenefits.id].deezerPremium.enabled.toString()
+                                                : getUserBenefits(userForBenefits, customBenefits).deezerPremium.enabled.toString()}
+                                            onChange={(e) => {
+                                                const newValue = e.target.value === 'true';
+                                                setCustomBenefits(prev => ({
+                                                    ...prev,
+                                                    [userForBenefits.id]: {
+                                                        ...prev[userForBenefits.id],
+                                                        deezerPremium: { ...prev[userForBenefits.id]?.deezerPremium, enabled: newValue }
+                                                    }
+                                                }));
+                                            }}
+                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                        >
+                                            <option value="true">Sim</option>
+                                            <option value="false">Não</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Desconto no Deemix */}
+                                    <div className="bg-gray-700 rounded-lg p-3">
+                                        <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                            💸 Desconto no Deemix
+                                        </label>
+                                        <select
+                                            value={customBenefits[userForBenefits.id]?.deemixDiscount?.enabled !== undefined
+                                                ? customBenefits[userForBenefits.id].deemixDiscount.enabled.toString()
+                                                : getUserBenefits(userForBenefits, customBenefits).deemixDiscount.enabled.toString()}
+                                            onChange={(e) => {
+                                                const newValue = e.target.value === 'true';
+                                                setCustomBenefits(prev => ({
+                                                    ...prev,
+                                                    [userForBenefits.id]: {
+                                                        ...prev[userForBenefits.id],
+                                                        deemixDiscount: { ...prev[userForBenefits.id]?.deemixDiscount, enabled: newValue }
+                                                    }
+                                                }));
+                                            }}
+                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                        >
+                                            <option value="true">Sim</option>
+                                            <option value="false">Não</option>
+                                        </select>
+                                    </div>
+
+                                    {/* ARL Premium */}
+                                    <div className="bg-gray-700 rounded-lg p-3">
+                                        <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                            🔐 ARL Premium para Deemix
+                                        </label>
+                                        <select
+                                            value={customBenefits[userForBenefits.id]?.arlPremium?.enabled !== undefined
+                                                ? customBenefits[userForBenefits.id].arlPremium.enabled.toString()
+                                                : (customBenefits[userForBenefits.id]?.deemixDiscount?.enabled || getUserBenefits(userForBenefits, customBenefits).deemixDiscount.enabled).toString()}
+                                            disabled={!(customBenefits[userForBenefits.id]?.deemixDiscount?.enabled || getUserBenefits(userForBenefits, customBenefits).deemixDiscount.enabled)}
+                                            onChange={(e) => {
+                                                const newValue = e.target.value === 'true';
+                                                setCustomBenefits(prev => ({
+                                                    ...prev,
+                                                    [userForBenefits.id]: {
+                                                        ...prev[userForBenefits.id],
+                                                        arlPremium: { ...prev[userForBenefits.id]?.arlPremium, enabled: newValue }
+                                                    }
+                                                }));
+                                            }}
+                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm disabled:opacity-50"
+                                        >
+                                            <option value="true">Sim</option>
+                                            <option value="false">Não</option>
+                                        </select>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            {!(customBenefits[userForBenefits.id]?.deemixDiscount?.enabled || getUserBenefits(userForBenefits, customBenefits).deemixDiscount.enabled)
+                                                ? 'Ativar Deemix primeiro'
+                                                : 'Aplica automaticamente se Deemix ativo'}
+                                        </p>
+                                    </div>
+
+                                    {/* Produção Musical */}
+                                    <div className="bg-gray-700 rounded-lg p-3">
+                                        <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                            🎼 Produção da sua Música
+                                        </label>
+                                        <select
+                                            value={customBenefits[userForBenefits.id]?.musicProduction?.enabled !== undefined
+                                                ? customBenefits[userForBenefits.id].musicProduction.enabled.toString()
+                                                : getUserBenefits(userForBenefits, customBenefits).musicProduction.enabled.toString()}
+                                            onChange={(e) => {
+                                                const newValue = e.target.value === 'true';
+                                                setCustomBenefits(prev => ({
+                                                    ...prev,
+                                                    [userForBenefits.id]: {
+                                                        ...prev[userForBenefits.id],
+                                                        musicProduction: { ...prev[userForBenefits.id]?.musicProduction, enabled: newValue }
+                                                    }
+                                                }));
+                                            }}
+                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                        >
+                                            <option value="true">Sim</option>
+                                            <option value="false">Não</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Botão Salvar Benefícios */}
+                                <div className="mt-4 pt-4 border-t border-gray-600">
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                console.log('💾 Salvando benefícios para usuário:', userForBenefits.id);
+                                                console.log('📋 Benefícios:', customBenefits[userForBenefits.id] || {});
+
+                                                const requestBody = {
+                                                    userId: userForBenefits.id,
+                                                    customBenefits: customBenefits[userForBenefits.id] || {}
+                                                };
+
+                                                console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
+
+                                                const response = await fetch('/api/admin/update-custom-benefits', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    credentials: 'include',
+                                                    body: JSON.stringify({
+                                                        userId: userForBenefits.id,
+                                                        customBenefits: customBenefits[userForBenefits.id] || {}
+                                                    })
+                                                });
+
+                                                const responseData = await response.json();
+                                                console.log('📡 Resposta da API:', responseData);
+
+                                                if (response.ok) {
+                                                    console.log('✅ Benefícios salvos com sucesso!');
+                                                    alert('Benefícios personalizados salvos com sucesso!');
+                                                    window.location.reload();
+                                                } else {
+                                                    console.error('❌ Erro na API:', responseData);
+                                                    const errorMessage = responseData.error || responseData.details || 'Erro desconhecido';
+                                                    alert(`Erro ao salvar benefícios personalizados: ${errorMessage}`);
+                                                }
+                                            } catch (error) {
+                                                console.error('❌ Erro ao salvar benefícios:', error);
+                                                alert(`Erro ao salvar benefícios personalizados: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+                                            }
+                                        }}
+                                        className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
+                                    >
+                                        💾 Salvar Benefícios Personalizados
+                                    </button>
                                 </div>
                             </div>
 

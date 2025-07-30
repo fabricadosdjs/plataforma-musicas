@@ -70,6 +70,10 @@ export default function DashboardPage() {
         redirect('/auth/sign-in');
     }
 
+    if (isLoaded && user && !user.isAdmin) {
+        redirect('/access-denied');
+    }
+
     const fetchStats = async () => {
         try {
             setLoading(true);
@@ -78,6 +82,8 @@ export default function DashboardPage() {
                 const data = await response.json();
                 setStats(data);
                 setLastUpdated(new Date());
+            } else {
+                console.error('Erro na resposta da API:', response.status);
             }
         } catch (error) {
             console.error('Erro ao carregar estatísticas:', error);
@@ -87,11 +93,13 @@ export default function DashboardPage() {
     };
 
     useEffect(() => {
-        fetchStats();
-        // Atualizar a cada 30 segundos
-        const interval = setInterval(fetchStats, 30000);
-        return () => clearInterval(interval);
-    }, []);
+        if (session?.user?.isAdmin) {
+            fetchStats();
+            // Atualizar a cada 60 segundos (reduzido para melhor performance)
+            const interval = setInterval(fetchStats, 60000);
+            return () => clearInterval(interval);
+        }
+    }, [session]);
 
     const formatBytes = (bytes: number) => {
         if (bytes === 0) return '0 Bytes';
@@ -114,6 +122,17 @@ export default function DashboardPage() {
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
                     <p className="mt-4 text-gray-400">Carregando dashboard...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!session?.user?.isAdmin) {
+        return (
+            <div className="min-h-screen bg-[#202124] text-white flex items-center justify-center">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold mb-4">Acesso Negado</h1>
+                    <p className="text-gray-400">Você não tem permissão para acessar esta página.</p>
                 </div>
             </div>
         );
@@ -147,7 +166,7 @@ export default function DashboardPage() {
             </header>
 
             <div className="p-6">
-                {stats && (
+                {stats ? (
                     <>
                         {/* Informações do Servidor */}
                         <div className="mb-8">
@@ -300,7 +319,7 @@ export default function DashboardPage() {
 
                             {/* Top Downloaders */}
                             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {stats.downloadStats.topDownloaderToday && (
+                                {stats.downloadStats.topDownloaderToday ? (
                                     <div className="bg-[#2d2f32] p-4 rounded-lg">
                                         <h3 className="font-semibold mb-2 text-green-400">Top Downloader Hoje</h3>
                                         <p className="text-white">{stats.downloadStats.topDownloaderToday.name}</p>
@@ -310,9 +329,14 @@ export default function DashboardPage() {
                                             {stats.downloadStats.topDownloaderToday.is_vip ? 'VIP' : 'FREE'}
                                         </span>
                                     </div>
+                                ) : (
+                                    <div className="bg-[#2d2f32] p-4 rounded-lg">
+                                        <h3 className="font-semibold mb-2 text-green-400">Top Downloader Hoje</h3>
+                                        <p className="text-gray-400">Nenhum download hoje</p>
+                                    </div>
                                 )}
 
-                                {stats.downloadStats.topDownloaderWeek && (
+                                {stats.downloadStats.topDownloaderWeek ? (
                                     <div className="bg-[#2d2f32] p-4 rounded-lg">
                                         <h3 className="font-semibold mb-2 text-purple-400">Top Downloader Semana</h3>
                                         <p className="text-white">{stats.downloadStats.topDownloaderWeek.name}</p>
@@ -322,9 +346,14 @@ export default function DashboardPage() {
                                             {stats.downloadStats.topDownloaderWeek.is_vip ? 'VIP' : 'FREE'}
                                         </span>
                                     </div>
+                                ) : (
+                                    <div className="bg-[#2d2f32] p-4 rounded-lg">
+                                        <h3 className="font-semibold mb-2 text-purple-400">Top Downloader Semana</h3>
+                                        <p className="text-gray-400">Nenhum download esta semana</p>
+                                    </div>
                                 )}
 
-                                {stats.downloadStats.topDownloaderMonth && (
+                                {stats.downloadStats.topDownloaderMonth ? (
                                     <div className="bg-[#2d2f32] p-4 rounded-lg">
                                         <h3 className="font-semibold mb-2 text-yellow-400">Top Downloader Mês</h3>
                                         <p className="text-white">{stats.downloadStats.topDownloaderMonth.name}</p>
@@ -333,6 +362,11 @@ export default function DashboardPage() {
                                         <span className={`inline-block px-2 py-1 rounded text-xs ${stats.downloadStats.topDownloaderMonth.is_vip ? 'bg-yellow-600' : 'bg-gray-600'}`}>
                                             {stats.downloadStats.topDownloaderMonth.is_vip ? 'VIP' : 'FREE'}
                                         </span>
+                                    </div>
+                                ) : (
+                                    <div className="bg-[#2d2f32] p-4 rounded-lg">
+                                        <h3 className="font-semibold mb-2 text-yellow-400">Top Downloader Mês</h3>
+                                        <p className="text-gray-400">Nenhum download este mês</p>
                                     </div>
                                 )}
                             </div>
@@ -479,6 +513,17 @@ export default function DashboardPage() {
                             </div>
                         </div>
                     </>
+                ) : (
+                    <div className="text-center py-20">
+                        <h2 className="text-2xl font-bold mb-4">Erro ao carregar dados</h2>
+                        <p className="text-gray-400 mb-4">Não foi possível carregar as estatísticas do dashboard.</p>
+                        <button
+                            onClick={fetchStats}
+                            className="bg-blue-600 px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Tentar Novamente
+                        </button>
+                    </div>
                 )}
             </div>
         </div>

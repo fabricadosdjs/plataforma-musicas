@@ -150,7 +150,7 @@ export class ContaboStorage {
     /**
      * Verifica se um arquivo é de áudio
      */
-    private isAudioFile(filename: string): boolean {
+    public isAudioFile(filename: string): boolean {
         const audioExtensions = ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a', '.wma'];
         const extension = filename.toLowerCase().substring(filename.lastIndexOf('.'));
         return audioExtensions.includes(extension);

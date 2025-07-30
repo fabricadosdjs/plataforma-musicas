@@ -23,7 +23,7 @@ const VipCrown = () => (
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
-  const { likedTracks, downloadedTracks } = useAppContext();
+  const { downloadedTracks } = useAppContext();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -106,7 +106,7 @@ export default function ProfilePage() {
         <div className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
           <div className="flex flex-col items-center p-6 rounded-2xl border border-blue-900 bg-gradient-to-br from-[#101937] to-[#1a2a4d] shadow-lg">
             <svg width="36" height="36" fill="none" viewBox="0 0 24 24"><path fill="#fff" d="M9 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm10-14v12.18A3 3 0 0 0 17 15a3 3 0 1 0 3 3V7h2V3h-6v2h2ZM5 19a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm12-2a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" /></svg>
-            <div className="text-white font-bold text-xl mt-2" style={{ fontFamily: 'Lato, sans-serif' }}>{likedTracks?.length ?? 0}</div>
+            <div className="text-white font-bold text-xl mt-2" style={{ fontFamily: 'Lato, sans-serif' }}>0</div>
             <div className="text-gray-300 text-xs" style={{ fontFamily: 'Lato, sans-serif' }}>Músicas Curtidas</div>
           </div>
           <div className="flex flex-col items-center p-6 rounded-2xl border border-green-900 bg-gradient-to-br from-[#0E2316] to-[#1a3d2a] shadow-lg">

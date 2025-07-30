@@ -27,6 +27,7 @@ export async function POST(req: Request) {
         if (!track.artist) missingFields.push('artist');
         if (!track.style) missingFields.push('style');
         if (!track.version) missingFields.push('version');
+        if (!track.pool) missingFields.push('pool');
         if (!track.imageUrl) missingFields.push('imageUrl');
         if (!track.previewUrl) missingFields.push('previewUrl');
         if (!track.downloadUrl) missingFields.push('downloadUrl');
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
         downloadUrl: track.downloadUrl,
         style: track.style,
         version: track.version,
+        pool: track.pool || 'Nexor Records',
         imageUrl: track.imageUrl,
         releaseDate: new Date(track.releaseDate),
         createdAt: now,

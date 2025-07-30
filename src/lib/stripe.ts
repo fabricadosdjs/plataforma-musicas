@@ -10,7 +10,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 // Cria uma instância única do cliente Stripe.
 // A API Version é importante para garantir compatibilidade.
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-06-30.basil', // Use a versão mais recente da API do Stripe
+    apiVersion: '2025-07-30.basil', // Use a versão mais recente da API do Stripe
 });
 
 export default stripe;

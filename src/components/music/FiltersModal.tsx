@@ -10,17 +10,20 @@ interface FiltersModalProps {
     genres: string[];
     artists: string[];
     versions: string[];
+    pools: string[];
     monthOptions: Array<{ value: string; label: string }>;
     selectedGenre: string;
     selectedArtist: string;
     selectedDateRange: string;
     selectedVersion: string;
     selectedMonth: string;
+    selectedPool: string;
     onGenreChange: (value: string) => void;
     onArtistChange: (value: string) => void;
     onDateRangeChange: (value: string) => void;
     onVersionChange: (value: string) => void;
     onMonthChange: (value: string) => void;
+    onPoolChange: (value: string) => void;
     onApplyFilters: () => void;
     onClearFilters: () => void;
     isLoading: boolean;
@@ -33,17 +36,20 @@ export default function FiltersModal({
     genres,
     artists,
     versions,
+    pools,
     monthOptions,
     selectedGenre,
     selectedArtist,
     selectedDateRange,
     selectedVersion,
     selectedMonth,
+    selectedPool,
     onGenreChange,
     onArtistChange,
     onDateRangeChange,
     onVersionChange,
     onMonthChange,
+    onPoolChange,
     onApplyFilters,
     onClearFilters,
     isLoading,
@@ -184,6 +190,27 @@ export default function FiltersModal({
                                 <option value="all">Todas as versões</option>
                                 {versions.map(version => (
                                     <option key={version} value={version}>{version}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Filtro por Pool */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                🏊‍♂️ Pool
+                            </label>
+                            <select
+                                value={selectedPool}
+                                onChange={(e) => onPoolChange(e.target.value)}
+                                className="w-full px-3 py-2 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                style={{
+                                    backgroundColor: '#1a1a1a',
+                                    borderColor: '#3a3a3a'
+                                }}
+                            >
+                                <option value="all">Todos os pools</option>
+                                {pools.map(pool => (
+                                    <option key={pool} value={pool}>{pool}</option>
                                 ))}
                             </select>
                         </div>

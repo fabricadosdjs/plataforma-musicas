@@ -4,7 +4,13 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['placehold.co', 'i.ibb.co', 'files.catbox.moe'],
+    domains: [
+      'placehold.co',
+      'i.ibb.co',
+      'files.catbox.moe',
+      'via.placeholder.com',
+      'dashboard.dittomusic.com',
+    ],
   },
   serverExternalPackages: ['@prisma/client'],
   async headers() {

@@ -1,7 +1,7 @@
 // src/components/layout/Header.tsx
 "use client";
 
-import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu } from 'lucide-react';
+import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, Bell, UserCircle, Users } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -30,25 +30,38 @@ const Header = ({
 }: HeaderProps) => {
   const { data: session } = useSession();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    type: 'warning' | 'error' | 'info';
+    title: string;
+    message: string;
+    timestamp: Date;
+    read: boolean;
+  }>>([]);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  // Fecha o menu ao clicar fora
+  const notificationsMenuRef = useRef<HTMLDivElement>(null);
+  // Fecha os menus ao clicar fora
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
       }
+      if (notificationsMenuRef.current && !notificationsMenuRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
     }
-    if (showProfileMenu) {
+    if (showProfileMenu || showNotifications) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showProfileMenu]);
+  }, [showProfileMenu, showNotifications]);
 
-  // Usando as funções de alerta do AppContext
-  const { showAlert, showVipAlert } = useAppContext();
+  // Usando a função de alerta do AppContext
+  const { showAlert } = useAppContext();
 
   const formatDate = (dateString: string | Date): string => {
     if (!dateString) return '';
@@ -57,21 +70,53 @@ const Header = ({
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  // Verificar vencimento do usuário e usar o sistema de alerta do AppContext
+  // Verificar vencimento do usuário e atualizar notificações
   useEffect(() => {
-    if (session?.user?.is_vip && session.user.vencimento) {
-      const vencimentoDate = new Date(session.user.vencimento);
-      const now = new Date();
-      const diffTime = vencimentoDate.getTime() - now.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (session?.user) {
+      const newNotifications: typeof notifications = [];
 
-      if (diffDays <= 3 && diffDays >= 0) {
-        showVipAlert(`Sua assinatura VIP vence em ${diffDays} dias!`);
-      } else if (diffDays < 0) {
-        showAlert(`Sua assinatura VIP venceu em ${formatDate(vencimentoDate)}!`, 15000);
+      // Verificar vencimento VIP - REMOVIDO O ALERTA AUTOMÁTICO
+      if (session.user.is_vip && session.user.vencimento) {
+        const vencimentoDate = new Date(session.user.vencimento);
+        const now = new Date();
+        const diffTime = vencimentoDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 3 && diffDays >= 0) {
+          newNotifications.push({
+            id: 'vip-expiring',
+            type: 'warning',
+            title: 'Plano VIP Vencendo',
+            message: `Seu plano VIP vence em ${diffDays} dias. Renove para manter seus benefícios!`,
+            timestamp: new Date(),
+            read: false
+          });
+          // REMOVIDO: showAlert(`Sua assinatura VIP vence em ${diffDays} dias!`);
+        } else if (diffDays < 0) {
+          newNotifications.push({
+            id: 'vip-expired',
+            type: 'error',
+            title: 'Plano VIP Expirado',
+            message: `Seu plano VIP venceu em ${formatDate(vencimentoDate)}. Renove agora!`,
+            timestamp: new Date(),
+            read: false
+          });
+        }
       }
+
+      setNotifications(newNotifications);
     }
-  }, [session, showAlert, showVipAlert]);
+  }, [session]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAsRead = (notificationId: string) => {
+    setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true } : n));
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +148,7 @@ const Header = ({
           {/* Desktop nav */}
           <nav className="hidden md:flex space-x-6 text-gray-300 font-medium items-center">
             <Link href="/new" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><CheckCircle className="h-4 w-4" />Novidades</Link>
+            <Link href="/community" className="flex items-center gap-1 hover:text-purple-400 transition-colors"><Users className="h-4 w-4" />Comunidade</Link>
             <Link href="/trending" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Star className="h-4 w-4" />Trending</Link>
             <Link href="/charts" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Crown className="h-4 w-4" />Charts</Link>
             <Link href="/featured" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><AlertCircle className="h-4 w-4" />Featured</Link>
@@ -139,6 +185,7 @@ const Header = ({
               </div>
               <nav className="flex flex-col gap-2 px-6">
                 <Link href="/new" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><CheckCircle className="h-5 w-5" />Novidades</Link>
+                <Link href="/community" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-purple-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Users className="h-5 w-5" />Comunidade</Link>
                 <Link href="/trending" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Star className="h-5 w-5" />Trending</Link>
                 <Link href="/charts" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Crown className="h-5 w-5" />Charts</Link>
                 <Link href="/featured" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><AlertCircle className="h-5 w-5" />Featured</Link>
@@ -163,65 +210,161 @@ const Header = ({
           </div>
         )}
 
-        {showSearchAndFilters && (
-          <form onSubmit={handleSearchSubmit} className="flex items-center w-full max-w-md mx-4 bg-gray-800 rounded-full px-4 py-2 border border-gray-700 focus-within:border-blue-500 transition-all duration-200">
-            <Search className="h-5 w-5 text-gray-400 mr-3" />
-            <input
-              type="text"
-              placeholder="Buscar músicas, artistas, estilos..."
-              className="flex-grow bg-transparent outline-none text-white placeholder-gray-400 text-sm"
-              value={searchQuery}
-              onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
-            />
-            {onFiltersClick && (
-              <button type="button" onClick={onFiltersClick} className="ml-3 p-2 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors relative">
-                {/* O componente Filter é importado do lucide-react - SEM COMENTÁRIOS DE LINHA JS AQUI */}
-                <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-blue-400' : 'text-gray-300'}`} />
-                {hasActiveFilters && (
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-blue-500 ring-2 ring-gray-800"></span>
-                )}
-              </button>
-            )}
-          </form>
-        )}
-
         <div className="flex items-center space-x-4">
           {session?.user ? (
-            <div className="relative" ref={profileMenuRef}>
-              <button
-                className="flex items-center space-x-2 text-white font-medium hover:text-blue-400 transition-colors focus:outline-none"
-                onClick={() => setShowProfileMenu((prev) => !prev)}
-                aria-label="Abrir menu de perfil"
-              >
-                <User className="h-8 w-8" />
-                {session.user.is_vip && <Crown className="h-5 w-5 text-yellow-400 ml-1" />}
-              </button>
-              {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50 p-4">
-                  <div className="mb-2 text-white text-sm">
-                    <div className="font-bold text-base mb-1">{session.user.name || 'Usuário'}</div>
-                    <div className="text-gray-400 mb-1">{session.user.email}</div>
-                    <div className="flex items-center gap-2 mb-1">
-                      {session.user.is_vip ? (
-                        <><Crown className="h-4 w-4 text-yellow-400" /> <span className="text-yellow-300 font-semibold">VIP</span></>
-                      ) : (
-                        <><AlertCircle className="h-4 w-4 text-red-400" /> <span className="text-red-300 font-semibold">Free</span></>
+            <div className="flex items-center space-x-3">
+              {/* Sino de Notificações */}
+              <div className="relative" ref={notificationsMenuRef}>
+                <button
+                  className="relative p-2 text-gray-300 hover:text-white focus:outline-none transition-colors"
+                  onClick={() => setShowNotifications((prev) => !prev)}
+                  aria-label="Ver notificações"
+                >
+                  <Bell className="h-6 w-6" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Menu de Notificações */}
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-80 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 max-h-96 overflow-hidden">
+                    <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+                      <h3 className="font-bold text-white">Notificações</h3>
+                      {notifications.length > 0 && (
+                        <button
+                          onClick={clearAllNotifications}
+                          className="text-xs text-gray-400 hover:text-white transition-colors"
+                        >
+                          Limpar Tudo
+                        </button>
                       )}
                     </div>
-                    {session.user.vencimento && (
-                      <div className="text-gray-400 text-xs">Vencimento: <span className="text-white font-semibold">{formatDate(session.user.vencimento)}</span></div>
+
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-6 text-center text-gray-400">
+                          <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p>Nenhuma notificação</p>
+                        </div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className={`p-4 border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors ${!notification.read ? 'bg-blue-500/5 border-l-4 border-l-blue-500' : ''
+                              }`}
+                            onClick={() => markAsRead(notification.id)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`p-2 rounded-lg ${notification.type === 'error' ? 'bg-red-500/20 text-red-400' :
+                                notification.type === 'warning' ? 'bg-yellow-500/20 text-yellow-400' :
+                                  'bg-blue-500/20 text-blue-400'
+                                }`}>
+                                {notification.type === 'error' ? <X className="h-4 w-4" /> :
+                                  notification.type === 'warning' ? <AlertCircle className="h-4 w-4" /> :
+                                    <Bell className="h-4 w-4" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-white text-sm">{notification.title}</h4>
+                                <p className="text-gray-300 text-xs mt-1 leading-relaxed">{notification.message}</p>
+                                <p className="text-gray-500 text-xs mt-2">
+                                  {notification.timestamp.toLocaleTimeString('pt-BR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              </div>
+                              {!notification.read && (
+                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Menu do Perfil */}
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  className="flex items-center space-x-3 text-white font-medium hover:text-blue-400 transition-colors focus:outline-none bg-gray-800/50 rounded-xl px-3 py-2 border border-gray-700 hover:border-gray-600"
+                  onClick={() => setShowProfileMenu((prev) => !prev)}
+                  aria-label="Abrir menu de perfil"
+                >
+                  <div className="relative">
+                    <UserCircle className="h-8 w-8" />
+                    {session.user.is_vip && (
+                      <Crown className="h-4 w-4 text-yellow-400 absolute -top-1 -right-1 bg-gray-900 rounded-full p-0.5" />
                     )}
                   </div>
-                  <Link href="/profile/page.tsx" className="block px-4 py-2 text-white hover:bg-gray-800 rounded-lg mb-2">Perfil</Link>
-                  <button
-                    className="block w-full text-left px-4 py-2 text-white hover:bg-gray-800 rounded-lg"
-                    onClick={() => signOut()}
-                  >Sair</button>
-                </div>
-              )}
+                  <span className="hidden md:block text-sm font-semibold">
+                    {session.user.name?.split(' ')[0] || 'Usuário'}
+                  </span>
+                </button>
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-72 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 p-6 font-lato">
+                    <div className="mb-4 text-white">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="relative">
+                          <UserCircle className="h-12 w-12 text-gray-300" />
+                          {session.user.is_vip && (
+                            <Crown className="h-5 w-5 text-yellow-400 absolute -top-1 -right-1 bg-gray-900 rounded-full p-0.5" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-bold text-lg">{session.user.name || 'Usuário'}</div>
+                          <div className="text-gray-400 text-sm">(51) 98108-6784</div>
+                        </div>
+                      </div>
+
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${session.user.is_vip
+                        ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+                        : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                        }`}>
+                        {session.user.is_vip ? (
+                          <><Crown className="h-4 w-4" /> VIP</>
+                        ) : (
+                          <><AlertCircle className="h-4 w-4" /> Free</>
+                        )}
+                      </div>
+
+                      {session.user.vencimento && (
+                        <div className="mt-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                          <div className="text-gray-400 text-xs mb-1">Vencimento:</div>
+                          <div className="text-white font-semibold">{formatDate(session.user.vencimento)}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Link
+                        href="/profile"
+                        className="flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 rounded-lg transition-colors font-medium"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        <UserCircle className="h-5 w-5" />
+                        Meu Perfil
+                      </Link>
+                      <button
+                        className="flex items-center gap-3 w-full text-left px-4 py-3 text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium"
+                        onClick={() => signOut()}
+                      >
+                        <X className="h-5 w-5" />
+                        Sair da Conta
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
-            <Link href="/auth/sign-in" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow">Entrar</Link>
+            <Link href="/auth/sign-in" className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg">
+              Entrar
+            </Link>
           )}
         </div>
       </div>
