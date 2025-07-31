@@ -71,12 +71,26 @@ export async function POST(request: NextRequest) {
         const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
         const key = `community/${session.user.id}/${timestamp}_${sanitizedFileName}`;
 
+        console.log(`🔑 Chave do arquivo: ${key}`);
+
         // Converter arquivo para buffer
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
+        console.log(`📦 Buffer criado: ${buffer.length} bytes`);
+
+        // Verificar configuração do Contabo
+        console.log(`🔧 Configuração Contabo:`);
+        console.log(`   Endpoint: ${process.env.CONTABO_ENDPOINT ? '✅ Configurado' : '❌ Não configurado'}`);
+        console.log(`   Region: ${process.env.CONTABO_REGION || 'Não configurado'}`);
+        console.log(`   Access Key: ${process.env.CONTABO_ACCESS_KEY ? '✅ Configurado' : '❌ Não configurado'}`);
+        console.log(`   Secret Key: ${process.env.CONTABO_SECRET_KEY ? '✅ Configurado' : '❌ Não configurado'}`);
+        console.log(`   Bucket: ${process.env.CONTABO_BUCKET_NAME || 'Não configurado'}`);
+
         // Upload para Contabo
+        console.log(`🚀 Iniciando upload para Contabo...`);
         const downloadUrl = await contaboStorage.uploadFile(key, buffer, file.type);
+        console.log(`✅ Upload concluído! URL: ${downloadUrl}`);
 
         // Gerar URL de preview (mesma URL por enquanto)
         const previewUrl = downloadUrl;
@@ -123,6 +137,13 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('❌ Erro no upload de música:', error);
+        console.error('📋 Detalhes do erro:', {
+            name: error instanceof Error ? error.name : 'Unknown',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : 'No stack trace',
+            cause: error instanceof Error ? error.cause : 'No cause'
+        });
+
         return NextResponse.json(
             {
                 success: false,

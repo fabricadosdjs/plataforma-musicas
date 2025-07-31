@@ -201,7 +201,9 @@ export default function MusicUploadForm() {
 
             const response = await fetch('/api/tracks/upload', {
                 method: 'POST',
-                body: uploadFormData
+                body: uploadFormData,
+                // Adicionar timeout maior para uploads
+                signal: AbortSignal.timeout(300000) // 5 minutos
             });
 
             const data = await response.json();

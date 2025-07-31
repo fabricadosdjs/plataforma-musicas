@@ -335,65 +335,38 @@ export default function ProfilePage() {
         <>
             <Header />
             <div className="min-h-screen bg-black text-white font-sans pt-20">
-                <div className="flex">
-                    {/* NAVEGAÇÃO LATERAL */}
-                    <div className="w-72 bg-gray-900/50 backdrop-blur-sm border-r border-gray-800 min-h-screen sticky top-20">
+                {/* NAVBAR MOBILE/TABLET */}
+                <nav className="md:hidden flex justify-center gap-2 px-2 py-3 bg-gray-900/80 border-b border-gray-800 sticky top-16 z-20 rounded-b-xl shadow-md">
+                    <button onClick={() => document.getElementById('conta')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="px-3 py-2 rounded-lg bg-gray-800/60 hover:bg-blue-700 text-xs font-semibold flex items-center gap-1"><User className="w-4 h-4" /> Conta</button>
+                    <button onClick={() => document.getElementById('beneficios')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="px-3 py-2 rounded-lg bg-gray-800/60 hover:bg-pink-700 text-xs font-semibold flex items-center gap-1"><Gift className="w-4 h-4" /> Benefícios</button>
+                    <button onClick={() => document.getElementById('deemix')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="px-3 py-2 rounded-lg bg-gray-800/60 hover:bg-purple-700 text-xs font-semibold flex items-center gap-1"><Headphones className="w-4 h-4" /> Deemix</button>
+                    <button onClick={() => document.getElementById('estatisticas')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="px-3 py-2 rounded-lg bg-gray-800/60 hover:bg-green-700 text-xs font-semibold flex items-center gap-1"><BarChart3 className="w-4 h-4" /> Estatísticas</button>
+                    <button onClick={() => document.getElementById('atividade')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="px-3 py-2 rounded-lg bg-gray-800/60 hover:bg-yellow-700 text-xs font-semibold flex items-center gap-1"><Activity className="w-4 h-4" /> Atividade</button>
+                    {userData?.is_vip && (
+                        <button onClick={() => document.getElementById('upload')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="px-3 py-2 rounded-lg bg-gray-800/60 hover:bg-pink-700 text-xs font-semibold flex items-center gap-1"><Upload className="w-4 h-4" /> Upload</button>
+                    )}
+                </nav>
+                <div className="flex flex-col md:flex-row">
+                    {/* NAVEGAÇÃO LATERAL DESKTOP */}
+                    <div className="hidden md:block w-72 bg-gray-900/50 backdrop-blur-sm border-r border-gray-800 min-h-screen sticky top-20">
                         <div className="p-6">
                             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                <User className="w-6 h-6 text-blue-400" />
-                                Navegação
+                                <User className="w-6 h-6 text-blue-400" /> Navegação
                             </h2>
                             <nav className="space-y-2">
-                                <button
-                                    onClick={() => document.getElementById('conta')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                                    className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"
-                                >
-                                    <User className="w-5 h-5" />
-                                    Informações da Conta
-                                </button>
-                                <button
-                                    onClick={() => document.getElementById('beneficios')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                                    className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"
-                                >
-                                    <Gift className="w-5 h-5" />
-                                    Benefícios do Plano
-                                </button>
-                                <button
-                                    onClick={() => document.getElementById('deemix')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                                    className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"
-                                >
-                                    <Headphones className="w-5 h-5" />
-                                    Deemix - Download
-                                </button>
-                                <button
-                                    onClick={() => document.getElementById('estatisticas')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                                    className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"
-                                >
-                                    <BarChart3 className="w-5 h-5" />
-                                    Estatísticas de Uso
-                                </button>
-                                <button
-                                    onClick={() => document.getElementById('atividade')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                                    className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"
-                                >
-                                    <Activity className="w-5 h-5" />
-                                    Atividade Recente
-                                </button>
+                                <button onClick={() => document.getElementById('conta')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-blue-700 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"><User className="w-5 h-5" /> Informações da Conta</button>
+                                <button onClick={() => document.getElementById('beneficios')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-pink-700 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"><Gift className="w-5 h-5" /> Benefícios do Plano</button>
+                                <button onClick={() => document.getElementById('deemix')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-purple-700 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"><Headphones className="w-5 h-5" /> Deemix - Download</button>
+                                <button onClick={() => document.getElementById('estatisticas')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-green-700 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"><BarChart3 className="w-5 h-5" /> Estatísticas de Uso</button>
+                                <button onClick={() => document.getElementById('atividade')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-yellow-700 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"><Activity className="w-5 h-5" /> Atividade Recente</button>
                                 {userData?.is_vip && (
-                                    <button
-                                        onClick={() => document.getElementById('upload')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                                        className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"
-                                    >
-                                        <Upload className="w-5 h-5" />
-                                        Enviar Músicas
-                                    </button>
+                                    <button onClick={() => document.getElementById('upload')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-pink-700 transition-all duration-200 flex items-center gap-3 text-gray-300 hover:text-white"><Upload className="w-5 h-5" /> Enviar Músicas</button>
                                 )}
                             </nav>
                         </div>
                     </div>
-
                     {/* CONTEÚDO PRINCIPAL */}
-                    <div className="flex-1 px-8 py-8">
+                    <div className="flex-1 px-2 md:px-8 py-8">
                         <div className="max-w-6xl mx-auto space-y-8">
                             {/* Header */}
                             <div className="bg-gray-900/30 backdrop-blur-sm rounded-2xl p-8 border border-gray-800 shadow-2xl mb-8">
@@ -632,51 +605,76 @@ export default function ProfilePage() {
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        {/* Drive Acesso */}
                                         <Card className="border-gray-700/50 shadow-xl" style={{ backgroundColor: '#1B1C1D' }}>
                                             <CardContent className="p-4 text-center">
                                                 <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                                                     <Disc className="w-6 h-6 text-blue-400" />
                                                 </div>
                                                 <h3 className="font-semibold text-white mb-1">Drive Acesso</h3>
-                                                <p className="text-xs text-green-400 font-medium">
+                                                <p className="text-xs text-green-400 font-medium mb-3">
                                                     {userData.planBenefits.driveAccess.description}
                                                 </p>
+                                                <button
+                                                    className="w-full mt-2 py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow transition-all cursor-pointer"
+                                                    onClick={() => window.open('https://plataformavip.nexorrecords.com.br/atualizacoes', '_blank')}
+                                                >
+                                                    ACESSAR DRIVE
+                                                </button>
                                             </CardContent>
                                         </Card>
-
+                                        {/* Packs Semanais */}
                                         <Card className="border-gray-700/50 shadow-xl" style={{ backgroundColor: '#1B1C1D' }}>
                                             <CardContent className="p-4 text-center">
                                                 <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                                                     <Package className="w-6 h-6 text-orange-400" />
                                                 </div>
                                                 <h3 className="font-semibold text-white mb-1">Packs Semanais</h3>
-                                                <p className="text-xs text-blue-400 font-medium">
+                                                <p className="text-xs text-blue-400 font-medium mb-3">
                                                     {userData.weeklyPackRequests || 0}/{userData.planBenefits.packRequests.limit}
                                                 </p>
+                                                <button
+                                                    className="w-full mt-2 py-2 px-4 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs shadow transition-all cursor-pointer"
+                                                    onClick={() => window.open('https://plataformavip.nexorrecords.com.br/atualizacoes', '_blank')}
+                                                >
+                                                    ACESSAR PACKS
+                                                </button>
                                             </CardContent>
                                         </Card>
-
+                                        {/* Playlists */}
                                         <Card className="border-gray-700/50 shadow-xl" style={{ backgroundColor: '#1B1C1D' }}>
                                             <CardContent className="p-4 text-center">
                                                 <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                                                     <ListMusic className="w-6 h-6 text-green-400" />
                                                 </div>
                                                 <h3 className="font-semibold text-white mb-1">Playlists</h3>
-                                                <p className="text-xs text-green-400 font-medium">
+                                                <p className="text-xs text-green-400 font-medium mb-3">
                                                     {userData.weeklyPlaylistDownloads || 0}/{userData.planBenefits.playlistDownloads.limit === -1 ? '∞' : userData.planBenefits.playlistDownloads.limit}
                                                 </p>
+                                                <button
+                                                    className="w-full mt-2 py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold text-xs shadow transition-all cursor-pointer"
+                                                    onClick={() => window.open('https://wa.me/5551935052274?text=Olá! Gostaria de pedir uma playlist personalizada.', '_blank')}
+                                                >
+                                                    PEDIR PLAYLIST
+                                                </button>
                                             </CardContent>
                                         </Card>
-
+                                        {/* Deezer Premium */}
                                         <Card className="border-gray-700/50 shadow-xl" style={{ backgroundColor: '#1B1C1D' }}>
                                             <CardContent className="p-4 text-center">
                                                 <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                                                     <Zap className="w-6 h-6 text-purple-400" />
                                                 </div>
                                                 <h3 className="font-semibold text-white mb-1">Deezer Premium</h3>
-                                                <p className={`text-xs font-medium ${userData.planBenefits.deezerPremium.enabled ? 'text-green-400' : 'text-gray-400'}`}>
+                                                <p className={`text-xs font-medium mb-3 ${userData.planBenefits.deezerPremium.enabled ? 'text-green-400' : 'text-gray-400'}`}>
                                                     {userData.planBenefits.deezerPremium.enabled ? 'Incluso' : 'N/D'}
                                                 </p>
+                                                <button
+                                                    className="w-full mt-2 py-2 px-4 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs shadow transition-all cursor-pointer"
+                                                    onClick={() => window.open('/app/deemix/', '_blank')}
+                                                >
+                                                    GERENCIAR DEEMIX
+                                                </button>
                                             </CardContent>
                                         </Card>
                                     </div>
