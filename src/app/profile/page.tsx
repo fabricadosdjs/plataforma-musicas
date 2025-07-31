@@ -734,10 +734,21 @@ export default function ProfilePage() {
                                                 </Button>
                                             </div>
 
-                                            {/* ARL Premium */}
-                                            <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/20">
+                                            {/* Aviso ARL Premium Offline */}
+                                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
+                                                <div className="flex items-center gap-3">
+                                                    <AlertTriangle className="w-6 h-6 text-red-400" />
+                                                    <div>
+                                                        <h4 className="font-semibold text-white">⚠️ ARL Premium Offline</h4>
+                                                        <p className="text-sm text-gray-300">A ARL Premium está temporariamente indisponível. Estamos trabalhando para restaurar o serviço.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* ARL Padrão */}
+                                            <div className="bg-yellow-500/10 rounded-xl p-4 border border-yellow-500/20">
                                                 <h4 className="text-sm font-bold text-white mb-3">
-                                                    ARL Premium:
+                                                    ARL Padrão:
                                                 </h4>
                                                 <div className="bg-gray-800/50 rounded-lg p-3">
                                                     <div className="flex items-center justify-between gap-2">
@@ -748,7 +759,7 @@ export default function ProfilePage() {
                                                         </div>
                                                         <button
                                                             onClick={() => copyToClipboard(arl)}
-                                                            className="p-2 border border-green-500/30 hover:bg-green-500/20 rounded flex items-center justify-center"
+                                                            className="p-2 border border-yellow-500/30 hover:bg-yellow-500/20 rounded flex items-center justify-center"
                                                         >
                                                             <Copy className="w-4 h-4" />
                                                         </button>
