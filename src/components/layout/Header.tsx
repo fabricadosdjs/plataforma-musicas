@@ -1,7 +1,7 @@
 // src/components/layout/Header.tsx
 "use client";
 
-import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, Bell, UserCircle, Users } from 'lucide-react';
+import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, Bell, UserCircle, Users, Home } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -147,13 +147,11 @@ const Header = ({
           </Link>
           {/* Desktop nav */}
           <nav className="hidden md:flex space-x-6 text-gray-300 font-medium items-center">
+            <Link href="/" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Home className="h-4 w-4" />Home</Link>
             <Link href="/new" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><CheckCircle className="h-4 w-4" />Novidades</Link>
             <Link href="/community" className="flex items-center gap-1 hover:text-purple-400 transition-colors"><Users className="h-4 w-4" />Comunidade</Link>
             <Link href="/trending" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Star className="h-4 w-4" />Trending</Link>
-            <Link href="/charts" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Crown className="h-4 w-4" />Charts</Link>
-            <Link href="/featured" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><AlertCircle className="h-4 w-4" />Featured</Link>
             <Link href="/pro" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><User className="h-4 w-4" />Pro</Link>
-            <Link href="/relatorios" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Search className="h-4 w-4" />Relatórios</Link>
             {session?.user?.isAdmin && (
               <Link href="/admin/users" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Crown className="h-4 w-4" />Admin</Link>
             )}
@@ -165,7 +163,8 @@ const Header = ({
               </button>
               <div className="absolute left-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-200 pointer-events-none" tabIndex={0} onMouseDown={e => e.preventDefault()}>
                 <Link href="/debridlink" className="flex items-center gap-2 px-4 py-2 text-gray-200 hover:bg-gray-800 rounded-t-lg"><Link2 className="h-4 w-4 text-green-400" />DebridLink</Link>
-                <Link href="/allavsoft" className="flex items-center gap-2 px-4 py-2 text-gray-200 hover:bg-gray-800 rounded-b-lg"><Download className="h-4 w-4 text-blue-400" />Allavsoft</Link>
+                <Link href="/allavsoft" className="flex items-center gap-2 px-4 py-2 text-gray-200 hover:bg-gray-800"><Download className="h-4 w-4 text-blue-400" />Allavsoft</Link>
+                <Link href="/deemix" className="flex items-center gap-2 px-4 py-2 text-gray-200 hover:bg-purple-800 rounded-b-lg"><Wrench className="h-4 w-4 text-purple-400" />Deemix</Link>
               </div>
             </div>
           </nav>
@@ -184,13 +183,12 @@ const Header = ({
                 <Image src={NEW_LOGO_URL} alt="Logo" width={120} height={32} className="mb-2" />
               </div>
               <nav className="flex flex-col gap-2 px-6">
+                <Link href="/" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Home className="h-5 w-5" />Home</Link>
                 <Link href="/new" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><CheckCircle className="h-5 w-5" />Novidades</Link>
                 <Link href="/community" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-purple-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Users className="h-5 w-5" />Comunidade</Link>
                 <Link href="/trending" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Star className="h-5 w-5" />Trending</Link>
-                <Link href="/charts" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Crown className="h-5 w-5" />Charts</Link>
-                <Link href="/featured" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><AlertCircle className="h-5 w-5" />Featured</Link>
                 <Link href="/pro" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><User className="h-5 w-5" />Pro</Link>
-                <Link href="/relatorios" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Search className="h-5 w-5" />Relatórios</Link>
+                <Link href="/deemix" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-purple-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Wrench className="h-5 w-5 text-purple-400" />Deemix</Link>
                 {session?.user?.isAdmin && (
                   <Link href="/admin/users" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Crown className="h-5 w-5" />Admin</Link>
                 )}

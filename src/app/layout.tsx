@@ -10,6 +10,7 @@ import { Lato } from 'next/font/google'; // Lato como fonte principal
 import './globals.css';
 import { ExtensionDetector } from '@/components/layout/ExtensionDetector';
 import { GlobalToastManager } from '@/components/layout/GlobalToastManager';
+import Footer from '@/components/layout/Footer';
 
 // Configura a fonte Lato como a fonte principal
 const lato = Lato({
@@ -120,8 +121,10 @@ export default function RootLayout({
             <AudioPlayerRoot />
             <PWAInstaller />
             {children}
+            <Footer />
           </AppProvider>
         </AuthProvider>
+        import Footer from '@/components/layout/Footer';
       </body>
     </html>
   );
