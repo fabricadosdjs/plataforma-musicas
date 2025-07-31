@@ -124,7 +124,6 @@ export default function RootLayout({
             <Footer />
           </AppProvider>
         </AuthProvider>
-        import Footer from '@/components/layout/Footer';
       </body>
     </html>
   );

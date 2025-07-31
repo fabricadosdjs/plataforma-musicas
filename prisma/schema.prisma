@@ -27,12 +27,14 @@ model User {
   whatsapp                String?
   deemix                  Boolean?   @default(false)
   isPro                   Boolean?   @default(false)
+  isAdmin                  Boolean?   @default(false)
   password                String?
   downloads               Download[]
   likes                   Like[]
   plays                   Play[]
   uploadedTracks          Track[]    // Músicas enviadas pelo usuário
   customItems             CustomItem[] // Items personalizados criados pelo admin
+  adminMessages           AdminMessage[] // Recados criados pelo admin
 }
 
 model Track {
@@ -110,4 +112,15 @@ model CustomItem {
   updatedAt   DateTime @updatedAt
   createdBy   String   // Admin user ID
   user        User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+}
+
+model AdminMessage {
+  id        Int      @id @default(autoincrement())
+  title     String   // Título do recado
+  message   String   // Texto do recado
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true) // Se o recado está ativo
+  createdBy String   // ID do admin que criou o recado
+  user      User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 }

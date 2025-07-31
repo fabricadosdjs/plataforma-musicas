@@ -48,6 +48,7 @@ function NewPageContent() {
   const [genres, setGenres] = useState<string[]>([]);
   const [artists, setArtists] = useState<string[]>([]);
   const [versions, setVersions] = useState<string[]>([]);
+  const [pools, setPools] = useState<string[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -79,6 +80,21 @@ function NewPageContent() {
     if (isToday) return 'Hoje';
     if (isYesterday) return 'Ontem';
     return date.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  const fetchFilters = async () => {
+    try {
+      const response = await fetch('/api/tracks/filters');
+      if (response.ok) {
+        const data = await response.json();
+        setGenres(data.genres || []);
+        setArtists(data.artists || []);
+        setVersions(data.versions || []);
+        setPools(data.pools || []);
+      }
+    } catch (error) {
+      console.error('Error fetching filters:', error);
+    }
   };
 
   const fetchTracks = async (resetPage = false) => {
@@ -114,6 +130,9 @@ function NewPageContent() {
 
   // Carregar dados iniciais
   useEffect(() => {
+    // Carregar filtros disponíveis
+    fetchFilters();
+    
     // Verificar se há filtros na URL
     const urlSearch = searchParams.get('search');
     const urlGenre = searchParams.get('genre');
@@ -371,7 +390,7 @@ function NewPageContent() {
             genres={genres}
             artists={artists}
             versions={versions}
-            pools={[]}
+            pools={pools}
             monthOptions={monthOptions}
             selectedGenre={selectedGenre}
             selectedArtist={selectedArtist}

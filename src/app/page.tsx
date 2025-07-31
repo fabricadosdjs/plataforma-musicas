@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { Heart, Music, TrendingUp, Database, Upload, AlertTriangle, CheckCircle, Clock, Star, Zap, Play, Download, Users, Award, Globe, Headphones } from 'lucide-react';
 import Link from 'next/link';
+import AdminMessagesDisplay from '@/components/ui/AdminMessagesDisplay';
 
 function HomePageContent() {
   const { data: session } = useSession();
@@ -71,6 +72,11 @@ function HomePageContent() {
             <Star className="h-5 w-5" />
             A partir de R$ 35,00/mês
           </div>
+        </div>
+
+        {/* SEÇÃO - RECADOS DA ADM */}
+        <div className="mb-16">
+          <AdminMessagesDisplay showAdminControls={false} />
         </div>
 
         {/* Features Grid */}

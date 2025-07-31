@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle, Copy, Crown, DollarSign, Edit, Filter, Loader2, Plus, Search, Settings, Trash, User, Users, X } from 'lucide-react';
+import { AlertCircle, CheckCircle, Copy, Crown, DollarSign, Edit, Filter, Loader2, MessageSquare, Plus, Search, Settings, Trash, User, Users, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -658,6 +658,13 @@ export default function AdminUsersPage() {
                         >
                             <Settings className="h-4 w-4" />
                             Itens Personalizados
+                        </a>
+                        <a
+                            href="/admin/messages"
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                        >
+                            <MessageSquare className="h-4 w-4" />
+                            Recados da ADM
                         </a>
                     </div>
                 </div>
