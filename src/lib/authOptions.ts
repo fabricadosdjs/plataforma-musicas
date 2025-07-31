@@ -272,6 +272,7 @@ export const authOptions: AuthOptions = {
                 token.lastDownloadReset = (user as any).lastDownloadReset;
                 token.lastWeekReset = (user as any).lastWeekReset;
                 token.customBenefits = (user as any).customBenefits;
+                token.whatsapp = (user as any).whatsapp;
 
             }
             return token;
@@ -293,6 +294,7 @@ export const authOptions: AuthOptions = {
                 (session.user as any).lastDownloadReset = token.lastDownloadReset as string;
                 (session.user as any).lastWeekReset = token.lastWeekReset as string;
                 (session.user as any).customBenefits = token.customBenefits as any;
+                (session.user as any).whatsapp = token.whatsapp as string;
             }
             return session;
         },

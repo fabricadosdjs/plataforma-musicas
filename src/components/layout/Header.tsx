@@ -316,7 +316,9 @@ const Header = ({
                         </div>
                         <div>
                           <div className="font-bold text-lg">{session.user.name || 'Usuário'}</div>
-                          <div className="text-gray-400 text-sm">(51) 98108-6784</div>
+                          <div className="text-gray-400 text-sm">
+                            {session.user.whatsapp || 'WhatsApp não informado'}
+                          </div>
                         </div>
                       </div>
 
