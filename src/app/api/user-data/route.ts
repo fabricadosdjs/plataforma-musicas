@@ -54,6 +54,21 @@ export async function GET(request: NextRequest) {
             where: { userId: userWithDetails.id }
         });
 
+        // Calcular downloads do dia atual corretamente
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+        const todayDownloadsCount = await prisma.download.count({
+            where: {
+                userId: userWithDetails.id,
+                downloadedAt: {
+                    gte: startOfDay,
+                    lte: endOfDay
+                }
+            }
+        });
+
         if (!userWithDetails) {
             return NextResponse.json({ error: 'Usuário não encontrado no banco de dados.' }, { status: 404 });
         }
@@ -171,7 +186,7 @@ export async function GET(request: NextRequest) {
             status: userWithDetails.status,
             valor: userWithDetails.valor,
             vencimento: userWithDetails.vencimento ? userWithDetails.vencimento.toISOString() : null,
-            dailyDownloadCount: userWithDetails.dailyDownloadCount,
+            dailyDownloadCount: todayDownloadsCount,
             dailyDownloadLimit: planBenefits?.dailyDownloadLimit || 50,
             weeklyPackRequests: userWithDetails.weeklyPackRequests,
             weeklyPlaylistDownloads: userWithDetails.weeklyPlaylistDownloads,
