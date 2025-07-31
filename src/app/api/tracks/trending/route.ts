@@ -7,11 +7,11 @@ const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-
-        if (!session?.user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        // Remover verificação de autenticação para permitir acesso público ao trending
+        // const session = await getServerSession(authOptions);
+        // if (!session?.user) {
+        //     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        // }
 
         // Get the current date and calculate weeks
         const now = new Date();
