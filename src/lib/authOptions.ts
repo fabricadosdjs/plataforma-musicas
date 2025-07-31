@@ -183,6 +183,7 @@ export const authOptions: AuthOptions = {
                         customBenefits: dbUser.customBenefits,
                         vencimento: dbUser.vencimento,
                         dataPagamento: dbUser.dataPagamento,
+                        whatsapp: dbUser.whatsapp, // Adicionar campo whatsapp
                     };
 
                 } catch (error) {
