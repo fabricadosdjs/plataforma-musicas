@@ -152,7 +152,7 @@ const Header = ({
             <Link href="/new" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><CheckCircle className="h-4 w-4" />Novidades</Link>
             <Link href="/community" className="flex items-center gap-1 hover:text-purple-400 transition-colors"><Users className="h-4 w-4" />Comunidade</Link>
             <Link href="/trending" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Star className="h-4 w-4" />Trending</Link>
-            <Link href="/pro" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><User className="h-4 w-4" />Pro</Link>
+            <Link href="/plans" className="flex items-center gap-1 hover:text-yellow-400 transition-colors"><Crown className="h-4 w-4" />Planos</Link>
             {session?.user?.isAdmin && (
               <Link href="/admin/users" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Crown className="h-4 w-4" />Admin</Link>
             )}
@@ -188,7 +188,7 @@ const Header = ({
                 <Link href="/new" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><CheckCircle className="h-5 w-5" />Novidades</Link>
                 <Link href="/community" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-purple-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Users className="h-5 w-5" />Comunidade</Link>
                 <Link href="/trending" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Star className="h-5 w-5" />Trending</Link>
-                <Link href="/pro" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><User className="h-5 w-5" />Pro</Link>
+                <Link href="/plans" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-yellow-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Crown className="h-5 w-5" />Planos</Link>
                 <Link href="/deemix" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-purple-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Wrench className="h-5 w-5 text-purple-400" />Deemix</Link>
                 {session?.user?.isAdmin && (
                   <Link href="/admin/users" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Crown className="h-5 w-5" />Admin</Link>
@@ -352,8 +352,8 @@ const Header = ({
                       </Link>
                       <button
                         className="flex items-center gap-3 w-full text-left px-4 py-3 text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium"
-                        onClick={() => signOut({ 
-                          callbackUrl: getSignInUrl() 
+                        onClick={() => signOut({
+                          callbackUrl: getSignInUrl()
                         })}
                       >
                         <X className="h-5 w-5" />

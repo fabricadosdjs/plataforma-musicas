@@ -4,7 +4,7 @@
 import Header from '@/components/layout/Header';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
-import { Heart, Music, TrendingUp, Database, Upload, AlertTriangle, CheckCircle, Clock, Star, Zap, Play, Download, Users, Award, Globe, Headphones } from 'lucide-react';
+import { Heart, Music, TrendingUp, Database, Upload, AlertTriangle, CheckCircle, Clock, Star, Zap, Play, Download, Users, Award, Globe, Headphones, Crown } from 'lucide-react';
 import Link from 'next/link';
 import AdminMessagesDisplay from '@/components/ui/AdminMessagesDisplay';
 
@@ -75,16 +75,90 @@ function HomePageContent() {
           </div>
 
           {/* Pricing Badge */}
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
-            <Star className="h-5 w-5" />
-            A partir de R$ 35,00/mês
-          </div>
+          <Link href="/plans">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 cursor-pointer">
+              <Star className="h-5 w-5" />
+              A partir de R$ 35,00/mês
+            </div>
+          </Link>
         </div>
 
         {/* SEÇÃO - RECADOS DA ADM */}
         <div className="mb-16">
           <AdminMessagesDisplay showAdminControls={false} />
         </div>
+
+        {/* SEÇÃO - PLANOS PARA USUÁRIOS NÃO LOGADOS */}
+        {!session?.user && (
+          <div className="mb-16">
+            <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 rounded-2xl p-8 border border-yellow-500/20">
+              <div className="text-center mb-8">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="bg-gradient-to-r from-yellow-600 to-orange-600 p-3 rounded-full mr-4">
+                    <Crown className="h-8 w-8 text-white" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-white">Escolha Seu Plano VIP</h2>
+                </div>
+                <p className="text-gray-300 max-w-3xl mx-auto text-lg">
+                  Acesso completo ao maior acervo de música eletrônica do Brasil.
+                  Escolha o plano ideal para suas necessidades e comece a baixar hoje mesmo.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-black/20 rounded-xl p-6 text-center">
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-3 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl">🥉</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">VIP BÁSICO</h3>
+                  <p className="text-gray-300 text-sm mb-4">R$ 30-35/mês</p>
+                  <ul className="text-gray-400 text-sm space-y-2 text-left">
+                    <li>• Acesso ao Drive Mensal</li>
+                    <li>• Até 4 packs por semana</li>
+                    <li>• Downloads ilimitados</li>
+                  </ul>
+                </div>
+
+                <div className="bg-black/20 rounded-xl p-6 text-center border-2 border-yellow-500/50">
+                  <div className="bg-gradient-to-r from-green-600 to-green-700 p-3 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl">🥈</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">VIP PADRÃO</h3>
+                  <p className="text-gray-300 text-sm mb-4">R$ 36-42/mês</p>
+                  <ul className="text-gray-400 text-sm space-y-2 text-left">
+                    <li>• Tudo do Básico</li>
+                    <li>• Deezer Premium Grátis</li>
+                    <li>• 15% desconto Deemix</li>
+                    <li>• ARL Premium</li>
+                  </ul>
+                </div>
+
+                <div className="bg-black/20 rounded-xl p-6 text-center">
+                  <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-3 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl">🥇</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">VIP COMPLETO</h3>
+                  <p className="text-gray-300 text-sm mb-4">R$ 43-60/mês</p>
+                  <ul className="text-gray-400 text-sm space-y-2 text-left">
+                    <li>• Tudo do Padrão</li>
+                    <li>• Playlists ilimitadas</li>
+                    <li>• Produção de música</li>
+                    <li>• Suporte prioritário</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <Link href="/plans">
+                  <button className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 mx-auto shadow-lg hover:shadow-xl">
+                    <Crown className="h-5 w-5" />
+                    Ver Todos os Planos
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">

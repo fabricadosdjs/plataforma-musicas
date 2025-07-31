@@ -9,6 +9,7 @@ declare module 'next-auth' {
             vencimento?: string | null;
             isAdmin?: boolean;
             whatsapp?: string;
+            valor?: number;
         } & DefaultSession['user'];
     }
 }
