@@ -42,13 +42,20 @@ function HomePageContent() {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="mb-8">
-            <h1 className="text-6xl md:text-7xl font-bold text-white tracking-tight mb-6 leading-tight">
+            <h1 className="text-5xl md:text-6xl font-bold text-white tracking-tight mb-6 leading-tight uppercase">
               O pool de discos independentes onde os DJs descobrem o que vem por aí
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
               A plataforma definitiva para DJs que buscam as melhores músicas eletrônicas,
               remixes exclusivos e sets que dominam as pistas. Descubra o futuro da música eletrônica.
             </p>
+            <div className="mt-8">
+              <img
+                src="https://i.ibb.co/9HdP7R4p/tela-pc.png"
+                alt="Tela do computador mostrando a plataforma"
+                className="max-w-4xl mx-auto rounded-lg shadow-2xl"
+              />
+            </div>
           </div>
 
           {/* CTA Buttons */}
@@ -258,10 +265,10 @@ function HomePageContent() {
                 <div className="bg-black/20 rounded-xl p-6 mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-amber-200 font-semibold">Progresso da Migração</span>
-                    <span className="text-amber-300 font-bold">0.05%</span>
+                    <span className="text-amber-300 font-bold">0.35%</span>
                   </div>
                   <div className="w-full bg-amber-900/50 rounded-full h-3 mb-2">
-                    <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-3 rounded-full transition-all duration-1000" style={{ width: '0.05%' }}></div>
+                    <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-3 rounded-full transition-all duration-1000" style={{ width: '0.35%' }}></div>
                   </div>
                   <div className="flex items-center justify-center text-xs text-amber-200">
                     <Clock className="h-4 w-4 mr-1" />
