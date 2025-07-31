@@ -170,6 +170,7 @@ export const authOptions: AuthOptions = {
                         email: dbUser.email,
                         name: dbUser.name || dbUser.email.split('@')[0],
                         is_vip: dbUser.is_vip, // Corrected from isPro
+                        isAdmin: dbUser.isAdmin, // Adicionar campo isAdmin
                         // Ensure other properties are included if needed in the session/JWT process from dbUser
                         valor: dbUser.valor,
                         status: dbUser.status,
@@ -257,6 +258,7 @@ export const authOptions: AuthOptions = {
             if (user) {
                 token.id = user.id;
                 token.is_vip = (user as any).is_vip;
+                token.isAdmin = (user as any).isAdmin; // Adicionar isAdmin ao token
                 token.valor = (user as any).valor;
                 // Get benefits dynamically using the user data from the database or admin master
                 token.benefits = getUserBenefits(user); // Use getUserBenefits to derive benefits
@@ -278,6 +280,7 @@ export const authOptions: AuthOptions = {
             if (session.user) {
                 (session.user as any).id = token.id as string;
                 (session.user as any).is_vip = token.is_vip as boolean;
+                (session.user as any).isAdmin = token.isAdmin as boolean; // Adicionar isAdmin à sessão
                 (session.user as any).valor = token.valor as string;
                 (session.user as any).benefits = token.benefits as any;
                 (session.user as any).status = token.status as string;

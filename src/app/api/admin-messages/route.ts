@@ -37,6 +37,12 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
+        
+        console.log('Session in admin-messages API:', {
+            user: session?.user,
+            isAdmin: session?.user?.isAdmin,
+            email: session?.user?.email
+        });
 
         if (!session?.user?.email) {
             return NextResponse.json(

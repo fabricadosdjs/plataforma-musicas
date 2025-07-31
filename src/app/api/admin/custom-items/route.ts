@@ -8,6 +8,12 @@ export async function GET() {
     try {
         const session = await getServerSession(authOptions);
 
+        console.log('Session in custom-items API:', {
+            user: session?.user,
+            isAdmin: session?.user?.isAdmin,
+            email: session?.user?.email
+        });
+
         if (!session?.user?.isAdmin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
