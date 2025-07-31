@@ -34,14 +34,24 @@ export async function GET(request: NextRequest) {
                         downloadedAt: true,
                     }
                 },
-                _count: {
-                    select: {
-                        downloads: true,
-                        likes: true,
-                        plays: true,
-                    },
-                },
             },
+        });
+
+        if (!userWithDetails) {
+            return NextResponse.json({ error: 'Usuário não encontrado no banco de dados.' }, { status: 404 });
+        }
+
+        // Contar estatísticas separadamente para garantir precisão
+        const downloadsCount = await prisma.download.count({
+            where: { userId: userWithDetails.id }
+        });
+
+        const likesCount = await prisma.like.count({
+            where: { userId: userWithDetails.id }
+        });
+
+        const playsCount = await prisma.play.count({
+            where: { userId: userWithDetails.id }
         });
 
         if (!userWithDetails) {
@@ -166,9 +176,9 @@ export async function GET(request: NextRequest) {
             weeklyPackRequests: userWithDetails.weeklyPackRequests,
             weeklyPlaylistDownloads: userWithDetails.weeklyPlaylistDownloads,
             deemix: userWithDetails.deemix,
-            downloadsCount: userWithDetails._count.downloads,
-            likesCount: userWithDetails._count.likes,
-            playsCount: userWithDetails._count.plays,
+            downloadsCount: downloadsCount,
+            likesCount: likesCount,
+            playsCount: playsCount,
             // Informações do plano VIP
             vipPlan: vipPlan,
             planBenefits: planBenefits,
