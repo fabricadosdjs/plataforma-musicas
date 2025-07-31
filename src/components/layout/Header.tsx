@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Filter } from 'lucide-react'; // Certifique-se de que Filter está importado aqui
+import { getSignInUrl } from '@/lib/utils';
 
 interface HeaderProps {
   showSearchAndFilters?: boolean;
@@ -199,7 +200,7 @@ const Header = ({
               <div className="flex-1"></div>
               <div className="p-6 border-t border-gray-700">
                 {session?.user ? (
-                  <button className="w-full py-2 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition" onClick={() => { setMobileMenuOpen(false); signOut(); }}>Sair</button>
+                  <button className="w-full py-2 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition" onClick={() => { setMobileMenuOpen(false); signOut({ callbackUrl: getSignInUrl() }); }}>Sair</button>
                 ) : (
                   <Link href="/auth/sign-in" className="w-full block py-2 rounded-lg bg-blue-600 text-white text-center font-bold hover:bg-blue-700 transition" onClick={() => setMobileMenuOpen(false)}>Entrar</Link>
                 )}
@@ -349,7 +350,9 @@ const Header = ({
                       </Link>
                       <button
                         className="flex items-center gap-3 w-full text-left px-4 py-3 text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium"
-                        onClick={() => signOut()}
+                        onClick={() => signOut({ 
+                          callbackUrl: getSignInUrl() 
+                        })}
                       >
                         <X className="h-5 w-5" />
                         Sair da Conta
