@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
                     }
                 }
             },
-            orderBy: { playedAt: 'desc' },
+            orderBy: { createdAt: 'desc' },
             take: 5
         });
 
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
                 })),
                 plays: recentPlays.map(p => ({
                     id: p.id,
-                    playedAt: p.playedAt,
+                    playedAt: p.createdAt,
                     track: p.track
                 }))
             }
