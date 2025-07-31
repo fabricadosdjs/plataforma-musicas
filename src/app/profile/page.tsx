@@ -492,7 +492,7 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div className="space-y-6">
                                     {/* Card Plano Atual */}
                                     <Card className="border-gray-700/50 shadow-xl bg-gradient-to-br from-gray-900/50 to-gray-800/50 hover:shadow-2xl transition-all duration-300">
                                         <CardHeader className="pb-3">
@@ -828,6 +828,17 @@ export default function ProfilePage() {
                                                 </p>
                                             </div>
 
+                                            {/* Aviso ARL Premium Offline */}
+                                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
+                                                <div className="flex items-center gap-3">
+                                                    <AlertTriangle className="w-6 h-6 text-red-400" />
+                                                    <div>
+                                                        <h4 className="font-semibold text-white">⚠️ ARL Premium Offline</h4>
+                                                        <p className="text-sm text-gray-300">A ARL Premium está temporariamente indisponível. Estamos trabalhando para restaurar o serviço.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             {/* Recursos do Deemix */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                                 <div className="p-4 bg-blue-500/10 rounded-xl border border-blue-500/20 text-center">
@@ -847,8 +858,8 @@ export default function ProfilePage() {
                                                 </div>
                                                 <div className="p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/20 text-center">
                                                     <Crown className="w-8 h-8 text-yellow-400 mx-auto mb-3" />
-                                                    <h4 className="font-semibold text-white mb-1">💎 ARL Premium</h4>
-                                                    <p className="text-xs text-gray-400">Sempre disponível</p>
+                                                    <h4 className="font-semibold text-white mb-1">💎 ARL Padrão</h4>
+                                                    <p className="text-xs text-gray-400">Disponível agora</p>
                                                 </div>
                                             </div>
 
@@ -1010,7 +1021,7 @@ export default function ProfilePage() {
                                     <h2 className="text-3xl font-bold text-white tracking-tight">Atividade Recente</h2>
                                 </div>
 
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className="space-y-6">
                                     {/* Downloads Recentes */}
                                     <Card className="border-gray-700/50 shadow-xl" style={{ backgroundColor: '#1B1C1D' }}>
                                         <CardHeader className="border-b border-gray-700/30 pb-4">
@@ -1020,9 +1031,9 @@ export default function ProfilePage() {
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="p-6">
-                                            <div className="space-y-4 max-h-80 overflow-y-auto">
+                                            <div className="space-y-4 max-h-96 overflow-y-auto">
                                                 {userData.recentDownloads.length > 0 ? (
-                                                    userData.recentDownloads.slice(0, 5).map((download) => (
+                                                    userData.recentDownloads.map((download) => (
                                                         <div key={download.id} className="flex items-center gap-4 p-3 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-all duration-200">
                                                             <img
                                                                 src={download.track.imageUrl}
@@ -1059,9 +1070,9 @@ export default function ProfilePage() {
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="p-6">
-                                            <div className="space-y-4 max-h-80 overflow-y-auto">
+                                            <div className="space-y-4 max-h-96 overflow-y-auto">
                                                 {userData.recentLikes.length > 0 ? (
-                                                    userData.recentLikes.slice(0, 5).map((like) => (
+                                                    userData.recentLikes.map((like) => (
                                                         <div key={like.id} className="flex items-center gap-4 p-3 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-all duration-200">
                                                             <img
                                                                 src={like.track.imageUrl}
