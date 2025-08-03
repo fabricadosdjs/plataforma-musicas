@@ -1881,9 +1881,19 @@ export default function AdminUsersPage() {
                                                 console.log('💾 Salvando benefícios para usuário:', userForBenefits.id);
                                                 console.log('📋 Benefícios:', customBenefits[userForBenefits.id] || {});
 
+                                                // Mapear campos para API
+                                                const cb = customBenefits[userForBenefits.id] || {};
+                                                const mappedBenefits = {
+                                                    ...cb,
+                                                    weeklyPackRequests: cb.packRequests?.limit,
+                                                    weeklyPackRequestsUsed: cb.packRequests?.used,
+                                                    weeklyPlaylistDownloads: cb.playlistDownloads?.limit,
+                                                    weeklyPlaylistDownloadsUsed: cb.playlistDownloads?.used,
+                                                };
+
                                                 const requestBody = {
                                                     userId: userForBenefits.id,
-                                                    customBenefits: customBenefits[userForBenefits.id] || {}
+                                                    customBenefits: mappedBenefits
                                                 };
 
                                                 console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
@@ -1892,10 +1902,7 @@ export default function AdminUsersPage() {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
                                                     credentials: 'include',
-                                                    body: JSON.stringify({
-                                                        userId: userForBenefits.id,
-                                                        customBenefits: customBenefits[userForBenefits.id] || {}
-                                                    })
+                                                    body: JSON.stringify(requestBody)
                                                 });
 
                                                 const responseData = await response.json();
