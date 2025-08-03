@@ -2,6 +2,7 @@
 
 import { useSession, signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
+// ...existing code...
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Alert from "@/components/ui/Alert";
@@ -1036,10 +1037,11 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="text-lg font-bold text-white">
                                         {(() => {
-                                            // Usar valores personalizados ou padrão do banco de dados
-                                            const used = userData?.weeklyPlaylistDownloadsUsed || 0;
-                                            const limit = userData?.weeklyPlaylistDownloads || 0;
-
+                                            const used = userData?.weeklyPlaylistDownloadsUsed ?? 0;
+                                            let limit = userData?.weeklyPlaylistDownloads;
+                                            if (!limit || limit < 1) {
+                                                limit = userData?.planBenefits?.playlistDownloads?.limit ?? 7;
+                                            }
                                             return `${used} / ${limit}`;
                                         })()}
                                     </div>
@@ -1048,9 +1050,11 @@ export default function ProfilePage() {
                                             className="bg-green-500 h-2 rounded-full transition-all"
                                             style={{
                                                 width: `${(() => {
-                                                    const used = userData?.weeklyPlaylistDownloadsUsed || 0;
-                                                    const limit = userData?.weeklyPlaylistDownloads || 1;
-
+                                                    const used = userData?.weeklyPlaylistDownloadsUsed ?? 0;
+                                                    let limit = userData?.weeklyPlaylistDownloads;
+                                                    if (!limit || limit < 1) {
+                                                        limit = userData?.planBenefits?.playlistDownloads?.limit ?? 7;
+                                                    }
                                                     return Math.min(100, (used / Math.max(1, limit)) * 100);
                                                 })()}%`
                                             }}
