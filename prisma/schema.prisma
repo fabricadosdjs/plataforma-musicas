@@ -24,6 +24,8 @@ model User {
   lastWeekReset           DateTime?
   weeklyPackRequests      Int?       @default(0)
   weeklyPlaylistDownloads Int?       @default(0)
+  weeklyPackRequestsUsed      Int?       @default(0)
+  weeklyPlaylistDownloadsUsed Int?       @default(0)
   whatsapp                String?
   deemix                  Boolean?   @default(false)
   isPro                   Boolean?   @default(false)

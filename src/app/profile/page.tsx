@@ -100,6 +100,9 @@ interface UserProfile {
     dailyDownloadLimit: number;
     weeklyPackRequests: number | null;
     weeklyPlaylistDownloads: number | null;
+    weeklyPackRequestsUsed: number | null; // Novo campo
+    weeklyPlaylistDownloadsUsed: number | null; // Novo campo
+    customBenefits: any; // Benefícios personalizados
     deemix: boolean | null;
     downloadsCount: number;
     likesCount: number;
@@ -417,7 +420,7 @@ export default function ProfilePage() {
                                             Meu Plano
                                         </button>
 
-                                        {(Boolean(userData.deemix) || Boolean(userData.valor && userData.valor >= 35)) && (
+                                        {userData.deemix && (
                                             <button
                                                 onClick={() => setActiveSection('deemix')}
                                                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeSection === 'deemix'
@@ -623,7 +626,7 @@ export default function ProfilePage() {
 
     // Seção do Deemix
     function renderDeemixSection() {
-        if (!userData || (!userData.deemix && (!userData.valor || userData.valor < 35))) {
+        if (!userData || !userData.deemix) {
             return (
                 <Card className="border-gray-700/50 bg-gray-800/60">
                     <CardContent className="p-6">
@@ -836,6 +839,124 @@ export default function ProfilePage() {
                                 <Headphones className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
                                 <h3 className="text-lg font-bold text-white mb-2">Suporte VIP</h3>
                                 <p className="text-emerald-100 text-sm">Atendimento prioritário 24/7 via WhatsApp.</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-xl p-6">
+                            <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                <ListMusic className="w-5 h-5 text-yellow-400" />
+                                Uso dos Benefícios Esta Semana
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                {/* Acesso ao Drive */}
+                                <div className="bg-gray-800/50 rounded-lg p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm text-gray-300">📁 Drive Mensal</span>
+                                        <span className="text-xs text-green-400">Ativo</span>
+                                    </div>
+                                    <div className="text-lg font-bold text-white">
+                                        Acesso Liberado
+                                    </div>
+                                    <div className="text-xs text-gray-400 mt-1">
+                                        Disponível até o vencimento
+                                    </div>
+                                </div>
+
+                                {/* Packs Semanais */}
+                                <div className="bg-gray-800/50 rounded-lg p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm text-gray-300">🎚️ Packs Semanais</span>
+                                        <span className="text-xs text-gray-400">Esta semana</span>
+                                    </div>
+                                    <div className="text-lg font-bold text-white">
+                                        {(() => {
+                                            // Usar valores reais do banco de dados
+                                            const used = userData?.weeklyPackRequestsUsed || 0;
+                                            const valor = userData?.valor || 0;
+                                            let limit = 4; // Valor padrão
+
+                                            if (valor >= 50) {
+                                                limit = 10;
+                                            } else if (valor >= 42) {
+                                                limit = 6;
+                                            } else if (valor >= 35) {
+                                                limit = 4;
+                                            }
+
+                                            return `${used} / ${limit}`;
+                                        })()}
+                                    </div>
+                                    <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                                        <div
+                                            className="bg-blue-500 h-2 rounded-full transition-all"
+                                            style={{
+                                                width: `${(() => {
+                                                    const used = userData?.weeklyPackRequestsUsed || 0;
+                                                    const valor = userData?.valor || 0;
+                                                    let limit = 4;
+
+                                                    if (valor >= 50) {
+                                                        limit = 10;
+                                                    } else if (valor >= 42) {
+                                                        limit = 6;
+                                                    } else if (valor >= 35) {
+                                                        limit = 4;
+                                                    }
+
+                                                    return Math.min(100, (used / Math.max(1, limit)) * 100);
+                                                })()}%`
+                                            }}
+                                        ></div>
+                                    </div>
+                                </div>
+
+                                {/* Playlists Semanais */}
+                                <div className="bg-gray-800/50 rounded-lg p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm text-gray-300">🎵 Playlists Semanais</span>
+                                        <span className="text-xs text-gray-400">Esta semana</span>
+                                    </div>
+                                    <div className="text-lg font-bold text-white">
+                                        {(() => {
+                                            // Usar valores reais do banco de dados
+                                            const used = userData?.weeklyPlaylistDownloadsUsed || 0;
+                                            const valor = userData?.valor || 0;
+                                            let limit = 7; // Valor padrão
+
+                                            if (valor >= 50) {
+                                                limit = 15;
+                                            } else if (valor >= 42) {
+                                                limit = 9;
+                                            } else if (valor >= 35) {
+                                                limit = 7;
+                                            }
+
+                                            return `${used} / ${limit}`;
+                                        })()}
+                                    </div>
+                                    <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                                        <div
+                                            className="bg-green-500 h-2 rounded-full transition-all"
+                                            style={{
+                                                width: `${(() => {
+                                                    const used = userData?.weeklyPlaylistDownloadsUsed || 0;
+                                                    const valor = userData?.valor || 0;
+                                                    let limit = 7;
+
+                                                    if (valor >= 50) {
+                                                        limit = 15;
+                                                    } else if (valor >= 42) {
+                                                        limit = 9;
+                                                    } else if (valor >= 35) {
+                                                        limit = 7;
+                                                    }
+
+                                                    return Math.min(100, (used / Math.max(1, limit)) * 100);
+                                                })()}%`
+                                            }}
+                                        ></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

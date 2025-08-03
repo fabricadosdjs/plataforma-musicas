@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
         }
 
-        // Buscar dados completos do usuário, incluindo downloads detalhados
+        // Buscar dados completos do usuário
         const userWithDetails = await prisma.user.findUnique({
             where: { email: session.user.email },
             select: {
@@ -27,15 +27,17 @@ export async function GET(request: NextRequest) {
                 dailyDownloadCount: true,
                 weeklyPackRequests: true,
                 weeklyPlaylistDownloads: true,
+                weeklyPlaylistDownloadsUsed: true,
+                customBenefits: true,
                 deemix: true,
-                downloads: {
-                    select: {
-                        trackId: true,
-                        downloadedAt: true,
-                    }
-                },
             },
         });
+
+        // Buscar downloads separadamente
+        const downloads = userWithDetails ? await prisma.download.findMany({
+            where: { userId: userWithDetails.id },
+            select: { trackId: true, downloadedAt: true }
+        }) : [];
 
         if (!userWithDetails) {
             return NextResponse.json({ error: 'Usuário não encontrado no banco de dados.' }, { status: 404 });
@@ -211,8 +213,8 @@ export async function GET(request: NextRequest) {
                 track: l.track
             })),
             // Campos legados para compatibilidade
-            downloadedTrackIds: userWithDetails.downloads.map(d => d.trackId),
-            downloadedTracks: userWithDetails.downloads.map(d => ({ trackId: d.trackId, downloadedAt: d.downloadedAt })),
+            downloadedTrackIds: downloads.map((d: { trackId: number; downloadedAt: Date }) => d.trackId),
+            downloadedTracks: downloads.map((d: { trackId: number; downloadedAt: Date }) => ({ trackId: d.trackId, downloadedAt: d.downloadedAt })),
         };
 
         return NextResponse.json(responseData);

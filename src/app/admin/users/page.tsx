@@ -20,6 +20,8 @@ interface User {
     dailyDownloadCount: number | null;
     weeklyPackRequests?: number;
     weeklyPlaylistDownloads?: number;
+    weeklyPackRequestsUsed?: number; // Campo para admin controlar uso manual
+    weeklyPlaylistDownloadsUsed?: number; // Campo para admin controlar uso manual
     lastDownloadReset?: string | null;
     lastWeekReset?: string | null;
     downloadsCount: number;
@@ -1476,21 +1478,27 @@ export default function AdminUsersPage() {
                                             <span className="text-xs text-gray-400">Esta semana</span>
                                         </div>
                                         <div className="text-lg font-bold text-white">
-                                            {userForBenefits.weeklyPackRequests || 0} / {(() => {
+                                            {(() => {
+                                                const customUsed = customBenefits[userForBenefits.id]?.packRequests?.used;
+                                                const used = customUsed !== undefined ? customUsed : (userForBenefits.weeklyPackRequestsUsed || 0);
                                                 const plan = getUserPlan(userForBenefits.valor || null);
                                                 const customBenefit = customBenefits[userForBenefits.id]?.packRequests;
-                                                return customBenefit?.limit || plan?.benefits.packRequests?.limit || 0;
+                                                const limit = customBenefit?.limit || plan?.benefits.packRequests?.limit || 0;
+                                                return `${used} / ${limit}`;
                                             })()}
                                         </div>
                                         <div className="w-full bg-gray-800 rounded-full h-2 mt-2">
                                             <div
                                                 className="bg-blue-600 h-2 rounded-full transition-all"
                                                 style={{
-                                                    width: `${Math.min(100, ((userForBenefits.weeklyPackRequests || 0) / Math.max(1, (() => {
+                                                    width: `${Math.min(100, (() => {
+                                                        const customUsed = customBenefits[userForBenefits.id]?.packRequests?.used;
+                                                        const used = customUsed !== undefined ? customUsed : (userForBenefits.weeklyPackRequestsUsed || 0);
                                                         const plan = getUserPlan(userForBenefits.valor || null);
                                                         const customBenefit = customBenefits[userForBenefits.id]?.packRequests;
-                                                        return customBenefit?.limit || plan?.benefits.packRequests?.limit || 1;
-                                                    })())) * 100)}%`
+                                                        const limit = customBenefit?.limit || plan?.benefits.packRequests?.limit || 1;
+                                                        return (used / Math.max(1, limit)) * 100;
+                                                    })())}%`
                                                 }}
                                             ></div>
                                         </div>
@@ -1502,11 +1510,13 @@ export default function AdminUsersPage() {
                                             <span className="text-xs text-gray-400">Esta semana</span>
                                         </div>
                                         <div className="text-lg font-bold text-white">
-                                            {userForBenefits.weeklyPlaylistDownloads || 0} / {(() => {
+                                            {(() => {
+                                                const customUsed = customBenefits[userForBenefits.id]?.playlistDownloads?.used;
+                                                const used = customUsed !== undefined ? customUsed : (userForBenefits.weeklyPlaylistDownloadsUsed || 0);
                                                 const plan = getUserPlan(userForBenefits.valor || null);
                                                 const customBenefit = customBenefits[userForBenefits.id]?.playlistDownloads;
                                                 const limit = customBenefit?.limit || plan?.benefits.playlistDownloads?.limit || 0;
-                                                return limit === -1 ? "∞" : limit;
+                                                return `${used} / ${limit === -1 ? "∞" : limit}`;
                                             })()}
                                         </div>
                                         <div className="w-full bg-gray-800 rounded-full h-2 mt-2">
@@ -1514,11 +1524,13 @@ export default function AdminUsersPage() {
                                                 className="bg-green-600 h-2 rounded-full transition-all"
                                                 style={{
                                                     width: `${(() => {
+                                                        const customUsed = customBenefits[userForBenefits.id]?.playlistDownloads?.used;
+                                                        const used = customUsed !== undefined ? customUsed : (userForBenefits.weeklyPlaylistDownloadsUsed || 0);
                                                         const plan = getUserPlan(userForBenefits.valor || null);
                                                         const customBenefit = customBenefits[userForBenefits.id]?.playlistDownloads;
                                                         const limit = customBenefit?.limit || plan?.benefits.playlistDownloads?.limit || 1;
                                                         if (limit === -1) return 100;
-                                                        return Math.min(100, ((userForBenefits.weeklyPlaylistDownloads || 0) / Math.max(1, limit)) * 100);
+                                                        return Math.min(100, (used / Math.max(1, limit)) * 100);
                                                     })()}%`
                                                 }}
                                             ></div>
@@ -1553,7 +1565,7 @@ export default function AdminUsersPage() {
                                     {/* Acesso ao Drive */}
                                     <div className="bg-gray-700 rounded-lg p-3">
                                         <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                            📁 Acesso ao Drive Mensal (desde 2023)
+                                            📁 Acesso ao Drive Mensal
                                         </label>
                                         <select
                                             value={customBenefits[userForBenefits.id]?.driveAccess?.enabled !== undefined
@@ -1579,27 +1591,62 @@ export default function AdminUsersPage() {
                                     {/* Solicitação de Packs */}
                                     <div className="bg-gray-700 rounded-lg p-3">
                                         <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                            🎚️ Solicitação de Packs (4 a 10)
+                                            🎚️ Solicitação de Packs
                                         </label>
-                                        <input
-                                            type="number"
-                                            min="4"
-                                            max="10"
-                                            value={customBenefits[userForBenefits.id]?.packRequests?.limit !== undefined
+                                        <div className="flex gap-2 mb-2">
+                                            <div className="flex-1">
+                                                <label className="text-xs text-gray-300 mb-1 block">Disponível (4-10)</label>
+                                                <input
+                                                    type="number"
+                                                    min="4"
+                                                    max="10"
+                                                    value={customBenefits[userForBenefits.id]?.packRequests?.limit !== undefined
+                                                        ? customBenefits[userForBenefits.id].packRequests.limit
+                                                        : getUserBenefits(userForBenefits, customBenefits).packRequests.limit}
+                                                    onChange={(e) => {
+                                                        const newValue = parseInt(e.target.value);
+                                                        setCustomBenefits(prev => ({
+                                                            ...prev,
+                                                            [userForBenefits.id]: {
+                                                                ...prev[userForBenefits.id],
+                                                                packRequests: { ...prev[userForBenefits.id]?.packRequests, limit: newValue, enabled: true }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
+                                                />
+                                            </div>
+                                            <div className="flex-1">
+                                                <label className="text-xs text-gray-300 mb-1 block">Usado (manual)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="10"
+                                                    value={customBenefits[userForBenefits.id]?.packRequests?.used !== undefined
+                                                        ? customBenefits[userForBenefits.id].packRequests.used
+                                                        : (userForBenefits.weeklyPackRequestsUsed || 0)}
+                                                    onChange={(e) => {
+                                                        const newValue = parseInt(e.target.value) || 0;
+                                                        setCustomBenefits(prev => ({
+                                                            ...prev,
+                                                            [userForBenefits.id]: {
+                                                                ...prev[userForBenefits.id],
+                                                                packRequests: { ...prev[userForBenefits.id]?.packRequests, used: newValue }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="text-xs text-gray-400">
+                                            {customBenefits[userForBenefits.id]?.packRequests?.used !== undefined
+                                                ? customBenefits[userForBenefits.id].packRequests.used
+                                                : (userForBenefits.weeklyPackRequestsUsed || 0)
+                                            } de {customBenefits[userForBenefits.id]?.packRequests?.limit !== undefined
                                                 ? customBenefits[userForBenefits.id].packRequests.limit
-                                                : getUserBenefits(userForBenefits, customBenefits).packRequests.limit}
-                                            onChange={(e) => {
-                                                const newValue = parseInt(e.target.value);
-                                                setCustomBenefits(prev => ({
-                                                    ...prev,
-                                                    [userForBenefits.id]: {
-                                                        ...prev[userForBenefits.id],
-                                                        packRequests: { ...prev[userForBenefits.id]?.packRequests, limit: newValue, enabled: true }
-                                                    }
-                                                }));
-                                            }}
-                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                        />
+                                                : getUserBenefits(userForBenefits, customBenefits).packRequests.limit} usados
+                                        </div>
                                     </div>
 
                                     {/* Conteúdos Avulsos */}
@@ -1657,27 +1704,62 @@ export default function AdminUsersPage() {
                                     {/* Download de Playlists */}
                                     <div className="bg-gray-700 rounded-lg p-3">
                                         <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                            🎵 Download de Playlists (7 a 15/semana)
+                                            🎵 Download de Playlists
                                         </label>
-                                        <input
-                                            type="number"
-                                            min="7"
-                                            max="15"
-                                            value={customBenefits[userForBenefits.id]?.playlistDownloads?.limit !== undefined
-                                                ? (customBenefits[userForBenefits.id].playlistDownloads.limit === -1 ? 15 : customBenefits[userForBenefits.id].playlistDownloads.limit)
-                                                : (getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit === -1 ? 15 : getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit)}
-                                            onChange={(e) => {
-                                                const newValue = parseInt(e.target.value);
-                                                setCustomBenefits(prev => ({
-                                                    ...prev,
-                                                    [userForBenefits.id]: {
-                                                        ...prev[userForBenefits.id],
-                                                        playlistDownloads: { ...prev[userForBenefits.id]?.playlistDownloads, limit: newValue, enabled: true }
-                                                    }
-                                                }));
-                                            }}
-                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                        />
+                                        <div className="flex gap-2 mb-2">
+                                            <div className="flex-1">
+                                                <label className="text-xs text-gray-300 mb-1 block">Disponível (7-15)</label>
+                                                <input
+                                                    type="number"
+                                                    min="7"
+                                                    max="15"
+                                                    value={customBenefits[userForBenefits.id]?.playlistDownloads?.limit !== undefined
+                                                        ? (customBenefits[userForBenefits.id].playlistDownloads.limit === -1 ? 15 : customBenefits[userForBenefits.id].playlistDownloads.limit)
+                                                        : (getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit === -1 ? 15 : getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit)}
+                                                    onChange={(e) => {
+                                                        const newValue = parseInt(e.target.value);
+                                                        setCustomBenefits(prev => ({
+                                                            ...prev,
+                                                            [userForBenefits.id]: {
+                                                                ...prev[userForBenefits.id],
+                                                                playlistDownloads: { ...prev[userForBenefits.id]?.playlistDownloads, limit: newValue, enabled: true }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
+                                                />
+                                            </div>
+                                            <div className="flex-1">
+                                                <label className="text-xs text-gray-300 mb-1 block">Usado (manual)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="15"
+                                                    value={customBenefits[userForBenefits.id]?.playlistDownloads?.used !== undefined
+                                                        ? customBenefits[userForBenefits.id].playlistDownloads.used
+                                                        : (userForBenefits.weeklyPlaylistDownloadsUsed || 0)}
+                                                    onChange={(e) => {
+                                                        const newValue = parseInt(e.target.value) || 0;
+                                                        setCustomBenefits(prev => ({
+                                                            ...prev,
+                                                            [userForBenefits.id]: {
+                                                                ...prev[userForBenefits.id],
+                                                                playlistDownloads: { ...prev[userForBenefits.id]?.playlistDownloads, used: newValue }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="text-xs text-gray-400">
+                                            {customBenefits[userForBenefits.id]?.playlistDownloads?.used !== undefined
+                                                ? customBenefits[userForBenefits.id].playlistDownloads.used
+                                                : (userForBenefits.weeklyPlaylistDownloadsUsed || 0)
+                                            } de {customBenefits[userForBenefits.id]?.playlistDownloads?.limit !== undefined
+                                                ? (customBenefits[userForBenefits.id].playlistDownloads.limit === -1 ? "∞" : customBenefits[userForBenefits.id].playlistDownloads.limit)
+                                                : (getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit === -1 ? "∞" : getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit)} usados
+                                        </div>
                                     </div>
 
                                     {/* Deezer Premium */}
