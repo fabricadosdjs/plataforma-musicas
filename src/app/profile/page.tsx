@@ -881,7 +881,7 @@ export default function ProfilePage() {
                             <p className="text-gray-300 mb-6">
                                 O Allavsoft estará disponível a partir de metade de agosto para todos os clientes que já adquiriram a licença! Uma ferramenta completa para download de vídeos e áudios.
                             </p>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div className="flex items-center gap-2 text-gray-300">
                                     <Download className="w-4 h-4" />
@@ -1002,10 +1002,12 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="text-lg font-bold text-white">
                                         {(() => {
-                                            // Usar valores personalizados ou padrão do banco de dados
-                                            const used = userData?.weeklyPackRequestsUsed || 0;
-                                            const limit = userData?.weeklyPackRequests || 0;
-
+                                            const used = userData?.weeklyPackRequestsUsed ?? 0;
+                                            // Se o limite for 0/null, usar o padrão do plano
+                                            let limit = userData?.weeklyPackRequests;
+                                            if (!limit || limit < 1) {
+                                                limit = userData?.planBenefits?.packRequests?.limit ?? 4;
+                                            }
                                             return `${used} / ${limit}`;
                                         })()}
                                     </div>
@@ -1014,9 +1016,11 @@ export default function ProfilePage() {
                                             className="bg-blue-500 h-2 rounded-full transition-all"
                                             style={{
                                                 width: `${(() => {
-                                                    const used = userData?.weeklyPackRequestsUsed || 0;
-                                                    const limit = userData?.weeklyPackRequests || 1;
-
+                                                    const used = userData?.weeklyPackRequestsUsed ?? 0;
+                                                    let limit = userData?.weeklyPackRequests;
+                                                    if (!limit || limit < 1) {
+                                                        limit = userData?.planBenefits?.packRequests?.limit ?? 4;
+                                                    }
                                                     return Math.min(100, (used / Math.max(1, limit)) * 100);
                                                 })()}%`
                                             }}
@@ -1064,7 +1068,7 @@ export default function ProfilePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="flex items-center gap-3">
                                     <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                                    <span className="text-white">Downloads ilimitados por dia</span>
+                                    <span className="text-white">Downloads por dia: <span className="font-bold text-green-300">{userData?.dailyDownloadLimit || 50}</span></span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
@@ -1079,7 +1083,11 @@ export default function ProfilePage() {
                                     <span className="text-white">Acesso total ao Drive</span>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                                    {userData?.deemix ? (
+                                        <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                                    ) : (
+                                        <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                                    )}
                                     <span className="text-white">Deemix Premium incluso</span>
                                 </div>
                                 <div className="flex items-center gap-3">
