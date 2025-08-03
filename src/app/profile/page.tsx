@@ -428,7 +428,9 @@ export default function ProfilePage() {
                                                 <Disc className="w-4 h-4" />
                                                 Deemix
                                             </button>
-                                        )}                                        {userData?.is_vip && (
+                                        )}
+
+                                        {userData?.is_vip && (
                                             <>
                                                 <button
                                                     onClick={() => setActiveSection('vip')}
