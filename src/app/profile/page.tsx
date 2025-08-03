@@ -1412,7 +1412,9 @@ export default function ProfilePage() {
                                             : 'text-gray-300 hover:bg-gray-700/30 hover:text-white'
                                             }`}
                                     >
-                                        <item.icon className={`w-5 h-5 ${activeSection === item.id ? 'text-purple-400' : 'text-gray-400'}`} />
+                                        {item.icon && typeof item.icon === 'function' ? (
+                                            <item.icon className={`w-5 h-5 ${activeSection === item.id ? 'text-purple-400' : 'text-gray-400'}`} />
+                                        ) : null}
                                         <div>
                                             <div className="font-medium">{item.label}</div>
                                             <div className="text-xs text-gray-400">{item.description}</div>
