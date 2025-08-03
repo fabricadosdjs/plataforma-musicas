@@ -64,16 +64,45 @@ export async function POST(request: NextRequest) {
 
         console.log('💾 Salvando customBenefits:', customBenefits);
 
+        // Preparar os dados para atualização
+        const updateData: any = {
+            customBenefits: customBenefits || {}
+        };
+
+        // Se há customBenefits, extrair e salvar os valores nos campos diretos da tabela também
+        if (customBenefits) {
+            if (customBenefits.weeklyPackRequests !== undefined) {
+                updateData.weeklyPackRequests = customBenefits.weeklyPackRequests;
+            }
+            if (customBenefits.weeklyPlaylistDownloads !== undefined) {
+                updateData.weeklyPlaylistDownloads = customBenefits.weeklyPlaylistDownloads;
+            }
+            if (customBenefits.weeklyPackRequestsUsed !== undefined) {
+                updateData.weeklyPackRequestsUsed = customBenefits.weeklyPackRequestsUsed;
+            }
+            if (customBenefits.weeklyPlaylistDownloadsUsed !== undefined) {
+                updateData.weeklyPlaylistDownloadsUsed = customBenefits.weeklyPlaylistDownloadsUsed;
+            }
+            if (customBenefits.deemix !== undefined) {
+                updateData.deemix = customBenefits.deemix;
+            }
+        }
+
+        console.log('📊 Dados para atualização:', updateData);
+
         // Atualizar os benefícios personalizados do usuário
         const updatedUser = await prisma.user.update({
             where: { id: userId },
-            data: {
-                customBenefits: customBenefits || {}
-            },
+            data: updateData,
             select: {
                 id: true,
                 email: true,
-                customBenefits: true
+                customBenefits: true,
+                weeklyPackRequests: true,
+                weeklyPlaylistDownloads: true,
+                weeklyPackRequestsUsed: true,
+                weeklyPlaylistDownloadsUsed: true,
+                deemix: true
             }
         });
 

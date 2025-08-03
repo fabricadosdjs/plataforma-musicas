@@ -129,6 +129,7 @@ export default function ProfilePage() {
         { id: 'plan', label: 'Meu Plano', description: 'Gerenciar assinatura', icon: Crown },
         { id: 'vip', label: 'Recursos VIP', description: 'Benefícios exclusivos', icon: Star },
         { id: 'deemix', label: 'Deemix', description: 'Downloads premium', icon: Disc },
+        { id: 'allavsoft', label: 'Allavsoft', description: 'Download universal', icon: Download },
         { id: 'activity', label: 'Atividade', description: 'Histórico e curtidas', icon: Clock },
         { id: 'profile', label: 'Dados Pessoais', description: 'Informações da conta', icon: Mail }
     ];
@@ -420,18 +421,27 @@ export default function ProfilePage() {
                                             Meu Plano
                                         </button>
 
-                                        {userData.deemix && (
-                                            <button
-                                                onClick={() => setActiveSection('deemix')}
-                                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeSection === 'deemix'
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                                                    }`}
-                                            >
-                                                <Disc className="w-4 h-4" />
-                                                Deemix
-                                            </button>
-                                        )}
+                                        <button
+                                            onClick={() => setActiveSection('deemix')}
+                                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeSection === 'deemix'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                                }`}
+                                        >
+                                            <Disc className="w-4 h-4" />
+                                            Deemix
+                                        </button>
+
+                                        <button
+                                            onClick={() => setActiveSection('allavsoft')}
+                                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeSection === 'allavsoft'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                                }`}
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            Allavsoft
+                                        </button>
 
                                         {userData?.is_vip && (
                                             <>
@@ -523,6 +533,8 @@ export default function ProfilePage() {
                 return renderPlanSection();
             case 'deemix':
                 return renderDeemixSection();
+            case 'allavsoft':
+                return renderAllavsoftSection();
             case 'vip':
                 return renderVipSection();
             case 'activity':
@@ -626,25 +638,6 @@ export default function ProfilePage() {
 
     // Seção do Deemix
     function renderDeemixSection() {
-        if (!userData || !userData.deemix) {
-            return (
-                <Card className="border-gray-700/50 bg-gray-800/60">
-                    <CardContent className="p-6">
-                        <div className="text-center py-8">
-                            <Disc className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold text-white mb-2">Deemix Não Disponível</h3>
-                            <p className="text-gray-400">Este recurso está disponível como add-on para qualquer plano VIP.</p>
-                            <div className="mt-4 space-y-2">
-                                <p className="text-sm text-gray-300">• VIP Básico: +R$ 22,75/mês</p>
-                                <p className="text-sm text-gray-300">• VIP Padrão: +R$ 20,30/mês</p>
-                                <p className="text-sm text-gray-300">• VIP Completo: +R$ 14,00/mês</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            );
-        }
-
         return (
             <div className="space-y-6">
                 <Card className="border-purple-500/50 bg-gray-800/60">
@@ -654,137 +647,276 @@ export default function ProfilePage() {
                                 <Disc className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold text-white">Deemix</h2>
-                                <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black px-3 py-1 rounded-full text-sm font-bold inline-block">
-                                    PREMIUM
-                                </div>
+                                <h2 className="text-2xl font-bold text-white">Deemix - Download de Músicas</h2>
                             </div>
                         </div>
 
-                        <div className="mb-6 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-4">
-                            <div className="flex items-center gap-3">
-                                <CheckCircle className="w-6 h-6 text-green-400" />
-                                <div>
-                                    <h4 className="font-semibold text-white">Deemix Ativo</h4>
-                                    <p className="text-sm text-gray-300">Downloads ilimitados em alta qualidade.</p>
+                        {userData?.deemix ? (
+                            // Box verde - Usuário tem acesso
+                            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-6 mb-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <CheckCircle className="w-6 h-6 text-green-400" />
+                                    <h4 className="text-lg font-semibold text-white">Acesso Liberado</h4>
+                                </div>
+                                <p className="text-gray-300 mb-4">
+                                    Você tem acesso completo à plataforma Deemix para download de músicas em alta qualidade.
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="flex items-center gap-2 text-green-300">
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span className="text-sm">Downloads ilimitados</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-green-300">
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span className="text-sm">Qualidade FLAC/MP3 320kbps</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-green-300">
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span className="text-sm">ARL Premium incluso</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-green-300">
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span className="text-sm">Suporte técnico</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Credenciais de Acesso */}
-                        <div className="bg-gray-700/30 rounded-xl p-6 mb-6">
-                            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                                🔑 Credenciais de Acesso
-                            </h3>
-                            <p className="text-gray-300 mb-6">Use as credenciais abaixo para acessar o gerenciamento do Deemix:</p>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Senha de Acesso:</label>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex-1 bg-gray-800 rounded-lg p-3 font-mono text-white">
-                                            JMgQuuKI1LDiXBm
+                        ) : (
+                            // Box vermelho - Usuário não tem acesso
+                            <>
+                                <div className="bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/20 rounded-xl p-6 mb-6">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <XCircle className="w-6 h-6 text-red-400" />
+                                        <h4 className="text-lg font-semibold text-white">Acesso Não Disponível</h4>
+                                    </div>
+                                    <p className="text-gray-300 mb-4">
+                                        O Deemix não está incluído no seu plano atual. Faça upgrade ou assine separadamente com desconto exclusivo!
+                                    </p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="flex items-center gap-2 text-gray-300">
+                                            <Music className="w-4 h-4" />
+                                            <span className="text-sm">Download de músicas em FLAC/MP3</span>
                                         </div>
-                                        <Button
-                                            onClick={() => copyToClipboard('JMgQuuKI1LDiXBm')}
-                                            className="bg-gray-600 hover:bg-gray-700 p-3"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                        </Button>
+                                        <div className="flex items-center gap-2 text-gray-300">
+                                            <Smartphone className="w-4 h-4" />
+                                            <span className="text-sm">Interface web moderna</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-gray-300">
+                                            <Zap className="w-4 h-4" />
+                                            <span className="text-sm">Downloads rápidos e estáveis</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-gray-300">
+                                            <Star className="w-4 h-4" />
+                                            <span className="text-sm">ARL Premium disponível</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Box roxa - Oferta especial VIP */}
+                                {userData?.is_vip && (
+                                    <div className="bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20 rounded-xl p-6 mb-6">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <Gift className="w-6 h-6 text-purple-400" />
+                                            <h4 className="text-lg font-semibold text-white">🎁 Oferta Especial VIP</h4>
+                                        </div>
+                                        <p className="text-gray-300 mb-6 text-center">
+                                            Como cliente VIP, você tem desconto no valor do seu plano
+                                        </p>
+                                        <div className="flex justify-center">
+                                            <Button
+                                                onClick={() => window.open('/deemix', '_blank')}
+                                                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 px-8 py-3"
+                                            >
+                                                <Star className="w-5 h-5 mr-2" />
+                                                ASSINAR DEEMIX COM DESCONTO
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Credenciais de Acesso - Só aparecem se tem acesso */}
+                        {userData?.deemix && (
+                            <>
+                                {/* Credenciais de Acesso */}
+                                <div className="bg-gray-700/30 rounded-xl p-6 mb-6">
+                                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                        🔑 Credenciais de Acesso
+                                    </h3>
+                                    <p className="text-gray-300 mb-6">Use as credenciais abaixo para acessar o gerenciamento do Deemix:</p>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Senha de Acesso:</label>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 bg-gray-800 rounded-lg p-3 font-mono text-white">
+                                                    JMgQuuKI1LDiXBm
+                                                </div>
+                                                <Button
+                                                    onClick={() => copyToClipboard('JMgQuuKI1LDiXBm')}
+                                                    className="bg-gray-600 hover:bg-gray-700 p-3"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-center">
+                                            <Button
+                                                onClick={() => window.open('https://plataformavip.nexorrecords.com.br/deemix-gerenciar', '_blank')}
+                                                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 px-8 py-3"
+                                            >
+                                                <Key className="w-5 h-5 mr-2" />
+                                                GERENCIAR DEEMIX
+                                            </Button>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                ARL Premium (Atualizada em 29.06.2025 às 01:45):
+                                            </label>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 bg-gray-800 rounded-lg p-3 font-mono text-white text-xs break-all">
+                                                    048bf08a0ad1e6f2cac6a80cea2aeab3c001e355054391fb196b388ecc19c6e72b1c790a2803788084ae8132a9f28b69704ab230c6450bb7fdd1d186fb51e7349bf536d4116e0c12d8f0e888c8c42f8f01953cddf587eca8b4f257396915225e
+                                                </div>
+                                                <Button
+                                                    onClick={() => copyToClipboard('048bf08a0ad1e6f2cac6a80cea2aeab3c001e355054391fb196b388ecc19c6e72b1c790a2803788084ae8132a9f28b69704ab230c6450bb7fdd1d186fb51e7349bf536d4116e0c12d8f0e888c8c42f8f01953cddf587eca8b4f257396915225e')}
+                                                    className="bg-gray-600 hover:bg-gray-700 p-3"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Configurações Spotify */}
+                                <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-6 mb-6">
+                                    <h3 className="text-lg font-bold text-white mb-4">
+                                        🎵 Configurações do Spotify (se necessário):
+                                    </h3>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Client ID:</label>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 bg-gray-800 rounded-lg p-3 font-mono text-white">
+                                                    JMgQuuKI1LDiXBm
+                                                </div>
+                                                <Button
+                                                    onClick={() => copyToClipboard('JMgQuuKI1LDiXBm')}
+                                                    className="bg-gray-600 hover:bg-gray-700 p-3"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Client Secret:</label>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 bg-gray-800 rounded-lg p-3 font-mono text-white">
+                                                    d8db5aeefe6e439a951e5da66f392889
+                                                </div>
+                                                <Button
+                                                    onClick={() => copyToClipboard('d8db5aeefe6e439a951e5da66f392889')}
+                                                    className="bg-gray-600 hover:bg-gray-700 p-3"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">User:</label>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 bg-gray-800 rounded-lg p-3 font-mono text-white">
+                                                    31psvp6pv6rhvjz7zfkcn4bv2ksm
+                                                </div>
+                                                <Button
+                                                    onClick={() => copyToClipboard('31psvp6pv6rhvjz7zfkcn4bv2ksm')}
+                                                    className="bg-gray-600 hover:bg-gray-700 p-3"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div className="flex justify-center">
                                     <Button
-                                        onClick={() => window.open('https://plataformavip.nexorrecords.com.br/deemix-gerenciar', '_blank')}
-                                        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 px-8 py-3"
+                                        onClick={() => window.open('https://workupload.com/file/AvaE2nLGqhn', '_blank')}
+                                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 px-8 py-3"
                                     >
-                                        <Key className="w-5 h-5 mr-2" />
-                                        GERENCIAR DEEMIX
+                                        <Download className="w-5 h-5 mr-2" />
+                                        BAIXAR DEEMIX
                                     </Button>
                                 </div>
+                            </>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                        ARL Premium (Atualizada em 29.06.2025 às 01:45):
-                                    </label>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex-1 bg-gray-800 rounded-lg p-3 font-mono text-white text-xs break-all">
-                                            048bf08a0ad1e6f2cac6a80cea2aeab3c001e355054391fb196b388ecc19c6e72b1c790a2803788084ae8132a9f28b69704ab230c6450bb7fdd1d186fb51e7349bf536d4116e0c12d8f0e888c8c42f8f01953cddf587eca8b4f257396915225e
-                                        </div>
-                                        <Button
-                                            onClick={() => copyToClipboard('048bf08a0ad1e6f2cac6a80cea2aeab3c001e355054391fb196b388ecc19c6e72b1c790a2803788084ae8132a9f28b69704ab230c6450bb7fdd1d186fb51e7349bf536d4116e0c12d8f0e888c8c42f8f01953cddf587eca8b4f257396915225e')}
-                                            className="bg-gray-600 hover:bg-gray-700 p-3"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </div>
+    // Seção do Allavsoft
+    function renderAllavsoftSection() {
+        return (
+            <div className="space-y-6">
+                <Card className="border-red-500/50 bg-gray-800/60">
+                    <CardContent className="p-6">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                                <Download className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-white">Allavsoft - Download Universal</h2>
                             </div>
                         </div>
 
-                        {/* Configurações Spotify */}
-                        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-6 mb-6">
-                            <h3 className="text-lg font-bold text-white mb-4">
-                                🎵 Configurações do Spotify (se necessário):
-                            </h3>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Client ID:</label>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex-1 bg-gray-800 rounded-lg p-3 font-mono text-white">
-                                            JMgQuuKI1LDiXBm
-                                        </div>
-                                        <Button
-                                            onClick={() => copyToClipboard('JMgQuuKI1LDiXBm')}
-                                            className="bg-gray-600 hover:bg-gray-700 p-3"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                        </Button>
-                                    </div>
+                        {/* Box vermelha - Indisponível para todos */}
+                        <div className="bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/20 rounded-xl p-6 mb-6">
+                            <p className="text-gray-300 mb-6">
+                                O Allavsoft estará disponível a partir de metade de agosto para todos os clientes que já adquiriram a licença! Uma ferramenta completa para download de vídeos e áudios.
+                            </p>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div className="flex items-center gap-2 text-gray-300">
+                                    <Download className="w-4 h-4" />
+                                    <span className="text-sm">Download de vídeos (YouTube, Vimeo, etc.)</span>
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Client Secret:</label>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex-1 bg-gray-800 rounded-lg p-3 font-mono text-white">
-                                            d8db5aeefe6e439a951e5da66f392889
-                                        </div>
-                                        <Button
-                                            onClick={() => copyToClipboard('d8db5aeefe6e439a951e5da66f392889')}
-                                            className="bg-gray-600 hover:bg-gray-700 p-3"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                        </Button>
-                                    </div>
+                                <div className="flex items-center gap-2 text-gray-300">
+                                    <Music className="w-4 h-4" />
+                                    <span className="text-sm">Extração de áudio em alta qualidade</span>
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">User:</label>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex-1 bg-gray-800 rounded-lg p-3 font-mono text-white">
-                                            31psvp6pv6rhvjz7zfkcn4bv2ksm
-                                        </div>
-                                        <Button
-                                            onClick={() => copyToClipboard('31psvp6pv6rhvjz7zfkcn4bv2ksm')}
-                                            className="bg-gray-600 hover:bg-gray-700 p-3"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                        </Button>
-                                    </div>
+                                <div className="flex items-center gap-2 text-gray-300">
+                                    <Smartphone className="w-4 h-4" />
+                                    <span className="text-sm">Suporte a +1000 sites</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-300">
+                                    <Zap className="w-4 h-4" />
+                                    <span className="text-sm">Downloads em lote</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-300 md:col-span-2">
+                                    <Settings className="w-4 h-4" />
+                                    <span className="text-sm">Conversão automática de formatos</span>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="flex justify-center">
-                            <Button
-                                onClick={() => window.open('https://workupload.com/file/AvaE2nLGqhn', '_blank')}
-                                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 px-8 py-3"
-                            >
-                                <Download className="w-5 h-5 mr-2" />
-                                BAIXAR DEEMIX
-                            </Button>
+                            <div className="bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20 rounded-xl p-4">
+                                <h4 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+                                    <Star className="w-5 h-5 text-purple-400" />
+                                    Novidade Exclusiva
+                                </h4>
+                                <p className="text-gray-300 mb-3">
+                                    Como cliente VIP, você terá acesso prioritário com desconto ao Allavsoft assim que for lançado!
+                                </p>
+                                <p className="text-purple-400 font-semibold text-center">
+                                    Lançamento previsto: Agosto 2025
+                                </p>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -870,18 +1002,9 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="text-lg font-bold text-white">
                                         {(() => {
-                                            // Usar valores reais do banco de dados
+                                            // Usar valores personalizados ou padrão do banco de dados
                                             const used = userData?.weeklyPackRequestsUsed || 0;
-                                            const valor = userData?.valor || 0;
-                                            let limit = 4; // Valor padrão
-
-                                            if (valor >= 50) {
-                                                limit = 10;
-                                            } else if (valor >= 42) {
-                                                limit = 6;
-                                            } else if (valor >= 35) {
-                                                limit = 4;
-                                            }
+                                            const limit = userData?.weeklyPackRequests || 0;
 
                                             return `${used} / ${limit}`;
                                         })()}
@@ -892,16 +1015,7 @@ export default function ProfilePage() {
                                             style={{
                                                 width: `${(() => {
                                                     const used = userData?.weeklyPackRequestsUsed || 0;
-                                                    const valor = userData?.valor || 0;
-                                                    let limit = 4;
-
-                                                    if (valor >= 50) {
-                                                        limit = 10;
-                                                    } else if (valor >= 42) {
-                                                        limit = 6;
-                                                    } else if (valor >= 35) {
-                                                        limit = 4;
-                                                    }
+                                                    const limit = userData?.weeklyPackRequests || 1;
 
                                                     return Math.min(100, (used / Math.max(1, limit)) * 100);
                                                 })()}%`
@@ -918,18 +1032,9 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="text-lg font-bold text-white">
                                         {(() => {
-                                            // Usar valores reais do banco de dados
+                                            // Usar valores personalizados ou padrão do banco de dados
                                             const used = userData?.weeklyPlaylistDownloadsUsed || 0;
-                                            const valor = userData?.valor || 0;
-                                            let limit = 7; // Valor padrão
-
-                                            if (valor >= 50) {
-                                                limit = 15;
-                                            } else if (valor >= 42) {
-                                                limit = 9;
-                                            } else if (valor >= 35) {
-                                                limit = 7;
-                                            }
+                                            const limit = userData?.weeklyPlaylistDownloads || 0;
 
                                             return `${used} / ${limit}`;
                                         })()}
@@ -940,16 +1045,7 @@ export default function ProfilePage() {
                                             style={{
                                                 width: `${(() => {
                                                     const used = userData?.weeklyPlaylistDownloadsUsed || 0;
-                                                    const valor = userData?.valor || 0;
-                                                    let limit = 7;
-
-                                                    if (valor >= 50) {
-                                                        limit = 15;
-                                                    } else if (valor >= 42) {
-                                                        limit = 9;
-                                                    } else if (valor >= 35) {
-                                                        limit = 7;
-                                                    }
+                                                    const limit = userData?.weeklyPlaylistDownloads || 1;
 
                                                     return Math.min(100, (used / Math.max(1, limit)) * 100);
                                                 })()}%`
