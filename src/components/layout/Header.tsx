@@ -127,7 +127,7 @@ const Header = ({
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-40 bg-gradient-to-r from-[#1B1C1D] to-[#2a2a2e] shadow-lg border-b border-gray-700/50 py-3 font-bebas-neue">
+    <header className="fixed top-0 left-0 w-full z-40 bg-gradient-to-r from-[#1B1C1D] to-[#2a2a2e] shadow-lg border-b border-gray-700/50 py-3">
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center space-x-4 md:space-x-6">
           {/* Mobile menu button */}
@@ -305,7 +305,7 @@ const Header = ({
                   </span>
                 </button>
                 {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-72 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 p-6 font-lato">
+                  <div className="absolute right-0 mt-2 w-72 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 p-6">
                     <div className="mb-4 text-white">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="relative">

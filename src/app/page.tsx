@@ -42,10 +42,10 @@ function HomePageContent() {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="mb-8">
-            <h1 className="text-5xl md:text-6xl font-bold text-white tracking-tight mb-6 leading-tight uppercase">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-6 leading-tight uppercase">
               O pool de discos independentes onde os DJs descobrem o que vem por aí
             </h1>
-            <p className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl lg:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
               A plataforma definitiva para DJs que buscam as melhores músicas eletrônicas,
               remixes exclusivos e sets que dominam as pistas. Descubra o futuro da música eletrônica.
             </p>
@@ -53,22 +53,22 @@ function HomePageContent() {
               <img
                 src="https://i.ibb.co/9HdP7R4p/tela-pc.png"
                 alt="Tela do computador mostrando a plataforma"
-                className="max-w-4xl mx-auto rounded-lg shadow-2xl"
+                className="w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-4xl mx-auto rounded-lg shadow-2xl"
               />
             </div>
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-12 px-4">
             <Link href="/new">
-              <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 flex items-center justify-center gap-3">
-                <Music className="h-6 w-6" />
+              <button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl text-base sm:text-lg transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 flex items-center justify-center gap-3">
+                <Music className="h-5 w-5 sm:h-6 sm:w-6" />
                 Explorar Músicas
               </button>
             </Link>
             <Link href="/trending">
-              <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 shadow-2xl hover:shadow-purple-500/25 flex items-center justify-center gap-3">
-                <TrendingUp className="h-6 w-6" />
+              <button className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl text-base sm:text-lg transition-all duration-300 shadow-2xl hover:shadow-purple-500/25 flex items-center justify-center gap-3">
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6" />
                 Ver Trending
               </button>
             </Link>
@@ -76,8 +76,8 @@ function HomePageContent() {
 
           {/* Pricing Badge */}
           <Link href="/plans">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 cursor-pointer">
-              <Star className="h-5 w-5" />
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 cursor-pointer text-sm sm:text-base">
+              <Star className="h-4 w-4 sm:h-5 sm:w-5" />
               A partir de R$ 35,00/mês
             </div>
           </Link>
@@ -339,10 +339,10 @@ function HomePageContent() {
                 <div className="bg-black/20 rounded-xl p-6 mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-amber-200 font-semibold">Progresso da Migração</span>
-                    <span className="text-amber-300 font-bold">0.35%</span>
+                    <span className="text-amber-300 font-bold">1.5%</span>
                   </div>
                   <div className="w-full bg-amber-900/50 rounded-full h-3 mb-2">
-                    <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-3 rounded-full transition-all duration-1000" style={{ width: '0.35%' }}></div>
+                    <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-3 rounded-full transition-all duration-1000" style={{ width: '1.5%' }}></div>
                   </div>
                   <div className="flex items-center justify-center text-xs text-amber-200">
                     <Clock className="h-4 w-4 mr-1" />

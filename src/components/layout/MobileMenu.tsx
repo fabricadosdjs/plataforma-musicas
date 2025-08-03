@@ -1,10 +1,10 @@
 "use client";
 
-import { Bell, Home, LogOut, Music, Star, TrendingUp, X } from 'lucide-react';
+import { Bell, Home, LogOut, Music, Star, TrendingUp, X, Crown, Wrench, Disc, Link as LinkIcon, Download, User } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface MobileMenuProps {
     isOpen: boolean;
@@ -15,6 +15,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     const pathname = usePathname();
     const { data: session, status } = useSession();
     const isSignedIn = status === 'authenticated';
+    const [showTools, setShowTools] = useState(false);
 
     // Fechar menu ao clicar fora
     useEffect(() => {
@@ -34,6 +35,13 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
         { href: '/featured', label: 'Destaque', icon: Star },
         { href: '/trending', label: 'Em Alta', icon: TrendingUp },
         { href: '/charts', label: 'Charts', icon: Music },
+        { href: '/plans', label: 'Planos', icon: Crown },
+    ];
+
+    const toolsItems = [
+        { href: '/deemix', label: 'Deemix', icon: Disc },
+        { href: '/debridlink', label: 'Debridlink', icon: LinkIcon },
+        { href: '/allavsoft', label: 'Allavsoft', icon: Download },
     ];
 
     const handleLinkClick = () => {
@@ -51,7 +59,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             />
 
             {/* Menu */}
-            <div className="fixed top-0 left-0 h-full w-80 bg-black/90 backdrop-blur-xl border-r border-gray-800/50 z-50 md:hidden transform transition-transform duration-300">
+            <div className="fixed top-0 left-0 h-full w-80 bg-black/90 backdrop-blur-xl border-r border-gray-800/50 z-50 md:hidden transform transition-transform duration-300 flex flex-col">
                 {/* Header do Menu */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-800/50">
                     <div className="flex items-center gap-3">
@@ -60,7 +68,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                             alt="Nextor Records"
                             className="h-8 w-auto"
                         />
-                        <span className="text-white font-sans font-bold text-lg tracking-wide">DJ Pool</span>
+                        <span className="text-white font-bold text-lg">DJ Pool</span>
                     </div>
                     <button
                         onClick={onClose}
@@ -70,9 +78,31 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                     </button>
                 </div>
 
-                {/* Navegação Principal */}
-                <nav className="p-6">
-                    <div className="space-y-3">
+                {/* Info do Usuário no Topo */}
+                {isSignedIn && (
+                    <div className="p-4 border-b border-gray-800/50">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                <span className="text-white font-bold">
+                                    {session.user?.name?.[0]?.toUpperCase() || 'U'}
+                                </span>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-white font-medium">{session.user?.name}</h3>
+                                <p className="text-gray-400 text-sm">{session.user?.email}</p>
+                            </div>
+                            {session.user?.is_vip && (
+                                <div className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-xs font-bold">
+                                    VIP
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Navegação Principal - Flexível */}
+                <nav className="flex-1 p-4 overflow-y-auto">
+                    <div className="space-y-2">
                         {menuItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = pathname === item.href;
@@ -82,106 +112,103 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                                     key={item.href}
                                     href={item.href}
                                     onClick={handleLinkClick}
-                                    className={`flex items-center gap-4 p-4 rounded-xl transition-all duration-200 ${isActive
+                                    className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${isActive
                                         ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30'
                                         : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
                                         }`}
                                 >
-                                    <Icon className="w-6 h-6" />
-                                    <span className="font-sans font-medium text-lg tracking-wide">{item.label}</span>
+                                    <Icon className="w-5 h-5" />
+                                    <span className="font-medium">{item.label}</span>
                                 </Link>
                             );
                         })}
-                    </div>
-                </nav>
 
-                {/* Seção do Usuário */}
-                {isSignedIn && (
-                    <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-800/50">
-                        {/* Informações do Usuário */}
-                        <div className="mb-4 p-4 bg-black/30 rounded-xl">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                    <span className="text-white font-bold text-lg">
-                                        {session.user?.name?.[0]?.toUpperCase() || 'U'}
-                                    </span>
+                        {/* Ferramentas - Expansível */}
+                        <div className="mt-4">
+                            <button
+                                onClick={() => setShowTools(!showTools)}
+                                className="w-full flex items-center justify-between gap-3 p-3 text-gray-300 hover:bg-gray-800/50 hover:text-white rounded-lg transition-all duration-200"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Wrench className="w-5 h-5" />
+                                    <span className="font-medium">Ferramentas</span>
                                 </div>
-                                <div className="flex-1">
-                                    <h3 className="text-white font-sans font-medium text-lg tracking-wide">{session.user?.name}</h3>
-                                    <p className="text-gray-400 text-sm font-sans">{session.user?.email}</p>
+                                <div className={`transform transition-transform duration-200 ${showTools ? 'rotate-90' : ''}`}>
+                                    ▶
                                 </div>
-                            </div>
+                            </button>
 
-                            {/* Status VIP */}
-                            {session.user?.is_vip && (
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                    <span className="text-green-400 text-sm font-sans font-medium tracking-wide">VIP ATIVO</span>
+                            {showTools && (
+                                <div className="ml-8 mt-2 space-y-1">
+                                    {toolsItems.map((tool) => {
+                                        const Icon = tool.icon;
+                                        const isActive = pathname === tool.href;
+
+                                        return (
+                                            <Link
+                                                key={tool.href}
+                                                href={tool.href}
+                                                onClick={handleLinkClick}
+                                                className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${isActive
+                                                    ? 'bg-blue-600/20 text-blue-400'
+                                                    : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                                                    }`}
+                                            >
+                                                <Icon className="w-4 h-4" />
+                                                <span className="text-sm font-medium">{tool.label}</span>
+                                            </Link>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
 
-                        {/* Links do Usuário */}
-                        <div className="space-y-2 mb-4">
+                        {/* Link para Perfil se logado */}
+                        {isSignedIn && (
                             <Link
                                 href="/profile"
                                 onClick={handleLinkClick}
-                                className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${pathname === '/profile'
+                                className={`flex items-center gap-3 p-3 rounded-lg transition-colors mt-4 ${pathname === '/profile'
                                     ? 'bg-blue-600/20 text-blue-400'
                                     : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
                                     }`}
                             >
-                                <Bell className="w-5 h-5" />
-                                <span className="font-sans tracking-wide">Perfil</span>
+                                <User className="w-5 h-5" />
+                                <span className="font-medium">Meu Perfil</span>
                             </Link>
+                        )}
+                    </div>
+                </nav>
 
-                            {!session.user?.is_vip && (
-                                <Link
-                                    href="/pro"
-                                    onClick={handleLinkClick}
-                                    className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${pathname === '/pro'
-                                        ? 'bg-blue-600/20 text-blue-400'
-                                        : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
-                                        }`}
-                                >
-                                    <Star className="w-5 h-5" />
-                                    <span className="font-sans tracking-wide">Upgrade Pro</span>
-                                </Link>
-                            )}
-                        </div>
-
-                        {/* Logout */}
+                {/* Seção Inferior - Fixa */}
+                <div className="p-4 border-t border-gray-800/50">
+                    {isSignedIn ? (
                         <button
                             onClick={() => signOut()}
                             className="w-full flex items-center gap-3 p-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
                         >
                             <LogOut className="w-5 h-5" />
-                            <span className="font-sans tracking-wide">Sair</span>
+                            <span className="font-medium">Sair</span>
                         </button>
-                    </div>
-                )}
-
-                {/* Se não estiver logado */}
-                {!isSignedIn && (
-                    <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-800/50">
-                        <div className="space-y-3">
+                    ) : (
+                        <div className="space-y-2">
                             <Link
                                 href="/auth/sign-in"
                                 onClick={handleLinkClick}
-                                className="w-full block text-center p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-sans font-medium transition-colors tracking-wide"
+                                className="w-full block text-center p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
                             >
                                 Entrar
                             </Link>
                             <Link
                                 href="/auth/sign-up"
                                 onClick={handleLinkClick}
-                                className="w-full block text-center p-4 border border-gray-600 hover:bg-gray-800/50 text-gray-300 rounded-xl font-sans font-medium transition-colors tracking-wide"
+                                className="w-full block text-center p-3 border border-gray-600 hover:bg-gray-800/50 text-gray-300 rounded-lg font-medium transition-colors"
                             >
                                 Cadastrar
                             </Link>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </>
     );
