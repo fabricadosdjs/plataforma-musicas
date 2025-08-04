@@ -45,15 +45,28 @@ export default function DynamicGradientBackground() {
         return `rgb(${r}, ${g}, ${b})`;
     };
 
-    const startColor = '#27222C';
+    const startColor = '#8B4513';
+    const midColor = '#2F1B14';
     const endColor = '#0C0C0C';
-    const currentColor = interpolateColor(startColor, endColor, scrollProgress);
+
+    // Função para interpolação tripla de cores
+    const interpolateTripleColor = (color1: string, color2: string, color3: string, factor: number) => {
+        if (factor <= 0.5) {
+            // Primeira metade: interpolar entre color1 e color2
+            return interpolateColor(color1, color2, factor * 2);
+        } else {
+            // Segunda metade: interpolar entre color2 e color3
+            return interpolateColor(color2, color3, (factor - 0.5) * 2);
+        }
+    };
+
+    const currentColor = interpolateTripleColor(startColor, midColor, endColor, scrollProgress);
 
     return (
         <div
-            className="fixed inset-0 -z-10 transition-colors duration-100"
+            className="fixed inset-0 -z-10 transition-colors duration-300"
             style={{
-                background: `linear-gradient(to bottom, ${startColor}, ${currentColor})`
+                background: `linear-gradient(135deg, ${startColor} 0%, ${midColor} 50%, ${currentColor} 100%)`
             }}
         />
     );

@@ -103,19 +103,15 @@ export default function FiltersModal({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0C0C0C]/80 via-[#27212B]/80 to-[#202B3F]/80 backdrop-blur-sm" />
 
             {/* Modal */}
             <div
                 ref={modalRef}
-                className="relative w-full max-w-2xl mx-4 rounded-2xl border shadow-2xl max-h-[90vh] overflow-y-auto"
-                style={{
-                    backgroundColor: '#2a2a2a',
-                    borderColor: '#3a3a3a'
-                }}
+                className="relative w-full max-w-2xl mx-4 rounded-2xl border border-gray-700/30 shadow-2xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-[#202B3F]/95 via-[#27212B]/95 to-[#0C0C0C]/95 backdrop-blur-lg"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: '#3a3a3a' }}>
+                <div className="flex items-center justify-between p-6 border-b border-gray-700/30">
                     <h2 className="text-xl font-semibold text-white flex items-center space-x-2">
                         <Filter className="h-5 w-5" />
                         <span>Filtrar Músicas</span>

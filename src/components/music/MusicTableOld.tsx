@@ -423,43 +423,47 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
 
 
             <div
-                className="bg-gradient-to-br from-gray-800 via-gray-900 to-black rounded-2xl overflow-auto shadow-2xl border border-gray-700/50 mt-2 custom-scrollbar"
+                className="bg-white/[0.02] backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl border border-white/[0.08] mt-6"
                 style={{
                     maxHeight: '70vh',
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: '#3b82f6 #18181b',
-                    fontFamily: "'Lato', sans-serif"
+                    scrollbarWidth: 'none',
+                    fontFamily: "'Inter', -apple-system, sans-serif"
                 }}
             >
                 {/* Desktop Table */}
-                <table className="hidden md:table min-w-full text-left text-sm text-gray-200 table-fixed" style={{ fontFamily: "'Lato', sans-serif", fontSize: '13px' }}>
-                    <thead className="sticky top-0 z-40 bg-gradient-to-r from-gray-800 via-gray-900 to-black text-gray-300 uppercase text-xs tracking-wider border-b border-gray-600/50" style={{ fontFamily: "'Lato', sans-serif" }}>
+                <table className="hidden md:table min-w-full text-left text-sm table-fixed" style={{ fontFamily: "'Inter', -apple-system, sans-serif" }}>
+                    <thead className="sticky top-0 z-40 bg-white/[0.03] backdrop-blur-xl border-b border-white/[0.06]">
                         <tr>
-                            <th className="px-6 py-4 font-bold tracking-wide w-[35%] text-white">
-                                <div className="flex items-center space-x-2">
-                                    <Music className="h-4 w-4 text-blue-400" />
-                                    <span>MÚSICA</span>
+                            <th className="px-8 py-6 text-xs font-medium tracking-wider text-gray-400 uppercase w-[35%]">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                    <span>Música</span>
                                 </div>
                             </th>
-                            <th className="px-6 py-4 font-bold tracking-wide w-[20%] text-white">
-                                <span>ARTISTA</span>
+                            <th className="px-8 py-6 text-xs font-medium tracking-wider text-gray-400 uppercase w-[20%]">
+                                Artista
                             </th>
-                            <th className="px-6 py-4 font-bold tracking-wide w-[20%] text-white">
-                                <span>GÊNERO</span>
+                            <th className="px-8 py-6 text-xs font-medium tracking-wider text-gray-400 uppercase w-[20%]">
+                                Gênero
                             </th>
-                            <th className="px-6 py-4 font-bold tracking-wide w-[15%] text-white">
-                                <span>POOL</span>
+                            <th className="px-8 py-6 text-xs font-medium tracking-wider text-gray-400 uppercase w-[15%]">
+                                Pool
                             </th>
-                            <th className="px-6 py-4 text-right font-bold tracking-wide w-[10%] text-white">
-                                <span>AÇÕES</span>
+                            <th className="px-8 py-6 text-xs font-medium tracking-wider text-gray-400 uppercase text-right w-[10%]">
+                                Ações
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-800" style={{ fontFamily: "'Lato', sans-serif" }}>
+                    <tbody className="divide-y divide-white/[0.03]">
                         {tracks.length === 0 && (
                             <tr>
-                                <td colSpan={5} className="text-center py-16 text-gray-400">
-                                    <p>Nenhuma música encontrada.</p>
+                                <td colSpan={5} className="text-center py-20 text-gray-500">
+                                    <div className="flex flex-col items-center space-y-3">
+                                        <div className="w-12 h-12 rounded-full bg-gray-800/50 flex items-center justify-center">
+                                            <Music className="w-6 h-6 text-gray-600" />
+                                        </div>
+                                        <p className="text-sm">Nenhuma música encontrada</p>
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -479,12 +483,12 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                             <button
                                                 onClick={session ? () => handlePlayPauseClick(track) : undefined}
                                                 disabled={!session}
-                                                className={`absolute inset-0 flex items-center justify-center rounded-xl transition-all duration-300 cursor-pointer backdrop-blur-sm ${currentTrack?.id === track.id && isPlaying
-                                                    ? 'text-orange-400 bg-orange-600/20 border-2 border-orange-500/50'
-                                                    : 'text-gray-200 hover:text-orange-400 bg-black/60 hover:bg-orange-600/20'
+                                                className={`absolute inset-0 flex items-center justify-center rounded-xl transition-all duration-300 cursor-pointer bg-black/60 hover:bg-blue-600/80 backdrop-blur-sm ${currentTrack?.id === track.id && isPlaying
+                                                    ? 'text-white bg-blue-600/80'
+                                                    : 'text-gray-200 hover:text-white'
                                                     } ${!session ? 'opacity-60 cursor-not-allowed' : ''}`}
                                                 style={{ zIndex: 2 }}
-                                                title={!session ? 'Faça login para ouvir a prévia' : currentTrack?.id === track.id && isPlaying ? 'Tocando agora - Clique para pausar' : 'Clique para tocar'}
+                                                title={!session ? 'Faça login para ouvir a prévia' : ''}
                                             >
                                                 {isPlaying && currentTrack?.id === track.id ?
                                                     <Pause size={24} /> :
@@ -592,113 +596,103 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                     </tbody>
                 </table>
                 {/* Mobile Cards */}
-                <div className="md:hidden flex flex-col gap-3 p-4">
+                <div className="md:hidden flex flex-col gap-4 p-2">
                     {tracks.length === 0 && (
-                        <div className="text-center py-12 text-gray-400 bg-gradient-to-br from-[#202B3F]/50 via-[#27212B]/50 to-[#0C0C0C]/50 rounded-xl border border-gray-700/30">Nenhuma música encontrada.</div>
+                        <div className="text-center py-10 text-gray-400 bg-gray-900 rounded-xl">Nenhuma música encontrada.</div>
                     )}
                     {tracks.map((track: Track) => (
-                        <div key={track.id} className={`rounded-xl bg-gradient-to-br from-[#202B3F]/80 via-[#27212B]/80 to-[#0C0C0C]/80 border border-gray-700/30 shadow-xl backdrop-blur-sm ${currentTrack?.id === track.id ? 'ring-2 ring-blue-500/50' : ''}`}>
-                            {/* Header com informações da música */}
-                            <div className="p-4 border-b border-gray-700/30">
-                                <div className="flex items-center gap-3">
-                                    <div className="relative w-12 h-12 flex-shrink-0 group">
-                                        <img
-                                            src="https://i.ibb.co/FL1rxTtx/20250526-1938-Sound-Cloud-Cover-Design-remix-01jw7bwxq6eqj8sqztah5n296g.png"
-                                            alt={track.songName + ' thumbnail'}
-                                            className="w-12 h-12 rounded-lg object-cover border border-gray-600/50 shadow-lg group-hover:border-blue-500/70 transition-all duration-300"
-                                        />
-                                        <button
-                                            onClick={() => handlePlayPauseClick(track)}
-                                            className={`absolute inset-0 flex items-center justify-center rounded-lg transition-all duration-300 cursor-pointer bg-black/60 hover:bg-blue-600/80 backdrop-blur-sm ${currentTrack?.id === track.id && isPlaying ? 'text-white bg-blue-600/80' : 'text-gray-200 hover:text-white'}`}
-                                            style={{ zIndex: 2 }}
-                                        >
-                                            {isPlaying && currentTrack?.id === track.id ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
-                                        </button>
+                        <div key={track.id} className={`rounded-2xl bg-gradient-to-br from-gray-900 to-black border border-gray-800 shadow-xl p-4 flex flex-col gap-3 ${currentTrack?.id === track.id ? 'ring-2 ring-blue-500' : ''}`}>
+                            <div className="flex items-center gap-4">
+                                <div className="relative w-16 h-16 flex-shrink-0 group">
+                                    <img
+                                        src="https://i.ibb.co/FL1rxTtx/20250526-1938-Sound-Cloud-Cover-Design-remix-01jw7bwxq6eqj8sqztah5n296g.png"
+                                        alt={track.songName + ' thumbnail'}
+                                        className="w-16 h-16 rounded-xl object-cover border border-gray-700 shadow-lg group-hover:border-blue-500 transition-all duration-300"
+                                    />
+                                    <button
+                                        onClick={() => handlePlayPauseClick(track)}
+                                        className={`absolute inset-0 flex items-center justify-center rounded-xl transition-all duration-300 cursor-pointer bg-black/60 hover:bg-blue-600/80 backdrop-blur-sm ${currentTrack?.id === track.id && isPlaying ? 'text-white bg-blue-600/80' : 'text-gray-200 hover:text-white'}`}
+                                        style={{ zIndex: 2 }}
+                                    >
+                                        {isPlaying && currentTrack?.id === track.id ? <Pause size={28} /> : <Play size={28} className="ml-1" />}
+                                    </button>
+                                </div>
+                                <div className="flex flex-col flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-white text-base truncate">{track.songName}</span>
+                                        {track.isCommunity && (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-500/30 tracking-wide shadow-lg" style={{ fontSize: '9px' }}>
+                                                COMUNIDADE
+                                            </span>
+                                        )}
                                     </div>
-                                    <div className="flex flex-col flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-semibold text-white text-sm truncate">{track.songName}</span>
-                                            {track.isCommunity && (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-500/30 tracking-wide shadow-lg">
-                                                    COMUNIDADE
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span className="text-gray-300 text-xs truncate mb-1">{track.artist}</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-purple-600/80 to-blue-600/80 text-white border border-purple-500/30 tracking-wide shadow-md">{track.style}</span>
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-green-600/80 to-emerald-600/80 text-white border border-green-500/30 tracking-wide shadow-md">{track.pool || 'Nexor Records'}</span>
-                                        </div>
-                                    </div>
+                                    <span className="text-gray-300 text-sm truncate">{track.artist}</span>
+                                    <span className="inline-flex items-center px-3 py-1 mt-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white border border-purple-500/30 tracking-wide shadow-lg w-fit">{track.style}</span>
                                 </div>
                             </div>
-
-                            {/* Ações */}
-                            <div className="p-3">
-                                <div className="grid grid-cols-2 gap-2 mb-2">
-                                    {/* Download */}
-                                    <button
-                                        onClick={() => handleDownload(track)}
-                                        disabled={!session?.user?.is_vip || (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)}
-                                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
-                                ${!session?.user?.is_vip
-                                                ? 'bg-gray-700/50 text-gray-400 opacity-50 cursor-not-allowed'
-                                                : hasDownloadedBefore(track.id)
-                                                    ? downloadedTracksTime[track.id] > 0
-                                                        ? 'bg-blue-600/80 text-white border border-blue-500/50 shadow-blue-500/25 opacity-60 cursor-not-allowed'
-                                                        : 'bg-blue-600/80 text-white hover:bg-blue-700/80 border border-blue-500/50 shadow-blue-500/25'
-                                                    : 'bg-green-600/80 text-white hover:bg-green-700/80 border border-green-500/50 shadow-green-500/25'
-                                            }`}
-                                        title={!session?.user?.is_vip ? 'Apenas usuários VIP podem fazer downloads' : hasDownloadedBefore(track.id) ? downloadedTracksTime[track.id] > 0 ? `Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente` : 'Música já baixada' : "Download disponível"}
-                                    >
-                                        <Download size={16} />
-                                        <span>{getDownloadButtonText(track.id)}</span>
-                                    </button>
-
-                                    {/* Curtir */}
-                                    <button
-                                        onClick={() => handleLikeClick(track.id)}
-                                        disabled={!session?.user?.is_vip || liking === track.id}
-                                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
-                                ${likedTracksSet.has(track.id)
-                                                ? 'bg-pink-600/80 text-white border border-pink-500/50 shadow-pink-500/25'
-                                                : 'bg-gray-700/50 text-gray-200 hover:bg-pink-700/80 border border-gray-500/50 shadow-gray-500/25'
-                                            }`}
-                                        title={likedTracksSet.has(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                                    >
-                                        <Heart size={16} className={likedTracksSet.has(track.id) ? 'fill-pink-400 text-pink-200' : 'text-gray-300'} />
-                                        <span>{likedTracksSet.has(track.id) ? 'Curtido' : 'Curtir'}</span>
-                                    </button>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    {/* Reportar erro */}
-                                    <button
-                                        onClick={() => handleReportClick(track)}
-                                        className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-yellow-700/80 text-white hover:bg-yellow-800/80 border border-yellow-500/50 shadow-yellow-500/25"
-                                        title="Reportar problema com a música"
-                                    >
-                                        <AlertTriangle size={16} />
-                                        <span>Reportar</span>
-                                    </button>
-
-                                    {/* Copyright */}
-                                    <button
-                                        onClick={() => handleCopyrightClick(track)}
-                                        className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-gray-800/80 text-white hover:bg-purple-800/80 border border-purple-500/50 shadow-purple-500/25"
-                                        title="Reportar copyright"
-                                    >
-                                        <Copyright size={16} />
-                                        <span>Copyright</span>
-                                    </button>
-                                </div>
-
-                                {!session && (
-                                    <Link href="/planos" className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-blue-600/80 text-white hover:bg-blue-700/80 border border-blue-500/50 shadow-blue-500/25">
-                                        ASSINAR PLANO
-                                    </Link>
-                                )}
+                            <div className="flex flex-row flex-wrap gap-2 mt-2">
+                                {/* Download */}
+                                <button
+                                    onClick={() => handleDownload(track)}
+                                    disabled={!session?.user?.is_vip || (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
+                            ${!session?.user?.is_vip
+                                            ? 'bg-gray-700 text-gray-400 opacity-50 cursor-not-allowed'
+                                            : hasDownloadedBefore(track.id)
+                                                ? downloadedTracksTime[track.id] > 0
+                                                    ? 'bg-blue-600 text-white border border-blue-500 shadow-blue-500/25 opacity-60 cursor-not-allowed'
+                                                    : 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 shadow-blue-500/25'
+                                                : 'bg-green-600 text-white hover:bg-green-700 border border-green-500 shadow-green-500/25'
+                                        }`}
+                                    style={{ fontSize: '15px' }}
+                                    title={!session?.user?.is_vip ? 'Apenas usuários VIP podem fazer downloads' : hasDownloadedBefore(track.id) ? downloadedTracksTime[track.id] > 0 ? `Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente` : 'Música já baixada' : "Download disponível"}
+                                >
+                                    <Download size={20} />
+                                    <span>{getDownloadButtonText(track.id)}</span>
+                                </button>
+                                {/* Curtir */}
+                                <button
+                                    onClick={() => handleLikeClick(track.id)}
+                                    disabled={!session?.user?.is_vip || liking === track.id}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
+                            ${likedTracksSet.has(track.id)
+                                            ? 'bg-pink-600 text-white border border-pink-500 shadow-pink-500/25'
+                                            : 'bg-gray-700 text-gray-200 hover:bg-pink-700 border border-gray-500 shadow-gray-500/25'
+                                        }`}
+                                    style={{ fontSize: '15px' }}
+                                    title={likedTracksSet.has(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                                >
+                                    <Heart size={20} className={likedTracksSet.has(track.id) ? 'fill-pink-400 text-pink-200' : 'text-gray-300'} />
+                                    <span>{likedTracksSet.has(track.id) ? 'Curtido' : 'Curtir'}</span>
+                                </button>
                             </div>
+                            <div className="flex flex-row gap-2 mt-2">
+                                {/* Reportar erro */}
+                                <button
+                                    onClick={() => handleReportClick(track)}
+                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-yellow-700 text-white hover:bg-yellow-800 border border-yellow-500 shadow-yellow-500/25"
+                                    style={{ fontSize: '15px' }}
+                                    title="Reportar problema com a música"
+                                >
+                                    <AlertTriangle size={20} />
+                                    <span>Reportar</span>
+                                </button>
+                                {/* Copyright */}
+                                <button
+                                    onClick={() => handleCopyrightClick(track)}
+                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-gray-800 text-white hover:bg-purple-800 border border-purple-500 shadow-purple-500/25"
+                                    style={{ fontSize: '15px' }}
+                                    title="Reportar copyright"
+                                >
+                                    <Copyright size={20} />
+                                    <span>Copyright</span>
+                                </button>
+                            </div>
+                            {!session && (
+                                <Link href="/planos" className="mt-3 flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 shadow-blue-500/25">
+                                    ASSINAR PLANO
+                                </Link>
+                            )}
                         </div>
                     ))}
                 </div>

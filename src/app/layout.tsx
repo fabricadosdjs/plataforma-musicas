@@ -2,6 +2,7 @@
 import DynamicGradientBackground from '@/components/layout/DynamicGradientBackground';
 import MusicRouteHandler from '@/components/layout/MusicRouteHandler';
 import AudioPlayerRoot from '@/components/player/AudioPlayerRoot';
+import FooterPlayer from '@/components/player/FooterPlayerNew';
 import PWAInstaller from '@/components/pwa/PWAInstaller';
 import { AppProvider } from '@/context/AppContext';
 import AuthProvider from '@/context/AuthProvider';
@@ -105,7 +106,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={lato.className}>
+    <html lang="pt-BR" className={lato.variable}>
       <body>
         {/* Meta tags para melhorar downloads - movido para head.tsx ou metadata */}
         <meta
@@ -118,7 +119,7 @@ export default function RootLayout({
             <ExtensionDetector />
             <GlobalToastManager />
             <DynamicGradientBackground />
-            <AudioPlayerRoot />
+            <FooterPlayer />
             <PWAInstaller />
             {children}
             <Footer />

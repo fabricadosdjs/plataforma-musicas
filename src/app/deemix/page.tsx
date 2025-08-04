@@ -4,268 +4,386 @@ import Link from "next/link"
 import Image from "next/image"
 import Header from "@/components/layout/Header"
 import {
-    ArrowLeft, Music, Download, Check, ExternalLink, Settings, Zap, Shield, Globe, Headphones, Star, Clock,
-    Server, User, ArrowRight, HelpCircle, AudioLines, FolderKanban, WifiOff, ListMusic, Computer, Search as SearchIcon, Wrench as WrenchIcon
+    ArrowLeft, Music, Download, Check, ExternalLink, Settings, Zap, Shield, Globe, Headphones, Clock,
+    Server, User, ArrowRight, HelpCircle, AudioLines, FolderKanban, WifiOff, ListMusic, Computer,
+    Search as SearchIcon, Wrench as WrenchIcon, Sparkles, Crown, MessageCircle, Info, Star
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { motion } from "framer-motion"
+
+// Animation variants
+const cardVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0 }
+};
+
+interface FeatureCardProps {
+    icon: React.ComponentType<{ className?: string }>;
+    title: string;
+    description: string;
+    color: string;
+}
+
+const FeatureCard = ({ icon: Icon, title, description, color }: FeatureCardProps) => {
+    const colorClasses = {
+        purple: "border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-purple-600/5 hover:shadow-purple-500/20",
+        green: "border-green-500/30 bg-gradient-to-br from-green-500/10 to-green-600/5 hover:shadow-green-500/20",
+        blue: "border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-blue-600/5 hover:shadow-blue-500/20",
+        orange: "border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-orange-600/5 hover:shadow-orange-500/20",
+        teal: "border-teal-500/30 bg-gradient-to-br from-teal-500/10 to-teal-600/5 hover:shadow-teal-500/20",
+        pink: "border-pink-500/30 bg-gradient-to-br from-pink-500/10 to-pink-600/5 hover:shadow-pink-500/20"
+    };
+
+    const iconColorClasses = {
+        purple: "text-purple-400 bg-purple-500/20 border-purple-500/30",
+        green: "text-green-400 bg-green-500/20 border-green-500/30",
+        blue: "text-blue-400 bg-blue-500/20 border-blue-500/30",
+        orange: "text-orange-400 bg-orange-500/20 border-orange-500/30",
+        teal: "text-teal-400 bg-teal-500/20 border-teal-500/30",
+        pink: "text-pink-400 bg-pink-500/20 border-pink-500/30"
+    };
+
+    return (
+        <div className={`relative overflow-hidden rounded-2xl border backdrop-blur-sm p-8 transition-all duration-300 hover:scale-105 hover:shadow-xl group ${colorClasses[color as keyof typeof colorClasses]}`}>
+            <div className="relative">
+                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl border mb-6 ${iconColorClasses[color as keyof typeof iconColorClasses]}`}>
+                    <Icon className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-white mb-4 tracking-tight">{title}</h3>
+                <p className="text-gray-400 leading-relaxed">{description}</p>
+            </div>
+        </div>
+    );
+};
 
 // --- Componente Principal da Página ---
 export default function Deemix() {
-
     return (
-        <div className="min-h-screen" style={{ backgroundColor: '#1B1C1D' }}>
+        <div className="min-h-screen bg-[#04060E] text-white">
             <Header />
-            <main className="container mx-auto px-4 py-8 pt-20">
-                <div className="space-y-16">
 
-                    <div className="flex items-center justify-start gap-4">
-                        <Button
-                            className="bg-gray-800/50 border border-gray-700 hover:bg-gray-700/50"
+            {/* Hero Section */}
+            <section className="relative overflow-hidden pt-24 py-20 lg:py-32">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent"></div>
+                <div className="absolute inset-0">
+                    <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-20 right-10 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+                </div>
+
+                <div className="container mx-auto px-6 relative">
+                    <div className="max-w-4xl mx-auto text-center">
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8 }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full text-purple-400 text-sm font-bold mb-8"
                         >
-                            <Link href="/" className="flex items-center">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Voltar
-                            </Link>
-                        </Button>
-                        <h1 className="text-4xl font-bold text-white tracking-tight">DEEMIX</h1>
+                            <Music className="w-4 h-4" />
+                            DEEMIX PREMIUM DEDICADO
+                        </motion.div>
+
+                        <motion.h1
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                            className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-8"
+                        >
+                            DEEMIX
+                            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> PREMIUM</span>
+                        </motion.h1>
+
+                        <motion.p
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, delay: 0.4 }}
+                            className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed"
+                        >
+                            A ferramenta mais poderosa para baixar músicas do <span className="text-purple-400 font-bold">Deezer</span> em alta qualidade.
+                            Servidor dedicado, velocidade máxima e qualidade <span className="text-pink-400 font-bold">FLAC</span>.
+                        </motion.p>
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, delay: 0.6 }}
+                            className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+                        >
+                            <a
+                                href="https://plataformavip.nexorrecords.com.br/deemix"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group relative overflow-hidden px-10 py-5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-black text-xl rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/40 border border-purple-400/30"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <span className="relative flex items-center gap-3">
+                                    <Download className="w-6 h-6" />
+                                    ACESSAR AGORA
+                                </span>
+                            </a>
+
+                            <a
+                                href="https://wa.me/5551935052274?text=Quero%20saber%20mais%20sobre%20o%20Deemix"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group px-10 py-5 bg-transparent border-2 border-gray-600 text-gray-300 font-bold text-xl rounded-xl transition-all duration-300 hover:border-purple-400 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105"
+                            >
+                                <span className="flex items-center gap-3">
+                                    <MessageCircle className="w-6 h-6" />
+                                    FALAR NO WHATSAPP
+                                </span>
+                            </a>
+                        </motion.div>
                     </div>
+                </div>
+            </section>
 
-                    <section className="text-center">
-                        <h2 className="text-5xl md:text-6xl font-bold text-white tracking-tight mb-4">DEEMIX SERVER 2025</h2>
-                        <p className="mt-4 max-w-3xl mx-auto text-lg text-gray-300 text-center">
-                            A sua central de música pessoal que combina a simplicidade de um programa no seu PC com o poder de um servidor dedicado na nuvem para baixar todo o catálogo do Deezer e suas playlists do Spotify.
-                        </p>
-                    </section>
-
-                    <div className="flex justify-center">
-                        <div className="relative w-full max-w-4xl rounded-xl overflow-hidden shadow-2xl shadow-purple-900/50 border border-purple-800/50">
-                            <Image src="https://i.ibb.co/S4zXbpWM/deemix.png" alt="Deemix Interface" width={1200} height={600} className="object-contain" />
-                        </div>
-                    </div>
-
-                    <section>
-                        <div className="text-center mb-10">
-                            <h3 className="text-4xl font-bold text-white tracking-tight mb-4">A Vantagem do Servidor Dedicado</h3>
-                            <p className="mt-2 max-w-3xl mx-auto text-gray-300 text-center">
-                                Você instala o programa, mas a mágica acontece na nossa infraestrutura. Entenda por que nosso Deemix é incomparável.
+            <main className="space-y-12">
+                {/* Server Architecture Section */}
+                <section className="py-12 bg-gray-900/20">
+                    <div className="container mx-auto px-6">
+                        <div className="text-center mb-12">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full text-green-400 text-sm font-bold mb-4">
+                                <Server className="w-4 h-4" />
+                                ARQUITETURA PREMIUM
+                            </div>
+                            <h2 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-4">
+                                VANTAGEM DO
+                                <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent"> SERVIDOR DEDICADO</span>
+                            </h2>
+                            <p className="text-xl text-gray-400 max-w-4xl mx-auto">
+                                Você instala o programa, mas a mágica acontece na nossa infraestrutura de nuvem. Entenda por que nosso Deemix é incomparável.
                             </p>
                         </div>
 
-                        <div className="max-w-4xl mx-auto p-8 rounded-lg bg-gray-900/50 border border-gray-800">
-                            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 text-center mb-8">
-                                <div className="flex flex-col items-center">
-                                    <User size={40} className="text-blue-400" />
-                                    <p className="font-bold mt-2 text-white">Você (Seu PC)</p>
-                                    <p className="text-xs text-gray-500">Programa Leve</p>
-                                </div>
-                                <ArrowRight size={32} className="text-gray-600 hidden md:block animate-pulse" />
-                                <div className="flex flex-col items-center">
-                                    <Server size={40} className="text-green-400" />
-                                    <p className="font-bold mt-2 text-white">Nosso Servidor Contabo</p>
-                                    <p className="text-xs text-gray-500">Processamento e Download</p>
-                                </div>
-                                <ArrowRight size={32} className="text-gray-600 hidden md:block animate-pulse" />
-                                <div className="flex flex-col items-center">
-                                    <Music size={40} className="text-pink-400" />
-                                    <p className="font-bold mt-2 text-white">Servidores Deezer</p>
-                                    <p className="text-xs text-gray-500">Fonte das Músicas</p>
+                        <div className="max-w-4xl mx-auto">
+                            <div className="relative overflow-hidden rounded-2xl border border-gray-700/50 bg-gray-900/50 backdrop-blur-sm p-8 md:p-12">
+                                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-purple-500/5"></div>
+                                <div className="relative">
+                                    {/* Architecture Diagram */}
+                                    <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 mb-8">
+                                        <motion.div
+                                            className="flex flex-col items-center text-center"
+                                            initial={{ opacity: 0, x: -50 }}
+                                            whileInView={{ opacity: 1, x: 0 }}
+                                            transition={{ duration: 0.6 }}
+                                        >
+                                            <div className="w-20 h-20 bg-blue-500/20 rounded-2xl flex items-center justify-center mb-4 border border-blue-500/30">
+                                                <User className="h-10 w-10 text-blue-400" />
+                                            </div>
+                                            <h3 className="font-black text-white text-lg mb-2">SEU PC</h3>
+                                            <p className="text-gray-400 text-sm">Interface Leve</p>
+                                        </motion.div>
+
+                                        <ArrowRight className="hidden md:block h-8 w-8 text-green-400 animate-pulse" />
+
+                                        <motion.div
+                                            className="flex flex-col items-center text-center"
+                                            initial={{ opacity: 0, y: 50 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.6, delay: 0.2 }}
+                                        >
+                                            <div className="w-20 h-20 bg-green-500/20 rounded-2xl flex items-center justify-center mb-4 border border-green-500/30">
+                                                <Server className="h-10 w-10 text-green-400" />
+                                            </div>
+                                            <h3 className="font-black text-white text-lg mb-2">NOSSO SERVIDOR</h3>
+                                            <p className="text-gray-400 text-sm">Processamento Premium</p>
+                                        </motion.div>
+
+                                        <ArrowRight className="hidden md:block h-8 w-8 text-green-400 animate-pulse" />
+
+                                        <motion.div
+                                            className="flex flex-col items-center text-center"
+                                            initial={{ opacity: 0, x: 50 }}
+                                            whileInView={{ opacity: 1, x: 0 }}
+                                            transition={{ duration: 0.6, delay: 0.4 }}
+                                        >
+                                            <div className="w-20 h-20 bg-pink-500/20 rounded-2xl flex items-center justify-center mb-4 border border-pink-500/30">
+                                                <Music className="h-10 w-10 text-pink-400" />
+                                            </div>
+                                            <h3 className="font-black text-white text-lg mb-2">DEEZER</h3>
+                                            <p className="text-gray-400 text-sm">Fonte das Músicas</p>
+                                        </motion.div>
+                                    </div>
+
+                                    <p className="text-gray-300 text-lg mb-8 text-center leading-relaxed">
+                                        Quando você clica para baixar, nosso servidor na Contabo faz todo o trabalho pesado:
+                                        baixa as músicas em altíssima velocidade dos servidores do Deezer e envia diretamente para você.
+                                    </p>
+
+                                    {/* Benefits Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {[
+                                            { icon: Zap, title: "Velocidade Máxima", desc: "Downloads usando conexão de 1 Gbit/s, não a sua internet." },
+                                            { icon: Shield, title: "Sem Burocracia", desc: "Não precisa de VPN, proxies ou configurações complexas." },
+                                            { icon: WifiOff, title: "Economia de Banda", desc: "Seu plano de internet não é consumido pelos downloads." },
+                                            { icon: Crown, title: "Privacidade Total", desc: "Nosso servidor protege seu IP e garante anonimato." }
+                                        ].map((item, index) => (
+                                            <motion.div
+                                                key={index}
+                                                className="flex items-start gap-4 p-4 bg-gray-800/30 rounded-xl border border-gray-700/30"
+                                                initial={{ opacity: 0, y: 20 }}
+                                                whileInView={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.4, delay: index * 0.1 }}
+                                            >
+                                                <div className="p-2 bg-green-500/20 rounded-lg">
+                                                    <item.icon className="h-5 w-5 text-green-400" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-white mb-1">{item.title}</h4>
+                                                    <p className="text-gray-400 text-sm">{item.desc}</p>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-
-                            <p className="text-gray-300 mb-6 text-center">
-                                Quando você clica para baixar, o programa instalado no seu PC envia um comando para o nosso servidor na Contabo. É o nosso servidor que faz todo o trabalho pesado: ele baixa as músicas em altíssima velocidade dos servidores do Deezer e as envia diretamente para o seu computador.
-                            </p>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                                <div className="flex items-start gap-3 p-4 bg-gray-800/50 rounded">
-                                    <Check className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
-                                    <span><span className="font-bold text-white">Velocidade Máxima:</span> Os downloads usam a conexão de 1 Gbit/s do nosso servidor, não a sua.</span>
-                                </div>
-                                <div className="flex items-start gap-3 p-4 bg-gray-800/50 rounded">
-                                    <Check className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
-                                    <span><span className="font-bold text-white">Sem Burocracia:</span> Não precisa de VPN, proxies ou configurações complexas. É só usar.</span>
-                                </div>
-                                <div className="flex items-start gap-3 p-4 bg-gray-800/50 rounded">
-                                    <Check className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
-                                    <span><span className="font-bold text-white">Economia de Banda:</span> Seu plano de internet não é consumido pelo download pesado dos arquivos de áudio.</span>
-                                </div>
-                                <div className="flex items-start gap-3 p-4 bg-gray-800/50 rounded">
-                                    <Check className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
-                                    <span><span className="font-bold text-white">Privacidade e Segurança:</span> Nosso servidor atua como um intermediário, protegendo seu IP.</span>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section>
-                        <div className="text-center mb-10">
-                            <h3 className="text-4xl font-bold text-white tracking-tight mb-4">Deemix: A Ferramenta Definitiva para Baixar Músicas em Alta Qualidade</h3>
-                            <p className="mt-2 max-w-3xl mx-auto text-gray-300 text-center">
-                                O Deemix é uma das ferramentas mais poderosas e populares para quem deseja baixar músicas diretamente do Deezer — uma das maiores plataformas de streaming do mundo. Diferente de métodos ilegais de extração de áudio por gravação de tela ou plugins inseguros, o Deemix atua como um cliente direto que baixa a música exatamente como ela está hospedada, sem perda de qualidade.
-                            </p>
-                        </div>
-                        <div className="max-w-5xl mx-auto space-y-6">
-                            <h4 className="text-3xl font-bold text-green-400 text-center">🚀 Principais Funcionalidades do Deemix:</h4>
-                            <div className="space-y-4">
-                                <div className="p-4 bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg space-y-2">
-                                    <div className="flex items-center gap-3">
-                                        <AudioLines className="h-6 w-6 text-green-400" />
-                                        <h5 className="font-bold text-white text-lg">Downloads em Qualidade Hi-Fi (FLAC)</h5>
-                                    </div>
-                                    <p className="text-sm text-gray-400 ml-9">Um dos maiores destaques do Deemix é a possibilidade de baixar faixas em qualidade FLAC, ideal para profissionais de áudio. Você também pode escolher outros formatos como MP3 320kbps.</p>
-                                </div>
-                                <div className="p-4 bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg space-y-2">
-                                    <div className="flex items-center gap-3">
-                                        <ListMusic className="h-6 w-6 text-green-400" />
-                                        <h5 className="font-bold text-white text-lg">Download de Álbuns, Singles e Discografias</h5>
-                                    </div>
-                                    <p className="text-sm text-gray-400 ml-9">Baixe faixas individuais, álbuns completos, discografias de artistas e playlists pessoais ou públicas do Deezer ou Spotify.</p>
-                                </div>
-                                <div className="p-4 bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg space-y-2">
-                                    <div className="flex items-center gap-3">
-                                        <FolderKanban className="h-6 w-6 text-green-400" />
-                                        <h5 className="font-bold text-white text-lg">Gerenciamento Inteligente de Arquivos</h5>
-                                    </div>
-                                    <p className="text-sm text-gray-400 ml-9">As músicas baixadas vêm com tags ID3 completas, capa do álbum em alta resolução e são organizadas automaticamente em pastas.</p>
-                                </div>
-                                <div className="p-4 bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg space-y-2">
-                                    <div className="flex items-center gap-3">
-                                        <Computer className="h-6 w-6 text-green-400" />
-                                        <h5 className="font-bold text-white text-lg">Interface Intuitiva e Versátil</h5>
-                                    </div>
-                                    <p className="text-sm text-gray-400 ml-9">Disponível em versões com interface gráfica (GUI) ou linha de comando (CLI), compatíveis com Windows, macOS e Linux.</p>
-                                </div>
-                                <div className="p-4 bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg space-y-2">
-                                    <div className="flex items-center gap-3">
-                                        <SearchIcon className="h-6 w-6 text-green-400" />
-                                        <h5 className="font-bold text-white text-lg">Busca Integrada e Rápida</h5>
-                                    </div>
-                                    <p className="text-sm text-gray-400 ml-9">Procure diretamente por artistas, álbuns ou músicas sem precisar sair do programa.</p>
-                                </div>
-                            </div>
-                            <div className="pt-6">
-                                <h4 className="text-3xl font-bold text-amber-400 text-center">🛠️ Dicas de Uso Avançado:</h4>
-                                <ul className="mt-4 space-y-2 list-disc list-inside text-gray-400 text-sm">
-                                    <li><span className="font-bold text-white">Login com token do Deezer:</span> Para acessar conteúdos Hi-Fi ou playlists privadas, você pode usar seu token de login da conta Deezer.</li>
-                                    <li><span className="font-bold text-white">Download automático de lançamentos:</span> Com scripts externos, é possível configurar o Deemix para monitorar artistas e baixar automaticamente novos lançamentos.</li>
-                                    <li><span className="font-bold text-white">Automação com scripts:</span> Via CLI, você pode criar rotinas automáticas de download, muito útil para rádios, DJs ou quem precisa renovar playlists com frequência.</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </section>
-
-                    <div>
-                        <h3 className="text-3xl font-bold text-center mb-8 text-white">FUNCIONALIDADES EXCLUSIVAS</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <Card className="border-purple-600/30 bg-gradient-to-br from-purple-950/20 to-purple-900/10 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 group" style={{ backgroundColor: '#1B1C1D' }}>
-                                <CardHeader className="text-center pb-4">
-                                    <div className="w-16 h-16 mx-auto mb-4 bg-purple-600/20 rounded-full flex items-center justify-center group-hover:bg-purple-600/30 transition-colors">
-                                        <Zap className="h-8 w-8 text-purple-400" />
-                                    </div>
-                                    <CardTitle className="text-xl text-white">DOWNLOAD ULTRA RÁPIDO</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-center text-sm text-gray-300">
-                                        Downloads em velocidade máxima direto dos servidores do Deezer, sem limitações de banda.
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="border-green-600/30 bg-gradient-to-br from-green-950/20 to-green-900/10 hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 group" style={{ backgroundColor: '#1B1C1D' }}>
-                                <CardHeader className="text-center pb-4">
-                                    <div className="w-16 h-16 mx-auto mb-4 bg-green-600/20 rounded-full flex items-center justify-center group-hover:bg-green-600/30 transition-colors">
-                                        <Shield className="h-8 w-8 text-green-400" />
-                                    </div>
-                                    <CardTitle className="text-xl text-white">100% SEGURO</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-center text-sm text-gray-300">
-                                        Conexão criptografada e downloads seguros. Seus dados estão sempre protegidos.
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="border-blue-600/30 bg-gradient-to-br from-blue-950/20 to-blue-900/10 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 group" style={{ backgroundColor: '#1B1C1D' }}>
-                                <CardHeader className="text-center pb-4">
-                                    <div className="w-16 h-16 mx-auto mb-4 bg-blue-600/20 rounded-full flex items-center justify-center group-hover:bg-blue-600/30 transition-colors">
-                                        <Globe className="h-8 w-8 text-blue-400" />
-                                    </div>
-                                    <CardTitle className="text-xl text-white">ACESSO GLOBAL</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-center text-sm text-gray-300">
-                                        Acesse de qualquer lugar do mundo através do nosso servidor web dedicado.
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="border-orange-600/30 bg-gradient-to-br from-orange-950/20 to-orange-900/10 hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 group" style={{ backgroundColor: '#1B1C1D' }}>
-                                <CardHeader className="text-center pb-4">
-                                    <div className="w-16 h-16 mx-auto mb-4 bg-orange-600/20 rounded-full flex items-center justify-center group-hover:bg-orange-600/30 transition-colors">
-                                        <Headphones className="h-8 w-8 text-orange-400" />
-                                    </div>
-                                    <CardTitle className="text-xl text-white">QUALIDADE PREMIUM</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-center text-sm text-gray-300">
-                                        Downloads em FLAC, 320kbps MP3 e outras qualidades. Áudio perfeito para audiófilos.
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="border-red-600/30 bg-gradient-to-br from-red-950/20 to-red-900/10 hover:shadow-lg hover:shadow-red-500/20 transition-all duration-300 group" style={{ backgroundColor: '#1B1C1D' }}>
-                                <CardHeader className="text-center pb-4">
-                                    <div className="w-16 h-16 mx-auto mb-4 bg-red-600/20 rounded-full flex items-center justify-center group-hover:bg-red-600/30 transition-colors">
-                                        <Star className="h-8 w-8 text-red-400" />
-                                    </div>
-                                    <CardTitle className="text-xl text-white">INTERFACE INTUITIVA</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-center text-sm text-gray-300">
-                                        Design moderno e fácil de usar. Encontre e baixe suas músicas em segundos.
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="border-teal-600/30 bg-gradient-to-br from-teal-950/20 to-teal-900/10 hover:shadow-lg hover:shadow-teal-500/20 transition-all duration-300 group" style={{ backgroundColor: '#1B1C1D' }}>
-                                <CardHeader className="text-center pb-4">
-                                    <div className="w-16 h-16 mx-auto mb-4 bg-teal-600/20 rounded-full flex items-center justify-center group-hover:bg-teal-600/30 transition-colors">
-                                        <Clock className="h-8 w-8 text-teal-400" />
-                                    </div>
-                                    <CardTitle className="text-xl text-white">DISPONÍVEL 24/7</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-center text-sm text-gray-300">
-                                        O servidor que faz o download para você está sempre online. Baixe quando quiser.
-                                    </p>
-                                </CardContent>
-                            </Card>
                         </div>
                     </div>
+                </section>
 
-                    <Card className="border-blue-600/50 bg-blue-950/20 text-center" style={{ backgroundColor: '#1B1C1D' }}>
-                        <CardHeader>
-                            <CardTitle className="flex items-center justify-center gap-3 text-blue-400 text-2xl font-bold">
-                                <HelpCircle className="h-6 w-6" /> Entendendo a ARL e o Spotify
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4 text-gray-300">
-                            <p>A <span className="font-bold text-white">ARL (Account Request Login)</span> é sua chave de acesso ao catálogo do Deezer. Ao assinar, nós fornecemos uma ARL Premium já configurada. Basta inseri-la uma vez nas configurações do Deemix e todo o conteúdo em alta qualidade será liberado. Você não precisa ter uma conta Deezer.</p>
-                            <p>Para o <span className="font-bold text-white">Spotify</span>, você pode conectar sua própria conta (gratuita ou premium) nas configurações. O Deemix irá ler suas playlists, encontrar as músicas no catálogo do Deezer e baixá-las para você na melhor qualidade disponível.</p>
-                        </CardContent>
-                    </Card>
+                {/* Features Section */}
+                <section className="py-12">
+                    <div className="container mx-auto px-6">
+                        <div className="text-center mb-12">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full text-purple-400 text-sm font-bold mb-4">
+                                <Sparkles className="w-4 h-4" />
+                                RECURSOS EXCLUSIVOS
+                            </div>
+                            <h3 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-4">
+                                FUNCIONALIDADES
+                                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> PREMIUM</span>
+                            </h3>
+                        </div>
 
-                    <div className="flex justify-center">
-                        <Card className="border-blue-600/30 bg-black/50 hover:shadow-md hover:shadow-blue-500/20 transition-all duration-300" style={{ backgroundColor: '#1B1C1D' }}>
+                        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {[
+                                { icon: Zap, title: "DOWNLOAD ULTRA RÁPIDO", description: "Downloads em velocidade máxima direto dos servidores do Deezer, sem limitações.", color: "purple" },
+                                { icon: Shield, title: "100% SEGURO", description: "Conexão criptografada e downloads seguros. Seus dados sempre protegidos.", color: "green" },
+                                { icon: Globe, title: "ACESSO GLOBAL", description: "Acesse de qualquer lugar do mundo através do nosso servidor web dedicado.", color: "blue" },
+                                { icon: Headphones, title: "QUALIDADE PREMIUM", description: "Downloads em FLAC, MP3 320kbps e outros formatos de alta qualidade.", color: "orange" },
+                                { icon: ListMusic, title: "PLAYLISTS COMPLETAS", description: "Baixe álbuns, discografias e playlists do Spotify e Deezer inteiras.", color: "teal" },
+                                { icon: FolderKanban, title: "ORGANIZAÇÃO AUTO", description: "Músicas organizadas automaticamente com tags e capas em alta resolução.", color: "pink" }
+                            ].map((feature, index) => (
+                                <motion.div
+                                    key={index}
+                                    variants={cardVariants}
+                                    initial="hidden"
+                                    whileInView="visible"
+                                    viewport={{ once: true, amount: 0.3 }}
+                                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                                >
+                                    <FeatureCard {...feature} />
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* CTA Section */}
+                <section className="py-12 bg-gray-900/20">
+                    <div className="container mx-auto px-6">
+                        <div className="max-w-4xl mx-auto text-center">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full text-green-400 text-sm font-bold mb-6">
+                                <Check className="w-4 h-4" />
+                                PRONTO PARA USAR
+                            </div>
+
+                            <h3 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6">
+                                COMECE A BAIXAR
+                                <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent"> AGORA MESMO</span>
+                            </h3>
+
+                            <p className="text-xl text-gray-300 mb-10 max-w-3xl mx-auto">
+                                Acesse nossa plataforma premium e descubra a liberdade de ter toda sua música favorita em alta qualidade, sem limites.
+                            </p>                            {/* Action Buttons */}
+                            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                                <a
+                                    href="https://plataformavip.nexorrecords.com.br/deemix"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group relative overflow-hidden px-10 py-5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-black text-xl rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/40 border border-purple-400/30"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    <span className="relative flex items-center gap-3">
+                                        <Download className="w-6 h-6" />
+                                        ACESSAR DEEMIX PREMIUM
+                                    </span>
+                                </a>
+
+                                <a
+                                    href="https://plataformavip.nexorrecords.com.br/deemix-gerenciar"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group px-10 py-5 bg-transparent border-2 border-gray-600 text-gray-300 font-bold text-xl rounded-xl transition-all duration-300 hover:border-purple-400 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105"
+                                >
+                                    <span className="flex items-center gap-3">
+                                        <Settings className="w-6 h-6" />
+                                        GERENCIAR CONTA
+                                    </span>
+                                </a>
+                            </div>
+
+                            {/* WhatsApp Support */}
+                            <div className="mt-16 max-w-2xl mx-auto">
+                                <div className="relative overflow-hidden rounded-2xl border border-gray-700/50 bg-gray-900/50 backdrop-blur-sm p-8">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5"></div>
+                                    <div className="relative text-center">
+                                        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 rounded-full border border-green-500/30 mb-6">
+                                            <MessageCircle className="h-8 w-8 text-green-400" />
+                                        </div>
+                                        <h4 className="text-2xl font-bold text-white mb-4">Precisa de Ajuda?</h4>
+                                        <p className="text-gray-400 mb-6">
+                                            Nossa equipe está pronta para te ajudar com qualquer dúvida sobre o Deemix Premium.
+                                        </p>
+                                        <a
+                                            href="https://wa.me/5551935052274?text=Olá,%20preciso%20de%20ajuda%20com%20o%20Deemix"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-3 px-8 py-4 bg-green-500/20 border border-green-500/50 text-green-400 font-bold rounded-xl transition-all duration-300 hover:bg-green-500/30 hover:scale-105"
+                                        >
+                                            <MessageCircle className="w-5 h-5" />
+                                            FALAR NO WHATSAPP
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            {/* Seção extra de cards interativos e informações premium */}
+            <section className="py-12 bg-gradient-to-br from-purple-900/10 to-green-900/10">
+                <div className="container mx-auto px-6">
+                    <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <Card className="bg-gray-900/60 border border-purple-700/30 backdrop-blur-sm p-8 hover:scale-105 transition-all duration-300">
                             <CardHeader>
-                                <CardTitle className="flex items-center justify-center gap-3 text-blue-400 text-2xl font-bold">
-                                    <HelpCircle className="h-6 w-6" /> Como Funciona
-                                </CardTitle>
+                                <CardTitle className="flex items-center gap-2 text-purple-400"><Sparkles className="w-6 h-6" /> Dica Pro</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4 text-gray-300">
-                                <p>O Deemix é uma ferramenta poderosa que permite baixar músicas diretamente do Deezer em alta qualidade. Nossa versão inclui um servidor dedicado que processa os downloads para você, garantindo velocidade máxima e estabilidade.</p>
-                                <p>Para começar, baixe o programa Deemix e configure com as credenciais fornecidas em seu perfil. O sistema irá conectar automaticamente ao nosso servidor e você poderá baixar qualquer música do catálogo do Deezer.</p>
+                            <CardContent>
+                                <p>Use o Deemix para baixar álbuns completos do Deezer com qualidade FLAC. Organize sua coleção com capas e metadados!</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-gray-900/60 border border-green-700/30 backdrop-blur-sm p-8 hover:scale-105 transition-all duration-300">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-green-400"><Info className="w-6 h-6" /> Tutorial Rápido</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p>Para baixar playlists, basta colar o link da Deezer, escolher o formato e clicar em baixar. Simples e eficiente!</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-gray-900/60 border border-blue-700/30 backdrop-blur-sm p-8 hover:scale-105 transition-all duration-300">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-blue-400"><Star className="w-6 h-6" /> Depoimento VIP</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p>“O Deemix é perfeito para baixar músicas em alta qualidade. Recomendo para todos que querem praticidade e organização!” <span className="text-blue-400">— DJ Nextor</span></p>
                             </CardContent>
                         </Card>
                     </div>
                 </div>
-            </main>
+            </section>
         </div>
-    )
+    );
 }

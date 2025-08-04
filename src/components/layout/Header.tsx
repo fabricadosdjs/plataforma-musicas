@@ -127,7 +127,7 @@ const Header = ({
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-40 bg-gradient-to-r from-[#1B1C1D] to-[#2a2a2e] shadow-lg border-b border-gray-700/50 py-3">
+    <header className="fixed top-0 left-0 w-full z-40 bg-gradient-to-r from-[#202B3F]/95 via-[#27212B]/95 to-[#0C0C0C]/95 backdrop-blur-md shadow-lg border-b border-gray-700/30 py-3">
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center space-x-4 md:space-x-6">
           {/* Mobile menu button */}
@@ -147,62 +147,228 @@ const Header = ({
             </div>
           </Link>
           {/* Desktop nav */}
-          <nav className="hidden md:flex space-x-6 text-gray-300 font-medium items-center">
-            <Link href="/" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Home className="h-4 w-4" />Home</Link>
-            <Link href="/new" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><CheckCircle className="h-4 w-4" />Novidades</Link>
-            <Link href="/community" className="flex items-center gap-1 hover:text-purple-400 transition-colors"><Users className="h-4 w-4" />Comunidade</Link>
-            <Link href="/trending" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Star className="h-4 w-4" />Trending</Link>
-            <Link href="/plans" className="flex items-center gap-1 hover:text-yellow-400 transition-colors"><Crown className="h-4 w-4" />Planos</Link>
+          {/* Professional Desktop Navigation */}
+          <nav className="hidden md:flex space-x-2 text-gray-300 font-medium items-center">
+            <Link
+              href="/"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-blue-400 hover:bg-blue-500/10 hover:scale-105 border border-transparent hover:border-blue-500/30 shadow-lg hover:shadow-blue-500/20"
+            >
+              <Home className="h-4 w-4" />
+              HOME
+            </Link>
+
+            <Link
+              href="/new"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-emerald-400 hover:bg-emerald-500/10 hover:scale-105 border border-transparent hover:border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20"
+            >
+              <CheckCircle className="h-4 w-4" />
+              NOVIDADES
+            </Link>
+
+            <Link
+              href="/community"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105 border border-transparent hover:border-purple-500/30 shadow-lg hover:shadow-purple-500/20"
+            >
+              <Users className="h-4 w-4" />
+              COMUNIDADE
+            </Link>
+
+            <Link
+              href="/trending"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-orange-400 hover:bg-orange-500/10 hover:scale-105 border border-transparent hover:border-orange-500/30 shadow-lg hover:shadow-orange-500/20"
+            >
+              <Star className="h-4 w-4" />
+              TRENDING
+            </Link>
+
+            <Link
+              href="/plans"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-yellow-400 hover:bg-yellow-500/10 hover:scale-105 border border-transparent hover:border-yellow-500/30 shadow-lg hover:shadow-yellow-500/20"
+            >
+              <Crown className="h-4 w-4" />
+              PLANOS VIP
+            </Link>
+
             {session?.user?.isAdmin && (
-              <Link href="/admin/users" className="flex items-center gap-1 hover:text-blue-400 transition-colors"><Crown className="h-4 w-4" />Admin</Link>
+              <Link
+                href="/admin/users"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
+              >
+                <Crown className="h-4 w-4" />
+                ADMIN
+              </Link>
             )}
-            {/* Ferramentas Dropdown */}
+
+            {/* Professional Tools Dropdown */}
             <div className="relative group" tabIndex={0}>
-              <button className="flex items-center gap-1 hover:text-green-400 transition-colors focus:outline-none" tabIndex={-1}>
-                <Wrench className="h-4 w-4" /> Ferramentas
-                <svg className="ml-1 h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-cyan-400 hover:bg-cyan-500/10 hover:scale-105 border border-transparent hover:border-cyan-500/30 shadow-lg hover:shadow-cyan-500/20 focus:outline-none group-hover:bg-cyan-500/20" tabIndex={-1}>
+                <Wrench className="h-4 w-4" />
+                FERRAMENTAS
+                <svg className="ml-1 h-3 w-3 transition-transform duration-300 group-hover:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
-              <div className="absolute left-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-200 pointer-events-none" tabIndex={0} onMouseDown={e => e.preventDefault()}>
-                <Link href="/debridlink" className="flex items-center gap-2 px-4 py-2 text-gray-200 hover:bg-gray-800 rounded-t-lg"><Link2 className="h-4 w-4 text-green-400" />DebridLink</Link>
-                <Link href="/allavsoft" className="flex items-center gap-2 px-4 py-2 text-gray-200 hover:bg-gray-800"><Download className="h-4 w-4 text-blue-400" />Allavsoft</Link>
-                <Link href="/deemix" className="flex items-center gap-2 px-4 py-2 text-gray-200 hover:bg-purple-800 rounded-b-lg"><Wrench className="h-4 w-4 text-purple-400" />Deemix</Link>
+              <div className="absolute left-0 mt-2 w-56 bg-gradient-to-br from-[#202B3F]/95 via-[#27212B]/95 to-[#0C0C0C]/95 backdrop-blur-xl border border-gray-600/30 rounded-xl shadow-2xl z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-all duration-300 pointer-events-none overflow-hidden" tabIndex={0} onMouseDown={e => e.preventDefault()}>
+                <Link
+                  href="/debridlink"
+                  className="flex items-center gap-3 px-4 py-3.5 text-gray-200 hover:bg-gradient-to-r hover:from-green-600/20 hover:to-green-700/20 border-b border-gray-700/50 transition-all duration-300 font-semibold tracking-wide hover:text-green-300 hover:scale-[1.02] transform"
+                >
+                  <Link2 className="h-4 w-4 text-green-400" />
+                  DEBRIDLINK
+                </Link>
+                <Link
+                  href="/allavsoft"
+                  className="flex items-center gap-3 px-4 py-3.5 text-gray-200 hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-blue-700/20 border-b border-gray-700/50 transition-all duration-300 font-semibold tracking-wide hover:text-blue-300 hover:scale-[1.02] transform"
+                >
+                  <Download className="h-4 w-4 text-blue-400" />
+                  ALLAVSOFT
+                </Link>
+                <Link
+                  href="/deemix"
+                  className="flex items-center gap-3 px-4 py-3.5 text-gray-200 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-purple-700/20 transition-all duration-300 font-semibold tracking-wide hover:text-purple-300 hover:scale-[1.02] transform"
+                >
+                  <Wrench className="h-4 w-4 text-purple-400" />
+                  DEEMIX
+                </Link>
               </div>
             </div>
           </nav>
         </div>
-        {/* Mobile Drawer */}
+        {/* Professional Mobile Drawer */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-50 flex">
-            {/* Overlay */}
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
-            {/* Drawer */}
-            <div className="relative bg-[#18181b] w-72 max-w-[80vw] h-full shadow-2xl border-r border-gray-800 animate-slideInLeft flex flex-col">
-              <button className="absolute top-4 right-4 p-2 rounded-full text-gray-400 hover:bg-gray-800" onClick={() => setMobileMenuOpen(false)} aria-label="Fechar menu">
-                <X className="h-7 w-7" />
-              </button>
-              <div className="flex flex-col items-center mt-10 mb-6">
-                <Image src={NEW_LOGO_URL} alt="Logo" width={120} height={32} className="mb-2" />
+            {/* Enhanced Overlay */}
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-md" onClick={() => setMobileMenuOpen(false)}></div>
+            {/* Professional Drawer */}
+            <div className="relative bg-gradient-to-br from-[#202B3F]/98 via-[#27212B]/98 to-[#0C0C0C]/98 backdrop-blur-xl w-80 max-w-[85vw] h-full shadow-2xl border-r border-gray-600/30 animate-slideInLeft flex flex-col overflow-hidden">
+              {/* Header with Close Button */}
+              <div className="relative p-6 border-b border-gray-700/30 bg-gradient-to-r from-[#202B3F]/50 via-[#27212B]/50 to-[#0C0C0C]/50">
+                <button
+                  className="absolute top-4 right-4 p-2 rounded-xl text-gray-400 hover:bg-gray-700/50 hover:text-white transition-all duration-300 hover:scale-110"
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-label="Fechar menu"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+
+                {/* Professional Logo Section */}
+                <div className="flex flex-col items-center mb-4">
+                  <Image src={NEW_LOGO_URL} alt="Logo" width={140} height={36} className="mb-3 drop-shadow-lg" />
+                  <div className="text-center">
+                    <h3 className="text-white font-bold text-lg tracking-wider">PLATAFORMA DJ</h3>
+                    <p className="text-gray-400 text-sm font-medium">Sua música, seu estilo</p>
+                  </div>
+                </div>
               </div>
-              <nav className="flex flex-col gap-2 px-6">
-                <Link href="/" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Home className="h-5 w-5" />Home</Link>
-                <Link href="/new" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><CheckCircle className="h-5 w-5" />Novidades</Link>
-                <Link href="/community" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-purple-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Users className="h-5 w-5" />Comunidade</Link>
-                <Link href="/trending" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Star className="h-5 w-5" />Trending</Link>
-                <Link href="/plans" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-yellow-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Crown className="h-5 w-5" />Planos</Link>
-                <Link href="/deemix" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-purple-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Wrench className="h-5 w-5 text-purple-400" />Deemix</Link>
+
+              {/* Professional Navigation */}
+              <nav className="flex flex-col gap-2 px-6 py-4 flex-1">
+                <Link
+                  href="/"
+                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-blue-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-blue-300 hover:scale-[1.02] transform border border-transparent hover:border-blue-500/30 shadow-lg hover:shadow-blue-500/20"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Home className="h-5 w-5" />
+                  HOME
+                </Link>
+
+                <Link
+                  href="/new"
+                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-emerald-600/20 hover:to-emerald-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-emerald-300 hover:scale-[1.02] transform border border-transparent hover:border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <CheckCircle className="h-5 w-5" />
+                  NOVIDADES
+                </Link>
+
+                <Link
+                  href="/community"
+                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-purple-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-purple-300 hover:scale-[1.02] transform border border-transparent hover:border-purple-500/30 shadow-lg hover:shadow-purple-500/20"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Users className="h-5 w-5" />
+                  COMUNIDADE
+                </Link>
+
+                <Link
+                  href="/trending"
+                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-orange-600/20 hover:to-orange-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-orange-300 hover:scale-[1.02] transform border border-transparent hover:border-orange-500/30 shadow-lg hover:shadow-orange-500/20"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Star className="h-5 w-5" />
+                  TRENDING
+                </Link>
+
+                <Link
+                  href="/plans"
+                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-yellow-600/20 hover:to-yellow-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-yellow-300 hover:scale-[1.02] transform border border-transparent hover:border-yellow-500/30 shadow-lg hover:shadow-yellow-500/20"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Crown className="h-5 w-5" />
+                  PLANOS VIP
+                </Link>
+
                 {session?.user?.isAdmin && (
-                  <Link href="/admin/users" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Crown className="h-5 w-5" />Admin</Link>
+                  <Link
+                    href="/admin/users"
+                    className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-red-300 hover:scale-[1.02] transform border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Crown className="h-5 w-5" />
+                    ADMIN
+                  </Link>
                 )}
-                <div className="border-t border-gray-700 my-2"></div>
-                <Link href="/debridlink" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-green-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Link2 className="h-5 w-5 text-green-400" />DebridLink</Link>
-                <Link href="/allavsoft" className="flex items-center gap-2 py-3 px-2 rounded-lg text-gray-200 hover:bg-blue-900/30 text-base font-semibold" onClick={() => setMobileMenuOpen(false)}><Download className="h-5 w-5 text-blue-400" />Allavsoft</Link>
+
+                {/* Tools Section */}
+                <div className="border-t border-gray-700/50 my-4 pt-4">
+                  <h4 className="text-gray-400 text-xs uppercase tracking-wider font-bold mb-3 px-4">FERRAMENTAS</h4>
+
+                  <Link
+                    href="/debridlink"
+                    className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-green-600/20 hover:to-green-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-green-300 hover:scale-[1.02] transform border border-transparent hover:border-green-500/30 shadow-lg hover:shadow-green-500/20"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Link2 className="h-5 w-5 text-green-400" />
+                    DEBRIDLINK
+                  </Link>
+
+                  <Link
+                    href="/allavsoft"
+                    className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-blue-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-blue-300 hover:scale-[1.02] transform border border-transparent hover:border-blue-500/30 shadow-lg hover:shadow-blue-500/20"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Download className="h-5 w-5 text-blue-400" />
+                    ALLAVSOFT
+                  </Link>
+
+                  <Link
+                    href="/deemix"
+                    className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-purple-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-purple-300 hover:scale-[1.02] transform border border-transparent hover:border-purple-500/30 shadow-lg hover:shadow-purple-500/20"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Wrench className="h-5 w-5 text-purple-400" />
+                    DEEMIX
+                  </Link>
+                </div>
               </nav>
-              <div className="flex-1"></div>
-              <div className="p-6 border-t border-gray-700">
+
+              {/* Professional Footer */}
+              <div className="p-6 border-t border-gray-700/50 bg-gradient-to-r from-gray-800/30 to-gray-900/50">
                 {session?.user ? (
-                  <button className="w-full py-2 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition" onClick={() => { setMobileMenuOpen(false); signOut({ callbackUrl: getSignInUrl() }); }}>Sair</button>
+                  <button
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white font-bold tracking-wider hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-red-500/30 hover:scale-[1.02] transform border border-red-500/30"
+                    onClick={() => { setMobileMenuOpen(false); signOut({ callbackUrl: getSignInUrl() }); }}
+                  >
+                    SAIR DA CONTA
+                  </button>
                 ) : (
-                  <Link href="/auth/sign-in" className="w-full block py-2 rounded-lg bg-blue-600 text-white text-center font-bold hover:bg-blue-700 transition" onClick={() => setMobileMenuOpen(false)}>Entrar</Link>
+                  <Link
+                    href="/auth/sign-in"
+                    className="w-full block py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center font-bold tracking-wider hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transform border border-blue-500/30"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    ENTRAR NA CONTA
+                  </Link>
                 )}
               </div>
             </div>
@@ -300,9 +466,6 @@ const Header = ({
                       <Crown className="h-4 w-4 text-yellow-400 absolute -top-1 -right-1 bg-gray-900 rounded-full p-0.5" />
                     )}
                   </div>
-                  <span className="hidden md:block text-sm font-semibold">
-                    {session.user.name?.split(' ')[0] || 'Usuário'}
-                  </span>
                 </button>
                 {showProfileMenu && (
                   <div className="absolute right-0 mt-2 w-72 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 p-6">
