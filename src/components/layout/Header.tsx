@@ -127,7 +127,7 @@ const Header = ({
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-40 bg-gradient-to-r from-[#202B3F]/95 via-[#27212B]/95 to-[#0C0C0C]/95 backdrop-blur-md shadow-lg border-b border-gray-700/30 py-3">
+    <header className="fixed top-0 left-0 w-full z-40 bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-md shadow-lg border-b border-gray-700/30 py-3">
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center space-x-4 md:space-x-6">
           {/* Mobile menu button */}
@@ -208,7 +208,7 @@ const Header = ({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className="absolute left-0 mt-2 w-56 bg-gradient-to-br from-[#202B3F]/95 via-[#27212B]/95 to-[#0C0C0C]/95 backdrop-blur-xl border border-gray-600/30 rounded-xl shadow-2xl z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-all duration-300 pointer-events-none overflow-hidden" tabIndex={0} onMouseDown={e => e.preventDefault()}>
+              <div className="absolute left-0 mt-2 w-56 bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-xl border border-gray-600/30 rounded-xl shadow-2xl z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-all duration-300 pointer-events-none overflow-hidden" tabIndex={0} onMouseDown={e => e.preventDefault()}>
                 <Link
                   href="/debridlink"
                   className="flex items-center gap-3 px-4 py-3.5 text-gray-200 hover:bg-gradient-to-r hover:from-green-600/20 hover:to-green-700/20 border-b border-gray-700/50 transition-all duration-300 font-semibold tracking-wide hover:text-green-300 hover:scale-[1.02] transform"
@@ -240,9 +240,9 @@ const Header = ({
             {/* Enhanced Overlay */}
             <div className="fixed inset-0 bg-black/70 backdrop-blur-md" onClick={() => setMobileMenuOpen(false)}></div>
             {/* Professional Drawer */}
-            <div className="relative bg-gradient-to-br from-[#202B3F]/98 via-[#27212B]/98 to-[#0C0C0C]/98 backdrop-blur-xl w-80 max-w-[85vw] h-full shadow-2xl border-r border-gray-600/30 animate-slideInLeft flex flex-col overflow-hidden">
+            <div className="relative bg-gradient-to-br from-gray-900/98 via-gray-800/98 to-black/98 backdrop-blur-xl w-80 max-w-[85vw] h-full shadow-2xl border-r border-gray-600/30 animate-slideInLeft flex flex-col overflow-hidden">
               {/* Header with Close Button */}
-              <div className="relative p-6 border-b border-gray-700/30 bg-gradient-to-r from-[#202B3F]/50 via-[#27212B]/50 to-[#0C0C0C]/50">
+              <div className="relative p-6 border-b border-gray-700/30 bg-gradient-to-r from-gray-800/50 via-gray-900/50 to-black/50">
                 <button
                   className="absolute top-4 right-4 p-2 rounded-xl text-gray-400 hover:bg-gray-700/50 hover:text-white transition-all duration-300 hover:scale-110"
                   onClick={() => setMobileMenuOpen(false)}

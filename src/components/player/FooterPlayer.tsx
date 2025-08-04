@@ -8,16 +8,17 @@ import { useSession } from 'next-auth/react';
 import { Track } from '@/types/track';
 
 const FooterPlayer = () => {
-    const { currentTrack, isPlaying, togglePlayPause, nextTrack } = useAppContext();
+    const { currentTrack, isPlaying, togglePlayPause, nextTrack, previousTrack } = useAppContext();
     const { data: session } = useSession();
-    const [volume, setVolume] = useState(0.7);
+    const [volume, setVolume] = useState(1.0); // Começar com 100%
     const [isMuted, setIsMuted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const audioRef = useRef<HTMLAudioElement>(null);
     const waveformRef = useRef<HTMLCanvasElement>(null);
-    const animationRef = useRef<number>();
+    const animationFrameId = useRef<number>();
     const [minimized, setMinimized] = useState(false);
+    const [isChangingVolume, setIsChangingVolume] = useState(false);
 
     // Criar dados simulados de waveform
     const generateWaveformData = () => {
@@ -30,14 +31,14 @@ const FooterPlayer = () => {
     const [waveformData] = useState(generateWaveformData());
 
     useEffect(() => {
-        if (audioRef.current) {
+        if (audioRef.current && !isChangingVolume) {
             if (isPlaying) {
                 audioRef.current.play().catch(() => { });
             } else {
                 audioRef.current.pause();
             }
         }
-    }, [isPlaying, currentTrack]);
+    }, [isPlaying, currentTrack, isChangingVolume]);
 
     // Desenhar waveform
     const drawWaveform = () => {
@@ -61,7 +62,7 @@ const FooterPlayer = () => {
 
             // Cor baseada no progresso
             const isPlayed = index / waveformData.length <= progress;
-            ctx.fillStyle = isPlayed ? '#FF7F00' : '#4A5568'; // Orange for played, gray for unplayed
+            ctx.fillStyle = isPlayed ? '#3b82f6' : '#4A5568'; // Blue for played, gray for unplayed
 
             ctx.fillRect(x, y, Math.max(barWidth - 1, 1), barHeight);
         });
@@ -72,7 +73,7 @@ const FooterPlayer = () => {
         const animate = () => {
             drawWaveform();
             if (isPlaying) {
-                animationRef.current = requestAnimationFrame(animate);
+                animationFrameId.current = requestAnimationFrame(animate);
             }
         };
 
@@ -81,11 +82,34 @@ const FooterPlayer = () => {
         }
 
         return () => {
-            if (animationRef.current) {
-                cancelAnimationFrame(animationRef.current);
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
             }
         };
     }, [currentTrack, isPlaying, currentTime, duration, waveformData]);
+
+    const animateProgress = () => {
+        if (audioRef.current) {
+            setCurrentTime(audioRef.current.currentTime);
+            animationFrameId.current = requestAnimationFrame(animateProgress);
+        }
+    };
+
+    useEffect(() => {
+        if (isPlaying) {
+            animationFrameId.current = requestAnimationFrame(animateProgress);
+        } else {
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+            }
+        }
+
+        return () => {
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+            }
+        };
+    }, [isPlaying]);
 
     // Gerenciar áudio
     useEffect(() => {
@@ -94,13 +118,10 @@ const FooterPlayer = () => {
         const audio = audioRef.current;
         audio.src = currentTrack.previewUrl;
         audio.volume = isMuted ? 0 : volume;
+        audio.load(); // Força o carregamento do áudio
 
         const handleLoadedMetadataEvent = () => {
             setDuration(audio.duration);
-        };
-
-        const handleTimeUpdateEvent = () => {
-            setCurrentTime(audio.currentTime);
         };
 
         const handleEndedEvent = () => {
@@ -109,15 +130,20 @@ const FooterPlayer = () => {
         };
 
         audio.addEventListener('loadedmetadata', handleLoadedMetadataEvent);
-        audio.addEventListener('timeupdate', handleTimeUpdateEvent);
         audio.addEventListener('ended', handleEndedEvent);
 
         return () => {
             audio.removeEventListener('loadedmetadata', handleLoadedMetadataEvent);
-            audio.removeEventListener('timeupdate', handleTimeUpdateEvent);
             audio.removeEventListener('ended', handleEndedEvent);
         };
-    }, [currentTrack, volume, isMuted, nextTrack]);
+    }, [currentTrack, nextTrack]);
+
+    // Atualizar volume separadamente para evitar reiniciar a música
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.volume = isMuted ? 0 : volume;
+        }
+    }, [volume, isMuted]);
 
     // Controlar play/pause
     useEffect(() => {
@@ -153,35 +179,46 @@ const FooterPlayer = () => {
     const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newVolume = parseFloat(e.target.value);
         setVolume(newVolume);
+        setIsChangingVolume(true);
+
         if (audioRef.current) {
-            // Não reinicia a música, só ajusta volume
             audioRef.current.volume = isMuted ? 0 : newVolume;
         }
+
+        // Reset flag após um delay para evitar interferências
+        setTimeout(() => setIsChangingVolume(false), 100);
     };
 
     const toggleMute = () => {
-        setIsMuted((prev) => {
-            if (audioRef.current) {
-                audioRef.current.volume = prev ? volume : 0;
-            }
-            return !prev;
-        });
+        const newMutedState = !isMuted;
+        setIsMuted(newMutedState);
+        if (audioRef.current) {
+            audioRef.current.volume = newMutedState ? 0 : volume;
+        }
+    };
+
+    const handleClosePlayer = () => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+        }
+        setMinimized(true);
     };
 
     const handlePrevious = () => {
-        if (audioRef.current) {
-            if (audioRef.current.currentTime > 3) {
-                // Se já tocou mais de 3 segundos, volta para o início
-                audioRef.current.currentTime = 0;
-            } else {
-                // Senão, simplesmente volta ao início (implementação simples)
-                audioRef.current.currentTime = 0;
-            }
+        if (!audioRef.current) return;
+
+        if (audioRef.current.currentTime > 3) {
+            // Se já tocou mais de 3 segundos, volta para o início da música atual
+            audioRef.current.currentTime = 0;
+            setCurrentTime(0);
+        } else {
+            // Senão, vai para a música anterior
+            previousTrack();
         }
     };
 
     const handleNext = () => {
-        // Chama a função nextTrack do contexto
+        // Chama a função nextTrack do contexto para ir para a próxima música
         nextTrack();
     };
 
@@ -215,65 +252,66 @@ const FooterPlayer = () => {
             />
             <div className="w-full max-w-3xl flex flex-col items-center px-4 py-2">
                 <div className="flex items-center w-full justify-between mb-1">
+                    {!minimized && (
+                        <div className="flex items-center gap-3">
+                            <img
+                                src={currentTrack.imageUrl}
+                                alt={currentTrack.songName}
+                                className="w-12 h-12 rounded-lg object-cover border border-gray-700 shadow-md"
+                            />
+                            <div className="flex flex-col">
+                                <span className="text-white font-semibold text-sm truncate max-w-[180px]">
+                                    {currentTrack.songName}
+                                </span>
+                                <span className="text-gray-300 text-xs truncate max-w-[180px]">
+                                    {currentTrack.artist}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Controles centrais */}
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={handlePrevious}
+                            className="p-2 rounded-full hover:bg-gray-700/60 text-gray-200 hover:text-white transition"
+                            title="Anterior"
+                        >
+                            <SkipBack size={24} />
+                        </button>
+                        <button
+                            onClick={togglePlayPause}
+                            className="p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition"
+                            title={isPlaying ? "Pausar" : "Tocar"}
+                        >
+                            {isPlaying ? <Pause size={28} /> : <Play size={28} />}
+                        </button>
+                        <button
+                            onClick={handleNext}
+                            className="p-2 rounded-full hover:bg-gray-700/60 text-gray-200 hover:text-white transition"
+                            title="Próxima"
+                        >
+                            <SkipForward size={24} />
+                        </button>
+                    </div>
+
                     {/* Minimizar/Restaurar/Fechar */}
-                    <div className="flex flex-col items-center justify-center mr-2">
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={() => setMinimized(!minimized)}
-                            className="text-gray-400 hover:text-white p-1 rounded-full border border-gray-700 bg-gray-900/70"
+                            className="text-gray-400 hover:text-white p-2 rounded-full border border-gray-700 bg-gray-900/70 transition-colors"
                             title={minimized ? 'Restaurar player' : 'Minimizar player'}
                         >
                             {minimized ? <Play size={16} /> : <Pause size={16} />}
                         </button>
                         <button
-                            onClick={() => setMinimized(true)}
-                            className="text-gray-400 hover:text-red-500 p-1 rounded-full border border-gray-700 mt-1"
+                            onClick={handleClosePlayer}
+                            className="text-gray-400 hover:text-red-500 p-2 rounded-full border border-gray-700 bg-gray-900/70 transition-colors"
                             title="Fechar player"
                         >
-                            ×
+                            ✕
                         </button>
                     </div>
-                    {!minimized && (
-                        <>
-                            <div className="flex items-center gap-3">
-                                <img
-                                    src={currentTrack.imageUrl}
-                                    alt={currentTrack.songName}
-                                    className="w-12 h-12 rounded-lg object-cover border border-gray-700 shadow-md"
-                                />
-                                <div className="flex flex-col">
-                                    <span className="text-white font-semibold text-sm truncate max-w-[180px]">
-                                        {currentTrack.songName}
-                                    </span>
-                                    <span className="text-gray-300 text-xs truncate max-w-[180px]">
-                                        {currentTrack.artist}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={handlePrevious}
-                                    className="p-2 rounded-full hover:bg-gray-700/60 text-gray-200 hover:text-white transition"
-                                    title="Anterior"
-                                >
-                                    <SkipBack size={24} />
-                                </button>
-                                <button
-                                    onClick={togglePlayPause}
-                                    className="p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition"
-                                    title={isPlaying ? "Pausar" : "Tocar"}
-                                >
-                                    {isPlaying ? <Pause size={28} /> : <Play size={28} />}
-                                </button>
-                                <button
-                                    onClick={nextTrack}
-                                    className="p-2 rounded-full hover:bg-gray-700/60 text-gray-200 hover:text-white transition"
-                                    title="Próxima"
-                                >
-                                    <SkipForward size={24} />
-                                </button>
-                            </div>
-                        </>
-                    )}
                 </div>
                 {!minimized && (
                     <div className="w-full flex flex-col items-center">
@@ -297,10 +335,14 @@ const FooterPlayer = () => {
                                 min="0"
                                 max="1"
                                 step="0.01"
-                                value={volume}
+                                value={isMuted ? 0 : volume}
                                 onChange={handleVolumeChange}
-                                className="w-16 accent-orange-600"
+                                className="w-20 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                                style={{
+                                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(isMuted ? 0 : volume) * 100}%, #374151 ${(isMuted ? 0 : volume) * 100}%, #374151 100%)`
+                                }}
                             />
+                            <span className="text-xs text-gray-400 w-8">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
                         </div>
                     </div>
                 )}

@@ -367,7 +367,7 @@ export default function ProfilePage() {
     return (
         <>
             <Header />
-            <div className="min-h-screen bg-gradient-to-br from-[#8B4513] via-[#2F1B14] to-[#0C0C0C] text-white pt-16">
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white pt-16">
                 <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
                     <div className="max-w-7xl mx-auto">
 
@@ -376,13 +376,13 @@ export default function ProfilePage() {
 
                             {/* SIDEBAR MENU */}
                             <div className="lg:col-span-1">
-                                <div className="bg-gradient-to-br from-[#8B4513]/95 via-[#2F1B14]/95 to-[#0C0C0C]/95 backdrop-blur-xl rounded-3xl p-6 xl:p-8 border-2 border-gray-700/30 sticky top-20 shadow-2xl w-full max-w-xs xl:max-w-[370px] flex flex-col h-fit">
+                                <div className="bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-xl rounded-3xl p-6 xl:p-8 border-2 border-gray-700/30 sticky top-20 shadow-2xl w-full max-w-xs xl:max-w-[370px] flex flex-col h-fit">
                                     {/* Profile Header */}
                                     <div className="text-center mb-8 pb-6 border-b border-gray-600/50">
                                         <div className="relative w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl ring-4 ring-purple-500/20">
                                             <User className="w-10 h-10 text-white" />
                                             {userData.is_vip && (
-                                                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                                                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg">
                                                     <Crown className="w-4 h-4 text-black" />
                                                 </div>
                                             )}
@@ -397,7 +397,7 @@ export default function ProfilePage() {
                                                 <span >{statusDisplay.text}</span>
                                             </div>
                                             {userData.is_vip && (
-                                                <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-lg animate-pulse">
+                                                <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-lg animate-pulse">
                                                     <Crown className="w-3 h-3" />
                                                     <span >VIP</span>
                                                 </div>
@@ -456,7 +456,7 @@ export default function ProfilePage() {
                                                 <button
                                                     onClick={() => setActiveSection('vip')}
                                                     className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-bold tracking-wider transition-all duration-300 transform hover:scale-[1.02] cursor-pointer ${activeSection === 'vip'
-                                                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black shadow-lg shadow-yellow-500/25 border border-yellow-400/50'
+                                                        ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-black shadow-lg shadow-yellow-500/25 border border-yellow-400/50'
                                                         : 'text-gray-300 hover:bg-gray-800/70 hover:text-white border border-transparent hover:border-gray-600/50'
                                                         }`}
                                                 >
@@ -890,7 +890,7 @@ export default function ProfilePage() {
                                     <Download className="w-5 h-5 text-red-400" />
                                     <h4 className="text-base font-semibold text-white">Allavsoft - Em Breve</h4>
                                 </div>
-                                <span className="text-xs text-orange-400 bg-orange-400/10 px-2 py-1 rounded-full">AGOSTO 2025</span>
+                                <span className="text-xs text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded-full">AGOSTO 2025</span>
                             </div>
                             <p className="text-gray-300 text-sm">
                                 Download de vídeos/áudios · +1000 sites · Downloads em lote
@@ -989,13 +989,13 @@ export default function ProfilePage() {
             <div className="space-y-6">
                 {/* Título da Seção */}
                 <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center">
                         <Crown className="w-6 h-6 text-black font-bold" />
                     </div>
                     <div>
                         <h2 className="text-3xl font-bold text-white">Recursos VIP</h2>
                         <p className="text-gray-400">Benefícios exclusivos e acesso prioritário</p>
-                        <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black px-3 py-1 rounded-full text-sm font-bold animate-pulse inline-block mt-2">
+                        <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-3 py-1 rounded-full text-sm font-bold animate-pulse inline-block mt-2">
                             ✨ EXCLUSIVO
                         </div>
                     </div>
@@ -1005,7 +1005,7 @@ export default function ProfilePage() {
                     <CardContent className="p-6">
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                            <div className="bg-gradient-to-br from-yellow-900/30 to-orange-900/30 rounded-lg p-4 text-center border border-yellow-500/20">
+                            <div className="bg-gradient-to-br from-yellow-900/30 to-yellow-800/30 rounded-lg p-4 text-center border border-yellow-500/20">
                                 <Zap className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
                                 <h3 className="text-sm font-bold text-white mb-1">Acesso Prioritário</h3>
                                 <p className="text-yellow-100 text-xs">Downloads sem fila</p>

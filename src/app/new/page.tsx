@@ -239,12 +239,12 @@ function NewPageContent() {
   const monthOptions = generateMonthOptions();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#8B4513] via-[#2F1B14] to-[#0C0C0C]">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <Header />
       <main className="container mx-auto px-4 py-8 pt-20">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full">
+            <div className="p-3 bg-gradient-to-r from-blue-700 to-blue-500 rounded-full">
               <CheckCircle className="h-8 w-8 text-white" />
             </div>
             <div>
@@ -254,17 +254,17 @@ function NewPageContent() {
           </div>
 
           {!session && (
-            <div className="w-full flex items-center justify-center py-3 px-4 mb-4 rounded-xl shadow-md bg-yellow-100 border border-yellow-400 text-yellow-900 font-semibold text-center text-sm">
+            <div className="w-full flex items-center justify-center py-3 px-4 mb-4 rounded-xl shadow-md bg-gray-800 border border-gray-700 text-gray-100 font-semibold text-center text-sm">
               Atenção: Usuários sem plano não podem ouvir, baixar ou curtir músicas. Apenas a navegação no catálogo está disponível.
             </div>
           )}
         </div>
 
         {/* Search and Filters Section */}
-        <div className="mb-8 bg-gradient-to-br from-[#8B4513]/40 via-[#2F1B14]/40 to-[#0C0C0C]/40 backdrop-blur-sm rounded-2xl p-6 border border-gray-800/30 shadow-2xl">
+        <div className="mb-8 bg-gradient-to-br from-gray-900/70 via-gray-800/70 to-black/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-800/30 shadow-2xl">
           <div className="flex flex-col items-center gap-4">
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex items-center w-full max-w-md bg-gradient-to-r from-[#8B4513]/60 to-[#2F1B14]/60 rounded-full px-4 py-3 border border-gray-700/50 focus-within:border-blue-500/70 transition-all duration-200 backdrop-blur-sm">
+            <form onSubmit={handleSearch} className="flex items-center w-full max-w-md bg-gradient-to-r from-gray-900/80 to-gray-800/80 rounded-full px-4 py-3 border border-gray-700/50 focus-within:border-blue-500/70 transition-all duration-200 backdrop-blur-sm">
               <Search className="h-5 w-5 text-gray-400 mr-3" />
               <input
                 type="text"
@@ -278,7 +278,7 @@ function NewPageContent() {
             {/* Filters Button */}
             <button
               onClick={() => setShowFiltersModal(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#8B4513]/60 to-[#2F1B14]/60 hover:from-[#8B4513]/80 hover:to-[#2F1B14]/80 text-white rounded-full transition-all duration-200 border border-gray-700/50 hover:border-gray-600/70 backdrop-blur-sm"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900/80 to-gray-800/80 hover:from-gray-900/90 hover:to-gray-800/90 text-white rounded-full transition-all duration-200 border border-gray-700/50 hover:border-gray-600/70 backdrop-blur-sm"
             >
               <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-blue-400' : 'text-gray-300'}`} />
               <span className="text-sm font-medium">Filtros</span>
@@ -289,7 +289,7 @@ function NewPageContent() {
 
             {/* Active Filters Indicator */}
             {hasActiveFilters && (
-              <div className="flex items-center space-x-2 text-orange-400">
+              <div className="flex items-center space-x-2 text-blue-400">
                 <Filter className="h-4 w-4" />
                 <span className="text-sm">Filtros ativos</span>
               </div>
@@ -310,12 +310,12 @@ function NewPageContent() {
           </div>
         ) : tracks.length === 0 ? (
           <div className="text-center py-32">
-            <div className="p-6 bg-gradient-to-br from-[#8B4513]/50 via-[#2F1B14]/50 to-[#0C0C0C]/50 rounded-2xl inline-block mb-6 border border-gray-700/30 backdrop-blur-sm">
+            <div className="p-6 bg-gradient-to-br from-gray-800/50 via-gray-900/50 to-black/50 rounded-2xl inline-block mb-6 border border-gray-700/30 backdrop-blur-sm">
               <Search className="h-16 w-16 text-gray-400 mx-auto" />
             </div>
             <h3 className="text-2xl font-bold text-white mb-4">Nenhuma música encontrada</h3>
             <p className="text-gray-400 mb-8">Tente ajustar seus filtros ou fazer uma nova busca.</p>
-            <button onClick={handleClearFilters} className="px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white rounded-lg font-medium transition-colors shadow-lg">Limpar Filtros</button>
+            <button onClick={handleClearFilters} className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium transition-colors shadow-lg">Limpar Filtros</button>
           </div>
         ) : (
           <>
@@ -418,7 +418,7 @@ function NewPageContent() {
 export default function NewPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-[#8B4513] via-[#2F1B14] to-[#0C0C0C] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
         <div className="animate-pulse text-white">Carregando...</div>
       </div>
     }>

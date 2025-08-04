@@ -14,6 +14,7 @@ interface AppContextType {
   playTrack: (track: Track, trackList?: Track[]) => void;
   togglePlayPause: () => void;
   nextTrack: () => void;
+  previousTrack: () => void;
   stopMusic: () => void;
   // ...
 
@@ -133,8 +134,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   // ... (outras funções como playTrack, nextTrack, etc.)
   const playTrack = (track: Track, list: Track[] = []) => {
-    console.log('AppContext: playTrack called with:', track);
-    console.log('AppContext: track list:', list);
     setCurrentTrack(track);
     setIsPlaying(true);
     if (list.length > 0) {
@@ -150,6 +149,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setIsPlaying(true);
   };
 
+  const previousTrack = () => {
+    if (trackList.length === 0) return;
+    const currentIndex = trackList.findIndex(track => track.id === currentTrack?.id);
+    const prevIndex = currentIndex <= 0 ? trackList.length - 1 : currentIndex - 1;
+    setCurrentTrack(trackList[prevIndex]);
+    setIsPlaying(true);
+  };
+
   const togglePlayPause = () => {
     console.log('AppContext: togglePlayPause called, current isPlaying:', isPlaying);
     setIsPlaying(!isPlaying);
@@ -161,6 +168,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     playTrack,
     togglePlayPause,
     nextTrack,
+    previousTrack,
     stopMusic,
     dailyDownloadCount,
     dailyLimit,
