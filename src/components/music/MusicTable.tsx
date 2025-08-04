@@ -5,9 +5,10 @@ import { useSession } from 'next-auth/react';
 import { Play, Pause, Download, Heart, AlertTriangle, Copyright, Music } from 'lucide-react';
 import Link from 'next/link';
 import { Track } from '@/types/track';
-import { useAppContext } from '@/context/AppContext';
+import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { useToast } from '@/hooks/useToast';
 import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
+import { useUserData } from '@/hooks/useUserData';
 
 interface MusicTableProps {
     tracks: Track[];
@@ -18,8 +19,18 @@ interface MusicTableProps {
 const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
     const { data: session } = useSession();
     const user = session?.user;
-    const { showToast } = useToast();
+    const {
+        showToast,
+        showLikeToast,
+        showDownloadToast,
+        showPlayToast,
+        showLoginRequiredToast,
+        showVipRequiredToast,
+        showTimeLimitToast,
+        showErrorToastWithDetails
+    } = useToast();
     const { detectedExtensions, hasExtension } = useDownloadExtensionDetector();
+    const { userData, updateLikedTrack, updateDownloadedTrack } = useUserData();
 
     // Verificar extensões quando há músicas
     useEffect(() => {
@@ -38,22 +49,6 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
 
     // Simula status de carregamento dos downloads
     const [loadingDownloadStatus, setLoadingDownloadStatus] = useState(false);
-    // Tracks curtidas (persistente)
-    const [likedTracksSet, setLikedTracksSet] = useState<Set<number>>(new Set());
-
-    // Função para buscar likes do backend
-    const fetchLikes = async () => {
-        if (!user?.id) return;
-        try {
-            const res = await fetch('/api/likes');
-            if (!res.ok) return;
-            const data = await res.json();
-            // Corrigido: backend retorna 'likedTracks', não 'likedTrackIds'
-            if (Array.isArray(data.likedTracks)) {
-                setLikedTracksSet(new Set(data.likedTracks));
-            }
-        } catch (err) { }
-    };
 
     // Estado para forçar atualização do timer a cada segundo
     const [, forceUpdate] = useState(0);
@@ -69,57 +64,6 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
     const [liking, setLiking] = useState<number | null>(null);
     // Estado para modal estiloso de download restrito 24h
     const [showRestrict24hModal, setShowRestrict24hModal] = useState<{ track: Track | null, open: boolean }>({ track: null, open: false });
-    // Limite de downloads por dia - será obtido dinamicamente
-    const [dailyDownloadLimit, setDailyDownloadLimit] = useState(50);
-
-    // Carrega likes do usuário ao montar (deve vir após a declaração de user)
-    useEffect(() => {
-        if (!user?.id) return;
-        fetchLikes();
-    }, [user?.id]);
-
-    // Função para buscar dados do usuário (incluindo limite diário e downloads)
-    const fetchUserData = async () => {
-        if (!user?.id) return;
-        try {
-            setIsLoadingUserData(true);
-            const res = await fetch('/api/user-data');
-            if (!res.ok) return;
-            const data = await res.json();
-
-            // Set daily download limit
-            if (data.dailyDownloadLimit) {
-                setDailyDownloadLimit(data.dailyDownloadLimit);
-            }
-
-            // Set daily download count
-            if (data.dailyDownloadCount !== undefined) {
-                setDownloadsToday(data.dailyDownloadCount);
-            }
-
-            // Set downloaded tracks
-            if (data.downloadedTrackIds) {
-                setDownloadedTracksSet(new Set(data.downloadedTrackIds));
-            }
-        } catch (err) {
-            console.error('Erro ao buscar dados do usuário:', err);
-        } finally {
-            setIsLoadingUserData(false);
-        }
-    };
-
-    // Carrega dados do usuário ao montar
-    useEffect(() => {
-        if (!user?.id) return;
-        fetchUserData();
-    }, [user?.id]);
-
-    // Quantos downloads o usuário já fez hoje (do contexto, ou do status)
-    const [downloadsToday, setDownloadsToday] = useState(0);
-    const [isLoadingUserData, setIsLoadingUserData] = useState(false);
-    const downloadsLeft = Math.max(dailyDownloadLimit - downloadsToday, 0);
-    // Set de IDs de músicas já baixadas
-    const [downloadedTracksSet, setDownloadedTracksSet] = useState<Set<number>>(new Set());
 
     // Estado para guardar tempo restante para cada track (em segundos)
     const [downloadedTracksTime, setDownloadedTracksTime] = useState<{ [trackId: number]: number }>({});
@@ -133,6 +77,27 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
         if (h > 0) return `${h}h ${m}m ${s}s`;
         if (m > 0) return `${m}m ${s}s`;
         return `${s}s`;
+    };
+
+    // Helper functions usando userData
+    const hasDownloadedBefore = (trackId: number) => {
+        return userData?.downloadedTrackIds?.includes(trackId) || false;
+    };
+
+    const isTrackLiked = (trackId: number) => {
+        return userData?.likedTrackIds?.includes(trackId) || false;
+    };
+
+    const getDailyDownloadLimit = () => {
+        return userData?.dailyDownloadLimit || 50;
+    };
+
+    const getDownloadsToday = () => {
+        return userData?.dailyDownloadCount || 0;
+    };
+
+    const getDownloadsLeft = () => {
+        return Math.max(getDailyDownloadLimit() - getDownloadsToday(), 0);
     };
 
     const handleDownload = async (track: Track, confirmReDownload = false) => {
@@ -160,19 +125,14 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                 const data = await response.json();
 
                 // Update download counts immediately
-                setDownloadsToday(data.dailyDownloadCount || 0);
-
-                // Update downloaded tracks set immediately for real-time UI update
-                const newDownloadedTracksSet = new Set(downloadedTracksSet);
-                newDownloadedTracksSet.add(track.id);
-                setDownloadedTracksSet(newDownloadedTracksSet);
+                updateDownloadedTrack(track.id);
 
                 // Force download the file
                 await downloadTrack(track);
 
                 // Show success toast
                 showToast(
-                    `✅ "${track.songName}" baixada com sucesso! Restam ${Math.max((data.dailyLimit || dailyDownloadLimit) - (data.dailyDownloadCount || 0), 0)} downloads hoje.`,
+                    `✅ "${track.songName}" baixada com sucesso! Restam ${Math.max((data.dailyLimit || getDailyDownloadLimit()) - (data.dailyDownloadCount || 0), 0)} downloads hoje.`,
                     'success'
                 );
             } else {
@@ -200,11 +160,11 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
     };
 
     // Audio player context
-    const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAppContext();
+    const { currentTrack, isPlaying, playTrack, togglePlayPause } = useGlobalPlayer();
 
     const handlePlayPauseClick = (track: Track) => {
-        if (!session) {
-            console.log('No session, cannot play');
+        if (!session?.user?.email) {
+            showLoginRequiredToast('ouvir as músicas');
             return;
         }
 
@@ -217,9 +177,10 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
             console.log('Toggling play/pause for same track');
             togglePlayPause();
         } else {
-            // Se é uma música diferente, toca ela
-            console.log('Playing new track:', track);
+            // Se é uma música diferente, toca ela e passa a playlist completa
+            console.log('Playing new track:', track, 'with playlist of', tracks.length, 'tracks');
             playTrack(track, tracks);
+            showPlayToast(track.songName);
         }
     };
 
@@ -227,22 +188,55 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
         return !hasDownloadedBefore(trackId) || downloadedTracksTime[trackId] <= 0;
     };
 
-    const handleDownloadClick = (track: Track) => {
+    const handleDownloadClick = async (track: Track) => {
+        if (!session?.user?.email) {
+            showLoginRequiredToast('fazer downloads');
+            return;
+        }
+
         if (!session?.user?.is_vip) {
             setShowRestrict24hModal({ track, open: true });
             return;
         }
 
         if (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0) {
-            showToast(
-                `⏰ Você já baixou "${track.songName}" nas últimas 24 horas. Aguarde ${formatTimeLeft(downloadedTracksTime[track.id])} para baixar novamente.`,
-                'warning'
-            );
+            showTimeLimitToast(track.songName, formatTimeLeft(downloadedTracksTime[track.id]));
             return;
         }
 
-        // Use handleDownload instead of downloadTrack to ensure state updates
-        handleDownload(track);
+        try {
+            // Registrar download na API
+            const response = await fetch('/api/tracks/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    trackId: track.id.toString()
+                }),
+            });
+
+            if (response.ok) {
+                // Atualizar estado local
+                updateDownloadedTrack(track.id);
+
+                // Iniciar download do arquivo
+                if (track.downloadUrl) {
+                    const link = document.createElement('a');
+                    link.href = track.downloadUrl;
+                    link.download = `${track.artist} - ${track.songName}.mp3`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+
+                showDownloadToast(track.songName);
+            } else {
+                const data = await response.json();
+                showErrorToastWithDetails('fazer download', data.error);
+            }
+        } catch (error) {
+            console.error('Erro ao fazer download:', error);
+            showErrorToastWithDetails('fazer download');
+        }
     };
 
     const downloadTrack = async (track: Track) => {
@@ -285,27 +279,33 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
     };
 
     const handleLikeClick = async (trackId: number) => {
-        if (!session?.user?.is_vip || liking === trackId) return;
+        if (!session?.user?.email || liking === trackId) return;
 
         setLiking(trackId);
         try {
-            const response = await fetch('/api/likes', {
+            const isLiked = isTrackLiked(trackId);
+            const response = await fetch('/api/tracks/like', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ trackId }),
+                body: JSON.stringify({
+                    trackId: trackId.toString(),
+                    action: isLiked ? 'unlike' : 'like'
+                }),
             });
 
             if (response.ok) {
-                const newLikedTracksSet = new Set(likedTracksSet);
-                if (newLikedTracksSet.has(trackId)) {
-                    newLikedTracksSet.delete(trackId);
-                } else {
-                    newLikedTracksSet.add(trackId);
-                }
-                setLikedTracksSet(newLikedTracksSet);
+                updateLikedTrack(trackId, !isLiked);
+
+                // Usar função específica do toast
+                showLikeToast(!isLiked);
+            } else {
+                const errorData = await response.json();
+                console.error('Erro ao curtir música:', errorData);
+                showErrorToastWithDetails('curtir música', errorData.error);
             }
         } catch (error) {
             console.error('Erro ao curtir música:', error);
+            showErrorToastWithDetails('curtir música');
         } finally {
             setLiking(null);
         }
@@ -366,11 +366,6 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
         }
     };
 
-    const hasDownloadedBefore = (trackId: number) => {
-        return downloadedTracksSet.has(trackId);
-    };
-
-
 
     // Debug: Log tracks to check previewUrl
     useEffect(() => {
@@ -407,12 +402,10 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                     }}
                 >
                     <span style={{ fontSize: 20, marginRight: 10 }}>⬇️</span>
-                    {isLoadingUserData ? (
-                        <span style={{ color: '#fff' }}>Carregando dados de download...</span>
-                    ) : downloadsLeft > 0 ? (
+                    {getDownloadsLeft() > 0 ? (
                         <>
-                            <span style={{ color: '#fff' }}>Você pode baixar até {dailyDownloadLimit} músicas por dia. </span>
-                            <span style={{ color: '#39FF14', marginLeft: 6 }}>Restam {downloadsLeft} downloads hoje.</span>
+                            <span style={{ color: '#fff' }}>Você pode baixar até {getDailyDownloadLimit()} músicas por dia. </span>
+                            <span style={{ color: '#39FF14', marginLeft: 6 }}>Restam {getDownloadsLeft()} downloads hoje.</span>
                         </>
                     ) : (
                         <span>Limite diário de downloads atingido. Tente novamente amanhã.</span>
@@ -435,22 +428,22 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                 <table className="hidden md:table min-w-full text-left text-sm text-gray-200 table-fixed" style={{ fontFamily: "'Lato', sans-serif", fontSize: '13px' }}>
                     <thead className="sticky top-0 z-40 bg-gradient-to-r from-gray-800 via-gray-900 to-black text-gray-300 uppercase text-xs tracking-wider border-b border-gray-600/50" style={{ fontFamily: "'Lato', sans-serif" }}>
                         <tr>
-                            <th className="px-6 py-4 font-bold tracking-wide w-[35%] text-white">
+                            <th className="px-3 py-3 font-bold tracking-wide w-[32%] text-white">
                                 <div className="flex items-center space-x-2">
                                     <Music className="h-4 w-4 text-[#6b7280]" />
                                     <span>MÚSICA</span>
                                 </div>
                             </th>
-                            <th className="px-6 py-4 font-bold tracking-wide w-[20%] text-white">
+                            <th className="px-3 py-3 font-bold tracking-wide w-[22%] text-white">
                                 <span>ARTISTA</span>
                             </th>
-                            <th className="px-6 py-4 font-bold tracking-wide w-[20%] text-white">
+                            <th className="px-3 py-3 font-bold tracking-wide w-[16%] text-white">
                                 <span>GÊNERO</span>
                             </th>
-                            <th className="px-6 py-4 font-bold tracking-wide w-[15%] text-white">
+                            <th className="px-3 py-3 font-bold tracking-wide w-[14%] text-white">
                                 <span>POOL</span>
                             </th>
-                            <th className="px-6 py-4 text-right font-bold tracking-wide w-[10%] text-white">
+                            <th className="px-3 py-3 text-right font-bold tracking-wide w-[16%] text-white">
                                 <span>AÇÕES</span>
                             </th>
                         </tr>
@@ -468,13 +461,14 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                 key={track.id}
                                 className={`${currentTrack?.id === track.id ? 'bg-[#374151]/20 border-l-4 border-l-[#6b7280]' : 'hover:border-l-4 hover:border-l-gray-600'}`}
                             >
-                                <td className="px-6 py-4 align-middle w-[35%]">
-                                    <div className="flex items-center gap-4">
-                                        <div className="relative w-14 h-14 group">
+                                <td className="px-3 py-3 align-middle w-[32%]">
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative flex-shrink-0 w-12 h-12 group">
                                             <img
                                                 src="https://i.ibb.co/FL1rxTtx/20250526-1938-Sound-Cloud-Cover-Design-remix-01jw7bwxq6eqj8sqztah5n296g.png"
                                                 alt={track.songName + ' thumbnail'}
-                                                className="w-14 h-14 rounded-xl object-cover border border-gray-700 shadow-lg group-hover:border-blue-500 transition-all duration-300"
+                                                className="w-12 h-12 rounded-xl object-cover border border-gray-700 shadow-lg group-hover:border-blue-500 transition-all duration-300"
+                                                style={{ minWidth: '48px', minHeight: '48px', maxWidth: '48px', maxHeight: '48px' }}
                                             />
                                             <button
                                                 onClick={session ? () => handlePlayPauseClick(track) : undefined}
@@ -487,18 +481,18 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                                 title={!session ? 'Faça login para ouvir a prévia' : currentTrack?.id === track.id && isPlaying ? 'Tocando agora - Clique para pausar' : 'Clique para tocar'}
                                             >
                                                 {isPlaying && currentTrack?.id === track.id ?
-                                                    <Pause size={24} /> :
-                                                    <Play size={24} className="ml-1" />
+                                                    <Pause size={20} /> :
+                                                    <Play size={20} className="ml-1" />
                                                 }
                                             </button>
                                         </div>
-                                        <div className="flex flex-col">
+                                        <div className="flex flex-col min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-semibold text-white tracking-wide" style={{ fontSize: '11px' }}>
+                                                <span className="font-semibold text-white tracking-wide truncate" style={{ fontSize: '11px' }}>
                                                     {track.songName}
                                                 </span>
                                                 {track.isCommunity && (
-                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-500/30 tracking-wide shadow-lg" style={{ fontSize: '9px' }}>
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-500/30 tracking-wide shadow-lg flex-shrink-0" style={{ fontSize: '9px' }}>
                                                         COMUNIDADE
                                                     </span>
                                                 )}
@@ -506,86 +500,81 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 align-middle w-[20%]">
+                                <td className="px-3 py-3 align-middle w-[22%]">
                                     <span className="text-gray-300 font-medium tracking-wide block truncate" style={{ fontSize: '11px' }}>
                                         {track.artist}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 align-middle w-[20%]">
+                                <td className="px-3 py-3 align-middle w-[16%]">
                                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white border border-purple-500/30 tracking-wide shadow-lg truncate" style={{ fontSize: '10px' }}>
                                         {track.style}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 align-middle w-[15%]">
+                                <td className="px-3 py-3 align-middle w-[14%]">
                                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-green-600 to-emerald-600 text-white border border-green-500/30 tracking-wide shadow-lg truncate" style={{ fontSize: '10px' }}>
                                         {track.pool || 'Nexor Records'}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 align-middle w-[10%]">
-                                    {session ? (
-                                        <div className="flex flex-row flex-nowrap items-center justify-end gap-1">
-                                            {/* Download */}
-                                            <button
-                                                onClick={() => handleDownload(track)}
-                                                disabled={
-                                                    !session?.user?.is_vip ||
-                                                    (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)
-                                                }
-                                                className={`inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
-                                                     ${!session?.user?.is_vip
-                                                        ? 'bg-[#374151] text-gray-400 opacity-50 cursor-not-allowed'
-                                                        : hasDownloadedBefore(track.id)
-                                                            ? downloadedTracksTime[track.id] > 0
-                                                                ? 'bg-[#6b7280] text-white border border-[#6b7280] shadow-[#6b7280]/25 opacity-60 cursor-not-allowed'
-                                                                : 'bg-[#6b7280] text-white hover:bg-[#9ca3af] border border-[#6b7280] shadow-[#6b7280]/25'
-                                                            : 'bg-[#374151] text-white hover:bg-[#4b5563] border border-[#374151] shadow-[#374151]/25'
-                                                    }`}
-                                                title={
-                                                    !session?.user?.is_vip ? 'Apenas usuários VIP podem fazer downloads'
-                                                        : hasDownloadedBefore(track.id)
-                                                            ? downloadedTracksTime[track.id] > 0
-                                                                ? `Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente`
-                                                                : 'Música já baixada'
-                                                            : "Download disponível"
-                                                }
-                                            >
-                                                <Download size={16} />
-                                            </button>
-                                            {/* Curtir */}
-                                            <button
-                                                onClick={() => handleLikeClick(track.id)}
-                                                disabled={!session?.user?.is_vip || liking === track.id}
-                                                className={`inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
-                                                    ${likedTracksSet.has(track.id)
-                                                        ? 'bg-pink-600 text-white border border-pink-500 shadow-pink-500/25'
-                                                        : 'bg-gray-700 text-gray-200 hover:bg-pink-700 border border-gray-500 shadow-gray-500/25'
-                                                    }`}
-                                                title={likedTracksSet.has(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                                            >
-                                                <Heart size={16} className={likedTracksSet.has(track.id) ? 'fill-pink-400 text-pink-200' : 'text-gray-300'} />
-                                            </button>
-                                            {/* Reportar erro */}
-                                            <button
-                                                onClick={() => handleReportClick(track)}
-                                                className="inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-yellow-700 text-white hover:bg-yellow-800 border border-yellow-500 shadow-yellow-500/25 transform hover:scale-105 active:scale-95"
-                                                title="Reportar problema com a música"
-                                            >
-                                                <AlertTriangle size={16} />
-                                            </button>
-                                            {/* Copyright */}
-                                            <button
-                                                onClick={() => handleCopyrightClick(track)}
-                                                className="inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-gray-800 text-white hover:bg-purple-800 border border-purple-500 shadow-purple-500/25 transform hover:scale-105 active:scale-95"
-                                                title="Reportar copyright"
-                                            >
-                                                <Copyright size={16} />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <Link href="/planos" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-[#374151] text-white hover:bg-[#4b5563] border border-[#374151] shadow-[#374151]/25 transform hover:scale-105 active:scale-95">
-                                            ASSINAR PLANO
-                                        </Link>
-                                    )}
+                                <td className="px-3 py-3 align-middle w-[16%]">
+                                    {/* AÇÕES ORIGINAIS */}
+                                    <div className="flex flex-row flex-nowrap items-center justify-end gap-1">
+                                        {/* Download */}
+                                        <button
+                                            onClick={() => handleDownload(track)}
+                                            disabled={
+                                                !session?.user?.is_vip ||
+                                                (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)
+                                            }
+                                            className={`inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
+                                                ${!session?.user?.is_vip
+                                                    ? 'bg-[#374151] text-gray-400 opacity-50 cursor-not-allowed'
+                                                    : hasDownloadedBefore(track.id)
+                                                        ? downloadedTracksTime[track.id] > 0
+                                                            ? 'bg-[#6b7280] text-white border border-[#6b7280] shadow-[#6b7280]/25 opacity-60 cursor-not-allowed'
+                                                            : 'bg-[#6b7280] text-white hover:bg-[#9ca3af] border border-[#6b7280] shadow-[#6b7280]/25'
+                                                        : 'bg-[#374151] text-white hover:bg-[#4b5563] border border-[#374151] shadow-[#374151]/25'
+                                                }`}
+                                            title={
+                                                !session?.user?.is_vip ? 'Apenas usuários VIP podem fazer downloads'
+                                                    : hasDownloadedBefore(track.id)
+                                                        ? downloadedTracksTime[track.id] > 0
+                                                            ? `Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente`
+                                                            : 'Música já baixada'
+                                                        : "Download disponível"
+                                            }
+                                        >
+                                            <Download size={16} />
+                                        </button>
+                                        {/* Curtir */}
+                                        <button
+                                            onClick={() => handleLikeClick(track.id)}
+                                            disabled={!session?.user?.is_vip || liking === track.id}
+                                            className={`inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
+                                                ${isTrackLiked(track.id)
+                                                    ? 'bg-pink-600 text-white border border-pink-500 shadow-pink-500/25'
+                                                    : 'bg-gray-700 text-gray-200 hover:bg-pink-700 border border-gray-500 shadow-gray-500/25'
+                                                }`}
+                                            title={isTrackLiked(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                                        >
+                                            <Heart size={16} className={isTrackLiked(track.id) ? 'fill-pink-400 text-pink-200' : 'text-gray-300'} />
+                                        </button>
+                                        {/* Reportar erro */}
+                                        <button
+                                            onClick={() => handleReportClick(track)}
+                                            className="inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-yellow-700 text-white hover:bg-yellow-800 border border-yellow-500 shadow-yellow-500/25 transform hover:scale-105 active:scale-95"
+                                            title="Reportar problema com a música"
+                                        >
+                                            <AlertTriangle size={16} />
+                                        </button>
+                                        {/* Copyright */}
+                                        <button
+                                            onClick={() => handleCopyrightClick(track)}
+                                            className="inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-gray-800 text-white hover:bg-purple-800 border border-purple-500 shadow-purple-500/25 transform hover:scale-105 active:scale-95"
+                                            title="Reportar copyright"
+                                        >
+                                            <Copyright size={16} />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -660,14 +649,14 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                         onClick={() => handleLikeClick(track.id)}
                                         disabled={!session?.user?.is_vip || liking === track.id}
                                         className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
-                                ${likedTracksSet.has(track.id)
+                                ${isTrackLiked(track.id)
                                                 ? 'bg-pink-600/80 text-white border border-pink-500/50 shadow-pink-500/25'
                                                 : 'bg-[#374151] text-gray-200 hover:bg-gray-600 border border-gray-500/50 shadow-gray-500/25'
                                             }`}
-                                        title={likedTracksSet.has(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                                        title={isTrackLiked(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                     >
-                                        <Heart size={16} className={likedTracksSet.has(track.id) ? 'fill-pink-400 text-pink-200' : 'text-gray-300'} />
-                                        <span>{likedTracksSet.has(track.id) ? 'Curtido' : 'Curtir'}</span>
+                                        <Heart size={16} className={isTrackLiked(track.id) ? 'fill-pink-400 text-pink-200' : 'text-gray-300'} />
+                                        <span>{isTrackLiked(track.id) ? 'Curtido' : 'Curtir'}</span>
                                     </button>
                                 </div>
 
@@ -702,8 +691,8 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                         </div>
                     ))}
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
 

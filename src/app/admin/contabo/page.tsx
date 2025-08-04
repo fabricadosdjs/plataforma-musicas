@@ -71,9 +71,15 @@ export default function ContaboStoragePage() {
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState<'success' | 'error'>('success');
     const [currentView, setCurrentView] = useState<'files' | 'import'>('files');
-    
-    // REMOVIDO: O estado de paginação foi removido.
-    // const [page, setPage] = useState(0);
+
+    // Estados de paginação para a aba de importação
+    const [currentPage, setCurrentPage] = useState(0);
+    const [itemsPerPage] = useState(35);
+
+    // Estados para gerenciamento de pastas
+    const [folders, setFolders] = useState<string[]>([]);
+    const [selectedFolder, setSelectedFolder] = useState<string>('');
+    const [showFolderSelector, setShowFolderSelector] = useState(false);
 
     if (isLoaded && !user) {
         redirect('/auth/sign-in');
@@ -84,6 +90,20 @@ export default function ContaboStoragePage() {
         loadFiles();
         setStyleOptions(getAllStyleNames());
     }, []);
+
+    // Reset da página quando a lista de músicas importáveis muda
+    useEffect(() => {
+        if (currentView === 'import') {
+            setCurrentPage(0);
+        }
+    }, [importableFiles.length, currentView]);
+
+    // Carrega as pastas quando a aba de importação é acessada
+    useEffect(() => {
+        if (currentView === 'import' && folders.length === 0) {
+            loadFolders();
+        }
+    }, [currentView, folders.length]);
 
     const loadFiles = async () => {
         setLoading(true);
@@ -105,10 +125,14 @@ export default function ContaboStoragePage() {
         }
     };
 
-    const loadImportableFiles = async () => {
+    const loadImportableFiles = async (folder?: string) => {
         setLoading(true);
         try {
-            const response = await fetch('/api/contabo/import');
+            const url = folder
+                ? `/api/contabo/import?prefix=${encodeURIComponent(folder)}`
+                : '/api/contabo/import';
+
+            const response = await fetch(url);
             const data = await response.json();
 
             if (data.success) {
@@ -123,6 +147,68 @@ export default function ContaboStoragePage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleLoadImportableFiles = () => {
+        loadImportableFiles();
+    };
+
+    const loadFolders = async () => {
+        try {
+            const response = await fetch('/api/contabo/files?audioOnly=false');
+            const data = await response.json();
+
+            if (data.success) {
+                // Extrai pastas únicas dos arquivos
+                const folderSet = new Set<string>();
+                data.files.forEach((file: StorageFile) => {
+                    const pathParts = file.key.split('/');
+                    if (pathParts.length > 1) {
+                        // Remove o nome do arquivo, mantém apenas o caminho
+                        const folderPath = pathParts.slice(0, -1).join('/');
+                        if (folderPath) {
+                            folderSet.add(folderPath);
+                        }
+                    }
+                });
+
+                const folderList = Array.from(folderSet).sort();
+                setFolders(folderList);
+            }
+        } catch (error) {
+            console.error('Erro ao carregar pastas:', error);
+        }
+    };
+
+    const selectFolder = async (folder: string) => {
+        setSelectedFolder(folder);
+        setShowFolderSelector(false);
+        await loadImportableFiles(folder);
+        setCurrentPage(0); // Reset para primeira página
+    };
+
+    const handleSelectFolder = (folder: string) => () => {
+        selectFolder(folder);
+    };
+
+    const selectAllFromFolder = () => {
+        if (selectedFolder) {
+            const folderFiles = importableFiles.filter(item =>
+                item.file.key.startsWith(selectedFolder + '/')
+            );
+            const folderFileKeys = folderFiles.map(item => item.file.key);
+            setSelectedFiles(folderFileKeys);
+        }
+    };
+
+    const clearFolderSelection = async () => {
+        setSelectedFolder('');
+        await loadImportableFiles();
+        setCurrentPage(0);
+    };
+
+    const handleClearFolderSelection = () => {
+        clearFolderSelection();
     };
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,8 +265,17 @@ export default function ContaboStoragePage() {
 
             if (data.success) {
                 showMessage(data.message, 'success');
-                setImportableFiles([]); // Limpa a lista após importação
-                setCurrentView('files'); // Volta para a lista de arquivos
+
+                // Remove as músicas importadas da lista
+                const remainingFiles = importableFiles.filter(item => !selectedFiles.includes(item.file.key));
+                setImportableFiles(remainingFiles);
+
+                // Ajusta a página atual se necessário
+                const totalPages = Math.ceil(remainingFiles.length / itemsPerPage);
+                if (currentPage >= totalPages && totalPages > 0) {
+                    setCurrentPage(Math.max(0, totalPages - 1));
+                }
+
                 setSelectedFiles([]);
             } else {
                 showMessage(data.error || 'Erro na importação', 'error');
@@ -429,6 +524,7 @@ export default function ContaboStoragePage() {
                             <button
                                 onClick={() => {
                                     setCurrentView('import');
+                                    setCurrentPage(0); // Reset para primeira página
                                     if (importableFiles.length === 0) {
                                         loadImportableFiles();
                                     }
@@ -557,60 +653,114 @@ export default function ContaboStoragePage() {
                             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                                 <Import className="w-5 h-5 text-purple-300" />
                                 Importar Músicas ({importableFiles.length})
+                                {selectedFolder && (
+                                    <span className="text-sm text-purple-400 ml-2">
+                                        - Pasta: {selectedFolder}
+                                    </span>
+                                )}
                             </h3>
 
-                            {importableFiles.length > 0 && (
-                                <div className="flex gap-2 flex-wrap items-center">
+                            <div className="flex gap-2 flex-wrap items-center">
+                                {/* Seletor de Pasta */}
+                                <div className="relative">
                                     <button
-                                        onClick={() => {
-                                            if (selectedFiles.length === importableFiles.length) {
-                                                setSelectedFiles([]);
-                                            } else {
-                                                setSelectedFiles(importableFiles.map(f => f.file.key));
-                                            }
-                                        }}
-                                        disabled={importing}
-                                        className="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg transition-colors disabled:opacity-50 border border-gray-600"
-                                        title={selectedFiles.length === importableFiles.length ? 'Desmarcar todas' : 'Marcar todas'}
+                                        onClick={() => setShowFolderSelector(!showFolderSelector)}
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg transition-colors border border-gray-600"
                                     >
-                                        {selectedFiles.length === importableFiles.length ? 'Desmarcar Todas' : 'Marcar Todas'}
+                                        <Folder className="w-4 h-4" />
+                                        {selectedFolder ? 'Trocar Pasta' : 'Selecionar Pasta'}
                                     </button>
-                                    <button
-                                        onClick={importSelectedFiles}
-                                        disabled={importing || selectedFiles.length === 0}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
-                                    >
-                                        {importing ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            <Import className="w-4 h-4" />
-                                        )}
-                                        {importing ? 'Importando...' : `Importar (marcadas)`}
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setSelectedFiles(importableFiles.map(f => f.file.key));
-                                            setTimeout(importSelectedFiles, 0);
-                                        }}
-                                        disabled={importing}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg transition-colors disabled:opacity-50"
-                                    >
-                                        <Import className="w-4 h-4" />
-                                        Importar Todas
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            const selected = importableFiles.filter(item => selectedFiles.includes(item.file.key));
-                                            const text = selected.map(item => `${item.importData.songName} - ${item.importData.artist}\n${item.file.url}`).join('\n\n');
-                                            navigator.clipboard.writeText(text);
-                                        }}
-                                        disabled={selectedFiles.length === 0}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg transition-colors disabled:opacity-50"
-                                    >
-                                        Copiar Todas
-                                    </button>
+
+                                    {showFolderSelector && (
+                                        <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto min-w-64">
+                                            <div className="p-2">
+                                                <button
+                                                    onClick={handleClearFolderSelection}
+                                                    className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white text-sm"
+                                                >
+                                                    📁 Todas as Pastas
+                                                </button>
+                                                <div className="border-t border-gray-600 my-1"></div>
+                                                {folders.map((folder) => (
+                                                    <button
+                                                        key={folder}
+                                                        onClick={handleSelectFolder(folder)}
+                                                        className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white text-sm"
+                                                    >
+                                                        📁 {folder}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+
+                                {/* Selecionar Todas da Pasta */}
+                                {selectedFolder && (
+                                    <button
+                                        onClick={selectAllFromFolder}
+                                        disabled={importing}
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                        <Folder className="w-4 h-4" />
+                                        Selecionar Todas da Pasta
+                                    </button>
+                                )}
+
+                                <button
+                                    onClick={() => {
+                                        // Se estamos na página 1 e todas as 35 primeiras estão marcadas, desmarca todas
+                                        if (currentPage === 0 && selectedFiles.length === Math.min(35, importableFiles.length)) {
+                                            setSelectedFiles([]);
+                                        } else {
+                                            // Marca apenas as 35 primeiras músicas (página 1)
+                                            const first35Keys = importableFiles.slice(0, 35).map(f => f.file.key);
+                                            setSelectedFiles(first35Keys);
+                                        }
+                                    }}
+                                    disabled={importing}
+                                    className="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg transition-colors disabled:opacity-50 border border-gray-600"
+                                    title={currentPage === 0 && selectedFiles.length === Math.min(35, importableFiles.length) ? 'Desmarcar todas' : 'Marcar 35 primeiras'}
+                                >
+                                    {currentPage === 0 && selectedFiles.length === Math.min(35, importableFiles.length) ? 'Desmarcar Todas' : 'Marcar 35 Primeiras'}
+                                </button>
+                                <button
+                                    onClick={importSelectedFiles}
+                                    disabled={importing || selectedFiles.length === 0}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                    {importing ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Import className="w-4 h-4" />
+                                    )}
+                                    {importing ? 'Importando...' : `Importar (marcadas)`}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        // Seleciona apenas as 35 primeiras músicas
+                                        const first35Keys = importableFiles.slice(0, 35).map(f => f.file.key);
+                                        setSelectedFiles(first35Keys);
+                                        setTimeout(importSelectedFiles, 0);
+                                    }}
+                                    disabled={importing}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                    <Import className="w-4 h-4" />
+                                    Importar 35 Primeiras
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const selected = importableFiles.filter(item => selectedFiles.includes(item.file.key));
+                                        const text = selected.map(item => `${item.importData.songName} - ${item.importData.artist}\n${item.file.url}`).join('\n\n');
+                                        navigator.clipboard.writeText(text);
+                                    }}
+                                    disabled={selectedFiles.length === 0}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                    Copiar Todas
+                                </button>
+                            </div>
                         </div>
 
                         {loading ? (
@@ -628,7 +778,7 @@ export default function ContaboStoragePage() {
                                     Todos os arquivos de áudio do storage já estão no banco de dados
                                 </p>
                                 <button
-                                    onClick={loadImportableFiles}
+                                    onClick={handleLoadImportableFiles}
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
                                 >
                                     <RefreshCw className="w-4 h-4" />
@@ -647,17 +797,44 @@ export default function ContaboStoragePage() {
                                 });
                                 // Ordena as datas decrescente
                                 const allDays = Object.keys(groupedByDay).sort((a, b) => b.localeCompare(a));
-                                
-                                // REMOVIDO: Lógica de paginação foi removida.
-                                
+
+                                // Calcula a paginação
+                                const totalItems = importableFiles.length;
+                                const totalPages = Math.ceil(totalItems / itemsPerPage);
+                                const startIndex = currentPage * itemsPerPage;
+                                const endIndex = startIndex + itemsPerPage;
+
+                                // Filtra os itens da página atual
+                                const currentPageItems = importableFiles.slice(startIndex, endIndex);
+
+                                // Agrupa os itens da página atual por dia
+                                const currentPageGroupedByDay: { [date: string]: ImportableFile[] } = {};
+                                currentPageItems.forEach((item) => {
+                                    const date = item.importData.releaseDate ? new Date(item.importData.releaseDate) : null;
+                                    const dayKey = date ? date.toISOString().split('T')[0] : 'sem-data';
+                                    if (!currentPageGroupedByDay[dayKey]) currentPageGroupedByDay[dayKey] = [];
+                                    currentPageGroupedByDay[dayKey].push(item);
+                                });
+                                const currentPageDays = Object.keys(currentPageGroupedByDay).sort((a, b) => b.localeCompare(a));
+
                                 return (
                                     <div>
-                                        {/* ATERADO: Mapeia sobre allDays diretamente */}
-                                        {allDays.map((day) => (
+                                        {/* Informações da paginação */}
+                                        <div className="px-6 py-3 bg-gray-700 border-b border-gray-600 flex items-center justify-between text-sm text-gray-300">
+                                            <span>
+                                                Mostrando {startIndex + 1}-{Math.min(endIndex, totalItems)} de {totalItems} músicas
+                                            </span>
+                                            <span>
+                                                Página {currentPage + 1} de {totalPages}
+                                            </span>
+                                        </div>
+
+                                        {/* Músicas da página atual */}
+                                        {currentPageDays.map((day) => (
                                             <div key={day} className="mb-8">
                                                 <h4 className="text-lg font-bold text-purple-300 mb-2 px-4 pt-4">{day === 'sem-data' ? 'Sem Data' : new Date(day).toLocaleDateString('pt-BR')}</h4>
                                                 <div className="divide-y divide-gray-700">
-                                                    {groupedByDay[day].map((item, index) => (
+                                                    {currentPageGroupedByDay[day].map((item, index) => (
                                                         <div key={item.file.key} className="p-4 flex items-start gap-4 hover:bg-gray-700/50">
                                                             {/* Checkbox para seleção */}
                                                             <input
@@ -708,7 +885,7 @@ export default function ContaboStoragePage() {
                                                                                         setImportableFiles((prev) => {
                                                                                             const updated = [...prev];
                                                                                             const fileIndex = prev.findIndex(p => p.file.key === item.file.key);
-                                                                                            if(fileIndex > -1){
+                                                                                            if (fileIndex > -1) {
                                                                                                 updated[fileIndex] = {
                                                                                                     ...updated[fileIndex],
                                                                                                     importData: {
@@ -832,7 +1009,55 @@ export default function ContaboStoragePage() {
                                                 </div>
                                             </div>
                                         ))}
-                                        {/* REMOVIDO: Bloco de botões de paginação */}
+
+                                        {/* Controles de paginação */}
+                                        {totalPages > 1 && (
+                                            <div className="px-6 py-4 bg-gray-700 border-t border-gray-600 flex items-center justify-between">
+                                                <button
+                                                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                                                    disabled={currentPage === 0}
+                                                    className="inline-flex items-center gap-2 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    ← Anterior
+                                                </button>
+
+                                                <div className="flex items-center gap-2">
+                                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                        let pageNum;
+                                                        if (totalPages <= 5) {
+                                                            pageNum = i;
+                                                        } else if (currentPage < 3) {
+                                                            pageNum = i;
+                                                        } else if (currentPage >= totalPages - 3) {
+                                                            pageNum = totalPages - 5 + i;
+                                                        } else {
+                                                            pageNum = currentPage - 2 + i;
+                                                        }
+
+                                                        return (
+                                                            <button
+                                                                key={pageNum}
+                                                                onClick={() => setCurrentPage(pageNum)}
+                                                                className={`px-3 py-2 rounded-lg transition-colors ${currentPage === pageNum
+                                                                    ? 'bg-purple-600 text-white'
+                                                                    : 'bg-gray-600 hover:bg-gray-700 text-gray-300'
+                                                                    }`}
+                                                            >
+                                                                {pageNum + 1}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                <button
+                                                    onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                                                    disabled={currentPage === totalPages - 1}
+                                                    className="inline-flex items-center gap-2 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Próxima →
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })()

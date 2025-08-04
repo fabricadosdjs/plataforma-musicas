@@ -22,14 +22,18 @@ interface AppContextType {
   dailyDownloadCount: number;
   dailyLimit: number;
   downloadedTracks: number[];
+  downloadedTracksSet: Set<number>;
   handleDownload: (track: Track) => Promise<void>;
+
+  // Toast global para feedback
+  showToast: (message: string, type?: 'default' | 'success' | 'info' | 'warning' | 'error' | 'vip' | 'access-check', duration?: number) => void;
 
   // ... (outras propriedades como alerts)
   showAlert: (message: string, duration?: number) => void;
   showVipAlert: (message: string, duration?: number) => void;
   showAccessCheckAlert: (message: string, duration?: number) => void;
   alertMessage: string;
-  alertType: 'default' | 'vip' | 'access-check';
+  alertType: 'default' | 'success' | 'info' | 'warning' | 'error' | 'vip' | 'access-check';
   closeAlert: () => void;
 }
 
@@ -44,12 +48,19 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [trackList, setTrackList] = useState<Track[]>([]);
   const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState<'default' | 'vip' | 'access-check'>('default');
-
+  const [alertType, setAlertType] = useState<'default' | 'vip' | 'access-check' | 'success' | 'info' | 'warning' | 'error'>('default');
   // ADICIONADO: Estados centralizados para downloads
   const [dailyDownloadCount, setDailyDownloadCount] = useState(0);
   const [dailyLimit, setDailyLimit] = useState(15); // Um valor padrão
   const [downloadedTracks, setDownloadedTracks] = useState<number[]>([]);
+  // Set para facilitar checagem de músicas baixadas
+  const downloadedTracksSet = new Set(downloadedTracks);
+  // Toast global para feedback
+  const showToast = useCallback((message: string, type: 'default' | 'success' | 'info' | 'warning' | 'error' | 'vip' | 'access-check' = 'default', duration: number = 5000) => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setTimeout(() => setAlertMessage(''), duration);
+  }, []);
 
   // ... (outros hooks e funções como playTrack, handleLike)
   const showAlert = useCallback((message: string, duration: number = 5000) => {
@@ -177,10 +188,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     dailyDownloadCount,
     dailyLimit,
     downloadedTracks,
+    downloadedTracksSet,
     handleDownload,
     showAlert,
     showVipAlert,
     showAccessCheckAlert,
+    showToast,
     closeAlert,
     alertMessage,
     alertType,

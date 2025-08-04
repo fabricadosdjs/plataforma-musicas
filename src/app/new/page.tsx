@@ -4,7 +4,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Filter, Download, Heart, Play, Pause, Music, TrendingUp, Clock, Star, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
+import { Search, Filter, Download, Heart, Play, Pause, Music, TrendingUp, Clock, Star, CheckCircle, Waves, Sparkles, Crown, BarChart3, Zap, Flame } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
 import { useToast } from '@/hooks/useToast';
@@ -239,33 +240,172 @@ function NewPageContent() {
   const monthOptions = generateMonthOptions();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#374151] via-[#1f2937] to-[#111827]">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a3e] to-[#2d1b69] relative overflow-hidden">
+      {/* Animated background particles */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500/5 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl animate-pulse delay-2000"></div>
+      </div>
+
       <Header />
-      <main className="container mx-auto px-4 py-8 pt-20">
+      <main className="container mx-auto px-4 py-8 pt-20 relative z-10">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-[#374151] to-[#4b5563] rounded-full">
-              <CheckCircle className="h-8 w-8 text-white" />
+            <div className="p-3 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full backdrop-blur-sm border border-purple-500/30 animate-pulse-glow">
+              <CheckCircle className="h-8 w-8 text-purple-400" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">Novidades</h1>
-              <p className="text-gray-300">As músicas mais recentes adicionadas ao catálogo</p>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-2 neon-text">
+                Novidades
+              </h1>
+              <p className="text-gray-300 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-purple-400 animate-float" />
+                As músicas mais recentes adicionadas ao catálogo
+              </p>
             </div>
           </div>
 
           {!session && (
-            <div className="w-full flex items-center justify-center py-3 px-4 mb-4 rounded-xl shadow-md bg-[#374151] border border-gray-700 text-gray-100 font-semibold text-center text-sm">
+            <div className="w-full flex items-center justify-center py-3 px-4 mb-4 rounded-xl shadow-md bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 text-gray-100 font-semibold text-center text-sm backdrop-blur-sm animate-pulse">
+              <Waves className="h-4 w-4 mr-2 text-orange-400" />
               Atenção: Usuários sem plano não podem ouvir, baixar ou curtir músicas. Apenas a navegação no catálogo está disponível.
             </div>
           )}
         </div>
 
-        {/* Search and Filters Section */}
-        <div className="mb-8 bg-gradient-to-br from-[#374151]/70 via-[#1f2937]/70 to-[#111827]/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-800/30 shadow-2xl">
+        {/* Hero Section - Beatport Style */}
+        <div className="mb-8 glass-effect rounded-3xl p-8 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Featured Track */}
+            <div className="lg:col-span-2 bg-gradient-to-br from-purple-600/20 to-blue-600/20 rounded-2xl p-6 hover:from-purple-600/30 hover:to-blue-600/30 transition-all duration-300">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="h-5 w-5 text-purple-400" />
+                <span className="text-purple-400 font-semibold text-sm uppercase tracking-wide">Featured Track</span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">As músicas mais quentes da semana</h3>
+              <p className="text-gray-300 mb-4">Descubra os últimos lançamentos que estão dominando as pistas de dança</p>
+              <div className="flex gap-3">
+                <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2">
+                  <Play size={16} />
+                  Ouvir Agora
+                </button>
+                <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors duration-200">
+                  Ver Todas
+                </button>
+              </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="space-y-4">
+              <div className="glass-effect rounded-xl p-4 hover:bg-white/10 transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-600/20 rounded-lg">
+                    <Music className="h-5 w-5 text-green-400" />
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold">{totalCount || 0}</div>
+                    <div className="text-gray-400 text-sm">Novas Músicas</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass-effect rounded-xl p-4 hover:bg-white/10 transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-600/20 rounded-lg">
+                    <Star className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold">VIP</div>
+                    <div className="text-gray-400 text-sm">Acesso Premium</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass-effect rounded-xl p-4 hover:bg-white/10 transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-600/20 rounded-lg">
+                    <Clock className="h-5 w-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold">24/7</div>
+                    <div className="text-gray-400 text-sm">Updates</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Genre Filters - Beatport Style */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4">
+            Navegue por Gêneros
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            {['House', 'Techno', 'Progressive', 'Trance', 'Deep House', 'Tech House', 'Melodic Techno', 'Afro House'].map((genre) => (
+              <button
+                key={genre}
+                onClick={() => {
+                  setSelectedGenre(genre.toLowerCase());
+                  handleSearch();
+                }}
+                className="px-4 py-2 glass-effect hover:bg-purple-600/30 text-white rounded-full transition-all duration-300 transform hover:scale-105 text-sm font-medium"
+              >
+                {genre}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Top 100 Promotion Box */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-yellow-600/20 via-orange-600/20 to-red-600/20 rounded-2xl p-6 border border-yellow-500/30 backdrop-blur-sm hover:shadow-lg hover:shadow-yellow-500/20 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-gradient-to-r from-yellow-500/30 to-orange-500/30 rounded-full">
+                  <Crown className="h-8 w-8 text-yellow-400" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-2">🎵 TOP 100 RANKING</h3>
+                  <p className="text-gray-300 mb-3">Descubra as músicas mais populares da plataforma em tempo real</p>
+                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <BarChart3 className="h-4 w-4 text-yellow-400" />
+                      Ranking em tempo real
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Zap className="h-4 w-4 text-orange-400" />
+                      Atualizado agora
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Flame className="h-4 w-4 text-red-400" />
+                      Trending tracks
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-3">
+                <div className="text-right">
+                  <div className="text-3xl font-bold text-yellow-400">100</div>
+                  <div className="text-sm text-gray-400">Músicas</div>
+                </div>
+                <Link
+                  href="/top-100"
+                  className="px-6 py-3 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-yellow-500/20 transform hover:scale-105 flex items-center gap-2"
+                >
+                  <Crown className="h-5 w-5" />
+                  Ver Top 100
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="mb-8 glass-effect rounded-3xl p-6 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 beatport-hover">
           <div className="flex flex-col items-center gap-4">
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex items-center w-full max-w-md bg-gradient-to-r from-[#374151]/80 to-[#1f2937]/80 rounded-full px-4 py-3 border border-gray-700/50 focus-within:border-[#6b7280]/70 transition-all duration-200 backdrop-blur-sm">
-              <Search className="h-5 w-5 text-gray-400 mr-3" />
+            <form onSubmit={handleSearch} className="flex items-center w-full max-w-md glass-effect rounded-full px-4 py-3 focus-within:border-purple-400/70 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 pulse-button">
+              <Search className="h-5 w-5 text-purple-400 mr-3 animate-pulse" />
               <input
                 type="text"
                 placeholder="Buscar músicas, artistas, estilos..."
@@ -278,18 +418,18 @@ function NewPageContent() {
             {/* Filters Button */}
             <button
               onClick={() => setShowFiltersModal(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#374151]/80 to-[#1f2937]/80 hover:from-[#374151]/90 hover:to-[#1f2937]/90 text-white rounded-full transition-all duration-200 border border-gray-700/50 hover:border-gray-600/70 backdrop-blur-sm"
+              className="flex items-center gap-2 px-6 py-3 glass-effect hover:bg-purple-600/20 text-white rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 beatport-hover pulse-button"
             >
-              <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-[#6b7280]' : 'text-gray-300'}`} />
+              <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-purple-400 animate-pulse' : 'text-gray-300'}`} />
               <span className="text-sm font-medium">Filtros</span>
               {hasActiveFilters && (
-                <span className="block h-2 w-2 rounded-full bg-[#6b7280] ring-2 ring-gray-800"></span>
+                <span className="block h-2 w-2 rounded-full bg-purple-400 ring-2 ring-purple-600 animate-pulse"></span>
               )}
             </button>
 
             {/* Active Filters Indicator */}
             {hasActiveFilters && (
-              <div className="flex items-center space-x-2 text-[#6b7280]">
+              <div className="flex items-center space-x-2 text-purple-400 animate-pulse">
                 <Filter className="h-4 w-4" />
                 <span className="text-sm">Filtros ativos</span>
               </div>
@@ -301,42 +441,49 @@ function NewPageContent() {
           <div className="flex items-center justify-center py-32">
             <div className="text-center">
               <div className="relative">
-                <div className="w-20 h-20 border-4 border-[#6b7280]/30 border-t-[#6b7280] rounded-full animate-spin mx-auto mb-6"></div>
-                <Music className="h-8 w-8 text-[#6b7280] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                <div className="w-20 h-20 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-6"></div>
+                <Music className="h-8 w-8 text-purple-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Carregando Músicas</h3>
+              <h3 className="text-xl font-semibold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2">Carregando Músicas</h3>
               <p className="text-gray-400">Aguarde enquanto buscamos as melhores faixas para você...</p>
             </div>
           </div>
         ) : tracks.length === 0 ? (
           <div className="text-center py-32">
-            <div className="p-6 bg-gradient-to-br from-[#374151]/50 via-[#1f2937]/50 to-[#111827]/50 rounded-2xl inline-block mb-6 border border-gray-700/30 backdrop-blur-sm">
-              <Search className="h-16 w-16 text-gray-400 mx-auto" />
+            <div className="p-6 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-indigo-900/20 rounded-3xl inline-block mb-6 border border-purple-500/20 backdrop-blur-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300">
+              <Search className="h-16 w-16 text-purple-400 mx-auto animate-pulse" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-4">Nenhuma música encontrada</h3>
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4">Nenhuma música encontrada</h3>
             <p className="text-gray-400 mb-8">Tente ajustar seus filtros ou fazer uma nova busca.</p>
-            <button onClick={handleClearFilters} className="px-6 py-3 bg-gradient-to-r from-[#374151] to-[#4b5563] hover:from-[#4b5563] hover:to-[#6b7280] text-white rounded-lg font-medium transition-colors shadow-lg">Limpar Filtros</button>
+            <button onClick={handleClearFilters} className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/20 transform hover:scale-105">Limpar Filtros</button>
           </div>
         ) : (
           <>
             {sortedDates.length > 0 ? (
               <div className="space-y-8">
-                {pagedDates.map((date) => (
-                  <div key={date} className="space-y-4">
-                    <div className="flex items-center space-x-4"><div className="flex items-center space-x-3"><div className="w-3 h-3 bg-[#6b7280] rounded-full"></div><h2 className="text-2xl font-bold text-white capitalize">{formatDate(date)}</h2></div></div>
-                    <div className="bg-gradient-to-br from-[#374151]/60 via-[#1f2937]/60 to-[#111827]/60 backdrop-blur-sm rounded-2xl border border-gray-600/30 overflow-hidden shadow-2xl">
+                {pagedDates.map((date, index) => (
+                  <div key={date} className="space-y-4 animate-slide-in-bottom" style={{ animationDelay: `${index * 100}ms` }}>
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-pulse-glow"></div>
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent capitalize neon-text">
+                          {formatDate(date)}
+                        </h2>
+                      </div>
+                    </div>
+                    <div className="glass-effect rounded-3xl overflow-hidden shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
                       <MusicTable tracks={tracksByDate[date] || []} onDownload={handleDownloadTracks} isDownloading={downloading} />
                     </div>
                   </div>
                 ))}
                 {/* Paginação de dias */}
                 {totalDayPages > 1 && (
-                  <div className="flex items-center justify-between mt-8 p-6 bg-gradient-to-br from-[#374151]/20 via-[#1f2937]/20 to-[#111827]/20 backdrop-blur-sm rounded-xl border border-white/10">
+                  <div className="flex items-center justify-between mt-8 p-6 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-indigo-900/20 backdrop-blur-lg rounded-2xl border border-purple-500/20 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300">
                     <div className="text-gray-300">
                       <span className="text-sm">Exibindo dias {daysPage + 1} de {totalDayPages}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button onClick={() => setDaysPage(daysPage - 1)} disabled={daysPage === 0 || searchLoading} className="flex items-center space-x-2 px-4 py-2 bg-[#374151]/50 hover:bg-[#4b5563]/50 disabled:bg-[#1f2937]/50 disabled:opacity-50 text-white rounded-lg transition-all duration-200 border border-gray-600/30">
+                      <button onClick={() => setDaysPage(daysPage - 1)} disabled={daysPage === 0 || searchLoading} className="flex items-center space-x-2 px-4 py-2 bg-purple-600/30 hover:bg-purple-600/50 disabled:bg-gray-800/50 disabled:opacity-50 text-white rounded-lg transition-all duration-300 border border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/20 transform hover:scale-105 disabled:transform-none">
                         <ChevronLeft className="h-4 w-4" />
                         <span>Anterior</span>
                       </button>
@@ -352,9 +499,9 @@ function NewPageContent() {
                               key={pageNum}
                               onClick={() => setDaysPage(pageNum)}
                               disabled={pageNum === daysPage || searchLoading}
-                              className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 ${pageNum === daysPage
-                                ? 'bg-[#6b7280] text-white'
-                                : 'bg-[#374151]/50 hover:bg-[#4b5563]/50 text-gray-300 disabled:opacity-50'
+                              className={`px-3 py-2 rounded-lg text-sm transition-all duration-300 transform hover:scale-105 ${pageNum === daysPage
+                                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/20'
+                                : 'bg-purple-600/20 hover:bg-purple-600/40 text-gray-300 disabled:opacity-50 border border-purple-500/30'
                                 }`}
                             >
                               {pageNum + 1}
@@ -362,7 +509,7 @@ function NewPageContent() {
                           );
                         })}
                       </div>
-                      <button onClick={() => setDaysPage(daysPage + 1)} disabled={daysPage === totalDayPages - 1 || searchLoading} className="flex items-center space-x-2 px-4 py-2 bg-[#374151]/50 hover:bg-[#4b5563]/50 disabled:bg-[#1f2937]/50 disabled:opacity-50 text-white rounded-lg transition-all duration-200 border border-gray-600/30">
+                      <button onClick={() => setDaysPage(daysPage + 1)} disabled={daysPage === totalDayPages - 1 || searchLoading} className="flex items-center space-x-2 px-4 py-2 bg-purple-600/30 hover:bg-purple-600/50 disabled:bg-gray-800/50 disabled:opacity-50 text-white rounded-lg transition-all duration-300 border border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/20 transform hover:scale-105 disabled:transform-none">
                         <span>Próximo</span>
                         <ChevronRight className="h-4 w-4" />
                       </button>
@@ -372,12 +519,12 @@ function NewPageContent() {
               </div>
             ) : (
               <div className="text-center py-32">
-                <div className="p-6 bg-gradient-to-br from-[#374151]/50 via-[#1f2937]/50 to-[#111827]/50 rounded-2xl inline-block mb-6 border border-gray-700/30 backdrop-blur-sm">
-                  <Music className="h-16 w-16 text-gray-400 mx-auto" />
+                <div className="p-6 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-indigo-900/20 rounded-3xl inline-block mb-6 border border-purple-500/20 backdrop-blur-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300">
+                  <Music className="h-16 w-16 text-purple-400 mx-auto animate-pulse" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Nenhuma música encontrada</h3>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4">Nenhuma música encontrada</h3>
                 <p className="text-gray-400 mb-8">Não há músicas disponíveis para os filtros selecionados.</p>
-                <button onClick={handleClearFilters} className="px-6 py-3 bg-gradient-to-r from-[#374151] to-[#4b5563] hover:from-[#4b5563] hover:to-[#6b7280] text-white rounded-lg font-medium transition-colors shadow-lg">Limpar Filtros</button>
+                <button onClick={handleClearFilters} className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/20 transform hover:scale-105">Limpar Filtros</button>
               </div>
             )}
           </>

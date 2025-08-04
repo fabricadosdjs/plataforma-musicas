@@ -1,97 +1,67 @@
-// src/components/player/FooterPlayer.tsx
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-react';
-import { useAppContext } from '@/context/AppContext';
+import {
+    Play,
+    Pause,
+    Download,
+    Heart,
+    Volume2,
+    VolumeX,
+    X,
+    SkipBack,
+    SkipForward
+} from 'lucide-react';
+import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { useSession } from 'next-auth/react';
 
-const FooterPlayer = () => {
+const FooterPlayerNew = () => {
     const { data: session } = useSession();
-    const { currentTrack, isPlaying, togglePlayPause, nextTrack, previousTrack } = useAppContext();
-    const [volume, setVolume] = useState(1.0); // Começar com 100%
+    const {
+        currentTrack,
+        isPlaying,
+        togglePlayPause,
+        stopTrack,
+        nextTrack,
+        previousTrack,
+        audioRef
+    } = useGlobalPlayer();
+
+    const [volume, setVolume] = useState(1.0);
     const [isMuted, setIsMuted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [isHidden, setIsHidden] = useState(false);
-    const audioRef = useRef<HTMLAudioElement>(null);
-    const waveformRef = useRef<HTMLCanvasElement>(null);
-    const animationRef = useRef<number>();
-    const lastUpdateRef = useRef<number>(0);
+    const [liked, setLiked] = useState(false);
+    const [liking, setLiking] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const progressBarRef = useRef<HTMLDivElement>(null);
 
-    // Criar dados simulados de waveform
-    const generateWaveformData = () => {
-        const data = [];
-        for (let i = 0; i < 100; i++) {
-            data.push(Math.random() * 0.8 + 0.2);
-        }
-        return data;
-    };
-
-    const [waveformData] = useState(generateWaveformData());
-
-    // Throttled time update para melhor performance
-    const throttledTimeUpdate = useCallback(() => {
-        const now = Date.now();
-        if (now - lastUpdateRef.current > 100) { // Atualiza a cada 100ms
-            if (audioRef.current) {
-                setCurrentTime(audioRef.current.currentTime);
-            }
-            lastUpdateRef.current = now;
-        }
-    }, []);
-
-    // Desenhar waveform
-    const drawWaveform = useCallback(() => {
-        if (!waveformRef.current) return;
-
-        const canvas = waveformRef.current;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const width = canvas.width;
-        const height = canvas.height;
-        const barWidth = width / waveformData.length;
-        const progress = duration > 0 ? currentTime / duration : 0;
-
-        ctx.clearRect(0, 0, width, height);
-
-        waveformData.forEach((amplitude, index) => {
-            const barHeight = amplitude * height * 0.8;
-            const x = index * barWidth;
-            const y = (height - barHeight) / 2;
-
-            // Cor baseada no progresso
-            const isPlayed = index / waveformData.length <= progress;
-            ctx.fillStyle = isPlayed ? '#FF7F00' : '#4A5568'; // Orange for played, gray for unplayed
-
-            ctx.fillRect(x, y, Math.max(barWidth - 1, 1), barHeight);
-        });
-    }, [currentTime, duration, waveformData]);
-
-    // Atualizar canvas quando necessário
+    // Verificar status de like quando currentTrack muda
     useEffect(() => {
-        let animationId: number;
+        const checkLikeStatus = async () => {
+            if (!currentTrack?.id || !session) {
+                setLiked(false);
+                return;
+            }
 
-        const animate = () => {
-            drawWaveform();
-            if (isPlaying) {
-                animationId = requestAnimationFrame(animate);
+            try {
+                const response = await fetch(`/api/tracks/like?trackId=${currentTrack.id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setLiked(data.liked);
+                } else {
+                    setLiked(false);
+                }
+            } catch (error) {
+                console.error('Erro ao verificar status de like:', error);
+                setLiked(false);
             }
         };
 
-        if (currentTrack) {
-            animate();
-        }
+        checkLikeStatus();
+    }, [currentTrack, session]);
 
-        return () => {
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-            }
-        };
-    }, [currentTrack, isPlaying, drawWaveform]);
-
-    // Gerenciar áudio com melhor controle
+    // Gerenciar áudio
     useEffect(() => {
         if (!audioRef.current) return;
 
@@ -99,7 +69,6 @@ const FooterPlayer = () => {
 
         // Reset estados quando muda a música
         if (currentTrack?.previewUrl) {
-            audio.src = currentTrack.previewUrl;
             audio.volume = isMuted ? 0 : volume;
             setCurrentTime(0);
             setDuration(0);
@@ -110,74 +79,72 @@ const FooterPlayer = () => {
         };
 
         const handleTimeUpdate = () => {
-            throttledTimeUpdate();
+            if (!isDragging) {
+                setCurrentTime(audio.currentTime);
+            }
         };
 
         const handleEnded = () => {
             setCurrentTime(0);
-            // Auto-next quando terminar
-            nextTrack();
         };
-
-        const handleCanPlay = () => {
-            // Garantir que o áudio está pronto para tocar
-            if (isPlaying && audio.paused) {
-                audio.play().catch(console.error);
-            }
-        };
-
-        // Limpar eventos anteriores
-        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        audio.removeEventListener('timeupdate', handleTimeUpdate);
-        audio.removeEventListener('ended', handleEnded);
-        audio.removeEventListener('canplay', handleCanPlay);
 
         // Adicionar eventos
         audio.addEventListener('loadedmetadata', handleLoadedMetadata);
         audio.addEventListener('timeupdate', handleTimeUpdate);
         audio.addEventListener('ended', handleEnded);
-        audio.addEventListener('canplay', handleCanPlay);
 
         return () => {
             audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
             audio.removeEventListener('timeupdate', handleTimeUpdate);
             audio.removeEventListener('ended', handleEnded);
-            audio.removeEventListener('canplay', handleCanPlay);
         };
-    }, [currentTrack, volume, isMuted, isPlaying, throttledTimeUpdate, nextTrack]);
+    }, [currentTrack, volume, isMuted, isDragging]);
 
-    // Controlar play/pause com melhor responsividade
-    useEffect(() => {
-        if (!audioRef.current || !currentTrack?.previewUrl) return;
+    // Progress bar click handler
+    const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (!audioRef.current || !progressBarRef.current || duration === 0) return;
 
-        const audio = audioRef.current;
-
-        if (isPlaying) {
-            if (audio.paused) {
-                audio.play().catch((error) => {
-                    console.error('Erro ao tocar áudio:', error);
-                });
-            }
-        } else {
-            if (!audio.paused) {
-                audio.pause();
-            }
-        }
-    }, [isPlaying, currentTrack]);
-
-    // Buscar posição no waveform com melhor precisão
-    const handleWaveformClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!audioRef.current || !waveformRef.current || duration === 0) return;
-
-        const canvas = waveformRef.current;
-        const rect = canvas.getBoundingClientRect();
+        const rect = progressBarRef.current.getBoundingClientRect();
         const x = e.clientX - rect.left;
-        const percentage = Math.max(0, Math.min(1, x / canvas.width));
+        const percentage = Math.max(0, Math.min(1, x / rect.width));
         const newTime = percentage * duration;
 
         audioRef.current.currentTime = newTime;
         setCurrentTime(newTime);
     }, [duration]);
+
+    // Progress bar drag handlers
+    const handleProgressMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        setIsDragging(true);
+        handleProgressClick(e);
+    }, [handleProgressClick]);
+
+    const handleProgressMouseMove = useCallback((e: MouseEvent) => {
+        if (!isDragging || !audioRef.current || !progressBarRef.current || duration === 0) return;
+
+        const rect = progressBarRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const percentage = Math.max(0, Math.min(1, x / rect.width));
+        const newTime = percentage * duration;
+
+        audioRef.current.currentTime = newTime;
+        setCurrentTime(newTime);
+    }, [isDragging, duration]);
+
+    const handleProgressMouseUp = useCallback(() => {
+        setIsDragging(false);
+    }, []);
+
+    useEffect(() => {
+        if (isDragging) {
+            document.addEventListener('mousemove', handleProgressMouseMove);
+            document.addEventListener('mouseup', handleProgressMouseUp);
+            return () => {
+                document.removeEventListener('mousemove', handleProgressMouseMove);
+                document.removeEventListener('mouseup', handleProgressMouseUp);
+            };
+        }
+    }, [isDragging, handleProgressMouseMove, handleProgressMouseUp]);
 
     const formatTime = useCallback((time: number) => {
         if (!time || isNaN(time)) return '0:00';
@@ -203,11 +170,76 @@ const FooterPlayer = () => {
     }, [isMuted, volume]);
 
     const handleClose = useCallback(() => {
-        if (audioRef.current) {
-            audioRef.current.pause();
+        stopTrack();
+        setCurrentTime(0);
+    }, [stopTrack]);
+
+    // Like handler - tempo real
+    const handleLikeClick = useCallback(async () => {
+        if (liking || !currentTrack?.id || !session) return;
+
+        setLiking(true);
+
+        try {
+            const response = await fetch('/api/tracks/like', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    trackId: currentTrack.id,
+                    action: liked ? 'unlike' : 'like'
+                }),
+            });
+
+            if (response.ok) {
+                setLiked(!liked);
+            } else {
+                console.error('Erro ao curtir música');
+            }
+        } catch (error) {
+            console.error('Erro ao curtir música:', error);
+        } finally {
+            setLiking(false);
         }
-        setIsHidden(true);
-    }, []);
+    }, [liked, liking, currentTrack, session]);
+
+    // Download handler - forçar download sem nova aba
+    const handleDownloadClick = useCallback(() => {
+        if (!currentTrack?.downloadUrl) return;
+
+        // Forçar download sem abrir nova aba
+        fetch(currentTrack.downloadUrl)
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${currentTrack.artist || ''} - ${currentTrack.songName || ''}.mp3`;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error('Erro no download:', {
+                    error: error?.message || 'Erro desconhecido',
+                    track: currentTrack?.songName,
+                    downloadUrl: currentTrack?.downloadUrl
+                });
+                // Fallback para método anterior
+                if (currentTrack.downloadUrl) {
+                    const link = document.createElement('a');
+                    link.href = currentTrack.downloadUrl;
+                    link.download = `${currentTrack.artist || ''} - ${currentTrack.songName || ''}.mp3`;
+                    link.target = '_self';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            });
+    }, [currentTrack]);
 
     const handlePrevious = useCallback(() => {
         if (!audioRef.current) return;
@@ -217,120 +249,147 @@ const FooterPlayer = () => {
             audioRef.current.currentTime = 0;
             setCurrentTime(0);
         } else {
-            // Senão, vai para a música anterior
+            // Navegar para música anterior
             previousTrack();
         }
     }, [previousTrack]);
 
     const handleNext = useCallback(() => {
-        // Chama a função nextTrack do contexto para ir para a próxima música
+        // Navegar para próxima música
         nextTrack();
     }, [nextTrack]);
 
-    // Não mostrar player se usuário não estiver logado ou não houver música
-    if (!session || !currentTrack || isHidden) return null;
+    // Não mostrar player se não houver música
+    if (!currentTrack) {
+        return null;
+    }
+
+    const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-gray-900 via-black to-gray-900 border-t border-gray-700/50 backdrop-blur-lg">
-            <div className="container mx-auto px-4 py-2">
-                <div className="flex items-center gap-3">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-gray-900 via-black to-gray-900 border-t border-gray-700/50 backdrop-blur-lg shadow-2xl">
+            <div className="container mx-auto px-4 py-3">
+                {/* Progress Bar - Estilo Spotify */}
+                <div className="w-full mb-3">
+                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-1">
+                        <span>{formatTime(currentTime)}</span>
+                        <div
+                            ref={progressBarRef}
+                            className="flex-1 h-1 bg-gray-600 rounded-full cursor-pointer group relative"
+                            onMouseDown={handleProgressMouseDown}
+                            onClick={handleProgressClick}
+                        >
+                            <div
+                                className="h-full bg-gradient-to-r from-green-400 to-green-500 rounded-full relative transition-all duration-150"
+                                style={{ width: `${progressPercentage}%` }}
+                            >
+                                <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-lg"></div>
+                            </div>
+                        </div>
+                        <span>{formatTime(duration)}</span>
+                    </div>
+                </div>
+
+                {/* Player Controls - Estilo Spotify */}
+                <div className="flex items-center justify-between">
                     {/* Track Info */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                         <img
-                            src={currentTrack.imageUrl || "https://i.ibb.co/FL1rxTtx/20250526-1938-Sound-Cloud-Cover-Design-remix-01jw7bwxq6eqj8sqztah5n296g.png"}
+                            src="https://i.ibb.co/FL1rxTtx/20250526-1938-Sound-Cloud-Cover-Design-remix-01jw7bwxq6eqj8sqztah5n296g.png"
                             alt={currentTrack.songName}
-                            className="w-10 h-10 rounded-lg object-cover border border-gray-600/50"
+                            className="w-14 h-14 rounded-lg object-cover border border-gray-600/50 shadow-lg"
                         />
                         <div className="min-w-0">
-                            <div className="text-white font-semibold text-sm truncate">
+                            <div className="text-white font-semibold text-sm truncate hover:text-green-400 transition-colors cursor-pointer">
                                 {currentTrack.songName}
                             </div>
-                            <div className="text-gray-400 text-xs truncate">
+                            <div className="text-gray-400 text-xs truncate hover:text-white transition-colors cursor-pointer">
                                 {currentTrack.artist}
                             </div>
                         </div>
+                        <button
+                            onClick={handleLikeClick}
+                            className={`p-2 rounded-full transition-all duration-200 ${liked ? 'text-green-400 hover:text-green-300' : 'text-gray-400 hover:text-white'
+                                }`}
+                            title={liked ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                            disabled={liking}
+                        >
+                            <Heart size={16} className={liked ? 'fill-current' : ''} />
+                        </button>
                     </div>
 
-                    {/* Controls */}
+                    {/* Center Controls */}
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handlePrevious}
-                            className="p-1.5 text-gray-300 hover:text-white transition-colors"
+                            className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
                             title="Anterior"
                         >
-                            <SkipBack size={16} />
+                            <SkipBack size={20} />
                         </button>
 
                         <button
                             onClick={togglePlayPause}
-                            className="p-2 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white rounded-full transition-all duration-200 shadow-lg"
+                            className="p-3 bg-white text-black rounded-full hover:scale-105 transition-all duration-200 shadow-lg"
                             title={isPlaying ? "Pausar" : "Tocar"}
                         >
-                            {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+                            {isPlaying ? (
+                                <Pause size={16} fill="currentColor" />
+                            ) : (
+                                <Play size={16} className="ml-0.5" fill="currentColor" />
+                            )}
                         </button>
 
                         <button
                             onClick={handleNext}
-                            className="p-1.5 text-gray-300 hover:text-white transition-colors"
+                            className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
                             title="Próxima"
                         >
-                            <SkipForward size={16} />
+                            <SkipForward size={20} />
                         </button>
                     </div>
 
-                    {/* Waveform & Progress */}
-                    <div className="flex-1 max-w-md mx-3">
-                        <div className="flex items-center gap-2 text-xs text-gray-400 mb-1">
-                            <span>{formatTime(currentTime)}</span>
-                            <span>/</span>
-                            <span>{formatTime(duration)}</span>
+                    {/* Right Controls */}
+                    <div className="flex items-center gap-3 flex-1 justify-end">
+                        <button
+                            onClick={handleDownloadClick}
+                            className="p-2 text-gray-400 hover:text-green-400 transition-colors duration-200"
+                            title="Download"
+                        >
+                            <Download size={16} />
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={toggleMute}
+                                className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
+                                title={isMuted ? "Ativar som" : "Silenciar"}
+                            >
+                                {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                            </button>
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                value={isMuted ? 0 : volume}
+                                onChange={handleVolumeChange}
+                                className="w-20 h-1 bg-gray-600 rounded-full appearance-none cursor-pointer accent-green-500"
+                            />
                         </div>
-                        <canvas
-                            ref={waveformRef}
-                            width={300}
-                            height={30}
-                            className="w-full h-8 cursor-pointer rounded-lg"
-                            onClick={handleWaveformClick}
-                        />
-                    </div>
 
-                    {/* Volume */}
-                    <div className="flex items-center gap-2">
-                        <button onClick={toggleMute} className="text-gray-300 hover:text-white transition-colors">
-                            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                        <button
+                            onClick={handleClose}
+                            className="p-2 text-gray-400 hover:text-red-400 transition-colors duration-200"
+                            title="Fechar player"
+                        >
+                            <X size={16} />
                         </button>
-                        <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={isMuted ? 0 : volume}
-                            onChange={handleVolumeChange}
-                            className="w-12 accent-orange-600"
-                        />
-                        <span className="text-xs text-gray-400 w-6">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
                     </div>
-
-                    {/* Botão Fechar */}
-                    <button
-                        onClick={handleClose}
-                        className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-700/50 transition-colors"
-                        title="Fechar player"
-                    >
-                        <X size={14} />
-                    </button>
                 </div>
             </div>
-
-            {/* Audio Element com configurações otimizadas */}
-            <audio
-                ref={audioRef}
-                preload="metadata"
-                crossOrigin="anonymous"
-                style={{ display: 'none' }}
-            />
         </div>
     );
 };
 
-export default FooterPlayer;
+export default FooterPlayerNew;

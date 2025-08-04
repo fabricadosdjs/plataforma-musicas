@@ -1,14 +1,16 @@
 // src/app/layout.tsx
 import DynamicGradientBackground from '@/components/layout/DynamicGradientBackground';
+import { GlobalPlayerProvider } from '@/context/GlobalPlayerContext';
 import MusicRouteHandler from '@/components/layout/MusicRouteHandler';
 import AudioPlayerRoot from '@/components/player/AudioPlayerRoot';
-import FooterPlayer from '@/components/player/FooterPlayerNew';
+import FooterPlayerNew from '@/components/player/FooterPlayerNew';
 import PWAInstaller from '@/components/pwa/PWAInstaller';
 import { AppProvider } from '@/context/AppContext';
 import AuthProvider from '@/context/AuthProvider';
 import type { Metadata } from 'next';
 import { Lato } from 'next/font/google'; // Lato como fonte principal
 import './globals.css';
+import '../styles/beatport-effects.css';
 import { ExtensionDetector } from '@/components/layout/ExtensionDetector';
 import { GlobalToastManager } from '@/components/layout/GlobalToastManager';
 import Footer from '@/components/layout/Footer';
@@ -115,14 +117,17 @@ export default function RootLayout({
         />
         <AuthProvider>
           <AppProvider>
-            <MusicRouteHandler />
-            <ExtensionDetector />
-            <GlobalToastManager />
-            <DynamicGradientBackground />
-            <FooterPlayer />
-            <PWAInstaller />
-            {children}
-            <Footer />
+            <GlobalPlayerProvider>
+              <MusicRouteHandler />
+              <ExtensionDetector />
+              <GlobalToastManager />
+              <DynamicGradientBackground />
+              <PWAInstaller />
+              {children}
+              {/* Player global sempre renderizado */}
+              <FooterPlayerNew />
+              <Footer />
+            </GlobalPlayerProvider>
           </AppProvider>
         </AuthProvider>
       </body>

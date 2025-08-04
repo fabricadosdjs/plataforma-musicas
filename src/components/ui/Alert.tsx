@@ -7,7 +7,7 @@ import { memo, useEffect, useState } from 'react';
 interface AlertProps {
     message: string;
     onClose: () => void;
-    type?: 'default' | 'vip' | 'access-check';
+    type?: 'default' | 'success' | 'info' | 'warning' | 'error' | 'vip' | 'access-check';
 }
 
 const Alert = memo(function Alert({ message, onClose, type = 'default' }: AlertProps) {

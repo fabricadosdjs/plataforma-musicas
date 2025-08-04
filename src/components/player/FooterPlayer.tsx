@@ -2,14 +2,29 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Minimize2, X, Maximize2 } from 'lucide-react';
-import { useAppContext } from '@/context/AppContext';
+import {
+    Play,
+    Pause,
+    SkipBack,
+    SkipForward,
+    Volume2,
+    VolumeX,
+    Minimize2,
+    X,
+    Maximize2,
+    ChevronLeft,
+    ChevronRight,
+    Square,
+    Circle,
+    Waves
+} from 'lucide-react';
+import { useAppContext } from '../../context/AppContext';
 import { useSession } from 'next-auth/react';
-import { Track } from '@/types/track';
 
 const FooterPlayer = () => {
     const { currentTrack, isPlaying, togglePlayPause, nextTrack, previousTrack } = useAppContext();
     const { data: session } = useSession();
+
     const [volume, setVolume] = useState(1.0); // Começar com 100%
     const [isMuted, setIsMuted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -119,15 +134,15 @@ const FooterPlayer = () => {
         const audio = audioRef.current;
         audio.src = currentTrack.previewUrl;
         audio.volume = isMuted ? 0 : volume;
-        audio.load(); // Força o carregamento do áudio
+        audio.load();
 
         const handleLoadedMetadataEvent = () => {
             setDuration(audio.duration);
         };
 
         const handleEndedEvent = () => {
-            // Tocar próxima música automaticamente
-            nextTrack();
+            // Parar quando a música terminar
+            togglePlayPause();
         };
 
         audio.addEventListener('loadedmetadata', handleLoadedMetadataEvent);
@@ -137,25 +152,14 @@ const FooterPlayer = () => {
             audio.removeEventListener('loadedmetadata', handleLoadedMetadataEvent);
             audio.removeEventListener('ended', handleEndedEvent);
         };
-    }, [currentTrack, nextTrack]);
+    }, [currentTrack, togglePlayPause]);
 
-    // Atualizar volume separadamente para evitar reiniciar a música
+    // Atualizar volume
     useEffect(() => {
         if (audioRef.current) {
             audioRef.current.volume = isMuted ? 0 : volume;
         }
     }, [volume, isMuted]);
-
-    // Controlar play/pause
-    useEffect(() => {
-        if (!audioRef.current) return;
-
-        if (isPlaying) {
-            audioRef.current.play().catch(console.error);
-        } else {
-            audioRef.current.pause();
-        }
-    }, [isPlaying]);
 
     // Buscar posição no waveform
     const handleWaveformClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -244,23 +248,29 @@ const FooterPlayer = () => {
     if (!currentTrack || isHidden) return null;
 
     return (
-        <div className={`fixed bottom-0 left-0 w-full bg-gradient-to-r from-gray-900 to-black border-t border-gray-800 shadow-2xl z-50 flex flex-col items-center transition-all duration-300 ${isMinimized ? 'h-16' : 'h-auto'}`}>
-            {/* Aba do player com controles de minimizar/fechar */}
-            <div className="w-full max-w-3xl flex justify-end px-4 py-1">
-                <div className="flex items-center gap-1">
+        <div className="fixed bottom-0 left-0 w-full bg-gradient-to-r from-gray-900 via-black to-gray-900 border-t border-gray-700/50 backdrop-blur-lg shadow-2xl z-50 flex flex-col items-center">
+            {/* Header com controles */}
+            <div className="w-full max-w-3xl flex items-center justify-between px-4 py-2">
+                <div className="flex items-center gap-2">
                     <button
                         onClick={handleMinimize}
-                        className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700/50 transition-colors"
-                        title={isMinimized ? 'Restaurar player' : 'Minimizar player'}
+                        className="group text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/5 hover:border-white/20"
+                        title={isMinimized ? "Expandir" : "Minimizar"}
                     >
-                        {isMinimized ? <Maximize2 size={12} /> : <Minimize2 size={12} />}
+                        {isMinimized ? (
+                            <Maximize2 size={14} className="group-hover:scale-110 transition-transform duration-200" />
+                        ) : (
+                            <Minimize2 size={14} className="group-hover:scale-110 transition-transform duration-200" />
+                        )}
                     </button>
+                </div>
+                <div className="flex items-center gap-2">
                     <button
                         onClick={handleClose}
-                        className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-700/50 transition-colors"
+                        className="group text-gray-400 hover:text-red-400 p-2 rounded-full hover:bg-red-500/10 transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/5 hover:border-red-400/20"
                         title="Fechar player"
                     >
-                        <X size={12} />
+                        <X size={14} className="group-hover:scale-110 transition-transform duration-200" />
                     </button>
                 </div>
             </div>
@@ -273,15 +283,19 @@ const FooterPlayer = () => {
                 style={{ display: "none" }}
             />
             <div className="w-full max-w-3xl flex flex-col items-center px-4 py-2">
-                <div className="flex items-center w-full justify-between mb-1">
+                {/* Controles centrais acima do waveform */}
+                <div className="flex items-center w-full justify-between mb-4">
                     {!isMinimized && (
                         <div className="flex items-center gap-3">
-                            <img
-                                src={currentTrack.imageUrl}
-                                alt={currentTrack.songName}
-                                className="w-12 h-12 rounded-lg object-cover border border-gray-700 shadow-md"
-                            />
-                            <div className="flex flex-col">
+                            <div className="flex-shrink-0 w-12 h-12">
+                                <img
+                                    src={currentTrack.imageUrl}
+                                    alt={currentTrack.songName}
+                                    className="w-12 h-12 rounded-lg object-cover border border-gray-700 shadow-md"
+                                    style={{ minWidth: '48px', minHeight: '48px', maxWidth: '48px', maxHeight: '48px' }}
+                                />
+                            </div>
+                            <div className="flex flex-col min-w-0 flex-1">
                                 <span className="text-white font-semibold text-sm truncate max-w-[180px]">
                                     {currentTrack.songName}
                                 </span>
@@ -292,64 +306,85 @@ const FooterPlayer = () => {
                         </div>
                     )}
 
-                    {/* Controles centrais */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                         <button
                             onClick={handlePrevious}
-                            className="p-2 rounded-full hover:bg-gray-700/60 text-gray-200 hover:text-white transition"
+                            className="group p-2.5 rounded-full hover:bg-white/10 text-gray-300 hover:text-white transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/5 hover:border-white/20"
                             title="Anterior"
                         >
-                            <SkipBack size={24} />
+                            <ChevronLeft size={20} className="group-hover:scale-110 transition-transform duration-200" />
                         </button>
                         <button
                             onClick={togglePlayPause}
-                            className="p-3 rounded-full bg-[#374151] hover:bg-[#4b5563] text-white shadow-lg transition backdrop-blur-sm"
+                            className="group p-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/20"
                             title={isPlaying ? "Pausar" : "Tocar"}
                         >
-                            {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
+                            {isPlaying ? (
+                                <Square size={18} className="group-hover:scale-110 transition-transform duration-200" fill="currentColor" />
+                            ) : (
+                                <Play size={18} className="ml-0.5 group-hover:scale-110 transition-transform duration-200" fill="currentColor" />
+                            )}
                         </button>
                         <button
                             onClick={handleNext}
-                            className="p-2 rounded-full hover:bg-gray-700/60 text-gray-200 hover:text-white transition"
+                            className="group p-2.5 rounded-full hover:bg-white/10 text-gray-300 hover:text-white transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/5 hover:border-white/20"
                             title="Próxima"
                         >
-                            <SkipForward size={24} />
+                            <ChevronRight size={20} className="group-hover:scale-110 transition-transform duration-200" />
                         </button>
                     </div>
-
-                    {/* Espaço vazio para manter layout balanceado */}
                     <div className="w-20"></div>
                 </div>
+                {/* Waveform centralizado e ocupando toda a linha */}
                 {!isMinimized && (
                     <div className="w-full flex flex-col items-center">
-                        <canvas
-                            ref={waveformRef}
-                            width={400}
-                            height={40}
-                            className="w-full h-10 cursor-pointer rounded-lg"
-                            onClick={handleWaveformClick}
-                        />
+                        <div className="relative w-full">
+                            <canvas
+                                ref={waveformRef}
+                                width={800}
+                                height={40}
+                                className="w-full h-10 cursor-pointer rounded-lg backdrop-blur-sm border border-white/10 hover:border-white/20 transition-colors duration-200"
+                                onClick={handleWaveformClick}
+                            />
+                            {/* Overlay com ícone de ondas quando não há música tocando */}
+                            {!isPlaying && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <Waves size={20} className="text-gray-500 opacity-50" />
+                                </div>
+                            )}
+                        </div>
                         <div className="flex justify-between w-full text-xs text-gray-400 mt-1">
                             <span>{formatTime(currentTime)}</span>
                             <span>{formatTime(duration)}</span>
                         </div>
-                        <div className="flex items-center gap-2 mt-2">
-                            <button onClick={toggleMute} className="text-gray-300 hover:text-white transition-colors">
-                                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                            </button>
-                            <input
-                                type="range"
-                                min="0"
-                                max="1"
-                                step="0.01"
-                                value={isMuted ? 0 : volume}
-                                onChange={handleVolumeChange}
-                                className="w-20 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                                style={{
-                                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(isMuted ? 0 : volume) * 100}%, #374151 ${(isMuted ? 0 : volume) * 100}%, #374151 100%)`
-                                }}
-                            />
-                            <span className="text-xs text-gray-400 w-8">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
+                        <div className="flex items-center gap-3 mt-2">
+                            {/* Controles de volume */}
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={toggleMute}
+                                    className="group p-2 rounded-full hover:bg-white/10 text-gray-300 hover:text-white transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/5 hover:border-white/20"
+                                    title={isMuted ? "Ativar som" : "Silenciar"}
+                                >
+                                    {isMuted ? (
+                                        <VolumeX size={16} className="group-hover:scale-110 transition-transform duration-200" />
+                                    ) : (
+                                        <Volume2 size={16} className="group-hover:scale-110 transition-transform duration-200" />
+                                    )}
+                                </button>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.01"
+                                    value={isMuted ? 0 : volume}
+                                    onChange={handleVolumeChange}
+                                    className="w-24 h-2 bg-gray-700/50 rounded-full appearance-none cursor-pointer slider backdrop-blur-sm border border-white/10 hover:border-white/20 transition-colors duration-200"
+                                    style={{
+                                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(isMuted ? 0 : volume) * 100}%, #374151 ${(isMuted ? 0 : volume) * 100}%, #374151 100%)`
+                                    }}
+                                />
+                                <span className="text-xs text-gray-400 w-8">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -364,3 +399,5 @@ function formatTime(seconds: number) {
     const s = Math.floor(seconds % 60);
     return `${m}:${s.toString().padStart(2, "0")}`;
 }
+
+export default FooterPlayer;

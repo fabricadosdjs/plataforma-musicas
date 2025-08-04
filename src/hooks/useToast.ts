@@ -20,7 +20,7 @@ export const useToast = () => {
         if (duration !== 0) {
             setTimeout(() => {
                 removeToast(id);
-            }, duration || 5000);
+            }, duration || 4000);
         }
     }, []);
 
@@ -32,9 +32,77 @@ export const useToast = () => {
         setToasts([]);
     }, []);
 
+    // Funções específicas para diferentes tipos de ações
+    const showSuccessToast = useCallback((message: string, duration?: number) => {
+        showToast(message, 'success', duration);
+    }, [showToast]);
+
+    const showErrorToast = useCallback((message: string, duration?: number) => {
+        showToast(message, 'error', duration);
+    }, [showToast]);
+
+    const showWarningToast = useCallback((message: string, duration?: number) => {
+        showToast(message, 'warning', duration);
+    }, [showToast]);
+
+    const showInfoToast = useCallback((message: string, duration?: number) => {
+        showToast(message, 'info', duration);
+    }, [showToast]);
+
+    // Funções específicas para ações de música
+    const showLikeToast = useCallback((isLiked: boolean, trackName?: string) => {
+        const message = isLiked
+            ? `❤️ Música adicionada aos favoritos!`
+            : `💔 Música removida dos favoritos!`;
+        showToast(message, 'success', 3000);
+    }, [showToast]);
+
+    const showDownloadToast = useCallback((trackName: string) => {
+        const message = `📥 "${trackName}" baixada com sucesso!`;
+        showToast(message, 'success', 3000);
+    }, [showToast]);
+
+    const showPlayToast = useCallback((trackName: string) => {
+        const message = `🎵 Tocando "${trackName}"`;
+        showToast(message, 'info', 2000);
+    }, [showToast]);
+
+    const showLoginRequiredToast = useCallback((action: string) => {
+        const message = `👤 Faça login para ${action}`;
+        showToast(message, 'warning', 4000);
+    }, [showToast]);
+
+    const showVipRequiredToast = useCallback((action: string) => {
+        const message = `⭐ Apenas usuários VIP podem ${action}`;
+        showToast(message, 'warning', 4000);
+    }, [showToast]);
+
+    const showTimeLimitToast = useCallback((trackName: string, timeLeft: string) => {
+        const message = `⏰ Você já baixou "${trackName}" nas últimas 24 horas. Aguarde ${timeLeft} para baixar novamente.`;
+        showToast(message, 'warning', 5000);
+    }, [showToast]);
+
+    const showErrorToastWithDetails = useCallback((action: string, details?: string) => {
+        const message = details
+            ? `❌ Erro ao ${action}: ${details}`
+            : `❌ Erro ao ${action}`;
+        showToast(message, 'error', 5000);
+    }, [showToast]);
+
     return {
         toasts,
         showToast,
+        showSuccessToast,
+        showErrorToast,
+        showWarningToast,
+        showInfoToast,
+        showLikeToast,
+        showDownloadToast,
+        showPlayToast,
+        showLoginRequiredToast,
+        showVipRequiredToast,
+        showTimeLimitToast,
+        showErrorToastWithDetails,
         removeToast,
         clearToasts,
     };

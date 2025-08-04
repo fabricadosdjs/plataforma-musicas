@@ -255,7 +255,7 @@ export default function MusicUploadForm() {
     return (
         <div className="space-y-6">
             {/* Formulário de Upload */}
-            <Card className="border-gray-700/50 shadow-xl" style={{ backgroundColor: '#1B1C1D' }}>
+            <Card className="border-gray-700/50 shadow-xl bg-gray-900">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3 text-lg text-white">
                         <Upload className="text-purple-400" />
@@ -487,7 +487,7 @@ export default function MusicUploadForm() {
             </Card>
 
             {/* Lista de Músicas Enviadas */}
-            <Card className="border-gray-700/50 shadow-xl" style={{ backgroundColor: '#1B1C1D' }}>
+            <Card className="border-gray-700/50 shadow-xl bg-gray-900">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3 text-lg text-white">
                         <Music className="text-purple-400" />
@@ -552,7 +552,7 @@ export default function MusicUploadForm() {
             </Card>
 
             {/* Informações */}
-            <Card className="border-gray-700/50 shadow-xl" style={{ backgroundColor: '#1B1C1D' }}>
+            <Card className="border-gray-700/50 shadow-xl bg-gray-900">
                 <CardContent className="p-6">
                     <div className="flex items-start gap-3">
                         <Info className="w-5 h-5 text-blue-400 mt-0.5" />

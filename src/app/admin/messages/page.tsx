@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import AdminMessagesDisplay from '@/components/ui/AdminMessagesDisplay';
+import { AdminAuth } from '@/components/admin/AdminAuth';
 
 export default function AdminMessagesPage() {
     const { data: session, status } = useSession();
@@ -12,8 +13,8 @@ export default function AdminMessagesPage() {
     useEffect(() => {
         if (status === 'loading') return;
 
-        if (!session?.user?.isAdmin) {
-            router.push('/access-denied');
+        if (!session) {
+            router.push('/auth/sign-in');
         }
     }, [session, status, router]);
 
@@ -25,22 +26,24 @@ export default function AdminMessagesPage() {
         );
     }
 
-    if (!session?.user?.isAdmin) {
+    if (!session) {
         return null; // Será redirecionado pelo useEffect
     }
 
     return (
-        <div className="min-h-screen bg-black">
-            <div className="container mx-auto px-4 py-8 pt-20">
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-4">Gerenciar Recados da Administração</h1>
-                    <p className="text-gray-300">
-                        Crie, edite e gerencie os recados que aparecem na página inicial para todos os usuários.
-                    </p>
-                </div>
+        <AdminAuth>
+            <div className="min-h-screen bg-black">
+                <div className="container mx-auto px-4 py-8 pt-20">
+                    <div className="mb-8">
+                        <h1 className="text-4xl font-bold text-white mb-4">Gerenciar Recados da Administração</h1>
+                        <p className="text-gray-300">
+                            Crie, edite e gerencie os recados que aparecem na página inicial para todos os usuários.
+                        </p>
+                    </div>
 
-                <AdminMessagesDisplay showAdminControls={true} />
+                    <AdminMessagesDisplay showAdminControls={true} />
+                </div>
             </div>
-        </div>
+        </AdminAuth>
     );
 } 
