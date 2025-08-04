@@ -437,7 +437,7 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                         <tr>
                             <th className="px-6 py-4 font-bold tracking-wide w-[35%] text-white">
                                 <div className="flex items-center space-x-2">
-                                    <Music className="h-4 w-4 text-blue-400" />
+                                    <Music className="h-4 w-4 text-[#6b7280]" />
                                     <span>MÚSICA</span>
                                 </div>
                             </th>
@@ -466,7 +466,7 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                         {tracks.map((track: Track) => (
                             <tr
                                 key={track.id}
-                                className={`${currentTrack?.id === track.id ? 'bg-blue-900/20 border-l-4 border-l-blue-500' : 'hover:border-l-4 hover:border-l-gray-600'}`}
+                                className={`${currentTrack?.id === track.id ? 'bg-[#374151]/20 border-l-4 border-l-[#6b7280]' : 'hover:border-l-4 hover:border-l-gray-600'}`}
                             >
                                 <td className="px-6 py-4 align-middle w-[35%]">
                                     <div className="flex items-center gap-4">
@@ -532,13 +532,13 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                                     (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)
                                                 }
                                                 className={`inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
-                                                    ${!session?.user?.is_vip
-                                                        ? 'bg-gray-700 text-gray-400 opacity-50 cursor-not-allowed'
+                                                     ${!session?.user?.is_vip
+                                                        ? 'bg-[#374151] text-gray-400 opacity-50 cursor-not-allowed'
                                                         : hasDownloadedBefore(track.id)
                                                             ? downloadedTracksTime[track.id] > 0
-                                                                ? 'bg-blue-600 text-white border border-blue-500 shadow-blue-500/25 opacity-60 cursor-not-allowed'
-                                                                : 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 shadow-blue-500/25'
-                                                            : 'bg-green-600 text-white hover:bg-green-700 border border-green-500 shadow-green-500/25'
+                                                                ? 'bg-[#6b7280] text-white border border-[#6b7280] shadow-[#6b7280]/25 opacity-60 cursor-not-allowed'
+                                                                : 'bg-[#6b7280] text-white hover:bg-[#9ca3af] border border-[#6b7280] shadow-[#6b7280]/25'
+                                                            : 'bg-[#374151] text-white hover:bg-[#4b5563] border border-[#374151] shadow-[#374151]/25'
                                                     }`}
                                                 title={
                                                     !session?.user?.is_vip ? 'Apenas usuários VIP podem fazer downloads'
@@ -582,7 +582,7 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                             </button>
                                         </div>
                                     ) : (
-                                        <Link href="/planos" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 shadow-blue-500/25 transform hover:scale-105 active:scale-95">
+                                        <Link href="/planos" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-[#374151] text-white hover:bg-[#4b5563] border border-[#374151] shadow-[#374151]/25 transform hover:scale-105 active:scale-95">
                                             ASSINAR PLANO
                                         </Link>
                                     )}
@@ -609,7 +609,7 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                         />
                                         <button
                                             onClick={() => handlePlayPauseClick(track)}
-                                            className={`absolute inset-0 flex items-center justify-center rounded-lg transition-all duration-300 cursor-pointer bg-black/60 hover:bg-blue-600/80 backdrop-blur-sm ${currentTrack?.id === track.id && isPlaying ? 'text-white bg-blue-600/80' : 'text-gray-200 hover:text-white'}`}
+                                            className={`absolute inset-0 flex items-center justify-center rounded-lg transition-all duration-300 cursor-pointer bg-[#374151]/60 hover:bg-blue-600/80 backdrop-blur-sm ${currentTrack?.id === track.id && isPlaying ? 'text-white bg-blue-600/80' : 'text-gray-200 hover:text-white'}`}
                                             style={{ zIndex: 2 }}
                                         >
                                             {isPlaying && currentTrack?.id === track.id ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
@@ -642,12 +642,12 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                         disabled={!session?.user?.is_vip || (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)}
                                         className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
                                 ${!session?.user?.is_vip
-                                                ? 'bg-gray-700/50 text-gray-400 opacity-50 cursor-not-allowed'
+                                                ? 'bg-[#374151] text-gray-400 opacity-50 cursor-not-allowed'
                                                 : hasDownloadedBefore(track.id)
                                                     ? downloadedTracksTime[track.id] > 0
                                                         ? 'bg-blue-600/80 text-white border border-blue-500/50 shadow-blue-500/25 opacity-60 cursor-not-allowed'
-                                                        : 'bg-blue-600/80 text-white hover:bg-blue-700/80 border border-blue-500/50 shadow-blue-500/25'
-                                                    : 'bg-green-600/80 text-white hover:bg-green-700/80 border border-green-500/50 shadow-green-500/25'
+                                                        : 'bg-[#374151] text-white hover:bg-gray-600 border border-gray-500/50 shadow-gray-500/25'
+                                                    : 'bg-[#374151] text-white hover:bg-gray-600 border border-gray-500/50 shadow-gray-500/25'
                                             }`}
                                         title={!session?.user?.is_vip ? 'Apenas usuários VIP podem fazer downloads' : hasDownloadedBefore(track.id) ? downloadedTracksTime[track.id] > 0 ? `Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente` : 'Música já baixada' : "Download disponível"}
                                     >
@@ -662,7 +662,7 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                         className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
                                 ${likedTracksSet.has(track.id)
                                                 ? 'bg-pink-600/80 text-white border border-pink-500/50 shadow-pink-500/25'
-                                                : 'bg-gray-700/50 text-gray-200 hover:bg-pink-700/80 border border-gray-500/50 shadow-gray-500/25'
+                                                : 'bg-[#374151] text-gray-200 hover:bg-gray-600 border border-gray-500/50 shadow-gray-500/25'
                                             }`}
                                         title={likedTracksSet.has(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                     >
@@ -694,7 +694,7 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                 </div>
 
                                 {!session && (
-                                    <Link href="/planos" className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-blue-600/80 text-white hover:bg-blue-700/80 border border-blue-500/50 shadow-blue-500/25">
+                                    <Link href="/planos" className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-[#374151]/80 text-white hover:bg-[#4b5563]/80 border border-[#374151]/50 shadow-[#374151]/25">
                                         ASSINAR PLANO
                                     </Link>
                                 )}

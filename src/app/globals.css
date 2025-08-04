@@ -19,29 +19,32 @@
 @import "tailwindcss";
 
 :root {
-  --background: linear-gradient(135deg, #1a1a1a 0%, #121212 50%, #000000 100%);
+  --background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
   --foreground: #ffffff;
-  --card-background: linear-gradient(135deg, #1a1a1a 0%, #121212 50%, #000000 100%);
-  --border-color: #3a3a3a;
-  --muted-background: linear-gradient(135deg, #1a1a1a 0%, #121212 50%, #000000 100%);
+  --card-background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
+  --border-color: #4b5563;
+  --muted-background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
   --accent-blue: #3b82f6;
   --accent-purple: #8b5cf6;
+  --gray-dark: #374151;
+  --gray-darker: #1f2937;
+  --gray-light: #6b7280;
   /* A variável --font-poppins será gerada automaticamente pelo Next.js com base no layout.tsx */
 }
 
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: linear-gradient(135deg, #1a1a1a 0%, #121212 50%, #000000 100%);
-    --foreground: #ededed;
-    --card-background: linear-gradient(135deg, #1a1a1a 0%, #121212 50%, #000000 100%);
-    --border-color: #3a3a3a;
-    --muted-background: linear-gradient(135deg, #1a1a1a 0%, #121212 50%, #000000 100%);
+    --background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
+    --foreground: #ffffff;
+    --card-background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
+    --border-color: #4b5563;
+    --muted-background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
   }
 }
 
 body {
-  background: linear-gradient(135deg, #1a1a1a 0%, #121212 50%, #000000 100%);
+  background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
   color: var(--foreground);
   font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 400;
@@ -117,27 +120,27 @@ code {
   font-family: 'JetBrains Mono', 'Courier New', monospace !important;
 }
 
-/* Tema Azul e Rosa para Tabela de Usuários */
+/* Tema Cinza Escuro para Tabela de Usuários */
 .users-table-container {
   font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 300;
 }
 
 .users-table-header {
-  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #ec4899 100%);
+  background: linear-gradient(135deg, #374151 0%, #4b5563 50%, #6b7280 100%);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .users-table-row-even {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
 }
 
 .users-table-row-odd {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
 }
 
 .users-table-row:hover {
-  background: linear-gradient(135deg, #1e40af 0%, #3730a3 50%, #be185d 100%);
+  background: linear-gradient(135deg, #4b5563 0%, #6b7280 50%, #9ca3af 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
@@ -158,19 +161,19 @@ code {
   letter-spacing: 0.05em;
 }
 
-.pink-gradient-button {
-  background: linear-gradient(135deg, #ec4899 0%, #be185d 50%, #9d174d 100%);
+.gray-gradient-button {
+  background: linear-gradient(135deg, #374151 0%, #4b5563 50%, #6b7280 100%);
   transition: all 0.3s ease;
 }
 
-.pink-gradient-button:hover {
-  background: linear-gradient(135deg, #be185d 0%, #9d174d 50%, #831843 100%);
+.gray-gradient-button:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #6b7280 50%, #9ca3af 100%);
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(236, 72, 153, 0.4);
+  box-shadow: 0 8px 16px rgba(55, 65, 81, 0.4);
 }
 
-.blue-gradient-accent {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+.gray-gradient-accent {
+  background: linear-gradient(135deg, #374151 0%, #4b5563 50%, #6b7280 100%);
 }
 
 /* Animações suaves para a tabela */
@@ -180,12 +183,12 @@ code {
 
 .users-table-row:hover .users-table-cell {
   color: #f8fafc;
-  text-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+  text-shadow: 0 0 8px rgba(55, 65, 81, 0.3);
 }
 
 /* Efeito de brilho nas bordas ao hover */
 .users-table-container:hover {
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.2), 0 0 60px rgba(236, 72, 153, 0.1);
+  box-shadow: 0 0 30px rgba(55, 65, 81, 0.2), 0 0 60px rgba(75, 85, 99, 0.1);
 }
 
 /* Efeito glassmorphism */

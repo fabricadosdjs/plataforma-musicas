@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Minimize2, X, Maximize2 } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 import { useSession } from 'next-auth/react';
 import { Track } from '@/types/track';
@@ -14,10 +14,11 @@ const FooterPlayer = () => {
     const [isMuted, setIsMuted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [isMinimized, setIsMinimized] = useState(false);
+    const [isHidden, setIsHidden] = useState(false);
     const audioRef = useRef<HTMLAudioElement>(null);
     const waveformRef = useRef<HTMLCanvasElement>(null);
     const animationFrameId = useRef<number>();
-    const [minimized, setMinimized] = useState(false);
     const [isChangingVolume, setIsChangingVolume] = useState(false);
 
     // Criar dados simulados de waveform
@@ -197,11 +198,15 @@ const FooterPlayer = () => {
         }
     };
 
-    const handleClosePlayer = () => {
+    const handleMinimize = () => {
+        setIsMinimized(!isMinimized);
+    };
+
+    const handleClose = () => {
         if (audioRef.current) {
             audioRef.current.pause();
         }
-        setMinimized(true);
+        setIsHidden(true);
     };
 
     const handlePrevious = () => {
@@ -222,9 +227,6 @@ const FooterPlayer = () => {
         nextTrack();
     };
 
-
-
-
     // Verificar se o usuário está logado
     const isLoggedIn = !!session;
 
@@ -239,10 +241,30 @@ const FooterPlayer = () => {
         );
     }
 
-    if (!currentTrack) return null;
+    if (!currentTrack || isHidden) return null;
 
     return (
-        <div className={`fixed bottom-0 left-0 w-full bg-gradient-to-r from-gray-900 to-black border-t border-gray-800 shadow-2xl z-50 flex flex-col items-center transition-all duration-300 ${minimized ? 'h-12' : 'h-auto'}`}>
+        <div className={`fixed bottom-0 left-0 w-full bg-gradient-to-r from-gray-900 to-black border-t border-gray-800 shadow-2xl z-50 flex flex-col items-center transition-all duration-300 ${isMinimized ? 'h-16' : 'h-auto'}`}>
+            {/* Aba do player com controles de minimizar/fechar */}
+            <div className="w-full max-w-3xl flex justify-end px-4 py-1">
+                <div className="flex items-center gap-1">
+                    <button
+                        onClick={handleMinimize}
+                        className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700/50 transition-colors"
+                        title={isMinimized ? 'Restaurar player' : 'Minimizar player'}
+                    >
+                        {isMinimized ? <Maximize2 size={12} /> : <Minimize2 size={12} />}
+                    </button>
+                    <button
+                        onClick={handleClose}
+                        className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-700/50 transition-colors"
+                        title="Fechar player"
+                    >
+                        <X size={12} />
+                    </button>
+                </div>
+            </div>
+
             <audio
                 id="footer-audio"
                 ref={audioRef}
@@ -252,7 +274,7 @@ const FooterPlayer = () => {
             />
             <div className="w-full max-w-3xl flex flex-col items-center px-4 py-2">
                 <div className="flex items-center w-full justify-between mb-1">
-                    {!minimized && (
+                    {!isMinimized && (
                         <div className="flex items-center gap-3">
                             <img
                                 src={currentTrack.imageUrl}
@@ -281,10 +303,10 @@ const FooterPlayer = () => {
                         </button>
                         <button
                             onClick={togglePlayPause}
-                            className="p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition"
+                            className="p-3 rounded-full bg-[#374151] hover:bg-[#4b5563] text-white shadow-lg transition backdrop-blur-sm"
                             title={isPlaying ? "Pausar" : "Tocar"}
                         >
-                            {isPlaying ? <Pause size={28} /> : <Play size={28} />}
+                            {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
                         </button>
                         <button
                             onClick={handleNext}
@@ -295,25 +317,10 @@ const FooterPlayer = () => {
                         </button>
                     </div>
 
-                    {/* Minimizar/Restaurar/Fechar */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setMinimized(!minimized)}
-                            className="text-gray-400 hover:text-white p-2 rounded-full border border-gray-700 bg-gray-900/70 transition-colors"
-                            title={minimized ? 'Restaurar player' : 'Minimizar player'}
-                        >
-                            {minimized ? <Play size={16} /> : <Pause size={16} />}
-                        </button>
-                        <button
-                            onClick={handleClosePlayer}
-                            className="text-gray-400 hover:text-red-500 p-2 rounded-full border border-gray-700 bg-gray-900/70 transition-colors"
-                            title="Fechar player"
-                        >
-                            ✕
-                        </button>
-                    </div>
+                    {/* Espaço vazio para manter layout balanceado */}
+                    <div className="w-20"></div>
                 </div>
-                {!minimized && (
+                {!isMinimized && (
                     <div className="w-full flex flex-col items-center">
                         <canvas
                             ref={waveformRef}

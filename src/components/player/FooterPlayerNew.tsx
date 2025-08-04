@@ -2,17 +2,18 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 import { useSession } from 'next-auth/react';
 
 const FooterPlayer = () => {
     const { data: session } = useSession();
-    const { currentTrack, isPlaying, togglePlayPause } = useAppContext();
-    const [volume, setVolume] = useState(0.7);
+    const { currentTrack, isPlaying, togglePlayPause, nextTrack, previousTrack } = useAppContext();
+    const [volume, setVolume] = useState(1.0); // Começar com 100%
     const [isMuted, setIsMuted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [isHidden, setIsHidden] = useState(false);
     const audioRef = useRef<HTMLAudioElement>(null);
     const waveformRef = useRef<HTMLCanvasElement>(null);
     const animationRef = useRef<number>();
@@ -114,8 +115,8 @@ const FooterPlayer = () => {
 
         const handleEnded = () => {
             setCurrentTime(0);
-            // Auto-pause quando terminar
-            // Futuramente pode implementar auto-next
+            // Auto-next quando terminar
+            nextTrack();
         };
 
         const handleCanPlay = () => {
@@ -143,7 +144,7 @@ const FooterPlayer = () => {
             audio.removeEventListener('ended', handleEnded);
             audio.removeEventListener('canplay', handleCanPlay);
         };
-    }, [currentTrack, volume, isMuted, isPlaying, throttledTimeUpdate]);
+    }, [currentTrack, volume, isMuted, isPlaying, throttledTimeUpdate, nextTrack]);
 
     // Controlar play/pause com melhor responsividade
     useEffect(() => {
@@ -201,38 +202,44 @@ const FooterPlayer = () => {
         }
     }, [isMuted, volume]);
 
-    const handlePrevious = useCallback(() => {
+    const handleClose = useCallback(() => {
         if (audioRef.current) {
-            if (audioRef.current.currentTime > 3) {
-                // Se já tocou mais de 3 segundos, volta para o início
-                audioRef.current.currentTime = 0;
-                setCurrentTime(0);
-            }
-            // Futuramente: implementar navegação para música anterior
+            audioRef.current.pause();
         }
+        setIsHidden(true);
     }, []);
 
-    const handleNext = useCallback(() => {
-        // Futuramente: implementar navegação para próxima música
-        if (audioRef.current) {
+    const handlePrevious = useCallback(() => {
+        if (!audioRef.current) return;
+
+        if (audioRef.current.currentTime > 3) {
+            // Se já tocou mais de 3 segundos, volta para o início da música atual
             audioRef.current.currentTime = 0;
             setCurrentTime(0);
+        } else {
+            // Senão, vai para a música anterior
+            previousTrack();
         }
-    }, []);
+    }, [previousTrack]);
+
+    const handleNext = useCallback(() => {
+        // Chama a função nextTrack do contexto para ir para a próxima música
+        nextTrack();
+    }, [nextTrack]);
 
     // Não mostrar player se usuário não estiver logado ou não houver música
-    if (!session || !currentTrack) return null;
+    if (!session || !currentTrack || isHidden) return null;
 
     return (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-gray-900 via-black to-gray-900 border-t border-gray-700/50 backdrop-blur-lg">
-            <div className="container mx-auto px-4 py-3">
-                <div className="flex items-center gap-4">
+            <div className="container mx-auto px-4 py-2">
+                <div className="flex items-center gap-3">
                     {/* Track Info */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                         <img
-                            src="https://i.ibb.co/FL1rxTtx/20250526-1938-Sound-Cloud-Cover-Design-remix-01jw7bwxq6eqj8sqztah5n296g.png"
+                            src={currentTrack.imageUrl || "https://i.ibb.co/FL1rxTtx/20250526-1938-Sound-Cloud-Cover-Design-remix-01jw7bwxq6eqj8sqztah5n296g.png"}
                             alt={currentTrack.songName}
-                            className="w-12 h-12 rounded-lg object-cover border border-gray-600/50"
+                            className="w-10 h-10 rounded-lg object-cover border border-gray-600/50"
                         />
                         <div className="min-w-0">
                             <div className="text-white font-semibold text-sm truncate">
@@ -248,30 +255,31 @@ const FooterPlayer = () => {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handlePrevious}
-                            className="p-2 text-gray-300 hover:text-white transition-colors"
-                            title="Voltar ao início"
+                            className="p-1.5 text-gray-300 hover:text-white transition-colors"
+                            title="Anterior"
                         >
-                            <SkipBack size={18} />
+                            <SkipBack size={16} />
                         </button>
 
                         <button
                             onClick={togglePlayPause}
-                            className="p-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white rounded-full transition-all duration-200 shadow-lg"
+                            className="p-2 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white rounded-full transition-all duration-200 shadow-lg"
+                            title={isPlaying ? "Pausar" : "Tocar"}
                         >
-                            {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
+                            {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
                         </button>
 
                         <button
                             onClick={handleNext}
-                            className="p-2 text-gray-300 hover:text-white transition-colors"
-                            title="Próxima (em breve)"
+                            className="p-1.5 text-gray-300 hover:text-white transition-colors"
+                            title="Próxima"
                         >
-                            <SkipForward size={18} />
+                            <SkipForward size={16} />
                         </button>
                     </div>
 
                     {/* Waveform & Progress */}
-                    <div className="flex-1 max-w-md mx-4">
+                    <div className="flex-1 max-w-md mx-3">
                         <div className="flex items-center gap-2 text-xs text-gray-400 mb-1">
                             <span>{formatTime(currentTime)}</span>
                             <span>/</span>
@@ -279,9 +287,9 @@ const FooterPlayer = () => {
                         </div>
                         <canvas
                             ref={waveformRef}
-                            width={400}
-                            height={40}
-                            className="w-full h-10 cursor-pointer rounded-lg"
+                            width={300}
+                            height={30}
+                            className="w-full h-8 cursor-pointer rounded-lg"
                             onClick={handleWaveformClick}
                         />
                     </div>
@@ -289,18 +297,28 @@ const FooterPlayer = () => {
                     {/* Volume */}
                     <div className="flex items-center gap-2">
                         <button onClick={toggleMute} className="text-gray-300 hover:text-white transition-colors">
-                            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
                         </button>
                         <input
                             type="range"
                             min="0"
                             max="1"
-                            step="0.1"
-                            value={volume}
+                            step="0.01"
+                            value={isMuted ? 0 : volume}
                             onChange={handleVolumeChange}
-                            className="w-16 accent-orange-600"
+                            className="w-12 accent-orange-600"
                         />
+                        <span className="text-xs text-gray-400 w-6">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
                     </div>
+
+                    {/* Botão Fechar */}
+                    <button
+                        onClick={handleClose}
+                        className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-700/50 transition-colors"
+                        title="Fechar player"
+                    >
+                        <X size={14} />
+                    </button>
                 </div>
             </div>
 

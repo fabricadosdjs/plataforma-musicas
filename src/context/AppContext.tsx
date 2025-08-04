@@ -142,7 +142,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const nextTrack = () => {
-    if (trackList.length === 0) return;
+    if (trackList.length === 0) {
+      return;
+    }
     const currentIndex = trackList.findIndex(track => track.id === currentTrack?.id);
     const nextIndex = (currentIndex + 1) % trackList.length;
     setCurrentTrack(trackList[nextIndex]);
@@ -150,7 +152,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const previousTrack = () => {
-    if (trackList.length === 0) return;
+    if (trackList.length === 0) {
+      return;
+    }
     const currentIndex = trackList.findIndex(track => track.id === currentTrack?.id);
     const prevIndex = currentIndex <= 0 ? trackList.length - 1 : currentIndex - 1;
     setCurrentTrack(trackList[prevIndex]);

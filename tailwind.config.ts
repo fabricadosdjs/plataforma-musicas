@@ -10,12 +10,15 @@ const config: Config = {
     theme: {
         extend: {
             colors: {
-                // Definindo cores para o tema escuro
+                // Definindo cores para o tema cinza escuro
                 primary: '#ffffff', // Branco para textos e elementos principais
-                secondary: '#202124', // Cor principal do tema escuro
-                accent: '#000000', // Preto para elementos de destaque
-                background: '#202124', // Fundo principal
+                secondary: '#374151', // Cor principal do tema cinza escuro
+                accent: '#1f2937', // Cinza mais escuro para elementos de destaque
+                background: '#374151', // Fundo principal cinza escuro
                 text: '#ffffff', // Cor padrão do texto branco
+                'gray-dark': '#374151', // Cinza escuro personalizado
+                'gray-darker': '#1f2937', // Cinza mais escuro
+                'gray-light': '#6b7280', // Cinza mais claro para hover
             },
             fontFamily: {
                 // Definindo Lato como fonte principal

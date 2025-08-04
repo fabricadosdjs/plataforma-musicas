@@ -273,8 +273,8 @@ const MusicTableMinimalist = ({ tracks, onDownload, isDownloading }: MusicTableP
                                                     onClick={session ? () => handlePlayPauseClick(track) : undefined}
                                                     disabled={!session}
                                                     className={`absolute inset-0 flex items-center justify-center rounded-xl transition-all duration-300 bg-black/40 hover:bg-black/60 backdrop-blur-sm ${currentTrack?.id === track.id && isPlaying
-                                                            ? 'text-white bg-blue-500/90'
-                                                            : 'text-gray-300 hover:text-white'
+                                                        ? 'text-white bg-blue-500/90'
+                                                        : 'text-gray-300 hover:text-white'
                                                         } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                     title={!session ? 'Faça login para ouvir a prévia' : ''}
                                                 >
@@ -329,8 +329,8 @@ const MusicTableMinimalist = ({ tracks, onDownload, isDownloading }: MusicTableP
                                                     onClick={() => handleDownload(track)}
                                                     disabled={isDownloading}
                                                     className={`inline-flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-300 border group ${hasDownloadedBefore(track.id)
-                                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
-                                                            : 'bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30'
+                                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
+                                                        : 'bg-[#374151] text-gray-300 border-gray-600 hover:bg-gray-600'
                                                         } ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                     title={hasDownloadedBefore(track.id) ? 'Baixado anteriormente' : 'Baixar música'}
                                                 >
@@ -342,8 +342,8 @@ const MusicTableMinimalist = ({ tracks, onDownload, isDownloading }: MusicTableP
                                                     onClick={() => handleLikeClick(track.id)}
                                                     disabled={!session?.user?.is_vip || liking === track.id}
                                                     className={`inline-flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-300 border group ${likedTracksSet.has(track.id)
-                                                            ? 'bg-pink-500/20 text-pink-400 border-pink-500/30 hover:bg-pink-500/30'
-                                                            : 'bg-gray-800/50 text-gray-400 border-gray-700/50 hover:bg-pink-500/20 hover:text-pink-400 hover:border-pink-500/30'
+                                                        ? 'bg-pink-500/20 text-pink-400 border-pink-500/30 hover:bg-pink-500/30'
+                                                        : 'bg-[#374151] text-gray-300 border-gray-600 hover:bg-gray-600'
                                                         }`}
                                                     title={likedTracksSet.has(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                                 >
@@ -417,8 +417,8 @@ const MusicTableMinimalist = ({ tracks, onDownload, isDownloading }: MusicTableP
                                         onClick={session ? () => handlePlayPauseClick(track) : undefined}
                                         disabled={!session}
                                         className={`absolute inset-0 flex items-center justify-center rounded-xl transition-all duration-300 bg-black/40 hover:bg-black/60 backdrop-blur-sm ${currentTrack?.id === track.id && isPlaying
-                                                ? 'text-white bg-blue-500/90'
-                                                : 'text-gray-300 hover:text-white'
+                                            ? 'text-white bg-blue-500/90'
+                                            : 'text-gray-300 hover:text-white'
                                             } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         {isPlaying && currentTrack?.id === track.id ? (
@@ -454,8 +454,8 @@ const MusicTableMinimalist = ({ tracks, onDownload, isDownloading }: MusicTableP
                                         onClick={() => handleDownload(track)}
                                         disabled={isDownloading}
                                         className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 border ${hasDownloadedBefore(track.id)
-                                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                                                : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                            : 'bg-[#374151] text-gray-300 border-gray-600'
                                             }`}
                                     >
                                         <Download size={18} />
@@ -465,8 +465,8 @@ const MusicTableMinimalist = ({ tracks, onDownload, isDownloading }: MusicTableP
                                         onClick={() => handleLikeClick(track.id)}
                                         disabled={!session?.user?.is_vip || liking === track.id}
                                         className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 border ${likedTracksSet.has(track.id)
-                                                ? 'bg-pink-500/20 text-pink-400 border-pink-500/30'
-                                                : 'bg-gray-800/50 text-gray-400 border-gray-700/50'
+                                            ? 'bg-pink-500/20 text-pink-400 border-pink-500/30'
+                                            : 'bg-[#374151] text-gray-300 border-gray-600'
                                             }`}
                                     >
                                         <Heart size={18} className={likedTracksSet.has(track.id) ? 'fill-current' : ''} />

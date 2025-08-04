@@ -12,6 +12,11 @@ export function DialogTrigger({ children, ...props }: React.ButtonHTMLAttributes
 }
 import React from "react";
 
-export function Dialog({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-    return <div {...props} className={"fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 " + (props.className || "")}>{children}</div>;
+interface DialogProps {
+    children: React.ReactNode;
+    className?: string;
+}
+
+export function Dialog({ children, ...props }: DialogProps) {
+    return <div {...props} className={"fixed inset-0 bg-[#374151] bg-opacity-50 flex items-center justify-center z-50 " + (props.className || "")}>{children}</div>;
 }

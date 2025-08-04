@@ -54,12 +54,12 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
         <>
             {/* Overlay */}
             <div
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+                className="fixed inset-0 bg-[#374151]/60 backdrop-blur-sm z-40 md:hidden"
                 onClick={onClose}
             />
 
             {/* Menu */}
-            <div className="fixed top-0 left-0 h-full w-80 bg-black/90 backdrop-blur-xl border-r border-gray-800/50 z-50 md:hidden transform transition-transform duration-300 flex flex-col">
+            <div className="fixed top-0 left-0 h-full w-80 bg-[#374151]/90 backdrop-blur-xl border-r border-gray-800/50 z-50 md:hidden transform transition-transform duration-300 flex flex-col">
                 {/* Header do Menu */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-800/50">
                     <div className="flex items-center gap-3">

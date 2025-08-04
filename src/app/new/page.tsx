@@ -239,12 +239,12 @@ function NewPageContent() {
   const monthOptions = generateMonthOptions();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen bg-gradient-to-br from-[#374151] via-[#1f2937] to-[#111827]">
       <Header />
       <main className="container mx-auto px-4 py-8 pt-20">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-blue-700 to-blue-500 rounded-full">
+            <div className="p-3 bg-gradient-to-r from-[#374151] to-[#4b5563] rounded-full">
               <CheckCircle className="h-8 w-8 text-white" />
             </div>
             <div>
@@ -254,17 +254,17 @@ function NewPageContent() {
           </div>
 
           {!session && (
-            <div className="w-full flex items-center justify-center py-3 px-4 mb-4 rounded-xl shadow-md bg-gray-800 border border-gray-700 text-gray-100 font-semibold text-center text-sm">
+            <div className="w-full flex items-center justify-center py-3 px-4 mb-4 rounded-xl shadow-md bg-[#374151] border border-gray-700 text-gray-100 font-semibold text-center text-sm">
               Atenção: Usuários sem plano não podem ouvir, baixar ou curtir músicas. Apenas a navegação no catálogo está disponível.
             </div>
           )}
         </div>
 
         {/* Search and Filters Section */}
-        <div className="mb-8 bg-gradient-to-br from-gray-900/70 via-gray-800/70 to-black/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-800/30 shadow-2xl">
+        <div className="mb-8 bg-gradient-to-br from-[#374151]/70 via-[#1f2937]/70 to-[#111827]/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-800/30 shadow-2xl">
           <div className="flex flex-col items-center gap-4">
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex items-center w-full max-w-md bg-gradient-to-r from-gray-900/80 to-gray-800/80 rounded-full px-4 py-3 border border-gray-700/50 focus-within:border-blue-500/70 transition-all duration-200 backdrop-blur-sm">
+            <form onSubmit={handleSearch} className="flex items-center w-full max-w-md bg-gradient-to-r from-[#374151]/80 to-[#1f2937]/80 rounded-full px-4 py-3 border border-gray-700/50 focus-within:border-[#6b7280]/70 transition-all duration-200 backdrop-blur-sm">
               <Search className="h-5 w-5 text-gray-400 mr-3" />
               <input
                 type="text"
@@ -278,18 +278,18 @@ function NewPageContent() {
             {/* Filters Button */}
             <button
               onClick={() => setShowFiltersModal(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900/80 to-gray-800/80 hover:from-gray-900/90 hover:to-gray-800/90 text-white rounded-full transition-all duration-200 border border-gray-700/50 hover:border-gray-600/70 backdrop-blur-sm"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#374151]/80 to-[#1f2937]/80 hover:from-[#374151]/90 hover:to-[#1f2937]/90 text-white rounded-full transition-all duration-200 border border-gray-700/50 hover:border-gray-600/70 backdrop-blur-sm"
             >
-              <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-blue-400' : 'text-gray-300'}`} />
+              <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-[#6b7280]' : 'text-gray-300'}`} />
               <span className="text-sm font-medium">Filtros</span>
               {hasActiveFilters && (
-                <span className="block h-2 w-2 rounded-full bg-blue-500 ring-2 ring-gray-800"></span>
+                <span className="block h-2 w-2 rounded-full bg-[#6b7280] ring-2 ring-gray-800"></span>
               )}
             </button>
 
             {/* Active Filters Indicator */}
             {hasActiveFilters && (
-              <div className="flex items-center space-x-2 text-blue-400">
+              <div className="flex items-center space-x-2 text-[#6b7280]">
                 <Filter className="h-4 w-4" />
                 <span className="text-sm">Filtros ativos</span>
               </div>
@@ -301,8 +301,8 @@ function NewPageContent() {
           <div className="flex items-center justify-center py-32">
             <div className="text-center">
               <div className="relative">
-                <div className="w-20 h-20 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin mx-auto mb-6"></div>
-                <Music className="h-8 w-8 text-blue-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                <div className="w-20 h-20 border-4 border-[#6b7280]/30 border-t-[#6b7280] rounded-full animate-spin mx-auto mb-6"></div>
+                <Music className="h-8 w-8 text-[#6b7280] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Carregando Músicas</h3>
               <p className="text-gray-400">Aguarde enquanto buscamos as melhores faixas para você...</p>
@@ -310,12 +310,12 @@ function NewPageContent() {
           </div>
         ) : tracks.length === 0 ? (
           <div className="text-center py-32">
-            <div className="p-6 bg-gradient-to-br from-gray-800/50 via-gray-900/50 to-black/50 rounded-2xl inline-block mb-6 border border-gray-700/30 backdrop-blur-sm">
+            <div className="p-6 bg-gradient-to-br from-[#374151]/50 via-[#1f2937]/50 to-[#111827]/50 rounded-2xl inline-block mb-6 border border-gray-700/30 backdrop-blur-sm">
               <Search className="h-16 w-16 text-gray-400 mx-auto" />
             </div>
             <h3 className="text-2xl font-bold text-white mb-4">Nenhuma música encontrada</h3>
             <p className="text-gray-400 mb-8">Tente ajustar seus filtros ou fazer uma nova busca.</p>
-            <button onClick={handleClearFilters} className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium transition-colors shadow-lg">Limpar Filtros</button>
+            <button onClick={handleClearFilters} className="px-6 py-3 bg-gradient-to-r from-[#374151] to-[#4b5563] hover:from-[#4b5563] hover:to-[#6b7280] text-white rounded-lg font-medium transition-colors shadow-lg">Limpar Filtros</button>
           </div>
         ) : (
           <>
@@ -323,20 +323,20 @@ function NewPageContent() {
               <div className="space-y-8">
                 {pagedDates.map((date) => (
                   <div key={date} className="space-y-4">
-                    <div className="flex items-center space-x-4"><div className="flex items-center space-x-3"><div className="w-3 h-3 bg-blue-500 rounded-full"></div><h2 className="text-2xl font-bold text-white capitalize">{formatDate(date)}</h2></div></div>
-                    <div className="bg-gradient-to-br from-gray-800/60 via-gray-900/60 to-black/60 backdrop-blur-sm rounded-2xl border border-gray-600/30 overflow-hidden shadow-2xl">
+                    <div className="flex items-center space-x-4"><div className="flex items-center space-x-3"><div className="w-3 h-3 bg-[#6b7280] rounded-full"></div><h2 className="text-2xl font-bold text-white capitalize">{formatDate(date)}</h2></div></div>
+                    <div className="bg-gradient-to-br from-[#374151]/60 via-[#1f2937]/60 to-[#111827]/60 backdrop-blur-sm rounded-2xl border border-gray-600/30 overflow-hidden shadow-2xl">
                       <MusicTable tracks={tracksByDate[date] || []} onDownload={handleDownloadTracks} isDownloading={downloading} />
                     </div>
                   </div>
                 ))}
                 {/* Paginação de dias */}
                 {totalDayPages > 1 && (
-                  <div className="flex items-center justify-between mt-8 p-6 bg-gradient-to-br from-[#202B3F]/20 via-[#27212B]/20 to-[#0C0C0C]/20 backdrop-blur-sm rounded-xl border border-white/10">
+                  <div className="flex items-center justify-between mt-8 p-6 bg-gradient-to-br from-[#374151]/20 via-[#1f2937]/20 to-[#111827]/20 backdrop-blur-sm rounded-xl border border-white/10">
                     <div className="text-gray-300">
                       <span className="text-sm">Exibindo dias {daysPage + 1} de {totalDayPages}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button onClick={() => setDaysPage(daysPage - 1)} disabled={daysPage === 0 || searchLoading} className="flex items-center space-x-2 px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 disabled:bg-gray-800/50 disabled:opacity-50 text-white rounded-lg transition-all duration-200 border border-gray-600/30">
+                      <button onClick={() => setDaysPage(daysPage - 1)} disabled={daysPage === 0 || searchLoading} className="flex items-center space-x-2 px-4 py-2 bg-[#374151]/50 hover:bg-[#4b5563]/50 disabled:bg-[#1f2937]/50 disabled:opacity-50 text-white rounded-lg transition-all duration-200 border border-gray-600/30">
                         <ChevronLeft className="h-4 w-4" />
                         <span>Anterior</span>
                       </button>
@@ -353,8 +353,8 @@ function NewPageContent() {
                               onClick={() => setDaysPage(pageNum)}
                               disabled={pageNum === daysPage || searchLoading}
                               className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 ${pageNum === daysPage
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 disabled:opacity-50'
+                                ? 'bg-[#6b7280] text-white'
+                                : 'bg-[#374151]/50 hover:bg-[#4b5563]/50 text-gray-300 disabled:opacity-50'
                                 }`}
                             >
                               {pageNum + 1}
@@ -362,7 +362,7 @@ function NewPageContent() {
                           );
                         })}
                       </div>
-                      <button onClick={() => setDaysPage(daysPage + 1)} disabled={daysPage === totalDayPages - 1 || searchLoading} className="flex items-center space-x-2 px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 disabled:bg-gray-800/50 disabled:opacity-50 text-white rounded-lg transition-all duration-200 border border-gray-600/30">
+                      <button onClick={() => setDaysPage(daysPage + 1)} disabled={daysPage === totalDayPages - 1 || searchLoading} className="flex items-center space-x-2 px-4 py-2 bg-[#374151]/50 hover:bg-[#4b5563]/50 disabled:bg-[#1f2937]/50 disabled:opacity-50 text-white rounded-lg transition-all duration-200 border border-gray-600/30">
                         <span>Próximo</span>
                         <ChevronRight className="h-4 w-4" />
                       </button>
@@ -372,12 +372,12 @@ function NewPageContent() {
               </div>
             ) : (
               <div className="text-center py-32">
-                <div className="p-6 bg-gradient-to-br from-[#202B3F]/50 via-[#27212B]/50 to-[#0C0C0C]/50 rounded-2xl inline-block mb-6 border border-gray-700/30 backdrop-blur-sm">
+                <div className="p-6 bg-gradient-to-br from-[#374151]/50 via-[#1f2937]/50 to-[#111827]/50 rounded-2xl inline-block mb-6 border border-gray-700/30 backdrop-blur-sm">
                   <Music className="h-16 w-16 text-gray-400 mx-auto" />
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-4">Nenhuma música encontrada</h3>
                 <p className="text-gray-400 mb-8">Não há músicas disponíveis para os filtros selecionados.</p>
-                <button onClick={handleClearFilters} className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium transition-colors shadow-lg">Limpar Filtros</button>
+                <button onClick={handleClearFilters} className="px-6 py-3 bg-gradient-to-r from-[#374151] to-[#4b5563] hover:from-[#4b5563] hover:to-[#6b7280] text-white rounded-lg font-medium transition-colors shadow-lg">Limpar Filtros</button>
               </div>
             )}
           </>
@@ -418,7 +418,7 @@ function NewPageContent() {
 export default function NewPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-[#374151] via-[#1f2937] to-[#111827] flex items-center justify-center">
         <div className="animate-pulse text-white">Carregando...</div>
       </div>
     }>

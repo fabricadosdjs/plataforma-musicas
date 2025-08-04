@@ -131,7 +131,7 @@ const Header = ({
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center space-x-4 md:space-x-6">
           {/* Mobile menu button */}
-          <button className="md:hidden flex items-center justify-center p-2 rounded-lg text-gray-200 hover:bg-gray-800 focus:outline-none" onClick={() => setMobileMenuOpen(true)} aria-label="Abrir menu">
+          <button className="md:hidden flex items-center justify-center p-2 rounded-lg text-gray-200 hover:bg-[#374151] focus:outline-none" onClick={() => setMobileMenuOpen(true)} aria-label="Abrir menu">
             <Menu className="h-7 w-7" />
           </button>
           <Link href="/">

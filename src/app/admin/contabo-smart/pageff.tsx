@@ -148,7 +148,7 @@ export default function ContaboSmartAdmin() {
                 <select
                     value={importDate}
                     onChange={(e) => setImportDate(e.target.value)}
-                    className="border border-gray-600 rounded px-2 py-1 text-sm bg-[#181818] text-white"
+                    className="border border-gray-600 rounded px-2 py-1 text-sm bg-[#374151] text-white"
                 >
                     <option value="current">Data Atual</option>
                     <option value="custom">Data Personalizada</option>
@@ -158,7 +158,7 @@ export default function ContaboSmartAdmin() {
                         type="date"
                         value={customDate}
                         onChange={(e) => setCustomDate(e.target.value)}
-                        className="border border-gray-600 rounded px-2 py-1 text-sm ml-2 bg-[#181818] text-white"
+                        className="border border-gray-600 rounded px-2 py-1 text-sm ml-2 bg-[#374151] text-white"
                     />
                 )}
                 <button
@@ -248,7 +248,7 @@ export default function ContaboSmartAdmin() {
                                 placeholder="Pesquisar arquivos..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 pr-4 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[#181818] text-white"
+                                className="pl-10 pr-4 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[#374151] text-white"
                             />
                         </div>
                         <button

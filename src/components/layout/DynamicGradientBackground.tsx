@@ -45,9 +45,9 @@ export default function DynamicGradientBackground() {
         return `rgb(${r}, ${g}, ${b})`;
     };
 
-    const startColor = '#8B4513';
-    const midColor = '#2F1B14';
-    const endColor = '#0C0C0C';
+    const startColor = '#6b7280'; // Cinza claro
+    const midColor = '#374151'; // Cinza escuro
+    const endColor = '#1f2937'; // Cinza mais escuro
 
     // Função para interpolação tripla de cores
     const interpolateTripleColor = (color1: string, color2: string, color3: string, factor: number) => {

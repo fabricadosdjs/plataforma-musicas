@@ -635,34 +635,33 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                 <button
                                     onClick={() => handleDownload(track)}
                                     disabled={!session?.user?.is_vip || (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)}
-                                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
-                            ${!session?.user?.is_vip
-                                            ? 'bg-gray-700 text-gray-400 opacity-50 cursor-not-allowed'
+                                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
+                                ${!session?.user?.is_vip
+                                            ? 'bg-[#374151] text-gray-400 opacity-50 cursor-not-allowed'
                                             : hasDownloadedBefore(track.id)
                                                 ? downloadedTracksTime[track.id] > 0
                                                     ? 'bg-blue-600 text-white border border-blue-500 shadow-blue-500/25 opacity-60 cursor-not-allowed'
-                                                    : 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 shadow-blue-500/25'
-                                                : 'bg-green-600 text-white hover:bg-green-700 border border-green-500 shadow-green-500/25'
+                                                    : 'bg-[#374151] text-white hover:bg-gray-600 border border-gray-500 shadow-gray-500/25'
+                                                : 'bg-[#374151] text-white hover:bg-gray-600 border border-gray-500 shadow-gray-500/25'
                                         }`}
-                                    style={{ fontSize: '15px' }}
                                     title={!session?.user?.is_vip ? 'Apenas usuários VIP podem fazer downloads' : hasDownloadedBefore(track.id) ? downloadedTracksTime[track.id] > 0 ? `Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente` : 'Música já baixada' : "Download disponível"}
                                 >
-                                    <Download size={20} />
+                                    <Download size={16} />
                                     <span>{getDownloadButtonText(track.id)}</span>
                                 </button>
+
                                 {/* Curtir */}
                                 <button
                                     onClick={() => handleLikeClick(track.id)}
                                     disabled={!session?.user?.is_vip || liking === track.id}
-                                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
-                            ${likedTracksSet.has(track.id)
-                                            ? 'bg-pink-600 text-white border border-pink-500 shadow-pink-500/25'
-                                            : 'bg-gray-700 text-gray-200 hover:bg-pink-700 border border-gray-500 shadow-gray-500/25'
+                                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
+                                ${likedTracksSet.has(track.id)
+                                            ? 'bg-pink-600/80 text-white border border-pink-500/50 shadow-pink-500/25'
+                                            : 'bg-[#374151] text-gray-200 hover:bg-gray-600 border border-gray-500/50 shadow-gray-500/25'
                                         }`}
-                                    style={{ fontSize: '15px' }}
                                     title={likedTracksSet.has(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                 >
-                                    <Heart size={20} className={likedTracksSet.has(track.id) ? 'fill-pink-400 text-pink-200' : 'text-gray-300'} />
+                                    <Heart size={16} className={likedTracksSet.has(track.id) ? 'fill-pink-400 text-pink-200' : 'text-gray-300'} />
                                     <span>{likedTracksSet.has(track.id) ? 'Curtido' : 'Curtir'}</span>
                                 </button>
                             </div>
