@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "cross-env DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy prisma generate && next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:seed": "node prisma/seed.js",
@@ -14,9 +14,6 @@
     "contabo:smart": "npx tsx test-smart-import.js",
     "contabo:style": "npx tsx test-style-detector.js",
     "contabo:setup": "echo 'Configurando Contabo...' && cp .env.contabo.example .env.local && echo 'Configure suas credenciais no .env.local e execute: npm run contabo:test'"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
@@ -60,7 +57,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@netlify/plugin-nextjs": "^5.11.6",
+    "@netlify/plugin-nextjs": "^5.12.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
