@@ -70,8 +70,8 @@ export default function AddMusicPage() {
   };
 
   const removeDuplicatesFromStorage = async () => {
-    if (!importResult?.duplicates || importResult.duplicates.length === 0) {
-      setMessage('Nenhuma duplicata para remover do storage');
+    if (!importResult?.duplicateFileKeys || importResult.duplicateFileKeys.length === 0) {
+      setMessage('Nenhuma duplicata no storage para remover');
       return;
     }
 
@@ -83,7 +83,7 @@ export default function AddMusicPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          filesToDelete: importResult.duplicates
+          filesToDelete: importResult.duplicateFileKeys
         })
       });
 
@@ -168,6 +168,11 @@ export default function AddMusicPage() {
                   <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-yellow-400" />
                     Músicas Não Importadas ({importResult.duplicates.length})
+                    {importResult.duplicateFileKeys && importResult.duplicateFileKeys.length > 0 && (
+                      <span className="text-sm text-red-400">
+                        ({importResult.duplicateFileKeys.length} no storage)
+                      </span>
+                    )}
                   </h4>
                   <div className="bg-[#1B1C1D] rounded-lg p-4 max-h-60 overflow-y-auto">
                     <ul className="space-y-2">
@@ -181,29 +186,31 @@ export default function AddMusicPage() {
                   </div>
                   
                   {/* Botão para remover duplicatas do storage */}
-                  <div className="mt-4 flex justify-between items-center">
-                    <div className="text-sm text-gray-400">
-                      💡 Estas duplicatas podem ser removidas do storage para liberar espaço
+                  {importResult.duplicateFileKeys && importResult.duplicateFileKeys.length > 0 && (
+                    <div className="mt-4 flex justify-between items-center">
+                      <div className="text-sm text-gray-400">
+                        💡 {importResult.duplicateFileKeys.length} arquivos duplicados no storage podem ser removidos para liberar espaço
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeDuplicatesFromStorage}
+                        disabled={removingDuplicates}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
+                      >
+                        {removingDuplicates ? (
+                          <>
+                            <Loader2 className="animate-spin" size={16} />
+                            Removendo...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 size={16} />
+                            Remover {importResult.duplicateFileKeys.length} do Storage
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={removeDuplicatesFromStorage}
-                      disabled={removingDuplicates}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
-                    >
-                      {removingDuplicates ? (
-                        <>
-                          <Loader2 className="animate-spin" size={16} />
-                          Removendo...
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 size={16} />
-                          Remover do Storage
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  )}
                 </div>
               )}
               

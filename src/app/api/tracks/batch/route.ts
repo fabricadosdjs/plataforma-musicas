@@ -1,6 +1,7 @@
 // src/app/api/tracks/batch/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { ContaboStorage } from '@/lib/contabo-storage';
 
 export async function POST(req: Request) {
   try {
@@ -77,19 +78,47 @@ export async function POST(req: Request) {
         existingTracks.map(track => `${track.artist} - ${track.songName}`.toLowerCase())
       );
 
+      // Verificar duplicatas no storage do Contabo
+      console.log('🔍 Verificando duplicatas no storage...');
+      const storage = new ContaboStorage({
+        endpoint: process.env.CONTABO_ENDPOINT!,
+        region: process.env.CONTABO_REGION!,
+        accessKeyId: process.env.CONTABO_ACCESS_KEY!,
+        secretAccessKey: process.env.CONTABO_SECRET_KEY!,
+        bucketName: process.env.CONTABO_BUCKET_NAME!,
+      });
+
+      // Buscar arquivos no storage
+      const storageFiles = await storage.listFiles();
+      const storageFileKeys = storageFiles.map(file => file.key);
+
       // Separar músicas únicas e duplicadas
       const uniqueTracks = [];
       const duplicateTracks = [];
       const duplicateReasons = [];
+      const duplicateFileKeys = [];
 
       for (const track of tracksToCreate) {
         const songKey = `${track.artist} - ${track.songName}`.toLowerCase();
         const isDuplicateUrl = existingUrls.has(track.previewUrl) || existingUrls.has(track.downloadUrl);
         const isDuplicateSong = existingSongs.has(songKey);
 
-        if (isDuplicateUrl || isDuplicateSong) {
+        // Verificar se o arquivo existe no storage
+        const downloadUrlParts = track.downloadUrl.split('/');
+        const fileName = downloadUrlParts[downloadUrlParts.length - 1];
+        const isInStorage = storageFileKeys.some(key => key.includes(fileName));
+
+        if (isDuplicateUrl || isDuplicateSong || isInStorage) {
           duplicateTracks.push(track);
-          if (isDuplicateUrl) {
+          
+          if (isInStorage) {
+            // Encontrar a chave exata do arquivo no storage
+            const exactKey = storageFileKeys.find(key => key.includes(fileName));
+            if (exactKey) {
+              duplicateFileKeys.push(exactKey);
+            }
+            duplicateReasons.push(`Arquivo no storage: ${track.artist} - ${track.songName}`);
+          } else if (isDuplicateUrl) {
             duplicateReasons.push(`URL duplicada: ${track.artist} - ${track.songName}`);
           } else {
             duplicateReasons.push(`Música já existe: ${track.artist} - ${track.songName}`);
@@ -123,6 +152,7 @@ export async function POST(req: Request) {
         totalDuplicates: duplicateTracks.length,
         message: `${insertResult?.count || 0} músicas adicionadas com sucesso!`,
         duplicates: duplicateReasons,
+        duplicateFileKeys: duplicateFileKeys,
         summary: {
           received: tracksToCreate.length,
           inserted: insertResult?.count || 0,
