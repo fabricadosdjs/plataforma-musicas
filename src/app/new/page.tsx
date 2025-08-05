@@ -196,6 +196,7 @@ function NewPageContent() {
   };
 
   const handleClearFilters = () => {
+    // Limpar todos os filtros
     setSelectedGenre('all');
     setSelectedArtist('all');
     setSelectedDateRange('all');
@@ -203,10 +204,14 @@ function NewPageContent() {
     setSelectedMonth('all');
     setSelectedPool('all');
     setSearchQuery('');
+    setCurrentPage(1);
+    
     // Limpar a URL também
     router.push('/new', { scroll: false });
+    
     // Aguardar um pouco antes de buscar para garantir que a URL foi limpa
     setTimeout(() => {
+      // Forçar recarregamento de todas as músicas
       fetchTracks(true);
     }, 100);
   };
@@ -401,64 +406,67 @@ function NewPageContent() {
             </div>
           </div>
         </div>
-        <div className="mb-8 glass-effect rounded-3xl p-6 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 beatport-hover">
-          <div className="flex flex-col lg:flex-row items-center gap-4">
-            {/* Search Bar with Filters */}
-            <div className="flex items-center w-full max-w-2xl glass-effect rounded-full px-6 py-4 focus-within:border-purple-400/70 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 pulse-button">
-              <Search className="h-5 w-5 text-purple-400 mr-4 animate-pulse" />
-              <input
-                type="text"
-                placeholder="Buscar músicas, artistas, estilos..."
-                className="flex-grow bg-transparent outline-none text-white placeholder-gray-400 text-sm"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              />
-              
-              {/* Quick Filters */}
-              <div className="flex items-center gap-2 ml-4">
-                <button
-                  onClick={() => setShowFiltersModal(true)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 beatport-hover pulse-button ${
-                    hasActiveFilters 
-                      ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50' 
-                      : 'bg-gray-800/50 text-gray-300 hover:bg-purple-600/20'
-                  }`}
-                >
-                  <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-purple-400 animate-pulse' : 'text-gray-300'}`} />
-                  <span className="text-sm font-medium">Filtros</span>
-                  {hasActiveFilters && (
-                    <span className="block h-2 w-2 rounded-full bg-purple-400 ring-2 ring-purple-600 animate-pulse ml-1"></span>
-                  )}
-                </button>
+        {/* Centralized Search Bar */}
+        <div className="mb-8 flex justify-center">
+          <div className="w-full max-w-4xl glass-effect rounded-3xl p-6 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 beatport-hover">
+            <div className="flex flex-col items-center gap-4">
+              {/* Search Bar */}
+              <div className="flex items-center w-full max-w-2xl glass-effect rounded-full px-6 py-4 focus-within:border-purple-400/70 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 pulse-button">
+                <Search className="h-5 w-5 text-purple-400 mr-4 animate-pulse" />
+                <input
+                  type="text"
+                  placeholder="Buscar músicas, artistas, estilos..."
+                  className="flex-grow bg-transparent outline-none text-white placeholder-gray-400 text-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                />
                 
-                {/* Quick Search Button */}
-                <button
-                  onClick={handleSearch}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 transform hover:scale-105"
-                >
-                  <Search className="h-4 w-4" />
-                  <span className="text-sm font-medium">Buscar</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Active Filters Display */}
-            {hasActiveFilters && (
-              <div className="flex items-center gap-3 text-purple-400 animate-pulse">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  <span className="text-sm font-medium">Filtros ativos</span>
+                {/* Quick Filters */}
+                <div className="flex items-center gap-2 ml-4">
+                  <button
+                    onClick={() => setShowFiltersModal(true)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 beatport-hover pulse-button ${
+                      hasActiveFilters 
+                        ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50' 
+                        : 'bg-gray-800/50 text-gray-300 hover:bg-purple-600/20'
+                    }`}
+                  >
+                    <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-purple-400 animate-pulse' : 'text-gray-300'}`} />
+                    <span className="text-sm font-medium">Filtros</span>
+                    {hasActiveFilters && (
+                      <span className="block h-2 w-2 rounded-full bg-purple-400 ring-2 ring-purple-600 animate-pulse ml-1"></span>
+                    )}
+                  </button>
+                  
+                  {/* Quick Search Button */}
+                  <button
+                    onClick={handleSearch}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 transform hover:scale-105"
+                  >
+                    <Search className="h-4 w-4" />
+                    <span className="text-sm font-medium">Buscar</span>
+                  </button>
                 </div>
-                <button
-                  onClick={handleClearFilters}
-                  className="flex items-center gap-1 px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-full text-xs transition-all duration-300"
-                >
-                  <X className="h-3 w-3" />
-                  <span>Limpar</span>
-                </button>
               </div>
-            )}
+
+              {/* Active Filters Display */}
+              {hasActiveFilters && (
+                <div className="flex items-center gap-3 text-purple-400 animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span className="text-sm font-medium">Filtros ativos</span>
+                  </div>
+                  <button
+                    onClick={handleClearFilters}
+                    className="flex items-center gap-1 px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-full text-xs transition-all duration-300"
+                  >
+                    <X className="h-3 w-3" />
+                    <span>Limpar</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -478,9 +486,33 @@ function NewPageContent() {
             <div className="p-6 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-indigo-900/20 rounded-3xl inline-block mb-6 border border-purple-500/20 backdrop-blur-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300">
               <Search className="h-16 w-16 text-purple-400 mx-auto animate-pulse" />
             </div>
-            <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4">Nenhuma música encontrada</h3>
-            <p className="text-gray-400 mb-8">Tente ajustar seus filtros ou fazer uma nova busca.</p>
-            <button onClick={handleClearFilters} className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/20 transform hover:scale-105">Limpar Filtros</button>
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4">
+              {hasActiveFilters ? 'Nenhuma música encontrada com os filtros atuais' : 'Nenhuma música encontrada'}
+            </h3>
+            <p className="text-gray-400 mb-8">
+              {hasActiveFilters 
+                ? 'Tente ajustar seus filtros ou limpar todos os filtros para ver todas as músicas disponíveis.'
+                : 'Tente fazer uma nova busca ou verificar se há músicas disponíveis.'
+              }
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {hasActiveFilters && (
+                <button 
+                  onClick={handleClearFilters} 
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/20 transform hover:scale-105 flex items-center justify-center gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Limpar Todos os Filtros
+                </button>
+              )}
+              <button 
+                onClick={() => setShowFiltersModal(true)} 
+                className="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-gray-500/20 transform hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Ajustar Filtros
+              </button>
+            </div>
           </div>
         ) : (
           <>
