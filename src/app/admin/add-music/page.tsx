@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle, Loader2, Music } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader2, Music, Trash2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -18,6 +18,7 @@ export default function AddMusicPage() {
   const [formData, setFormData] = useState({
     jsonData: ''
   });
+  const [removingDuplicates, setRemovingDuplicates] = useState(false);
 
   if (isLoaded && !user) {
     redirect('/auth/sign-in');
@@ -65,6 +66,44 @@ export default function AddMusicPage() {
       setMessage('Erro de rede ou servidor');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const removeDuplicatesFromStorage = async () => {
+    if (!importResult?.duplicates || importResult.duplicates.length === 0) {
+      setMessage('Nenhuma duplicata para remover do storage');
+      return;
+    }
+
+    setRemovingDuplicates(true);
+    try {
+      const response = await fetch('/api/contabo/delete-duplicates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filesToDelete: importResult.duplicates
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setMessage(`✅ ${result.message} - Storage limpo com sucesso!`);
+        // Limpar a lista de duplicatas após remoção
+        setImportResult({
+          ...importResult,
+          duplicates: []
+        });
+      } else {
+        const errorText = await response.text();
+        setMessage(`❌ Erro ao remover duplicatas: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Erro ao remover duplicatas:', error);
+      setMessage('❌ Erro de rede ao remover duplicatas do storage');
+    } finally {
+      setRemovingDuplicates(false);
     }
   };
 
@@ -139,6 +178,31 @@ export default function AddMusicPage() {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                  
+                  {/* Botão para remover duplicatas do storage */}
+                  <div className="mt-4 flex justify-between items-center">
+                    <div className="text-sm text-gray-400">
+                      💡 Estas duplicatas podem ser removidas do storage para liberar espaço
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeDuplicatesFromStorage}
+                      disabled={removingDuplicates}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
+                    >
+                      {removingDuplicates ? (
+                        <>
+                          <Loader2 className="animate-spin" size={16} />
+                          Removendo...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 size={16} />
+                          Remover do Storage
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               )}

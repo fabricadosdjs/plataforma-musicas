@@ -637,8 +637,8 @@ export default function ContaboSmartAdmin() {
                                                     </h4>
                                                     {track.confidence && (
                                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${track.confidence > 80 ? 'bg-green-500/20 text-green-400' :
-                                                                track.confidence > 60 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                                    'bg-red-500/20 text-red-400'
+                                                            track.confidence > 60 ? 'bg-yellow-500/20 text-yellow-400' :
+                                                                'bg-red-500/20 text-red-400'
                                                             }`}>
                                                             {track.confidence}% confiança
                                                         </span>
