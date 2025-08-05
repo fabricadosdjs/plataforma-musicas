@@ -1,7 +1,7 @@
 // src/app/admin/dashboard/page.tsx
 "use client";
 
-import { Activity, Calendar, Clock, CpuIcon, DollarSign, Download, HardDrive, Heart, MemoryStick, Music, Server, TrendingUp, Users } from 'lucide-react';
+import { Activity, AlertTriangle, Calendar, Clock, CpuIcon, DollarSign, Download, HardDrive, Heart, MemoryStick, Music, Server, TrendingUp, Users } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -156,6 +156,10 @@ export default function DashboardPage() {
                             <span className="text-sm text-gray-400">
                                 Última atualização: {lastUpdated.toLocaleTimeString()}
                             </span>
+                            <Link href="/admin/orphaned-tracks" className="bg-red-600 px-4 py-2 rounded text-sm hover:bg-red-700 transition-colors flex items-center gap-2">
+                                <AlertTriangle size={16} />
+                                Músicas Órfãs
+                            </Link>
                             <button
                                 onClick={fetchStats}
                                 disabled={loading}

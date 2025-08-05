@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 
 interface UserData {
@@ -19,17 +19,28 @@ interface UseUserDataReturn {
 }
 
 export const useUserData = (): UseUserDataReturn => {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const [userData, setUserData] = useState<UserData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const lastFetchRef = useRef<string | null>(null);
+    const isFetchingRef = useRef(false);
 
     const fetchUserData = useCallback(async () => {
-        if (!session?.user?.email) {
+        // Evitar chamadas simultâneas
+        if (isFetchingRef.current) return;
+
+        // Verificar se o usuário mudou
+        const currentUserEmail = session?.user?.email;
+        if (lastFetchRef.current === currentUserEmail) return;
+
+        if (!currentUserEmail) {
             setUserData(null);
+            lastFetchRef.current = null;
             return;
         }
 
+        isFetchingRef.current = true;
         setIsLoading(true);
         setError(null);
 
@@ -41,11 +52,13 @@ export const useUserData = (): UseUserDataReturn => {
 
             const data = await res.json();
             setUserData(data);
+            lastFetchRef.current = currentUserEmail;
         } catch (err) {
             console.error('Erro ao buscar dados do usuário:', err);
             setError(err instanceof Error ? err.message : 'Erro desconhecido');
         } finally {
             setIsLoading(false);
+            isFetchingRef.current = false;
         }
     }, [session?.user?.email]);
 
@@ -81,10 +94,15 @@ export const useUserData = (): UseUserDataReturn => {
         });
     }, []);
 
-    // Buscar dados quando o usuário mudar
+    // Buscar dados apenas quando o status da sessão mudar para 'authenticated'
     useEffect(() => {
-        fetchUserData();
-    }, [fetchUserData]);
+        if (status === 'authenticated' && session?.user?.email) {
+            fetchUserData();
+        } else if (status === 'unauthenticated') {
+            setUserData(null);
+            lastFetchRef.current = null;
+        }
+    }, [status, session?.user?.email, fetchUserData]);
 
     return {
         userData,

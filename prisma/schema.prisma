@@ -28,6 +28,9 @@ model User {
   weeklyPlaylistDownloadsUsed Int?       @default(0)
   whatsapp                String?
   deemix                  Boolean?   @default(false)
+  deezerPremium           Boolean?   @default(false)
+  deezerEmail             String?
+  deezerPassword          String?
   isPro                   Boolean?   @default(false)
   isAdmin                  Boolean?   @default(false)
   password                String?

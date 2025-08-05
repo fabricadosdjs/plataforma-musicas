@@ -93,6 +93,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   // ALTERADO: fetchUserData agora busca tudo, incluindo contagem de downloads
   const fetchUserData = useCallback(async () => {
     if (!user) return;
+
+    // Evitar chamadas desnecessárias se já temos os dados
+    if (downloadedTracks.length > 0 && dailyDownloadCount > 0) return;
+
     try {
       // Usando a rota GET que modificamos para pegar todos os dados iniciais
       const response = await fetch('/api/downloads');
@@ -107,13 +111,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error fetching user data:", error);
       showAlert("Erro ao carregar dados do usuário.");
     }
-  }, [user, showAlert]);
+  }, [user, showAlert, downloadedTracks.length, dailyDownloadCount]);
 
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === 'authenticated' && user) {
       fetchUserData();
+    } else if (status === 'unauthenticated') {
+      setDownloadedTracks([]);
+      setDailyDownloadCount(0);
+      setDailyLimit(15);
     }
-  }, [status, fetchUserData]);
+  }, [status, user, fetchUserData]);
 
   // ADICIONADO: Lógica de download centralizada
   const handleDownload = async (track: Track, confirmReDownload = false) => {

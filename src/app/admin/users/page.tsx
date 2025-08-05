@@ -1,35 +1,39 @@
 "use client";
-
-import { AlertCircle, CheckCircle, Copy, Crown, DollarSign, Edit, Filter, Loader2, MessageSquare, Plus, Search, Settings, Trash, User, Users, X } from 'lucide-react';
-import { useSession } from 'next-auth/react';
-import { redirect } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { AdminAuth } from '@/components/admin/AdminAuth';
-
-// Corrected: Interface definition should only contain properties.
+import React from "react";
+// Interface do usuário
 interface User {
     id: string;
     name: string;
-    whatsapp?: string;
     email: string;
-    valor?: number;
+    whatsapp?: string;
+    vvalor?: number;
     vencimento?: string;
     dataPagamento?: string;
     status: string;
     deemix: boolean;
+    deezerPremium: boolean;
+    deezerEmail?: string;
+    deezerPassword?: string;
     is_vip: boolean;
-    dailyDownloadCount: number | null;
+    ddailyDownloadCount: number | null;
     weeklyPackRequests?: number;
     weeklyPlaylistDownloads?: number;
-    weeklyPackRequestsUsed?: number; // Campo para admin controlar uso manual
-    weeklyPlaylistDownloadsUsed?: number; // Campo para admin controlar uso manual
-    lastDownloadReset?: string | null;
-    lastWeekReset?: string | null;
-    downloadsCount: number;
-    likesCount: number;
+    wweeklyPackRequestsUsed?: number;
+    wweeklyPlaylistDownloadsUsed?: number;
+    llastDownloadReset?: string | null;
+    llastWeekReset?: string | null;
+    downloadsCount?: number;
+    likesCount?: number;
     password?: string;
     customBenefits?: any;
 }
+
+// Imports
+import AdminAuth from '@/components/AdminAuth';
+import { Users, Crown, CheckCircle, DollarSign, Plus, Search, Filter, Copy, AlertCircle, Settings, Loader2, User, Edit, Trash, X, Download, Heart, Play } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { redirect } from 'next/navigation';
 
 // ...existing code (VIP_BENEFITS, VIP_PLANS, BENEFIT_LABELS, getUserPlan, getUserBenefits) should remain outside the component, as constants/helpers
 const VIP_BENEFITS = {
@@ -109,26 +113,26 @@ const BENEFIT_LABELS = {
     musicProduction: '🎼 Produção da sua Música'
 } as const;
 
-// Função para determinar o plano baseado no valor mensal
-const getUserPlan = (valor: number | null) => {
-    if (!valor || valor < VIP_PLANS.BASICO.minValue) {
+// Função para determinar o plano baseado no vvalor mensal
+const getUserPlan = (vvalor: number | null) => {
+    if (!vvalor || vvalor < VIP_PLANS.BASICO.minValue) {
         return null;
     }
 
-    if (valor >= VIP_PLANS.BASICO.minValue && valor <= VIP_PLANS.BASICO.maxValue) {
+    if (vvalor >= VIP_PLANS.BASICO.minValue && vvalor <= VIP_PLANS.BASICO.maxValue) {
         return VIP_PLANS.BASICO;
     }
 
-    if (valor >= VIP_PLANS.PADRAO.minValue && valor <= VIP_PLANS.PADRAO.maxValue) {
+    if (vvalor >= VIP_PLANS.PADRAO.minValue && vvalor <= VIP_PLANS.PADRAO.maxValue) {
         return VIP_PLANS.PADRAO;
     }
 
-    if (valor >= VIP_PLANS.COMPLETO.minValue && valor <= VIP_PLANS.COMPLETO.maxValue) {
+    if (vvalor >= VIP_PLANS.COMPLETO.minValue && vvalor <= VIP_PLANS.COMPLETO.maxValue) {
         return VIP_PLANS.COMPLETO;
     }
 
-    // Para valores acima do máximo, considera como VIP COMPLETO
-    if (valor > VIP_PLANS.COMPLETO.maxValue) {
+    // Para vvalores acima do máximo, considera como VIP COMPLETO
+    if (vvalor > VIP_PLANS.COMPLETO.maxValue) {
         return VIP_PLANS.COMPLETO;
     }
 
@@ -137,7 +141,7 @@ const getUserPlan = (valor: number | null) => {
 
 // Função para obter benefícios do usuário (padrão + personalizações)
 const getUserBenefits = (user: User, customBenefits: { [userId: string]: any }) => {
-    const defaultPlan = getUserPlan(user.valor || null);
+    const defaultPlan = getUserPlan(user.vvalor || null);
     const defaultBenefits = defaultPlan ? defaultPlan.benefits : VIP_BENEFITS.BASICO;
     const userCustom = customBenefits[user.id] || {};
 
@@ -174,13 +178,16 @@ export default function AdminUsersPage() {
         whatsapp: '',
         email: '',
         password: '',
-        valor: 0,
+        vvalor: 0,
         vencimento: '',
         dataPagamento: '',
         status: 'ativo',
         deemix: true,
+        deezerPremium: false,
+        deezerEmail: '',
+        deezerPassword: '',
         is_vip: true,
-        dailyDownloadCount: 0
+        ddailyDownloadCount: 0
     });
 
     useEffect(() => {
@@ -254,8 +261,8 @@ export default function AdminUsersPage() {
     // Função para calcular receita mensal
     const calculateMonthlyRevenue = () => {
         return users
-            .filter(user => user.is_vip && user.valor)
-            .reduce((acc, user) => acc + Number(user.valor || 0), 0);
+            .filter(user => user.is_vip && user.vvalor)
+            .reduce((acc, user) => acc + Number(user.vvalor || 0), 0);
     };
 
     // Função para verificar se a data de vencimento está próxima (3 dias)
@@ -413,6 +420,37 @@ export default function AdminUsersPage() {
         }
     };
 
+    const toggleDeezerPremiumStatus = async (userId: string, currentDeezerPremium: boolean) => {
+        setUpdating(userId);
+        try {
+            const response = await fetch('/api/admin/users', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId,
+                    deezerPremium: !currentDeezerPremium
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                showMessage(data.message, 'success');
+                setUsers(prev => prev.map(user =>
+                    user.id === userId
+                        ? { ...user, deezerPremium: !user.deezerPremium }
+                        : user
+                ));
+            } else {
+                throw new Error('Falha ao atualizar status do Deezer Premium');
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar status do Deezer Premium:', error);
+            showMessage('Erro ao atualizar status do Deezer Premium', 'error');
+        } finally {
+            setUpdating(null);
+        }
+    };
+
     const showDeleteConfirmation = (user: User) => {
         setUserToDelete(user);
     };
@@ -509,13 +547,16 @@ export default function AdminUsersPage() {
             whatsapp: user.whatsapp || '',
             email: user.email || '',
             password: '', // Não mostrar senha existente por segurança
-            valor: user.valor || 0,
+            vvalor: user.vvalor || 0,
             vencimento: formatDateForInput(user.vencimento),
             dataPagamento: formatDateForInput(user.dataPagamento),
             status: user.status,
             deemix: user.deemix,
+            deezerPremium: user.deezerPremium || false,
+            deezerEmail: user.deezerEmail || '',
+            deezerPassword: '', // Não mostrar senha existente por segurança
             is_vip: user.is_vip,
-            dailyDownloadCount: user.dailyDownloadCount || 0
+            ddailyDownloadCount: user.ddailyDownloadCount || 0
         });
     };
 
@@ -527,13 +568,16 @@ export default function AdminUsersPage() {
             whatsapp: '',
             email: '',
             password: '',
-            valor: 0,
+            vvalor: 0,
             vencimento: '',
             dataPagamento: '',
             status: 'ativo',
             deemix: true,
+            deezerPremium: false,
+            deezerEmail: '',
+            deezerPassword: '',
             is_vip: true,
-            dailyDownloadCount: 0
+            ddailyDownloadCount: 0
         });
     };
 
@@ -554,13 +598,16 @@ export default function AdminUsersPage() {
             whatsapp: '',
             email: '',
             password: '',
-            valor: 0,
+            vvalor: 0,
             vencimento: '',
             dataPagamento: '',
             status: 'ativo',
             deemix: true,
+            deezerPremium: false,
+            deezerEmail: '',
+            deezerPassword: '',
             is_vip: true,
-            dailyDownloadCount: 0
+            ddailyDownloadCount: 0
         });
     };
 
@@ -663,17 +710,10 @@ export default function AdminUsersPage() {
                                 <Settings className="h-4 w-4" />
                                 Itens Personalizados
                             </a>
-                            <a
-                                href="/admin/messages"
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-                            >
-                                <MessageSquare className="h-4 w-4" />
-                                Recados da ADM
-                            </a>
                         </div>
                     </div>
 
-                    {/* Filtros e Busca */}
+                    {/* Search and Filters */}
                     <div className="bg-gray-800/50 rounded-xl p-6 mb-6 space-y-4">
                         {/* Barra de Busca - Linha separada */}
                         <div className="relative">
@@ -734,55 +774,58 @@ export default function AdminUsersPage() {
                         </div>
                     )}
 
-                    {/* Statistics Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                        <div className="bg-gray-800 rounded-xl p-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-blue-600/20 rounded-lg">
-                                    <Users className="w-6 h-6 text-blue-400" />
+                    {/* Statistics Cards - Cards Elegantes e Estreitos */}
+                    <div className="space-y-4 mb-6">
+                        {/* Primeira linha - Cards principais */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            {/* Total de Usuários */}
+                            <div className="bg-gradient-to-br from-blue-900/80 to-blue-700/80 rounded-xl p-4 flex items-center gap-3 shadow-lg border border-blue-500/30 backdrop-blur-sm">
+                                <div className="p-2 bg-blue-500/20 rounded-lg">
+                                    <Users className="w-5 h-5 text-blue-300" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-gray-400">Total de Usuários</p>
+                                <div className="flex-1">
+                                    <p className="text-xs text-gray-300 font-medium">Total de Usuários</p>
                                     <p className="text-2xl font-bold text-white">{users.length}</p>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="bg-gray-800 rounded-xl p-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-yellow-600/20 rounded-lg">
-                                    <Crown className="w-6 h-6 text-yellow-400" />
+                            {/* Usuários VIP */}
+                            <div className="bg-gradient-to-br from-yellow-900/80 to-yellow-700/80 rounded-xl p-4 flex items-center gap-3 shadow-lg border border-yellow-500/30 backdrop-blur-sm">
+                                <div className="p-2 bg-yellow-500/20 rounded-lg">
+                                    <Crown className="w-5 h-5 text-yellow-300" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-gray-400">Usuários VIP</p>
+                                <div className="flex-1">
+                                    <p className="text-xs text-gray-300 font-medium">Usuários VIP</p>
                                     <p className="text-2xl font-bold text-yellow-400">{users.filter(u => u.is_vip).length}</p>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="bg-gray-800 rounded-xl p-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-green-600/20 rounded-lg">
-                                    <CheckCircle className="w-6 h-6 text-green-400" />
+                            {/* Usuários Ativos */}
+                            <div className="bg-gradient-to-br from-green-900/80 to-green-700/80 rounded-xl p-4 flex items-center gap-3 shadow-lg border border-green-500/30 backdrop-blur-sm">
+                                <div className="p-2 bg-green-500/20 rounded-lg">
+                                    <CheckCircle className="w-5 h-5 text-green-300" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-gray-400">Usuários Ativos</p>
+                                <div className="flex-1">
+                                    <p className="text-xs text-gray-300 font-medium">Usuários Ativos</p>
                                     <p className="text-2xl font-bold text-green-400">{users.filter(u => u.status === 'ativo').length}</p>
+                                </div>
+                            </div>
+                            {/* Receita Mensal */}
+                            <div className="bg-gradient-to-br from-emerald-900/80 to-emerald-700/80 rounded-xl p-4 flex items-center gap-3 shadow-lg border border-emerald-500/30 backdrop-blur-sm">
+                                <div className="p-2 bg-emerald-500/20 rounded-lg">
+                                    <DollarSign className="w-5 h-5 text-emerald-300" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs text-gray-300 font-medium">Receita Mensal</p>
+                                    <p className="text-2xl font-bold text-emerald-400">R$ {calculateMonthlyRevenue().toFixed(2)}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-gray-800 rounded-xl p-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-emerald-600/20 rounded-lg">
-                                    <DollarSign className="w-6 h-6 text-emerald-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-400">Receita Mensal</p>
-                                    <p className="text-2xl font-bold text-emerald-400">
-                                        R$ {calculateMonthlyRevenue().toFixed(2)}
-                                    </p>
-                                </div>
+                        {/* Segunda linha - Cards de estatísticas do usuário */}
+                        <div className="space-y-4">
+                            {/* Título Visão Geral */}
+                            <div className="mb-4">
+                                <h2 className="text-xl font-bold text-white mb-1">Visão Geral</h2>
+                                <p className="text-sm text-gray-400">Resumo das suas atividades e estatísticas</p>
                             </div>
                         </div>
                     </div>
@@ -821,7 +864,7 @@ export default function AdminUsersPage() {
                                             E-mail
                                         </th>
                                         <th className="w-[12%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
-                                            Valor
+                                            vvalor
                                         </th>
                                         <th className="w-[11%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                             Plano
@@ -837,6 +880,9 @@ export default function AdminUsersPage() {
                                         </th>
                                         <th className="w-[6%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                             Deemix
+                                        </th>
+                                        <th className="w-[6%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
+                                            Deezer
                                         </th>
                                         <th className="w-[7%] px-3 py-4 text-center text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                             Ações
@@ -882,12 +928,12 @@ export default function AdminUsersPage() {
                                             </td>
                                             <td className="px-3 py-4 whitespace-nowrap">
                                                 <span className="text-xs font-light text-emerald-300 bg-emerald-500/10 px-2 py-1 rounded-lg">
-                                                    {user.valor ? `R$ ${Number(user.valor).toFixed(2)}` : '-'}
+                                                    {user.vvalor ? `R$ ${Number(user.vvalor).toFixed(2)}` : '-'}
                                                 </span>
                                             </td>
                                             <td className="px-3 py-4">
                                                 {(() => {
-                                                    const userPlan = getUserPlan(user.valor || null);
+                                                    const userPlan = getUserPlan(user.vvalor || null);
                                                     const hasCustomBenefits = customBenefits[user.id] && Object.keys(customBenefits[user.id]).length > 0;
 
                                                     if (!userPlan) {
@@ -960,6 +1006,22 @@ export default function AdminUsersPage() {
                                                     )}
                                                 </button>
                                             </td>
+                                            <td className="px-3 py-4">
+                                                <button
+                                                    onClick={() => toggleDeezerPremiumStatus(user.id, user.deezerPremium)}
+                                                    disabled={updating === user.id}
+                                                    className={`inline-flex items-center justify-center w-10 h-8 rounded-xl text-xs font-bold transition-all ${user.deezerPremium
+                                                        ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 shadow-blue-500/30 shadow-lg'
+                                                        : 'bg-gradient-to-r from-gray-600 to-gray-700 text-gray-300 hover:from-gray-500 hover:to-gray-600 shadow-gray-500/20 shadow-lg'
+                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                >
+                                                    {updating === user.id ? (
+                                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                                    ) : (
+                                                        user.deezerPremium ? '✓' : '✗'
+                                                    )}
+                                                </button>
+                                            </td>
                                             <td className="px-2 py-4">
                                                 <div className="flex items-center gap-2">
                                                     <button
@@ -1028,15 +1090,15 @@ export default function AdminUsersPage() {
                         )}
                     </div>
 
-                    {/* Seção de Benefícios por Valor */}
+                    {/* Seção de Benefícios por vvalor */}
                     <div className="mt-8 bg-gray-900 rounded-xl overflow-hidden border border-gray-700">
                         <div className="px-6 py-4 bg-gray-950 border-b border-gray-700">
                             <h2 className="text-xl font-semibold text-white flex items-center gap-2">
                                 <Crown className="w-6 h-6 text-yellow-400" />
-                                Benefícios por Valor Mensal
+                                Benefícios por vvalor Mensal
                             </h2>
                             <p className="text-gray-300 text-sm mt-1">
-                                Configure os benefícios que cada usuário tem direito conforme seu valor mensal
+                                Configure os benefícios que cada usuário tem direito conforme seu vvalor mensal
                             </p>
                         </div>
 
@@ -1059,7 +1121,7 @@ export default function AdminUsersPage() {
 
                                         <div className="space-y-3">
                                             <div className="bg-gray-700 rounded-lg p-3">
-                                                <h4 className="font-semibold text-white mb-2">Valor Mensal</h4>
+                                                <h4 className="font-semibold text-white mb-2">vvalor Mensal</h4>
                                                 <p className="text-2xl font-bold text-green-400">
                                                     R$ {plan.minValue} - R$ {plan.maxValue}
                                                 </p>
@@ -1140,263 +1202,325 @@ export default function AdminUsersPage() {
                     </div>
 
                     {/* Modal de Confirmação de Exclusão */}
-                    {userToDelete && (
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                            <div className="bg-gradient-to-br from-[#1B1C1D] to-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-md text-white">
-                                <h3 className="text-xl font-medium mb-6">
-                                    Confirmar Exclusão
-                                </h3>
+                    {
+                        userToDelete && (
+                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                <div className="bg-gradient-to-br from-[#1B1C1D] to-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-md text-white">
+                                    <h3 className="text-xl font-medium mb-6">
+                                        Confirmar Exclusão
+                                    </h3>
 
-                                <div className="text-center">
-                                    <User className="w-16 h-16 mx-auto text-red-400 mb-4" />
-                                    <p className="text-sm mb-4">
-                                        Tem certeza que deseja excluir o usuário <strong>{userToDelete.name}</strong>?
-                                    </p>
-                                    {userToDelete.valor && (
-                                        <p className="text-green-400 text-sm font-medium">
-                                            R$ {Number(userToDelete.valor).toFixed(2)}/mês
+                                    <div className="text-center">
+                                        <User className="w-16 h-16 mx-auto text-red-400 mb-4" />
+                                        <p className="text-sm mb-4">
+                                            Tem certeza que deseja excluir o usuário <strong>{userToDelete?.name}</strong>?
                                         </p>
-                                    )}
-                                </div>
-                                <div className="mt-4 p-3 bg-red-900/20 border border-red-700 rounded-lg">
-                                    <p className="text-red-300 text-sm flex items-center gap-2">
-                                        <AlertCircle className="w-4 h-4" />
-                                        Todos os dados, likes e downloads serão permanentemente removidos
-                                    </p>
-                                </div>
-                                <div className="flex gap-3 mt-8">
-                                    <button
-                                        onClick={cancelDelete}
-                                        disabled={deleting === userToDelete.id}
-                                        className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors disabled:opacity-50"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        onClick={confirmDeleteUser}
-                                        disabled={deleting === userToDelete.id}
-                                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                                    >
-                                        {deleting === userToDelete.id ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                Excluindo...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Trash className="w-4 h-4" />
-                                                Excluir
-                                            </>
+                                        {userToDelete?.vvalor && (
+                                            <p className="text-green-400 text-sm font-medium">
+                                                R$ {Number(userToDelete.vvalor).toFixed(2)}/mês
+                                            </p>
                                         )}
-                                    </button>
+                                    </div>
+                                    <div className="mt-4 p-3 bg-red-900/20 border border-red-700 rounded-lg">
+                                        <p className="text-red-300 text-sm flex items-center gap-2">
+                                            <AlertCircle className="w-4 h-4" />
+                                            Todos os dados, likes e downloads serão permanentemente removidos
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-3 mt-8">
+                                        <button
+                                            onClick={cancelDelete}
+                                            disabled={deleting === userToDelete?.id}
+                                            className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            onClick={confirmDeleteUser}
+                                            disabled={deleting === userToDelete?.id}
+                                            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                        >
+                                            {deleting === userToDelete?.id ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Excluindo...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Trash className="w-4 h-4" />
+                                                    Excluir
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
 
                     {/* Modal de Edição/Adição - Tema Escuro */}
-                    {(editingUser || showAddModal) && (
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                            <div className="bg-gradient-to-br from-[#1B1C1D] to-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto text-white shadow-2xl">
-                                <h3 className="text-2xl font-medium mb-8">
-                                    {editingUser ? 'Editar Usuário' : 'Adicionar Novo Usuário'}
-                                </h3>
+                    {
+                        (editingUser || showAddModal) && (
+                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                <div className="bg-gradient-to-br from-[#1B1C1D] to-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto text-white shadow-2xl">
+                                    <h3 className="text-2xl font-medium mb-8">
+                                        {editingUser ? 'Editar Usuário' : 'Adicionar Novo Usuário'}
+                                    </h3>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-3">
-                                            Nome *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={editForm.name}
-                                            onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                                            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                            placeholder="Nome completo"
-                                        />
-                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                Nome *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={editForm.name}
+                                                onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                placeholder="Nome completo"
+                                            />
+                                        </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-3">
-                                            WhatsApp
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={editForm.whatsapp}
-                                            onChange={(e) => setEditForm(prev => ({ ...prev, whatsapp: e.target.value }))}
-                                            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                            placeholder="(11) 99999-9999"
-                                        />
-                                    </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                WhatsApp
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={editForm.whatsapp}
+                                                onChange={(e) => setEditForm(prev => ({ ...prev, whatsapp: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                placeholder="(11) 99999-9999"
+                                            />
+                                        </div>
 
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-300 mb-3">
-                                            Email *
-                                        </label>
-                                        <input
-                                            type="email"
-                                            value={editForm.email}
-                                            onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                                            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                            placeholder="email@exemplo.com"
-                                        />
-                                    </div>
-
-                                    {/* Campo de senha - só aparece quando estiver adicionando novo usuário */}
-                                    {showAddModal && (
                                         <div className="md:col-span-2">
                                             <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                Senha *
+                                                Email *
                                             </label>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={editForm.password}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
-                                                    className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                    placeholder="Senha forte para novo usuário"
-                                                    autoComplete="new-password"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className="px-4 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl"
-                                                    onClick={() => {
-                                                        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
-                                                        let password = "";
-                                                        for (let i = 0, n = charset.length; i < 14; ++i) {
-                                                            password += charset.charAt(Math.floor(Math.random() * n));
-                                                        }
-                                                        setEditForm(prev => ({ ...prev, password }));
-                                                    }}
-                                                >
-                                                    Gerar senha forte
-                                                </button>
-                                            </div>
+                                            <input
+                                                type="email"
+                                                value={editForm.email}
+                                                onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                placeholder="email@exemplo.com"
+                                            />
                                         </div>
-                                    )}
-                                    {editingUser && (
-                                        <div className="md:col-span-2">
+
+                                        {/* Campo de senha - só aparece quando estiver adicionando novo usuário */}
+                                        {showAddModal && (
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                    Senha *
+                                                </label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={editForm.password}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
+                                                        className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                        placeholder="Senha forte para novo usuário"
+                                                        autoComplete="new-password"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="px-4 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl"
+                                                        onClick={() => {
+                                                            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
+                                                            let password = "";
+                                                            for (let i = 0, n = charset.length; i < 14; ++i) {
+                                                                password += charset.charAt(Math.floor(Math.random() * n));
+                                                            }
+                                                            setEditForm(prev => ({ ...prev, password }));
+                                                        }}
+                                                    >
+                                                        Gerar senha forte
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {editingUser && (
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                    Senha (deixe em branco para não alterar)
+                                                </label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={editForm.password}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
+                                                        className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                        placeholder="Nova senha (opcional)"
+                                                        autoComplete="new-password"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="px-4 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl"
+                                                        onClick={() => {
+                                                            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
+                                                            let password = "";
+                                                            for (let i = 0, n = charset.length; i < 14; ++i) {
+                                                                password += charset.charAt(Math.floor(Math.random() * n));
+                                                            }
+                                                            setEditForm(prev => ({ ...prev, password }));
+                                                        }}
+                                                    >
+                                                        Gerar senha forte
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div>
                                             <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                Senha (deixe em branco para não alterar)
+                                                vvalor da Assinatura (R$)
                                             </label>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={editForm.password}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
-                                                    className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                    placeholder="Nova senha (opcional)"
-                                                    autoComplete="new-password"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className="px-4 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl"
-                                                    onClick={() => {
-                                                        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
-                                                        let password = "";
-                                                        for (let i = 0, n = charset.length; i < 14; ++i) {
-                                                            password += charset.charAt(Math.floor(Math.random() * n));
-                                                        }
-                                                        setEditForm(prev => ({ ...prev, password }));
-                                                    }}
-                                                >
-                                                    Gerar senha forte
-                                                </button>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={editForm.vvalor}
+                                                onChange={(e) => setEditForm(prev => ({ ...prev, vvalor: e.target.value === '' ? 0 : parseFloat(e.target.value) }))}
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                Status
+                                            </label>
+                                            <select
+                                                value={editForm.status}
+                                                onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                            >
+                                                <option value="ativo" className="bg-gray-900">Ativo</option>
+                                                <option value="inativo" className="bg-gray-900">Inativo</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                Data de Vencimento
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={editForm.vencimento || ''}
+                                                onChange={(e) => setEditForm(prev => ({ ...prev, vencimento: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                Data do Pagamento
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={editForm.dataPagamento || ''}
+                                                onChange={(e) => setEditForm(prev => ({ ...prev, dataPagamento: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                            />
+                                        </div>
+
+                                        <div className="md:col-span-2">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                        Deemix Ativo
+                                                    </label>
+                                                    <select
+                                                        value={editForm.deemix ? 'sim' : 'nao'}
+                                                        onChange={(e) => setEditForm(prev => ({
+                                                            ...prev,
+                                                            deemix: e.target.value === 'sim'
+                                                        }))}
+                                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                    >
+                                                        <option value="sim" className="bg-gray-900">Sim</option>
+                                                        <option value="nao" className="bg-gray-900">Não</option>
+                                                    </select>
+                                                    <p className="text-xs text-gray-400 mt-2">
+                                                        {editForm.deemix ? 'Usuário pode acessar o sistema Deemix' : 'Usuário não tem acesso ao Deemix'}
+                                                    </p>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                        Usuário VIP
+                                                    </label>
+                                                    <select
+                                                        value={editForm.is_vip ? 'sim' : 'nao'}
+                                                        onChange={(e) => setEditForm(prev => ({
+                                                            ...prev,
+                                                            is_vip: e.target.value === 'sim'
+                                                        }))}
+                                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                    >
+                                                        <option value="sim" className="bg-gray-900">Sim</option>
+                                                        <option value="nao" className="bg-gray-900">Não</option>
+                                                    </select>
+                                                    <p className="text-xs text-gray-400 mt-2">
+                                                        {editForm.is_vip ? 'Usuário tem acesso VIP às músicas' : 'Usuário sem acesso às músicas'}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                    )}
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-3">
-                                            Valor da Assinatura (R$)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={editForm.valor}
-                                            onChange={(e) => setEditForm(prev => ({ ...prev, valor: parseFloat(e.target.value) || 0 }))}
-                                            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
+                                        <div className="md:col-span-2">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                        Deezer Premium Ativo
+                                                    </label>
+                                                    <select
+                                                        value={editForm.deezerPremium ? 'sim' : 'nao'}
+                                                        onChange={(e) => setEditForm(prev => ({
+                                                            ...prev,
+                                                            deezerPremium: e.target.value === 'sim'
+                                                        }))}
+                                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                    >
+                                                        <option value="sim" className="bg-gray-900">Sim</option>
+                                                        <option value="nao" className="bg-gray-900">Não</option>
+                                                    </select>
+                                                    <p className="text-xs text-gray-400 mt-2">
+                                                        {editForm.deezerPremium ? 'Usuário tem acesso ao Deezer Premium' : 'Usuário não tem acesso ao Deezer Premium'}
+                                                    </p>
+                                                </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-3">
-                                            Status
-                                        </label>
-                                        <select
-                                            value={editForm.status}
-                                            onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
-                                            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                        >
-                                            <option value="ativo" className="bg-gray-900">Ativo</option>
-                                            <option value="inativo" className="bg-gray-900">Inativo</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-3">
-                                            Data de Vencimento
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={editForm.vencimento}
-                                            onChange={(e) => setEditForm(prev => ({ ...prev, vencimento: e.target.value }))}
-                                            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-3">
-                                            Data do Pagamento
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={editForm.dataPagamento}
-                                            onChange={(e) => setEditForm(prev => ({ ...prev, dataPagamento: e.target.value }))}
-                                            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                        />
-                                    </div>
-
-                                    <div className="md:col-span-2">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                    Deemix Ativo
-                                                </label>
-                                                <select
-                                                    value={editForm.deemix ? 'sim' : 'nao'}
-                                                    onChange={(e) => setEditForm(prev => ({
-                                                        ...prev,
-                                                        deemix: e.target.value === 'sim'
-                                                    }))}
-                                                    className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                >
-                                                    <option value="sim" className="bg-gray-900">Sim</option>
-                                                    <option value="nao" className="bg-gray-900">Não</option>
-                                                </select>
-                                                <p className="text-xs text-gray-400 mt-2">
-                                                    {editForm.deemix ? 'Usuário pode acessar o sistema Deemix' : 'Usuário não tem acesso ao Deemix'}
-                                                </p>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                        Email Deezer Premium
+                                                    </label>
+                                                    <input
+                                                        type="email"
+                                                        value={editForm.deezerEmail || ''}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, deezerEmail: e.target.value }))}
+                                                        placeholder="email@deezer.com"
+                                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                    />
+                                                    <p className="text-xs text-gray-400 mt-2">
+                                                        Email para acesso ao Deezer Premium
+                                                    </p>
+                                                </div>
                                             </div>
+                                        </div>
 
+                                        <div className="md:col-span-2">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                    Usuário VIP
+                                                    Senha Deezer Premium
                                                 </label>
-                                                <select
-                                                    value={editForm.is_vip ? 'sim' : 'nao'}
-                                                    onChange={(e) => setEditForm(prev => ({
-                                                        ...prev,
-                                                        is_vip: e.target.value === 'sim'
-                                                    }))}
+                                                <input
+                                                    type="password"
+                                                    value={editForm.deezerPassword || ''}
+                                                    onChange={(e) => setEditForm(prev => ({ ...prev, deezerPassword: e.target.value }))}
+                                                    placeholder="••••••••"
                                                     className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                >
-                                                    <option value="sim" className="bg-gray-900">Sim</option>
-                                                    <option value="nao" className="bg-gray-900">Não</option>
-                                                </select>
+                                                />
                                                 <p className="text-xs text-gray-400 mt-2">
-                                                    {editForm.is_vip ? 'Usuário tem acesso VIP às músicas' : 'Usuário sem acesso às músicas'}
+                                                    Senha para acesso ao Deezer Premium
                                                 </p>
                                             </div>
                                         </div>
@@ -1426,570 +1550,573 @@ export default function AdminUsersPage() {
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
 
                     {/* Modal de Personalização de Benefícios */}
-                    {showBenefitsModal && userForBenefits && (
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                            <div className="bg-gray-900 rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto text-white border border-gray-700">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <Crown className="w-8 h-8 text-purple-400" />
-                                        <div>
-                                            <h3 className="text-xl font-semibold">Personalizar Benefícios</h3>
-                                            <p className="text-sm text-gray-400">
-                                                {userForBenefits.name} - {getUserPlan(userForBenefits.valor || null)?.name || 'Sem plano'}
-                                            </p>
+                    {
+                        showBenefitsModal && userForBenefits && (
+                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                <div className="bg-gray-900 rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto text-white border border-gray-700">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <Crown className="w-8 h-8 text-purple-400" />
+                                            <div>
+                                                <h3 className="text-xl font-semibold">Personalizar Benefícios</h3>
+                                                <p className="text-sm text-gray-400">
+                                                    {userForBenefits?.name} - {getUserPlan(userForBenefits?.vvalor || null)?.name || 'Sem plano'}
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <button
-                                        onClick={closeBenefitsModal}
-                                        className="text-gray-400 hover:text-gray-300"
-                                    >
-                                        <X className="w-6 h-6" />
-                                    </button>
-                                </div>
-
-                                <div className="mb-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
-                                    <h4 className="font-semibold text-blue-400 mb-2">Benefícios do Plano Atual</h4>
-                                    <p className="text-sm text-gray-300">
-                                        Os benefícios abaixo são baseados no plano atual do usuário.
-                                        Você pode personalizar cada benefício individualmente para este usuário específico.
-                                    </p>
-                                </div>
-
-                                {/* Seção de Uso Atual dos Benefícios */}
-                                <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <h4 className="font-semibold text-white flex items-center gap-2">
-                                            📊 Uso Atual dos Benefícios
-                                        </h4>
-                                        <div className="text-xs text-gray-400">
-                                            Último reset semanal: {userForBenefits.lastWeekReset
-                                                ? new Date(userForBenefits.lastWeekReset).toLocaleDateString('pt-BR')
-                                                : 'Nunca'
-                                            }
-                                        </div>
+                                        <button
+                                            onClick={closeBenefitsModal}
+                                            className="text-gray-400 hover:text-gray-300"
+                                        >
+                                            <X className="w-6 h-6" />
+                                        </button>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-xs text-gray-300">🎚️ Packs Semanais</span>
-                                                <span className="text-xs text-gray-400">Esta semana</span>
-                                            </div>
-                                            <div className="text-lg font-bold text-white">
-                                                {(() => {
-                                                    const customUsed = customBenefits[userForBenefits.id]?.packRequests?.used;
-                                                    const used = customUsed !== undefined ? customUsed : (userForBenefits.weeklyPackRequestsUsed || 0);
-                                                    const plan = getUserPlan(userForBenefits.valor || null);
-                                                    const customBenefit = customBenefits[userForBenefits.id]?.packRequests;
-                                                    const limit = customBenefit?.limit || plan?.benefits.packRequests?.limit || 0;
-                                                    return `${used} / ${limit}`;
-                                                })()}
-                                            </div>
-                                            <div className="w-full bg-gray-800 rounded-full h-2 mt-2">
-                                                <div
-                                                    className="bg-blue-600 h-2 rounded-full transition-all"
-                                                    style={{
-                                                        width: `${Math.min(100, (() => {
-                                                            const customUsed = customBenefits[userForBenefits.id]?.packRequests?.used;
-                                                            const used = customUsed !== undefined ? customUsed : (userForBenefits.weeklyPackRequestsUsed || 0);
-                                                            const plan = getUserPlan(userForBenefits.valor || null);
-                                                            const customBenefit = customBenefits[userForBenefits.id]?.packRequests;
-                                                            const limit = customBenefit?.limit || plan?.benefits.packRequests?.limit || 1;
-                                                            return (used / Math.max(1, limit)) * 100;
-                                                        })())}%`
-                                                    }}
-                                                ></div>
-                                            </div>
-                                        </div>
+                                    <div className="mb-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
+                                        <h4 className="font-semibold text-blue-400 mb-2">Benefícios do Plano Atual</h4>
+                                        <p className="text-sm text-gray-300">
+                                            Os benefícios abaixo são baseados no plano atual do usuário.
+                                            Você pode personalizar cada benefício individualmente para este usuário específico.
+                                        </p>
+                                    </div>
 
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-xs text-gray-300">🎵 Playlists Semanais</span>
-                                                <span className="text-xs text-gray-400">Esta semana</span>
-                                            </div>
-                                            <div className="text-lg font-bold text-white">
-                                                {(() => {
-                                                    const customUsed = customBenefits[userForBenefits.id]?.playlistDownloads?.used;
-                                                    const used = customUsed !== undefined ? customUsed : (userForBenefits.weeklyPlaylistDownloadsUsed || 0);
-                                                    const plan = getUserPlan(userForBenefits.valor || null);
-                                                    const customBenefit = customBenefits[userForBenefits.id]?.playlistDownloads;
-                                                    const limit = customBenefit?.limit || plan?.benefits.playlistDownloads?.limit || 0;
-                                                    return `${used} / ${limit === -1 ? "∞" : limit}`;
-                                                })()}
-                                            </div>
-                                            <div className="w-full bg-gray-800 rounded-full h-2 mt-2">
-                                                <div
-                                                    className="bg-green-600 h-2 rounded-full transition-all"
-                                                    style={{
-                                                        width: `${(() => {
-                                                            const customUsed = customBenefits[userForBenefits.id]?.playlistDownloads?.used;
-                                                            const used = customUsed !== undefined ? customUsed : (userForBenefits.weeklyPlaylistDownloadsUsed || 0);
-                                                            const plan = getUserPlan(userForBenefits.valor || null);
-                                                            const customBenefit = customBenefits[userForBenefits.id]?.playlistDownloads;
-                                                            const limit = customBenefit?.limit || plan?.benefits.playlistDownloads?.limit || 1;
-                                                            if (limit === -1) return 100;
-                                                            return Math.min(100, (used / Math.max(1, limit)) * 100);
-                                                        })()}%`
-                                                    }}
-                                                ></div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-xs text-gray-300">⬇️ Downloads Diários</span>
-                                                <span className="text-xs text-gray-400">Hoje</span>
-                                            </div>
-                                            <div className="text-lg font-bold text-white">
-                                                {userForBenefits.dailyDownloadCount || 0}
-                                            </div>
-                                            <div className="text-xs text-gray-400 mt-1">
-                                                Último reset: {userForBenefits.lastDownloadReset
-                                                    ? new Date(userForBenefits.lastDownloadReset).toLocaleDateString('pt-BR')
+                                    {/* Seção de Uso Atual dos Benefícios */}
+                                    <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h4 className="font-semibold text-white flex items-center gap-2">
+                                                📊 Uso Atual dos Benefícios
+                                            </h4>
+                                            <div className="text-xs text-gray-400">
+                                                Último reset semanal: {userForBenefits?.llastWeekReset
+                                                    ? new Date(userForBenefits?.llastWeekReset).toLocaleDateString('pt-BR')
                                                     : 'Nunca'
                                                 }
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
 
-                                {/* Personalização de Benefícios */}
-                                <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
-                                    <h4 className="font-semibold text-white flex items-center gap-2 mb-4">
-                                        ⚙️ Personalizar Benefícios
-                                    </h4>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {/* Acesso ao Drive */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                📁 Acesso ao Drive Mensal
-                                            </label>
-                                            <select
-                                                value={customBenefits[userForBenefits.id]?.driveAccess?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].driveAccess.enabled.toString()
-                                                    : getUserBenefits(userForBenefits, customBenefits).driveAccess.enabled.toString()}
-                                                onChange={(e) => {
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            driveAccess: { ...prev[userForBenefits.id]?.driveAccess, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                        </div>
-
-                                        {/* Solicitação de Packs */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🎚️ Solicitação de Packs
-                                            </label>
-                                            <div className="flex gap-2 mb-2">
-                                                <div className="flex-1">
-                                                    <label className="text-xs text-gray-300 mb-1 block">Disponível (4-10)</label>
-                                                    <input
-                                                        type="number"
-                                                        min="4"
-                                                        max="10"
-                                                        value={customBenefits[userForBenefits.id]?.packRequests?.limit !== undefined
-                                                            ? customBenefits[userForBenefits.id].packRequests.limit
-                                                            : getUserBenefits(userForBenefits, customBenefits).packRequests.limit}
-                                                        onChange={(e) => {
-                                                            const newValue = parseInt(e.target.value);
-                                                            setCustomBenefits(prev => ({
-                                                                ...prev,
-                                                                [userForBenefits.id]: {
-                                                                    ...prev[userForBenefits.id],
-                                                                    packRequests: { ...prev[userForBenefits.id]?.packRequests, limit: newValue, enabled: true }
-                                                                }
-                                                            }));
-                                                        }}
-                                                        className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
-                                                    />
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-xs text-gray-300">🎚️ Packs Semanais</span>
+                                                    <span className="text-xs text-gray-400">Esta semana</span>
                                                 </div>
-                                                <div className="flex-1">
-                                                    <label className="text-xs text-gray-300 mb-1 block">Usado (manual)</label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="10"
-                                                        value={customBenefits[userForBenefits.id]?.packRequests?.used !== undefined
-                                                            ? customBenefits[userForBenefits.id].packRequests.used
-                                                            : (userForBenefits.weeklyPackRequestsUsed || 0)}
-                                                        onChange={(e) => {
-                                                            const newValue = parseInt(e.target.value) || 0;
-                                                            setCustomBenefits(prev => ({
-                                                                ...prev,
-                                                                [userForBenefits.id]: {
-                                                                    ...prev[userForBenefits.id],
-                                                                    packRequests: { ...prev[userForBenefits.id]?.packRequests, used: newValue }
-                                                                }
-                                                            }));
+                                                <div className="text-lg font-bold text-white">
+                                                    {/* Calculate 'used' and 'limit' above, then use them here */}
+                                                    {(() => {
+                                                        const customUsed = customBenefits[userForBenefits?.id || '']?.packRequests?.used;
+                                                        const used = customUsed !== undefined ? customUsed : (userForBenefits?.wweeklyPackRequestsUsed || 0);
+                                                        const plan = getUserPlan(userForBenefits?.vvalor || null);
+                                                        const customBenefit = customBenefits[userForBenefits?.id || '']?.packRequests;
+                                                        const limit = customBenefit?.limit || plan?.benefits.packRequests?.limit || 1;
+                                                        return `${used} / ${limit}`;
+                                                    })()}
+                                                </div>
+                                                <div className="w-full bg-gray-800 rounded-full h-2 mt-2">
+                                                    <div
+                                                        className="bg-blue-600 h-2 rounded-full transition-all"
+                                                        style={{
+                                                            width: (() => {
+                                                                const customUsed = customBenefits[userForBenefits?.id]?.packRequests?.used;
+                                                                const used = customUsed !== undefined ? customUsed : (userForBenefits?.wweeklyPackRequestsUsed || 0);
+                                                                const plan = getUserPlan(userForBenefits?.vvalor || null);
+                                                                const customBenefit = customBenefits[userForBenefits?.id]?.packRequests;
+                                                                const limit = customBenefit?.limit || plan?.benefits.packRequests?.limit || 1;
+                                                                return `${(used / Math.max(1, limit)) * 100}%`;
+                                                            })()
                                                         }}
-                                                        className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
-                                                    />
+                                                    ></div>
                                                 </div>
                                             </div>
-                                            <div className="text-xs text-gray-400">
-                                                {customBenefits[userForBenefits.id]?.packRequests?.used !== undefined
-                                                    ? customBenefits[userForBenefits.id].packRequests.used
-                                                    : (userForBenefits.weeklyPackRequestsUsed || 0)
-                                                } de {customBenefits[userForBenefits.id]?.packRequests?.limit !== undefined
-                                                    ? customBenefits[userForBenefits.id].packRequests.limit
-                                                    : getUserBenefits(userForBenefits, customBenefits).packRequests.limit} usados
-                                            </div>
-                                        </div>
 
-                                        {/* Conteúdos Avulsos */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                📦 Conteúdos Avulsos
-                                            </label>
-                                            <select
-                                                value={customBenefits[userForBenefits.id]?.individualContent?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].individualContent.enabled.toString()
-                                                    : getUserBenefits(userForBenefits, customBenefits).individualContent.enabled.toString()}
-                                                onChange={(e) => {
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            individualContent: { ...prev[userForBenefits.id]?.individualContent, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                        </div>
-
-                                        {/* Packs Extras */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🔥 Packs Extras
-                                            </label>
-                                            <select
-                                                value={customBenefits[userForBenefits.id]?.extraPacks?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].extraPacks.enabled.toString()
-                                                    : getUserBenefits(userForBenefits, customBenefits).extraPacks.enabled.toString()}
-                                                onChange={(e) => {
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            extraPacks: { ...prev[userForBenefits.id]?.extraPacks, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                        </div>
-
-                                        {/* Download de Playlists */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🎵 Download de Playlists
-                                            </label>
-                                            <div className="flex gap-2 mb-2">
-                                                <div className="flex-1">
-                                                    <label className="text-xs text-gray-300 mb-1 block">Disponível (7-15)</label>
-                                                    <input
-                                                        type="number"
-                                                        min="7"
-                                                        max="15"
-                                                        value={customBenefits[userForBenefits.id]?.playlistDownloads?.limit !== undefined
-                                                            ? (customBenefits[userForBenefits.id].playlistDownloads.limit === -1 ? 15 : customBenefits[userForBenefits.id].playlistDownloads.limit)
-                                                            : (getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit === -1 ? 15 : getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit)}
-                                                        onChange={(e) => {
-                                                            const newValue = parseInt(e.target.value);
-                                                            setCustomBenefits(prev => ({
-                                                                ...prev,
-                                                                [userForBenefits.id]: {
-                                                                    ...prev[userForBenefits.id],
-                                                                    playlistDownloads: { ...prev[userForBenefits.id]?.playlistDownloads, limit: newValue, enabled: true }
-                                                                }
-                                                            }));
-                                                        }}
-                                                        className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
-                                                    />
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-xs text-gray-300">🎵 Playlists Semanais</span>
+                                                    <span className="text-xs text-gray-400">Esta semana</span>
                                                 </div>
-                                                <div className="flex-1">
-                                                    <label className="text-xs text-gray-300 mb-1 block">Usado (manual)</label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="15"
-                                                        value={customBenefits[userForBenefits.id]?.playlistDownloads?.used !== undefined
-                                                            ? customBenefits[userForBenefits.id].playlistDownloads.used
-                                                            : (userForBenefits.weeklyPlaylistDownloadsUsed || 0)}
-                                                        onChange={(e) => {
-                                                            const newValue = parseInt(e.target.value) || 0;
-                                                            setCustomBenefits(prev => ({
-                                                                ...prev,
-                                                                [userForBenefits.id]: {
-                                                                    ...prev[userForBenefits.id],
-                                                                    playlistDownloads: { ...prev[userForBenefits.id]?.playlistDownloads, used: newValue }
-                                                                }
-                                                            }));
+                                                <div className="text-lg font-bold text-white">
+                                                    {(() => {
+                                                        const customUsed = customBenefits[userForBenefits?.id]?.playlistDownloads?.used;
+                                                        const used = customUsed !== undefined ? customUsed : (userForBenefits?.wweeklyPlaylistDownloadsUsed || 0);
+                                                        const plan = getUserPlan(userForBenefits?.vvalor || null);
+                                                        const customBenefit = customBenefits[userForBenefits?.id]?.playlistDownloads;
+                                                        const limit = customBenefit?.limit || plan?.benefits.playlistDownloads?.limit || 0;
+                                                        return `${used} / ${limit === -1 ? "∞" : limit}`;
+                                                    })()}
+                                                </div>
+                                                <div className="w-full bg-gray-800 rounded-full h-2 mt-2">
+                                                    <div
+                                                        className="bg-green-600 h-2 rounded-full transition-all"
+                                                        style={{
+                                                            width: `${(() => {
+                                                                const customUsed = customBenefits[userForBenefits?.id]?.playlistDownloads?.used;
+                                                                const used = customUsed !== undefined ? customUsed : (userForBenefits?.wweeklyPlaylistDownloadsUsed || 0);
+                                                                const plan = getUserPlan(userForBenefits?.vvalor || null);
+                                                                const customBenefit = customBenefits[userForBenefits?.id]?.playlistDownloads;
+                                                                const limit = customBenefit?.limit || plan?.benefits.playlistDownloads?.limit || 1;
+                                                                if (limit === -1) return 100;
+                                                                return Math.min(100, (used / Math.max(1, limit)) * 100);
+                                                            })()}%`
                                                         }}
-                                                        className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
-                                                    />
+                                                    ></div>
                                                 </div>
                                             </div>
-                                            <div className="text-xs text-gray-400">
-                                                {customBenefits[userForBenefits.id]?.playlistDownloads?.used !== undefined
-                                                    ? customBenefits[userForBenefits.id].playlistDownloads.used
-                                                    : (userForBenefits.weeklyPlaylistDownloadsUsed || 0)
-                                                } de {customBenefits[userForBenefits.id]?.playlistDownloads?.limit !== undefined
-                                                    ? (customBenefits[userForBenefits.id].playlistDownloads.limit === -1 ? "∞" : customBenefits[userForBenefits.id].playlistDownloads.limit)
-                                                    : (getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit === -1 ? "∞" : getUserBenefits(userForBenefits, customBenefits).playlistDownloads.limit)} usados
+
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-xs text-gray-300">⬇️ Downloads Diários</span>
+                                                    <span className="text-xs text-gray-400">Hoje</span>
+                                                </div>
+                                                <div className="text-lg font-bold text-white">
+                                                    {userForBenefits?.ddailyDownloadCount || 0}
+                                                </div>
+                                                <div className="text-xs text-gray-400 mt-1">
+                                                    Último reset: {userForBenefits?.llastDownloadReset
+                                                        ? new Date(userForBenefits?.llastDownloadReset).toLocaleDateString('pt-BR')
+                                                        : 'Nunca'
+                                                    }
+                                                </div>
                                             </div>
-                                        </div>
-
-                                        {/* Deezer Premium */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🎁 Deezer Premium Grátis
-                                            </label>
-                                            <select
-                                                value={customBenefits[userForBenefits.id]?.deezerPremium?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].deezerPremium.enabled.toString()
-                                                    : getUserBenefits(userForBenefits, customBenefits).deezerPremium.enabled.toString()}
-                                                onChange={(e) => {
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            deezerPremium: { ...prev[userForBenefits.id]?.deezerPremium, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                        </div>
-
-                                        {/* Desconto no Deemix */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                💸 Desconto no Deemix
-                                            </label>
-                                            <select
-                                                value={customBenefits[userForBenefits.id]?.deemixDiscount?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].deemixDiscount.enabled.toString()
-                                                    : getUserBenefits(userForBenefits, customBenefits).deemixDiscount.enabled.toString()}
-                                                onChange={(e) => {
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            deemixDiscount: { ...prev[userForBenefits.id]?.deemixDiscount, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                        </div>
-
-                                        {/* ARL Premium */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🔐 ARL Premium para Deemix
-                                            </label>
-                                            <select
-                                                value={customBenefits[userForBenefits.id]?.arlPremium?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].arlPremium.enabled.toString()
-                                                    : (customBenefits[userForBenefits.id]?.deemixDiscount?.enabled || getUserBenefits(userForBenefits, customBenefits).deemixDiscount.enabled).toString()}
-                                                disabled={!(customBenefits[userForBenefits.id]?.deemixDiscount?.enabled || getUserBenefits(userForBenefits, customBenefits).deemixDiscount.enabled)}
-                                                onChange={(e) => {
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            arlPremium: { ...prev[userForBenefits.id]?.arlPremium, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm disabled:opacity-50"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                            <p className="text-xs text-gray-400 mt-1">
-                                                {!(customBenefits[userForBenefits.id]?.deemixDiscount?.enabled || getUserBenefits(userForBenefits, customBenefits).deemixDiscount.enabled)
-                                                    ? 'Ativar Deemix primeiro'
-                                                    : 'Aplica automaticamente se Deemix ativo'}
-                                            </p>
-                                        </div>
-
-                                        {/* Produção Musical */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🎼 Produção da sua Música
-                                            </label>
-                                            <select
-                                                value={customBenefits[userForBenefits.id]?.musicProduction?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].musicProduction.enabled.toString()
-                                                    : getUserBenefits(userForBenefits, customBenefits).musicProduction.enabled.toString()}
-                                                onChange={(e) => {
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            musicProduction: { ...prev[userForBenefits.id]?.musicProduction, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
                                         </div>
                                     </div>
 
-                                    {/* Botão Salvar Benefícios */}
-                                    <div className="mt-4 pt-4 border-t border-gray-600">
+                                    {/* Personalização de Benefícios */}
+                                    <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                        <h4 className="font-semibold text-white flex items-center gap-2 mb-4">
+                                            ⚙️ Personalizar Benefícios
+                                        </h4>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {/* Acesso ao Drive */}
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                                    📁 Acesso ao Drive Mensal
+                                                </label>
+                                                <select
+                                                    value={customBenefits[userForBenefits?.id]?.driveAccess?.enabled !== undefined
+                                                        ? customBenefits[userForBenefits?.id].driveAccess.enabled.toString()
+                                                        : getUserBenefits(userForBenefits!, customBenefits).driveAccess.enabled.toString()}
+                                                    onChange={(e) => {
+                                                        const newValue = e.target.value === 'true';
+                                                        setCustomBenefits(prev => ({
+                                                            ...prev,
+                                                            [userForBenefits?.id]: {
+                                                                ...prev[userForBenefits?.id],
+                                                                driveAccess: { ...prev[userForBenefits?.id]?.driveAccess, enabled: newValue }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                                >
+                                                    <option value="true">Sim</option>
+                                                    <option value="false">Não</option>
+                                                </select>
+                                            </div>
+
+                                            {/* Solicitação de Packs */}
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                                    🎚️ Solicitação de Packs
+                                                </label>
+                                                <div className="flex gap-2 mb-2">
+                                                    <div className="flex-1">
+                                                        <label className="text-xs text-gray-300 mb-1 block">Disponível (4-10)</label>
+                                                        <input
+                                                            type="number"
+                                                            min="4"
+                                                            max="10"
+                                                            value={customBenefits[userForBenefits?.id]?.packRequests?.limit !== undefined
+                                                                ? customBenefits[userForBenefits?.id].packRequests.limit
+                                                                : getUserBenefits(userForBenefits!, customBenefits).packRequests.limit}
+                                                            onChange={(e) => {
+                                                                const newValue = parseInt(e.target.value);
+                                                                setCustomBenefits(prev => ({
+                                                                    ...prev,
+                                                                    [userForBenefits?.id]: {
+                                                                        ...prev[userForBenefits?.id],
+                                                                        packRequests: { ...prev[userForBenefits?.id]?.packRequests, limit: newValue, enabled: true }
+                                                                    }
+                                                                }));
+                                                            }}
+                                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <label className="text-xs text-gray-300 mb-1 block">Usado (manual)</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="10"
+                                                            value={customBenefits[userForBenefits?.id]?.packRequests?.used !== undefined
+                                                                ? customBenefits[userForBenefits?.id].packRequests.used
+                                                                : (userForBenefits?.wweeklyPackRequestsUsed || 0)}
+                                                            onChange={(e) => {
+                                                                const newValue = parseInt(e.target.value) || 0;
+                                                                setCustomBenefits(prev => ({
+                                                                    ...prev,
+                                                                    [userForBenefits?.id]: {
+                                                                        ...prev[userForBenefits?.id],
+                                                                        packRequests: { ...prev[userForBenefits?.id]?.packRequests, used: newValue }
+                                                                    }
+                                                                }));
+                                                            }}
+                                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="text-xs text-gray-400">
+                                                    {customBenefits[userForBenefits?.id]?.packRequests?.used !== undefined
+                                                        ? customBenefits[userForBenefits?.id].packRequests.used
+                                                        : (userForBenefits?.wweeklyPackRequestsUsed || 0)
+                                                    } de {customBenefits[userForBenefits?.id]?.packRequests?.limit !== undefined
+                                                        ? customBenefits[userForBenefits?.id].packRequests.limit
+                                                        : getUserBenefits(userForBenefits!, customBenefits).packRequests.limit} usados
+                                                </div>
+                                            </div>
+
+                                            {/* Conteúdos Avulsos */}
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                                    📦 Conteúdos Avulsos
+                                                </label>
+                                                <select
+                                                    value={customBenefits[userForBenefits?.id]?.individualContent?.enabled !== undefined
+                                                        ? customBenefits[userForBenefits?.id].individualContent.enabled.toString()
+                                                        : getUserBenefits(userForBenefits!, customBenefits).individualContent.enabled.toString()}
+                                                    onChange={(e) => {
+                                                        const newValue = e.target.value === 'true';
+                                                        setCustomBenefits(prev => ({
+                                                            ...prev,
+                                                            [userForBenefits?.id]: {
+                                                                ...prev[userForBenefits?.id],
+                                                                individualContent: { ...prev[userForBenefits?.id]?.individualContent, enabled: newValue }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                                >
+                                                    <option value="true">Sim</option>
+                                                    <option value="false">Não</option>
+                                                </select>
+                                            </div>
+
+                                            {/* Packs Extras */}
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                                    🔥 Packs Extras
+                                                </label>
+                                                <select
+                                                    value={customBenefits[userForBenefits?.id]?.extraPacks?.enabled !== undefined
+                                                        ? customBenefits[userForBenefits?.id].extraPacks.enabled.toString()
+                                                        : getUserBenefits(userForBenefits!, customBenefits).extraPacks.enabled.toString()}
+                                                    onChange={(e) => {
+                                                        const newValue = e.target.value === 'true';
+                                                        setCustomBenefits(prev => ({
+                                                            ...prev,
+                                                            [userForBenefits?.id]: {
+                                                                ...prev[userForBenefits?.id],
+                                                                extraPacks: { ...prev[userForBenefits?.id]?.extraPacks, enabled: newValue }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                                >
+                                                    <option value="true">Sim</option>
+                                                    <option value="false">Não</option>
+                                                </select>
+                                            </div>
+
+                                            {/* Download de Playlists */}
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                                    🎵 Download de Playlists
+                                                </label>
+                                                <div className="flex gap-2 mb-2">
+                                                    <div className="flex-1">
+                                                        <label className="text-xs text-gray-300 mb-1 block">Disponível (7-15)</label>
+                                                        <input
+                                                            type="number"
+                                                            min="7"
+                                                            max="15"
+                                                            value={customBenefits[userForBenefits?.id]?.playlistDownloads?.limit !== undefined
+                                                                ? (customBenefits[userForBenefits?.id].playlistDownloads.limit === -1 ? 15 : customBenefits[userForBenefits?.id].playlistDownloads.limit)
+                                                                : (getUserBenefits(userForBenefits!, customBenefits).playlistDownloads.limit === -1 ? 15 : getUserBenefits(userForBenefits!, customBenefits).playlistDownloads.limit)}
+                                                            onChange={(e) => {
+                                                                const newValue = parseInt(e.target.value);
+                                                                setCustomBenefits(prev => ({
+                                                                    ...prev,
+                                                                    [userForBenefits?.id]: {
+                                                                        ...prev[userForBenefits?.id],
+                                                                        playlistDownloads: { ...prev[userForBenefits?.id]?.playlistDownloads, limit: newValue, enabled: true }
+                                                                    }
+                                                                }));
+                                                            }}
+                                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <label className="text-xs text-gray-300 mb-1 block">Usado (manual)</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="15"
+                                                            value={customBenefits[userForBenefits?.id]?.playlistDownloads?.used !== undefined
+                                                                ? customBenefits[userForBenefits?.id].playlistDownloads.used
+                                                                : (userForBenefits?.wweeklyPlaylistDownloadsUsed || 0)}
+                                                            onChange={(e) => {
+                                                                const newValue = parseInt(e.target.value) || 0;
+                                                                setCustomBenefits(prev => ({
+                                                                    ...prev,
+                                                                    [userForBenefits?.id]: {
+                                                                        ...prev[userForBenefits?.id],
+                                                                        playlistDownloads: { ...prev[userForBenefits?.id]?.playlistDownloads, used: newValue }
+                                                                    }
+                                                                }));
+                                                            }}
+                                                            className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="text-xs text-gray-400">
+                                                    {customBenefits[userForBenefits?.id]?.playlistDownloads?.used !== undefined
+                                                        ? customBenefits[userForBenefits?.id].playlistDownloads.used
+                                                        : (userForBenefits?.wweeklyPlaylistDownloadsUsed || 0)
+                                                    } de {customBenefits[userForBenefits?.id]?.playlistDownloads?.limit !== undefined
+                                                        ? (customBenefits[userForBenefits?.id].playlistDownloads.limit === -1 ? "∞" : customBenefits[userForBenefits?.id].playlistDownloads.limit)
+                                                        : (getUserBenefits(userForBenefits!, customBenefits).playlistDownloads.limit === -1 ? "∞" : getUserBenefits(userForBenefits!, customBenefits).playlistDownloads.limit)} usados
+                                                </div>
+                                            </div>
+
+                                            {/* Deezer Premium */}
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                                    🎁 Deezer Premium Grátis
+                                                </label>
+                                                <select
+                                                    value={customBenefits[userForBenefits?.id]?.deezerPremium?.enabled !== undefined
+                                                        ? customBenefits[userForBenefits?.id].deezerPremium.enabled.toString()
+                                                        : getUserBenefits(userForBenefits!, customBenefits).deezerPremium.enabled.toString()}
+                                                    onChange={(e) => {
+                                                        const newValue = e.target.value === 'true';
+                                                        setCustomBenefits(prev => ({
+                                                            ...prev,
+                                                            [userForBenefits?.id]: {
+                                                                ...prev[userForBenefits?.id],
+                                                                deezerPremium: { ...prev[userForBenefits?.id]?.deezerPremium, enabled: newValue }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                                >
+                                                    <option value="true">Sim</option>
+                                                    <option value="false">Não</option>
+                                                </select>
+                                            </div>
+
+                                            {/* Desconto no Deemix */}
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                                    💸 Desconto no Deemix
+                                                </label>
+                                                <select
+                                                    value={customBenefits[userForBenefits?.id]?.deemixDiscount?.enabled !== undefined
+                                                        ? customBenefits[userForBenefits?.id].deemixDiscount.enabled.toString()
+                                                        : getUserBenefits(userForBenefits!, customBenefits).deemixDiscount.enabled.toString()}
+                                                    onChange={(e) => {
+                                                        const newValue = e.target.value === 'true';
+                                                        setCustomBenefits(prev => ({
+                                                            ...prev,
+                                                            [userForBenefits?.id]: {
+                                                                ...prev[userForBenefits?.id],
+                                                                deemixDiscount: { ...prev[userForBenefits?.id]?.deemixDiscount, enabled: newValue }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                                >
+                                                    <option value="true">Sim</option>
+                                                    <option value="false">Não</option>
+                                                </select>
+                                            </div>
+
+                                            {/* ARL Premium */}
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                                    🔐 ARL Premium para Deemix
+                                                </label>
+                                                <select
+                                                    value={customBenefits[userForBenefits?.id]?.arlPremium?.enabled !== undefined
+                                                        ? customBenefits[userForBenefits?.id].arlPremium.enabled.toString()
+                                                        : (customBenefits[userForBenefits?.id]?.deemixDiscount?.enabled || getUserBenefits(userForBenefits!, customBenefits).deemixDiscount.enabled).toString()}
+                                                    disabled={!(customBenefits[userForBenefits?.id]?.deemixDiscount?.enabled || getUserBenefits(userForBenefits!, customBenefits).deemixDiscount.enabled)}
+                                                    onChange={(e) => {
+                                                        const newValue = e.target.value === 'true';
+                                                        setCustomBenefits(prev => ({
+                                                            ...prev,
+                                                            [userForBenefits?.id]: {
+                                                                ...prev[userForBenefits?.id],
+                                                                arlPremium: { ...prev[userForBenefits?.id]?.arlPremium, enabled: newValue }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm disabled:opacity-50"
+                                                >
+                                                    <option value="true">Sim</option>
+                                                    <option value="false">Não</option>
+                                                </select>
+                                                <p className="text-xs text-gray-400 mt-1">
+                                                    {!(customBenefits[userForBenefits?.id]?.deemixDiscount?.enabled || getUserBenefits(userForBenefits!, customBenefits).deemixDiscount.enabled)
+                                                        ? 'Ativar Deemix primeiro'
+                                                        : 'Aplica automaticamente se Deemix ativo'}
+                                                </p>
+                                            </div>
+
+                                            {/* Produção Musical */}
+                                            <div className="bg-gray-700 rounded-lg p-3">
+                                                <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
+                                                    🎼 Produção da sua Música
+                                                </label>
+                                                <select
+                                                    value={customBenefits[userForBenefits?.id]?.musicProduction?.enabled !== undefined
+                                                        ? customBenefits[userForBenefits?.id].musicProduction.enabled.toString()
+                                                        : getUserBenefits(userForBenefits!, customBenefits).musicProduction.enabled.toString()}
+                                                    onChange={(e) => {
+                                                        const newValue = e.target.value === 'true';
+                                                        setCustomBenefits(prev => ({
+                                                            ...prev,
+                                                            [userForBenefits?.id]: {
+                                                                ...prev[userForBenefits?.id],
+                                                                musicProduction: { ...prev[userForBenefits?.id]?.musicProduction, enabled: newValue }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
+                                                >
+                                                    <option value="true">Sim</option>
+                                                    <option value="false">Não</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* Botão Salvar Benefícios */}
+                                        <div className="mt-4 pt-4 border-t border-gray-600">
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        console.log('💾 Salvando benefícios para usuário:', userForBenefits?.id);
+                                                        console.log('📋 Benefícios:', customBenefits[userForBenefits?.id] || {});
+
+                                                        // Mapear campos para API
+                                                        const cb = customBenefits[userForBenefits?.id] || {};
+                                                        const mappedBenefits = {
+                                                            ...cb,
+                                                            weeklyPackRequests: cb.packRequests?.limit,
+                                                            wweeklyPackRequestsUsed: cb.packRequests?.used,
+                                                            weeklyPlaylistDownloads: cb.playlistDownloads?.limit,
+                                                            wweeklyPlaylistDownloadsUsed: cb.playlistDownloads?.used,
+                                                        };
+
+                                                        const requestBody = {
+                                                            userId: userForBenefits?.id,
+                                                            customBenefits: mappedBenefits
+                                                        };
+
+                                                        console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
+
+                                                        const response = await fetch('/api/admin/update-custom-benefits', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            credentials: 'include',
+                                                            body: JSON.stringify(requestBody)
+                                                        });
+
+                                                        const responseData = await response.json();
+                                                        console.log('📡 Resposta da API:', responseData);
+
+                                                        if (response.ok) {
+                                                            console.log('✅ Benefícios salvos com sucesso!');
+                                                            alert('Benefícios personalizados salvos com sucesso!');
+                                                            window.location.reload();
+                                                        } else {
+                                                            console.error('❌ Erro na API:', responseData);
+                                                            const errorMessage = responseData.error || responseData.details || 'Erro desconhecido';
+                                                            alert(`Erro ao salvar benefícios personalizados: ${errorMessage}`);
+                                                        }
+                                                    } catch (error) {
+                                                        console.error('❌ Erro ao salvar benefícios:', error);
+                                                        alert(`Erro ao salvar benefícios personalizados: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+                                                    }
+                                                }}
+                                                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
+                                            >
+                                                💾 Salvar Benefícios Personalizados
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Ações de Gerenciamento */}
+                                    <div className="mb-6 flex flex-wrap gap-3">
                                         <button
                                             onClick={async () => {
-                                                try {
-                                                    console.log('💾 Salvando benefícios para usuário:', userForBenefits.id);
-                                                    console.log('📋 Benefícios:', customBenefits[userForBenefits.id] || {});
+                                                if (confirm('Tem certeza que deseja resetar os contadores semanais deste usuário?')) {
+                                                    try {
+                                                        const response = await fetch('/api/admin/reset-weekly-counters', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ userId: userForBenefits?.id })
+                                                        });
 
-                                                    // Mapear campos para API
-                                                    const cb = customBenefits[userForBenefits.id] || {};
-                                                    const mappedBenefits = {
-                                                        ...cb,
-                                                        weeklyPackRequests: cb.packRequests?.limit,
-                                                        weeklyPackRequestsUsed: cb.packRequests?.used,
-                                                        weeklyPlaylistDownloads: cb.playlistDownloads?.limit,
-                                                        weeklyPlaylistDownloadsUsed: cb.playlistDownloads?.used,
-                                                    };
-
-                                                    const requestBody = {
-                                                        userId: userForBenefits.id,
-                                                        customBenefits: mappedBenefits
-                                                    };
-
-                                                    console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
-
-                                                    const response = await fetch('/api/admin/update-custom-benefits', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        credentials: 'include',
-                                                        body: JSON.stringify(requestBody)
-                                                    });
-
-                                                    const responseData = await response.json();
-                                                    console.log('📡 Resposta da API:', responseData);
-
-                                                    if (response.ok) {
-                                                        console.log('✅ Benefícios salvos com sucesso!');
-                                                        alert('Benefícios personalizados salvos com sucesso!');
-                                                        window.location.reload();
-                                                    } else {
-                                                        console.error('❌ Erro na API:', responseData);
-                                                        const errorMessage = responseData.error || responseData.details || 'Erro desconhecido';
-                                                        alert(`Erro ao salvar benefícios personalizados: ${errorMessage}`);
+                                                        if (response.ok) {
+                                                            alert('Contadores semanais resetados com sucesso!');
+                                                            window.location.reload();
+                                                        } else {
+                                                            alert('Erro ao resetar contadores');
+                                                        }
+                                                    } catch (error) {
+                                                        alert('Erro ao resetar contadores');
                                                     }
-                                                } catch (error) {
-                                                    console.error('❌ Erro ao salvar benefícios:', error);
-                                                    alert(`Erro ao salvar benefícios personalizados: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
                                                 }
                                             }}
-                                            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
+                                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm transition-colors"
                                         >
-                                            💾 Salvar Benefícios Personalizados
+                                            🔄 Resetar Contadores Semanais
+                                        </button>
+
+                                        <button
+                                            onClick={async () => {
+                                                if (confirm('Tem certeza que deseja resetar o contador diário de downloads deste usuário?')) {
+                                                    try {
+                                                        const response = await fetch('/api/admin/reset-daily-counter', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ userId: userForBenefits?.id })
+                                                        });
+
+                                                        if (response.ok) {
+                                                            alert('Contador diário resetado com sucesso!');
+                                                            window.location.reload();
+                                                        } else {
+                                                            alert('Erro ao resetar contador diário');
+                                                        }
+                                                    } catch (error) {
+                                                        alert('Erro ao resetar contador diário');
+                                                    }
+                                                }
+                                            }}
+                                            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg"
+                                        >
+                                            ⬇️ Resetar Contador Diário
                                         </button>
                                     </div>
                                 </div>
-
-                                {/* Ações de Gerenciamento */}
-                                <div className="mb-6 flex flex-wrap gap-3">
-                                    <button
-                                        onClick={async () => {
-                                            if (confirm('Tem certeza que deseja resetar os contadores semanais deste usuário?')) {
-                                                try {
-                                                    const response = await fetch('/api/admin/reset-weekly-counters', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ userId: userForBenefits.id })
-                                                    });
-
-                                                    if (response.ok) {
-                                                        alert('Contadores semanais resetados com sucesso!');
-                                                        window.location.reload();
-                                                    } else {
-                                                        alert('Erro ao resetar contadores');
-                                                    }
-                                                } catch (error) {
-                                                    alert('Erro ao resetar contadores');
-                                                }
-                                            }
-                                        }}
-                                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm transition-colors"
-                                    >
-                                        🔄 Resetar Contadores Semanais
-                                    </button>
-
-                                    <button
-                                        onClick={async () => {
-                                            if (confirm('Tem certeza que deseja resetar o contador diário de downloads deste usuário?')) {
-                                                try {
-                                                    const response = await fetch('/api/admin/reset-daily-counter', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ userId: userForBenefits.id })
-                                                    });
-
-                                                    if (response.ok) {
-                                                        alert('Contador diário resetado com sucesso!');
-                                                        window.location.reload();
-                                                    } else {
-                                                        alert('Erro ao resetar contador diário');
-                                                    }
-                                                } catch (error) {
-                                                    alert('Erro ao resetar contador diário');
-                                                }
-                                            }
-                                        }}
-                                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg"
-                                    >
-                                        ⬇️ Resetar Contador Diário
-                                    </button>
-                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
                 </div>
             </div>
         </AdminAuth>
     );
 }
+

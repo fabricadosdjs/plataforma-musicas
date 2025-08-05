@@ -109,28 +109,26 @@ export default function Deemix() {
                             transition={{ duration: 0.8, delay: 0.6 }}
                             className="flex flex-col sm:flex-row gap-6 justify-center items-center"
                         >
-                            <a
-                                href="https://plataformavip.nexorrecords.com.br/deemix"
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <Link
+                                href="/planos"
                                 className="group relative overflow-hidden px-10 py-5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-black text-xl rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/40 border border-purple-400/30"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                 <span className="relative flex items-center gap-3">
-                                    <Download className="w-6 h-6" />
-                                    ACESSAR AGORA
+                                    <Crown className="w-6 h-6" />
+                                    VER PLANOS VIP
                                 </span>
-                            </a>
+                            </Link>
 
                             <a
-                                href="https://wa.me/5551935052274?text=Quero%20saber%20mais%20sobre%20o%20Deemix"
+                                href="https://mpago.la/1CW9WQK"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="group px-10 py-5 bg-transparent border-2 border-gray-600 text-gray-300 font-bold text-xl rounded-xl transition-all duration-300 hover:border-purple-400 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105"
                             >
                                 <span className="flex items-center gap-3">
-                                    <MessageCircle className="w-6 h-6" />
-                                    FALAR NO WHATSAPP
+                                    <Download className="w-6 h-6" />
+                                    COMPRAR AVULSO
                                 </span>
                             </a>
                         </motion.div>
@@ -290,36 +288,34 @@ export default function Deemix() {
                             </div>
 
                             <h3 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6">
-                                COMECE A BAIXAR
-                                <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent"> AGORA MESMO</span>
+                                ESCOLHA SEU
+                                <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent"> PLANO IDEAL</span>
                             </h3>
 
                             <p className="text-xl text-gray-300 mb-10 max-w-3xl mx-auto">
-                                Acesse nossa plataforma premium e descubra a liberdade de ter toda sua música favorita em alta qualidade, sem limites.
+                                Escolha entre nossos planos VIP com descontos especiais ou compre o Deemix avulso. Descubra a liberdade de ter toda sua música favorita em alta qualidade.
                             </p>                            {/* Action Buttons */}
                             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-                                <a
-                                    href="https://plataformavip.nexorrecords.com.br/deemix"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                <Link
+                                    href="/planos"
                                     className="group relative overflow-hidden px-10 py-5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-black text-xl rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/40 border border-purple-400/30"
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <span className="relative flex items-center gap-3">
-                                        <Download className="w-6 h-6" />
-                                        ACESSAR DEEMIX PREMIUM
+                                        <Crown className="w-6 h-6" />
+                                        VER PLANOS VIP
                                     </span>
-                                </a>
+                                </Link>
 
                                 <a
-                                    href="https://plataformavip.nexorrecords.com.br/deemix-gerenciar"
+                                    href="https://mpago.la/1CW9WQK"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="group px-10 py-5 bg-transparent border-2 border-gray-600 text-gray-300 font-bold text-xl rounded-xl transition-all duration-300 hover:border-purple-400 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105"
                                 >
-                                    <span className="flex items-center gap-3">
-                                        <Settings className="w-6 h-6" />
-                                        GERENCIAR CONTA
+                                    <span className="relative flex items-center gap-3">
+                                        <Download className="w-6 h-6" />
+                                        COMPRAR AVULSO
                                     </span>
                                 </a>
                             </div>
@@ -352,6 +348,153 @@ export default function Deemix() {
                     </div>
                 </section>
             </main>
+
+            {/* Seção de Preços */}
+            <section className="py-12 bg-gradient-to-br from-purple-900/10 to-green-900/10">
+                <div className="container mx-auto px-6">
+                    <div className="text-center mb-12">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 text-sm font-bold mb-4">
+                            <Crown className="w-4 h-4" />
+                            PLANOS DISPONÍVEIS
+                        </div>
+                        <h3 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-4">
+                            ESCOLHA SEU
+                            <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent"> DESCONTO IDEAL</span>
+                        </h3>
+                        <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+                            Planos VIP com descontos especiais ou compre o Deemix avulso. Todos com acesso completo à plataforma premium.
+                        </p>
+                    </div>
+
+                    <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {/* Plano VIP Básico */}
+                        <Card className="bg-gray-900/60 border border-purple-700/30 backdrop-blur-sm p-8 hover:scale-105 transition-all duration-300">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-purple-400">
+                                    <Crown className="w-6 h-6" />
+                                    VIP BÁSICO
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-center mb-6">
+                                    <div className="text-3xl font-bold text-white mb-2">R$ 35/mês</div>
+                                    <div className="text-lg text-purple-400 font-semibold mb-4">35% de desconto</div>
+                                    <div className="text-sm text-gray-400">Preço normal: R$ 35,00</div>
+                                </div>
+                                <ul className="space-y-2 text-sm text-gray-300">
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        Deemix Premium incluído
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        50 Downloads/dia
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        Acesso ao Drive
+                                    </li>
+                                </ul>
+                            </CardContent>
+                        </Card>
+
+                        {/* Plano VIP Padrão */}
+                        <Card className="bg-gray-900/60 border border-green-700/30 backdrop-blur-sm p-8 hover:scale-105 transition-all duration-300">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-green-400">
+                                    <Crown className="w-6 h-6" />
+                                    VIP PADRÃO
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-center mb-6">
+                                    <div className="text-3xl font-bold text-white mb-2">R$ 42/mês</div>
+                                    <div className="text-lg text-green-400 font-semibold mb-4">42% de desconto</div>
+                                    <div className="text-sm text-gray-400">Preço normal: R$ 35,00</div>
+                                </div>
+                                <ul className="space-y-2 text-sm text-gray-300">
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        Deemix Premium incluído
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        75 Downloads/dia
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        Drive + Packs
+                                    </li>
+                                </ul>
+                            </CardContent>
+                        </Card>
+
+                        {/* Plano VIP Completo */}
+                        <Card className="bg-gray-900/60 border border-blue-700/30 backdrop-blur-sm p-8 hover:scale-105 transition-all duration-300">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-blue-400">
+                                    <Crown className="w-6 h-6" />
+                                    VIP COMPLETO
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-center mb-6">
+                                    <div className="text-3xl font-bold text-white mb-2">R$ 50/mês</div>
+                                    <div className="text-lg text-blue-400 font-semibold mb-4">60% de desconto</div>
+                                    <div className="text-sm text-gray-400">Preço normal: R$ 35,00</div>
+                                </div>
+                                <ul className="space-y-2 text-sm text-gray-300">
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        Deemix Premium incluído
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        150 Downloads/dia
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        Todos os recursos
+                                    </li>
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Card do Deemix Avulso */}
+                    <div className="max-w-2xl mx-auto mt-8">
+                        <Card className="bg-gray-900/60 border border-orange-700/30 backdrop-blur-sm p-8 hover:scale-105 transition-all duration-300">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-orange-400">
+                                    <Download className="w-6 h-6" />
+                                    DEEMIX AVULSO
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-center mb-6">
+                                    <div className="text-3xl font-bold text-white mb-2">R$ 35,00</div>
+                                    <div className="text-lg text-orange-400 font-semibold mb-4">Preço único</div>
+                                    <div className="text-sm text-gray-400">Acesso direto ao Deemix Premium</div>
+                                </div>
+                                <ul className="space-y-2 text-sm text-gray-300">
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        Deemix Premium completo
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        Downloads ilimitados
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-green-400" />
+                                        Qualidade FLAC/MP3
+                                    </li>
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </section>
 
             {/* Seção extra de cards interativos e informações premium */}
             <section className="py-12 bg-gradient-to-br from-purple-900/10 to-green-900/10">

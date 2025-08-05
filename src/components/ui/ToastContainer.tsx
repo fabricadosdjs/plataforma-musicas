@@ -13,14 +13,14 @@ interface ToastContainerProps {
 
 const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemove }) => {
     return (
-        <div className="fixed top-24 right-4 z-[9999] space-y-3 max-w-sm w-full">
+        <div className="fixed top-24 right-4 z-[99999] space-y-3 max-w-sm w-full">
             {toasts.map((toast, index) => (
                 <div
                     key={toast.id}
                     className="transform transition-all duration-500 ease-out"
                     style={{
                         transform: `translateX(${index * 20}px)`,
-                        zIndex: 9999 - index,
+                        zIndex: 99999 - index,
                     }}
                 >
                     <Toast

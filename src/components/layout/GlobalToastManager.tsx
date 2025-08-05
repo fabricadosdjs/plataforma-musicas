@@ -1,10 +1,10 @@
 "use client";
 
-import { useToast } from '@/hooks/useToast';
+import { useToastContext } from '@/context/ToastContext';
 import ToastContainer from '@/components/ui/ToastContainer';
 
 export const GlobalToastManager = () => {
-  const { toasts, removeToast } = useToast();
+  const { toasts, removeToast } = useToastContext();
 
   return <ToastContainer toasts={toasts} onRemove={removeToast} />;
 }; 

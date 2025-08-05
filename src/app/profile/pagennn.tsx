@@ -32,8 +32,13 @@ export default function ProfilePage() {
       if (session?.user?.email) {
         try {
           const res = await axios.get(`/api/user?email=${encodeURIComponent(session.user.email)}`);
-          setUserData(res.data);
+          if (res && res.data) {
+            setUserData(res.data);
+          } else {
+            setUserData(null);
+          }
         } catch (err) {
+          console.error('Erro ao buscar dados do usuário:', err);
           setUserData(null);
         } finally {
           setLoading(false);

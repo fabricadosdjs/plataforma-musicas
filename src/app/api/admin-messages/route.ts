@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 // GET - Buscar todos os recados ativos
 export async function GET() {
@@ -37,7 +37,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        
+
         console.log('Session in admin-messages API:', {
             user: session?.user,
             isAdmin: session?.user?.isAdmin,

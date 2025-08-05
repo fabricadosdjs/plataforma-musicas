@@ -18,8 +18,8 @@ async function detectNewFiles(request: NextRequest) {
         const storage = new ContaboStorage({
             endpoint: process.env.CONTABO_ENDPOINT!,
             region: process.env.CONTABO_REGION!,
-            accessKeyId: process.env.CONTABO_ACCESS_KEY!,
-            secretAccessKey: process.env.CONTABO_SECRET_KEY!,
+            accessKeyId: process.env.CONTABO_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.CONTABO_SECRET_ACCESS_KEY!,
             bucketName: process.env.CONTABO_BUCKET_NAME!,
         });
 

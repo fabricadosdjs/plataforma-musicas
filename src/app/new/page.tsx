@@ -1,7 +1,7 @@
 // src/app/new/page.tsx
 "use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -17,6 +17,7 @@ import { Track } from '@/types/track';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 function NewPageContent() {
+  console.log('🎵 NewPage: Componente NewPageContent renderizado');
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,10 +46,10 @@ function NewPageContent() {
     setDownloading(false);
   };
 
-  const handleTracksUpdate = (updatedTracks: Track[]) => {
+  const handleTracksUpdate = useCallback((updatedTracks: Track[]) => {
     // Atualizar as tracks após exclusão
     setTracks(updatedTracks);
-    
+
     // Reorganizar as tracks por data
     const newTracksByDate: { [date: string]: Track[] } = {};
     updatedTracks.forEach(track => {
@@ -58,10 +59,10 @@ function NewPageContent() {
       }
       newTracksByDate[date].push(track);
     });
-    
+
     setTracksByDate(newTracksByDate);
     setSortedDates(Object.keys(newTracksByDate).sort((a, b) => b.localeCompare(a)));
-  };
+  }, []);
 
   const [searchLoading, setSearchLoading] = useState(false);
   const [genres, setGenres] = useState<string[]>([]);
@@ -70,6 +71,7 @@ function NewPageContent() {
   const [pools, setPools] = useState<string[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [featuredTracks, setFeaturedTracks] = useState<any[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('all');
@@ -116,8 +118,21 @@ function NewPageContent() {
     }
   };
 
+  const fetchFeaturedTracks = async () => {
+    try {
+      const response = await fetch('/api/tracks/featured');
+      if (response.ok) {
+        const data = await response.json();
+        setFeaturedTracks(data.tracks || []);
+      }
+    } catch (error) {
+      console.error('Error fetching featured tracks:', error);
+    }
+  };
+
   const fetchTracks = async (resetPage = false) => {
     try {
+      console.log('🎵 NewPage: Iniciando fetchTracks');
       setSearchLoading(true);
       const params = new URLSearchParams();
       if (selectedGenre !== 'all') params.append('genre', selectedGenre);
@@ -127,9 +142,22 @@ function NewPageContent() {
       if (selectedMonth !== 'all') params.append('month', selectedMonth);
       if (selectedPool !== 'all') params.append('pool', selectedPool);
       if (searchQuery.trim()) params.append('search', searchQuery.trim());
+
+      const url = `/api/tracks?${params}`;
+      console.log('🎵 NewPage: Fazendo requisição para:', url);
+
       // Não enviar page/limit para buscar tudo
-      const response = await fetch(`/api/tracks?${params}`);
+      const response = await fetch(url);
+      console.log('🎵 NewPage: Resposta recebida:', response.status, response.statusText);
+
       const data = await response.json();
+      console.log('🎵 NewPage: Dados recebidos:', {
+        tracksCount: data.tracks?.length || 0,
+        tracksByDateKeys: Object.keys(data.tracksByDate || {}),
+        sortedDatesCount: data.sortedDates?.length || 0,
+        totalCount: data.totalCount || 0
+      });
+
       if (response.ok) {
         setTracks(data.tracks || []);
         setTracksByDate(data.tracksByDate || []);
@@ -137,11 +165,24 @@ function NewPageContent() {
         setTotalPages(1);
         setTotalCount(data.totalCount || data.total || 0);
         if (loading) {
+          console.log('🎵 NewPage: Definindo loading como false');
+          setLoading(false);
+        } else {
+          console.log('🎵 NewPage: Loading já era false, não alterando');
+        }
+      } else {
+        console.error('🎵 NewPage: Erro na resposta:', data);
+        if (loading) {
+          console.log('🎵 NewPage: Erro na resposta, mas definindo loading como false');
           setLoading(false);
         }
       }
     } catch (error) {
-      console.error('Error fetching tracks:', error);
+      console.error('🎵 NewPage: Erro ao buscar tracks:', error);
+      if (loading) {
+        console.log('🎵 NewPage: Erro no catch, definindo loading como false');
+        setLoading(false);
+      }
     } finally {
       setSearchLoading(false);
     }
@@ -149,8 +190,11 @@ function NewPageContent() {
 
   // Carregar dados iniciais
   useEffect(() => {
+    console.log('🎵 NewPage: useEffect inicial executado, loading atual:', loading);
     // Carregar filtros disponíveis
     fetchFilters();
+    // Carregar músicas em destaque
+    fetchFeaturedTracks();
 
     // Verificar se há filtros na URL
     const urlSearch = searchParams.get('search');
@@ -160,6 +204,10 @@ function NewPageContent() {
     const urlVersion = searchParams.get('version');
     const urlMonth = searchParams.get('month');
     const urlPool = searchParams.get('pool');
+
+    console.log('🎵 NewPage: Filtros da URL:', {
+      urlSearch, urlGenre, urlArtist, urlDateRange, urlVersion, urlMonth, urlPool
+    });
 
     // Só aplicar filtros se eles existirem na URL
     if (urlSearch || urlGenre || urlArtist || urlDateRange || urlVersion || urlMonth || urlPool) {
@@ -181,12 +229,17 @@ function NewPageContent() {
       setSelectedPool('all');
     }
 
+    console.log('🎵 NewPage: Chamando fetchTracks');
     fetchTracks(false);
-  }, [searchParams]);
+  }, []); // Removido searchParams da dependência
 
+  // useEffect separado para searchQuery
   useEffect(() => {
-    fetchTracks(true);
-  }, [searchQuery]);
+    // Só executar se não for o carregamento inicial
+    if (!loading) {
+      fetchTracks(true);
+    }
+  }, [searchQuery, loading]);
 
   const updateURL = (newFilters: any = {}) => {
     const params = new URLSearchParams();
@@ -223,10 +276,10 @@ function NewPageContent() {
     setSelectedPool('all');
     setSearchQuery('');
     setCurrentPage(1);
-    
+
     // Limpar a URL também
     router.push('/new', { scroll: false });
-    
+
     // Aguardar um pouco antes de buscar para garantir que a URL foi limpa
     setTimeout(() => {
       // Forçar recarregamento de todas as músicas
@@ -262,8 +315,10 @@ function NewPageContent() {
 
   const monthOptions = generateMonthOptions();
 
+  console.log('🎵 NewPage: Renderizando componente, loading:', loading, 'tracks:', tracks.length);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a3e] to-[#2d1b69] relative overflow-hidden">
+    <div className="min-h-screen bg-[#1B1C1D] relative overflow-hidden">
       {/* Animated background particles */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500/5 rounded-full blur-3xl animate-pulse"></div>
@@ -308,14 +363,43 @@ function NewPageContent() {
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">As músicas mais quentes da semana</h3>
               <p className="text-gray-300 mb-4">Descubra os últimos lançamentos que estão dominando as pistas de dança</p>
+
+              {featuredTracks.length > 0 ? (
+                <div className="space-y-3 mb-4">
+                  {featuredTracks.slice(0, 3).map((track, index) => (
+                    <div key={track.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all duration-300">
+                      <div className="w-8 h-8 bg-purple-600/30 rounded-full flex items-center justify-center text-purple-400 font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-medium truncate">{track.songName}</div>
+                        <div className="text-gray-400 text-sm truncate">{track.artist}</div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Play className="h-3 w-3" />
+                          {track._count?.plays || 0}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Download className="h-3 w-3" />
+                          {track._count?.downloads || 0}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-gray-400 text-sm mb-4">Carregando músicas em destaque...</div>
+              )}
+
               <div className="flex gap-3">
-                <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2">
+                <Link href="/trending" className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2">
                   <Play size={16} />
-                  Ouvir Agora
-                </button>
-                <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors duration-200">
-                  Ver Todas
-                </button>
+                  Ver Trending
+                </Link>
+                <Link href="/top-100" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors duration-200">
+                  Top 100
+                </Link>
               </div>
             </div>
 
@@ -366,18 +450,22 @@ function NewPageContent() {
             Navegue por Gêneros
           </h2>
           <div className="flex flex-wrap gap-3">
-            {['House', 'Techno', 'Progressive', 'Trance', 'Deep House', 'Tech House', 'Melodic Techno', 'Afro House'].map((genre) => (
-              <button
-                key={genre}
-                onClick={() => {
-                  setSelectedGenre(genre.toLowerCase());
-                  handleSearch();
-                }}
-                className="px-4 py-2 glass-effect hover:bg-purple-600/30 text-white rounded-full transition-all duration-300 transform hover:scale-105 text-sm font-medium"
-              >
-                {genre}
-              </button>
-            ))}
+            {genres.length > 0 ? (
+              genres.map((genre) => (
+                <button
+                  key={genre}
+                  onClick={() => {
+                    setSelectedGenre(genre.toLowerCase());
+                    handleSearch();
+                  }}
+                  className="px-4 py-2 glass-effect hover:bg-purple-600/30 text-white rounded-full transition-all duration-300 transform hover:scale-105 text-sm font-medium"
+                >
+                  {genre}
+                </button>
+              ))
+            ) : (
+              <div className="text-gray-400 text-sm">Carregando gêneros...</div>
+            )}
           </div>
         </div>
 
@@ -425,8 +513,8 @@ function NewPageContent() {
           </div>
         </div>
         {/* Centralized Search Bar */}
-        <div className="mb-8 flex justify-center">
-          <div className="w-full max-w-4xl glass-effect rounded-3xl p-6 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 beatport-hover">
+        <div className="mb-8">
+          <div className="w-full glass-effect rounded-3xl p-6 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 beatport-hover">
             <div className="flex flex-col items-center gap-4">
               {/* Search Bar */}
               <div className="flex items-center w-full max-w-2xl glass-effect rounded-full px-6 py-4 focus-within:border-purple-400/70 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 pulse-button">
@@ -439,16 +527,15 @@ function NewPageContent() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 />
-                
+
                 {/* Quick Filters */}
                 <div className="flex items-center gap-2 ml-4">
                   <button
                     onClick={() => setShowFiltersModal(true)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 beatport-hover pulse-button ${
-                      hasActiveFilters 
-                        ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50' 
-                        : 'bg-gray-800/50 text-gray-300 hover:bg-purple-600/20'
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 beatport-hover pulse-button ${hasActiveFilters
+                      ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50'
+                      : 'bg-gray-800/50 text-gray-300 hover:bg-purple-600/20'
+                      }`}
                   >
                     <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-purple-400 animate-pulse' : 'text-gray-300'}`} />
                     <span className="text-sm font-medium">Filtros</span>
@@ -456,7 +543,7 @@ function NewPageContent() {
                       <span className="block h-2 w-2 rounded-full bg-purple-400 ring-2 ring-purple-600 animate-pulse ml-1"></span>
                     )}
                   </button>
-                  
+
                   {/* Quick Search Button */}
                   <button
                     onClick={handleSearch}
@@ -508,23 +595,23 @@ function NewPageContent() {
               {hasActiveFilters ? 'Nenhuma música encontrada com os filtros atuais' : 'Nenhuma música encontrada'}
             </h3>
             <p className="text-gray-400 mb-8">
-              {hasActiveFilters 
+              {hasActiveFilters
                 ? 'Tente ajustar seus filtros ou limpar todos os filtros para ver todas as músicas disponíveis.'
                 : 'Tente fazer uma nova busca ou verificar se há músicas disponíveis.'
               }
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {hasActiveFilters && (
-                <button 
-                  onClick={handleClearFilters} 
+                <button
+                  onClick={handleClearFilters}
                   className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/20 transform hover:scale-105 flex items-center justify-center gap-2"
                 >
                   <X className="h-4 w-4" />
                   Limpar Todos os Filtros
                 </button>
               )}
-              <button 
-                onClick={() => setShowFiltersModal(true)} 
+              <button
+                onClick={() => setShowFiltersModal(true)}
                 className="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-gray-500/20 transform hover:scale-105 flex items-center justify-center gap-2"
               >
                 <Filter className="h-4 w-4" />
@@ -547,7 +634,13 @@ function NewPageContent() {
                       </div>
                     </div>
                     <div className="glass-effect rounded-3xl overflow-hidden shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
-                      <MusicTable tracks={tracksByDate[date] || []} onDownload={handleTracksUpdate} isDownloading={downloading} />
+                      {useMemo(() => (
+                        <MusicTable
+                          tracks={tracksByDate[date] || []}
+                          onDownload={handleTracksUpdate}
+                          isDownloading={downloading}
+                        />
+                      ), [tracksByDate[date], downloading])}
                     </div>
                   </div>
                 ))}

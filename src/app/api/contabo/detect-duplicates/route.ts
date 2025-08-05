@@ -27,8 +27,8 @@ async function detectDuplicates(request: NextRequest) {
         const storage = new ContaboStorage({
             endpoint: process.env.CONTABO_ENDPOINT!,
             region: process.env.CONTABO_REGION!,
-            accessKeyId: process.env.CONTABO_ACCESS_KEY!,
-            secretAccessKey: process.env.CONTABO_SECRET_KEY!,
+            accessKeyId: process.env.CONTABO_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.CONTABO_SECRET_ACCESS_KEY!,
             bucketName: process.env.CONTABO_BUCKET_NAME!,
         });
 
@@ -72,7 +72,7 @@ async function detectDuplicates(request: NextRequest) {
         for (const [name, files] of fileGroups.entries()) {
             if (files.length > 1) {
                 const totalSize = files.reduce((sum, file) => sum + file.size, 0);
-                const largestFile = files.reduce((largest, file) => 
+                const largestFile = files.reduce((largest, file) =>
                     file.size > largest.size ? file : largest
                 );
 

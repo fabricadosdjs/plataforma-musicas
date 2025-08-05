@@ -28,8 +28,8 @@ function parseDateInput(dateInput: any): Date | null {
         // Attempt to clean the string if it contains problematic prefixes like '+'
         // This is a speculative fix for "+272025-08-21T03:00:00.000Z"
         // It tries to remove the leading '+' if it seems to be part of an invalid large year format.
-        if (dateString.startsWith('+') && dateString.length > 5 && !isNaN(parseInt(dateString.substring(1,5)))) {
-             dateString = dateString.substring(1);
+        if (dateString.startsWith('+') && dateString.length > 5 && !isNaN(parseInt(dateString.substring(1, 5)))) {
+            dateString = dateString.substring(1);
         }
 
         const parsedDate = new Date(dateString);
@@ -133,13 +133,17 @@ export async function POST(request: NextRequest) {
         if (!user) {
             return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
         }
+
         // Verificar se é VIP ou admin
         const isAdmin = session.user.email === 'edersonleonardo@nexorrecords.com.br';
         if (!user.is_vip && !isAdmin) {
             return NextResponse.json({ error: 'Apenas usuários VIP podem baixar músicas.' }, { status: 403 });
         }
 
-        // Resetar contador diário se passou 24h
+        // Para usuários VIP, não há limite de downloads
+        const isVipUser = user.is_vip || isAdmin;
+
+        // Resetar contador diário se passou 24h (mantido para estatísticas)
         const now = new Date();
         let dailyCount = user.dailyDownloadCount || 0;
         let lastReset = user.lastDownloadReset ? new Date(user.lastDownloadReset) : null;
@@ -152,16 +156,18 @@ export async function POST(request: NextRequest) {
             lastReset = now;
         }
 
-        // Verificar limite diário
-        const maxDailyDownloads = (user as any).benefits?.downloadsPerDay || 50;
-        if (dailyCount >= maxDailyDownloads) {
-            const resetTime = new Date(lastReset.getTime() + 24 * 60 * 60 * 1000);
-            return NextResponse.json({
-                error: `Limite diário de ${maxDailyDownloads} downloads atingido. Tente novamente após ${resetTime.toLocaleString('pt-BR')}.`,
-                dailyDownloadCount: dailyCount,
-                lastDownloadReset: lastReset.toISOString(),
-                needsConfirmation: false
-            }, { status: 429 });
+        // Verificar limite diário APENAS para usuários não-VIP
+        if (!isVipUser) {
+            const maxDailyDownloads = (user as any).benefits?.downloadsPerDay || 50;
+            if (dailyCount >= maxDailyDownloads) {
+                const resetTime = new Date(lastReset.getTime() + 24 * 60 * 60 * 1000);
+                return NextResponse.json({
+                    error: `Limite diário de ${maxDailyDownloads} downloads atingido. Tente novamente após ${resetTime.toLocaleString('pt-BR')}.`,
+                    dailyDownloadCount: dailyCount,
+                    lastDownloadReset: lastReset.toISOString(),
+                    needsConfirmation: false
+                }, { status: 429 });
+            }
         }
 
         // Verificar se já existe um download recente
@@ -189,7 +195,7 @@ export async function POST(request: NextRequest) {
             }, { status: 403 });
         }
 
-        // Registrar download e incrementar contador
+        // Registrar download e incrementar contador (apenas para não-VIP)
         const nextAllowedDownload = new Date(now.getTime() + 24 * 60 * 60 * 1000);
         const downloadedAt = now;
 
@@ -211,15 +217,20 @@ export async function POST(request: NextRequest) {
                 nextAllowedDownload: nextAllowedDownload
             }
         });
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { dailyDownloadCount: dailyCount + 1 }
-        });
+
+        // Incrementar contador apenas para usuários não-VIP
+        if (!isVipUser) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { dailyDownloadCount: dailyCount + 1 }
+            });
+        }
 
         return NextResponse.json({
             success: true,
             download,
-            dailyDownloadCount: dailyCount + 1
+            dailyDownloadCount: isVipUser ? dailyCount : dailyCount + 1,
+            isVipUser: isVipUser
         });
     } catch (error) {
         console.error('Erro ao registrar download:', error);

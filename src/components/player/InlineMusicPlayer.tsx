@@ -416,9 +416,9 @@ const InlineMusicPlayer: React.FC<InlineMusicPlayerProps> = ({
                         {/* Download */}
                         <button
                             onClick={() => onDownload(track)}
-                            disabled={!session?.user?.is_vip || (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)}
+                            disabled={!session?.user?.is_vip && session?.user?.email !== 'edersonleonardo@nexorrecords.com.br' || (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)}
                             className={`inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
-                                ${!session?.user?.is_vip
+                                ${!session?.user?.is_vip && session?.user?.email !== 'edersonleonardo@nexorrecords.com.br'
                                     ? 'bg-[#374151] text-gray-400 opacity-50 cursor-not-allowed'
                                     : hasDownloadedBefore(track.id)
                                         ? downloadedTracksTime[track.id] > 0
@@ -426,7 +426,7 @@ const InlineMusicPlayer: React.FC<InlineMusicPlayerProps> = ({
                                             : 'bg-red-600 text-white hover:bg-red-700 border border-red-500 shadow-red-500/25'
                                         : 'bg-[#374151] text-white hover:bg-[#4b5563] border border-[#374151] shadow-[#374151]/25'
                                 }`}
-                            title={!session?.user?.is_vip ? 'Apenas usuários VIP podem fazer downloads' : hasDownloadedBefore(track.id) ? downloadedTracksTime[track.id] > 0 ? `Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente` : 'Música já baixada' : "Download disponível"}
+                            title={!session?.user?.is_vip && session?.user?.email !== 'edersonleonardo@nexorrecords.com.br' ? 'Apenas usuários VIP podem fazer downloads' : hasDownloadedBefore(track.id) ? downloadedTracksTime[track.id] > 0 ? `Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente` : 'Música já baixada' : "Download disponível"}
                         >
                             <Download size={16} />
                             <span className="ml-1">{getDownloadButtonText(track.id)}</span>
@@ -435,7 +435,7 @@ const InlineMusicPlayer: React.FC<InlineMusicPlayerProps> = ({
                         {/* Curtir */}
                         <button
                             onClick={() => onLike(track.id)}
-                            disabled={!session?.user?.is_vip}
+                            disabled={!session?.user?.is_vip && session?.user?.email !== 'edersonleonardo@nexorrecords.com.br'}
                             className={`inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
                                 ${likedTracksSet.has(track.id)
                                     ? 'bg-pink-600 text-white border border-pink-500 shadow-pink-500/25'

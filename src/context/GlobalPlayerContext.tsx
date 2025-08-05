@@ -18,7 +18,7 @@ interface GlobalPlayerContextType {
     isPlaying: boolean;
     playlist: Track[];
     currentTrackIndex: number;
-    playTrack: (track: Track, newPlaylist?: Track[]) => void;
+    playTrack: (track: Track, newPlaylist?: Track[]) => Promise<void>;
     pauseTrack: () => void;
     stopTrack: () => void;
     togglePlayPause: () => void;
@@ -36,7 +36,56 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const [currentTrackIndex, setCurrentTrackIndex] = useState(-1);
     const audioRef = useRef<HTMLAudioElement>(null);
 
-    const playTrack = (track: Track, newPlaylist?: Track[]) => {
+    const getSecureAudioUrl = async (track: Track): Promise<string | null> => {
+        const audioUrl = track.downloadUrl || track.previewUrl || track.url;
+        if (!audioUrl) return null;
+
+        // Se a URL já é uma URL segura (assinada), use-a
+        if (audioUrl.includes('X-Amz-Signature')) {
+            return audioUrl;
+        }
+
+        // Se é uma URL do Contabo, tente obter uma URL segura
+        if (audioUrl.includes('contabostorage.com')) {
+            try {
+                // Extrair o caminho completo do arquivo da URL
+                // Exemplo: https://usc1.contabostorage.com/211285f2fbcc4760a62df1aff280735f:plataforma-de-musicas/community/DEORRO%20Y%20VOCES%20DEL%20RANCHO%20-%20CAMARON%20PELAO%20MAIN.mp3
+                // Precisamos extrair: community/DEORRO%20Y%20VOCES%20DEL%20RANCHO%20-%20CAMARON%20PELAO%20MAIN.mp3
+
+                // Encontrar o índice após "plataforma-de-musicas/"
+                const bucketPattern = 'plataforma-de-musicas/';
+                const bucketIndex = audioUrl.indexOf(bucketPattern);
+                if (bucketIndex !== -1) {
+                    const key = audioUrl.substring(bucketIndex + bucketPattern.length);
+                    console.log('🎵 GlobalPlayer: Extraindo chave do arquivo:', {
+                        originalUrl: audioUrl,
+                        extractedKey: key,
+                        bucketPattern,
+                        bucketIndex
+                    });
+
+                    const response = await fetch(`/api/audio-url?key=${encodeURIComponent(key)}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('🎵 GlobalPlayer: URL segura obtida:', data.url);
+                        return data.url;
+                    } else {
+                        console.error('🎵 GlobalPlayer: Erro na API audio-url:', response.status, response.statusText);
+                        const errorText = await response.text();
+                        console.error('🎵 GlobalPlayer: Resposta de erro:', errorText);
+                    }
+                } else {
+                    console.error('🎵 GlobalPlayer: Padrão do bucket não encontrado na URL:', audioUrl);
+                }
+            } catch (error) {
+                console.error('🎵 GlobalPlayer: Erro ao obter URL segura:', error);
+            }
+        }
+
+        return audioUrl;
+    };
+
+    const playTrack = async (track: Track, newPlaylist?: Track[]) => {
         console.log('🎵 GlobalPlayer: playTrack called with:', {
             id: track.id,
             songName: track.songName,
@@ -45,18 +94,18 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
             url: track.url
         });
 
-        // Verificar se há uma URL de áudio válida
-        const audioUrl = track.downloadUrl || track.previewUrl || track.url;
-        if (!audioUrl) {
+        // Obter URL segura se necessário
+        const secureUrl = await getSecureAudioUrl(track);
+        if (!secureUrl) {
             console.error('🎵 GlobalPlayer: No valid audio URL found for track:', track);
             return;
         }
 
         // Verificar se a URL é válida
         try {
-            new URL(audioUrl);
+            new URL(secureUrl);
         } catch (error) {
-            console.error('🎵 GlobalPlayer: Invalid audio URL:', audioUrl);
+            console.error('🎵 GlobalPlayer: Invalid audio URL:', secureUrl);
             return;
         }
 

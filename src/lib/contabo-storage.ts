@@ -25,6 +25,14 @@ export class ContaboStorage {
     private endpoint: string;
 
     constructor(config: ContaboConfig) {
+        console.log('🔧 ContaboStorage: Configurando com:', {
+            endpoint: config.endpoint,
+            region: config.region,
+            accessKeyId: config.accessKeyId ? `${config.accessKeyId.substring(0, 8)}...` : 'undefined',
+            secretAccessKey: config.secretAccessKey ? '***' : 'undefined',
+            bucketName: config.bucketName
+        });
+
         this.s3Client = new S3Client({
             endpoint: config.endpoint,
             region: config.region,
@@ -89,6 +97,36 @@ export class ContaboStorage {
     }
 
     /**
+     * Gera URL assinada para acesso seguro
+     */
+    async getSecureUrl(key: string, expiresIn: number = 3600): Promise<string> {
+        try {
+            console.log('🎵 ContaboStorage: Gerando URL assinada para:', { key, bucketName: this.bucketName });
+
+            const command = new GetObjectCommand({
+                Bucket: this.bucketName,
+                Key: key,
+            });
+
+            const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
+            console.log('🎵 ContaboStorage: URL assinada gerada com sucesso:', signedUrl.substring(0, 100) + '...');
+            return signedUrl;
+        } catch (error) {
+            console.error('🎵 ContaboStorage: Erro ao gerar URL assinada:', {
+                error: error instanceof Error ? error.message : error,
+                key,
+                bucketName: this.bucketName,
+                endpoint: this.endpoint,
+                region: this.s3Client.config.region()
+            });
+            // Fallback para URL pública
+            const publicUrl = this.getPublicUrl(key);
+            console.log('🎵 ContaboStorage: Usando fallback para URL pública:', publicUrl);
+            return publicUrl;
+        }
+    }
+
+    /**
      * Gera URL assinada temporária (para buckets privados)
      */
     async getSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
@@ -142,7 +180,7 @@ export class ContaboStorage {
             });
 
             const response = await this.s3Client.send(command);
-            
+
             if (!response.Contents || response.Contents.length === 0) {
                 return null;
             }
@@ -172,7 +210,7 @@ export class ContaboStorage {
     async deleteFile(key: string): Promise<void> {
         try {
             console.log(`🗑️ Tentando excluir arquivo: ${key}`);
-            
+
             const command = new DeleteObjectCommand({
                 Bucket: this.bucketName,
                 Key: key,
@@ -261,8 +299,8 @@ export class ContaboStorage {
 // Instância padrão configurada via variáveis de ambiente
 export const contaboStorage = new ContaboStorage({
     endpoint: process.env.CONTABO_ENDPOINT || '',
-    region: process.env.CONTABO_REGION || 'eu-central-1',
-    accessKeyId: process.env.CONTABO_ACCESS_KEY || '',
-    secretAccessKey: process.env.CONTABO_SECRET_KEY || '',
+    region: process.env.CONTABO_REGION || 'usc1',
+    accessKeyId: process.env.CONTABO_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.CONTABO_SECRET_ACCESS_KEY || '',
     bucketName: process.env.CONTABO_BUCKET_NAME || '',
 });

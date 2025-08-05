@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
     try {
@@ -25,6 +25,10 @@ export async function POST(request: NextRequest) {
         if (!user) {
             return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
         }
+
+        // Verificar se é VIP ou admin
+        const isAdmin = session.user.email === 'edersonleonardo@nexorrecords.com.br';
+        const isVipUser = user.is_vip || isAdmin;
 
         // Verificar se a track existe
         const track = await prisma.track.findUnique({
@@ -50,25 +54,30 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Você já baixou esta música nas últimas 24 horas' }, { status: 400 });
         }
 
-        // Verificar limite diário de downloads
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Verificar limite diário de downloads APENAS para usuários não-VIP
+        let downloadsToday = 0;
+        let dailyLimit = Infinity;
 
-        const downloadsToday = await prisma.download.count({
-            where: {
-                userId: user.id,
-                downloadedAt: {
-                    gte: today
+        if (!isVipUser) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            downloadsToday = await prisma.download.count({
+                where: {
+                    userId: user.id,
+                    downloadedAt: {
+                        gte: today
+                    }
                 }
+            });
+
+            dailyLimit = user.dailyDownloadCount || 50;
+
+            if (downloadsToday >= dailyLimit) {
+                return NextResponse.json({
+                    error: `Limite diário de downloads atingido (${dailyLimit})`
+                }, { status: 400 });
             }
-        });
-
-        const dailyLimit = user.dailyDownloadCount || 50;
-
-        if (downloadsToday >= dailyLimit) {
-            return NextResponse.json({
-                error: `Limite diário de downloads atingido (${dailyLimit})`
-            }, { status: 400 });
         }
 
         // Criar download
@@ -80,18 +89,21 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        // Atualizar contador de downloads do usuário
-        await prisma.user.update({
-            where: { id: user.id },
-            data: {
-                dailyDownloadCount: downloadsToday + 1
-            }
-        });
+        // Atualizar contador de downloads do usuário apenas para não-VIP
+        if (!isVipUser) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    dailyDownloadCount: downloadsToday + 1
+                }
+            });
+        }
 
         return NextResponse.json({
             success: true,
             message: 'Download registrado com sucesso',
-            downloadsLeft: dailyLimit - (downloadsToday + 1)
+            downloadsLeft: isVipUser ? 'Ilimitado' : (dailyLimit - (downloadsToday + 1)),
+            isVipUser: isVipUser
         });
 
     } catch (error) {

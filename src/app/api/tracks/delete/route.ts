@@ -7,23 +7,23 @@ import { ContaboStorage } from '@/lib/contabo-storage';
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     // Verificar se o usuário está logado e é admin
     const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
-    
+
     if (!session?.user || !isAdmin) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Acesso negado. Apenas administradores podem excluir músicas.' 
+      return NextResponse.json({
+        success: false,
+        error: 'Acesso negado. Apenas administradores podem excluir músicas.'
       }, { status: 403 });
     }
 
     const { trackId } = await request.json();
 
     if (!trackId) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'ID da música é obrigatório' 
+      return NextResponse.json({
+        success: false,
+        error: 'ID da música é obrigatório'
       }, { status: 400 });
     }
 
@@ -33,9 +33,9 @@ export async function DELETE(request: NextRequest) {
     });
 
     if (!track) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Música não encontrada' 
+      return NextResponse.json({
+        success: false,
+        error: 'Música não encontrada'
       }, { status: 404 });
     }
 
@@ -45,8 +45,8 @@ export async function DELETE(request: NextRequest) {
     const storage = new ContaboStorage({
       endpoint: process.env.CONTABO_ENDPOINT!,
       region: process.env.CONTABO_REGION!,
-      accessKeyId: process.env.CONTABO_ACCESS_KEY!,
-      secretAccessKey: process.env.CONTABO_SECRET_KEY!,
+      accessKeyId: process.env.CONTABO_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.CONTABO_SECRET_ACCESS_KEY!,
       bucketName: process.env.CONTABO_BUCKET_NAME!,
     });
 
@@ -59,11 +59,11 @@ export async function DELETE(request: NextRequest) {
         // Extrair a chave do arquivo da URL
         const urlParts = track.downloadUrl.split('/');
         const fileName = urlParts[urlParts.length - 1];
-        
+
         // Buscar arquivos no storage para encontrar a chave exata
         const storageFiles = await storage.listFiles();
         const fileKey = storageFiles.find(file => file.key.includes(fileName))?.key;
-        
+
         if (fileKey) {
           console.log(`🗑️ Excluindo arquivo do storage: ${fileKey}`);
           await storage.deleteFile(fileKey);

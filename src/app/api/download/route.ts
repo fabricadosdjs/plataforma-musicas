@@ -35,7 +35,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Verificar se precisa resetar contador diário
+        // Verificar se é VIP ou admin
+        const isAdmin = session.user.email === 'edersonleonardo@nexorrecords.com.br';
+        const isVipUser = user.is_vip || isAdmin;
+
+        // Verificar se precisa resetar contador diário (mantido para estatísticas)
         const now = new Date();
         const lastReset = user.lastDownloadReset ? new Date(user.lastDownloadReset) : null;
 
@@ -51,12 +55,12 @@ export async function POST(request: NextRequest) {
             user.dailyDownloadCount = 0;
         }
 
-        // Obter limites do usuário
+        // Obter limites do usuário (apenas para não-VIP)
         const benefits = (session.user as any).benefits;
-        const dailyLimit = benefits?.downloadsPerDay || 5;
+        const dailyLimit = isVipUser ? Infinity : (benefits?.downloadsPerDay || 5);
 
-        // Verificar limite
-        if (user.dailyDownloadCount >= dailyLimit) {
+        // Verificar limite APENAS para usuários não-VIP
+        if (!isVipUser && user.dailyDownloadCount >= dailyLimit) {
             return NextResponse.json(
                 {
                     error: 'Limite diário de downloads atingido',
@@ -98,26 +102,29 @@ export async function POST(request: NextRequest) {
                 }
             });
 
-            // Incrementar contador
-            await prisma.user.update({
-                where: { id: user.id },
-                data: {
-                    dailyDownloadCount: user.dailyDownloadCount + 1
-                } as any
-            });
+            // Incrementar contador apenas para usuários não-VIP
+            if (!isVipUser) {
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: {
+                        dailyDownloadCount: user.dailyDownloadCount + 1
+                    } as any
+                });
+            }
         }
 
         return NextResponse.json({
             success: true,
             message: 'Download autorizado',
             downloadUrl: track.downloadUrl,
-            remainingDownloads: dailyLimit - (user.dailyDownloadCount + 1),
+            remainingDownloads: isVipUser ? 'Ilimitado' : (dailyLimit - (user.dailyDownloadCount + 1)),
             track: {
                 id: track.id,
                 songName: track.songName,
                 artist: track.artist,
                 style: track.style
-            }
+            },
+            isVipUser: isVipUser
         });
 
     } catch (error) {

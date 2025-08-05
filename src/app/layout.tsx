@@ -8,18 +8,27 @@ import PWAInstaller from '@/components/pwa/PWAInstaller';
 import { AppProvider } from '@/context/AppContext';
 import AuthProvider from '@/context/AuthProvider';
 import type { Metadata } from 'next';
-import { Lato } from 'next/font/google'; // Lato como fonte principal
+import { Lato, Inter } from 'next/font/google'; // Lato como fonte principal, Inter para elementos específicos
 import './globals.css';
 import '../styles/beatport-effects.css';
 import { ExtensionDetector } from '@/components/layout/ExtensionDetector';
 import { GlobalToastManager } from '@/components/layout/GlobalToastManager';
+import { ToastProvider } from '@/context/ToastContext';
 import Footer from '@/components/layout/Footer';
+import BrowserExtensionHandler from '@/components/layout/BrowserExtensionHandler';
 
 // Configura a fonte Lato como a fonte principal
 const lato = Lato({
   subsets: ['latin'],
   weight: ['300', '400', '700', '900'], // Incluindo light (300), regular (400), bold (700) e black (900)
   variable: '--font-lato', // Define uma variável CSS para Lato
+});
+
+// Configura a fonte Inter para elementos específicos
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-inter', // Define uma variável CSS para Inter
 });
 
 export const metadata: Metadata = {
@@ -108,8 +117,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={lato.variable}>
-      <body>
+    <html lang="pt-BR" className={`${lato.variable} ${inter.variable}`}>
+      <body suppressHydrationWarning={true}>
         {/* Meta tags para melhorar downloads - movido para head.tsx ou metadata */}
         <meta
           name="viewport"
@@ -117,17 +126,20 @@ export default function RootLayout({
         />
         <AuthProvider>
           <AppProvider>
-            <GlobalPlayerProvider>
-              <MusicRouteHandler />
-              <ExtensionDetector />
-              <GlobalToastManager />
-              <DynamicGradientBackground />
-              <PWAInstaller />
-              {children}
-              {/* Player global sempre renderizado */}
-              <FooterPlayerNew />
-              <Footer />
-            </GlobalPlayerProvider>
+            <ToastProvider>
+              <GlobalPlayerProvider>
+                <BrowserExtensionHandler />
+                <MusicRouteHandler />
+                <ExtensionDetector />
+                <GlobalToastManager />
+                <DynamicGradientBackground />
+                <PWAInstaller />
+                {children}
+                {/* Player global sempre renderizado */}
+                <FooterPlayerNew />
+                <Footer />
+              </GlobalPlayerProvider>
+            </ToastProvider>
           </AppProvider>
         </AuthProvider>
       </body>

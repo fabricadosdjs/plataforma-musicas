@@ -28,8 +28,8 @@ function parseDateInput(dateInput: any): Date | null {
         // Attempt to clean the string if it contains problematic prefixes like '+' for large years
         // This is a speculative fix for "+272025-08-21T03:00:00.000Z"
         // It tries to remove the leading '+' if it seems to be part of an invalid large year format.
-        if (dateString.startsWith('+') && dateString.length > 5 && !isNaN(parseInt(dateString.substring(1,5)))) {
-             dateString = dateString.substring(1);
+        if (dateString.startsWith('+') && dateString.length > 5 && !isNaN(parseInt(dateString.substring(1, 5)))) {
+            dateString = dateString.substring(1);
         }
 
         const parsedDate = new Date(dateString);
@@ -92,6 +92,9 @@ export async function GET(req: Request) {
                 status: user.status,
                 is_vip: user.is_vip,
                 deemix: user.deemix,
+                deezerPremium: user.deezerPremium,
+                deezerEmail: user.deezerEmail,
+                deezerPassword: user.deezerPassword,
                 dailyDownloadCount: user.dailyDownloadCount,
                 weeklyPackRequests: user.weeklyPackRequests,
                 weeklyPlaylistDownloads: user.weeklyPlaylistDownloads,
@@ -176,7 +179,7 @@ export async function DELETE_BY_EMAIL(req: Request) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, email, password, isAdmin, whatsapp, valor, vencimento, dataPagamento, status, deemix, is_vip, isPro, dailyDownloadCount, lastDownloadReset, weeklyPackRequests, weeklyPlaylistDownloads, lastWeekReset, customBenefits } = body;
+        const { name, email, password, isAdmin, whatsapp, valor, vencimento, dataPagamento, status, deemix, deezerPremium, deezerEmail, deezerPassword, is_vip, isPro, dailyDownloadCount, lastDownloadReset, weeklyPackRequests, weeklyPlaylistDownloads, lastWeekReset, customBenefits } = body;
 
         if (!name || !email || !password) {
             return new NextResponse("Nome, email e senha são obrigatórios", { status: 400 });
@@ -202,6 +205,9 @@ export async function POST(req: Request) {
                 dataPagamento: parseDateInput(dataPagamento),
                 status,
                 deemix: !!deemix,
+                deezerPremium: !!deezerPremium,
+                deezerEmail: deezerEmail || null,
+                deezerPassword: deezerPassword || null,
                 dailyDownloadCount: dailyDownloadCount ?? 0,
                 lastDownloadReset: parseDateInput(lastDownloadReset),
                 weeklyPackRequests: weeklyPackRequests ?? 0,
