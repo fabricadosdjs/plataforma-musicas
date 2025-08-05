@@ -188,6 +188,17 @@ function NewPageContent() {
     }
   };
 
+  // Função memoizada para renderizar MusicTable
+  const renderMusicTable = useCallback((date: string) => {
+    return (
+      <MusicTable
+        tracks={tracksByDate[date] || []}
+        onDownload={handleTracksUpdate}
+        isDownloading={downloading}
+      />
+    );
+  }, [tracksByDate, downloading, handleTracksUpdate]);
+
   // Carregar dados iniciais
   useEffect(() => {
     console.log('🎵 NewPage: useEffect inicial executado, loading atual:', loading);
@@ -634,13 +645,7 @@ function NewPageContent() {
                       </div>
                     </div>
                     <div className="glass-effect rounded-3xl overflow-hidden shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
-                      {useMemo(() => (
-                        <MusicTable
-                          tracks={tracksByDate[date] || []}
-                          onDownload={handleTracksUpdate}
-                          isDownloading={downloading}
-                        />
-                      ), [tracksByDate[date], downloading])}
+                      {renderMusicTable(date)}
                     </div>
                   </div>
                 ))}
