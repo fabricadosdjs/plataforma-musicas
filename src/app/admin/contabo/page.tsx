@@ -934,6 +934,7 @@ export default function ContaboStoragePage() {
 
                                 // Filtra os itens da página atual
                                 const currentPageItems = importableFiles.slice(startIndex, endIndex);
+                                const currentPageKeys = currentPageItems.map(f => f.file.key);
 
                                 // Agrupa os itens da página atual por dia
                                 const currentPageGroupedByDay: { [date: string]: ImportableFile[] } = {};
