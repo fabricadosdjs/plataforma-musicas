@@ -47,14 +47,17 @@ export async function middleware(request: NextRequest) {
   // (as validações em tempo real serão feitas nas próprias APIs)
   const userFromToken = token as any;
 
-  // Verifica acesso VIP baseado no token
-  if (isVipProtected && !userFromToken.is_vip) {
+  // Verificar se é admin
+  const isAdmin = userFromToken.email === 'edersonleonardo@nexorrecords.com.br';
+
+  // Verifica acesso VIP baseado no token (admin tem acesso total)
+  if (isVipProtected && !userFromToken.is_vip && !isAdmin) {
     return NextResponse.redirect(new URL('/access-denied?reason=vip', request.url));
   }
 
-  // Para rotas Deemix, assumir que usuários VIP têm acesso
+  // Para rotas Deemix, assumir que usuários VIP têm acesso (admin tem acesso total)
   // (validação específica será feita na API)
-  if (isDeemixProtected && !userFromToken.is_vip) {
+  if (isDeemixProtected && !userFromToken.is_vip && !isAdmin) {
     return NextResponse.redirect(new URL('/access-denied?reason=deemix', request.url));
   }
 

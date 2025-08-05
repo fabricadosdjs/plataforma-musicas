@@ -66,7 +66,9 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Utilizador não encontrado" }, { status: 404 });
     }
-    if (!user.is_vip) {
+    // Verificar se é VIP ou admin
+    const isAdmin = session.user.email === 'edersonleonardo@nexorrecords.com.br';
+    if (!user.is_vip && !isAdmin) {
       return NextResponse.json({ error: 'Apenas usuários VIP podem baixar músicas' }, { status: 403 });
     }
 

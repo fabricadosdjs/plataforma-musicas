@@ -107,7 +107,9 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
     };
 
     const handleDownload = async (track: Track, confirmReDownload = false) => {
-        if (!session?.user?.is_vip) {
+        // Verificar se é VIP ou admin
+        const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
+        if (!session?.user?.is_vip && !isAdmin) {
             setShowRestrict24hModal({ track, open: true });
             return;
         }
@@ -200,7 +202,9 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
             return;
         }
 
-        if (!session?.user?.is_vip) {
+        // Verificar se é VIP ou admin
+        const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
+        if (!session?.user?.is_vip && !isAdmin) {
             setShowRestrict24hModal({ track, open: true });
             return;
         }
@@ -701,9 +705,9 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                     {/* Download */}
                                     <button
                                         onClick={() => handleDownload(track)}
-                                        disabled={!session?.user?.is_vip || (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)}
+                                        disabled={!session?.user?.is_vip && session?.user?.email !== 'edersonleonardo@nexorrecords.com.br' || (hasDownloadedBefore(track.id) && downloadedTracksTime[track.id] > 0)}
                                         className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
-                                ${!session?.user?.is_vip
+                                ${!session?.user?.is_vip && session?.user?.email !== 'edersonleonardo@nexorrecords.com.br'
                                                 ? 'bg-[#374151] text-gray-400 opacity-50 cursor-not-allowed'
                                                 : hasDownloadedBefore(track.id)
                                                     ? downloadedTracksTime[track.id] > 0
@@ -711,7 +715,7 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                                         : 'bg-[#374151] text-white hover:bg-gray-600 border border-gray-500/50 shadow-gray-500/25'
                                                     : 'bg-[#374151] text-white hover:bg-gray-600 border border-gray-500/50 shadow-gray-500/25'
                                             }`}
-                                        title={!session?.user?.is_vip ? 'Apenas usuários VIP podem fazer downloads' : hasDownloadedBefore(track.id) ? downloadedTracksTime[track.id] > 0 ? `Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente` : 'Música já baixada' : "Download disponível"}
+                                        title={!session?.user?.is_vip && session?.user?.email !== 'edersonleonardo@nexorrecords.com.br' ? 'Apenas usuários VIP podem fazer downloads' : hasDownloadedBefore(track.id) ? downloadedTracksTime[track.id] > 0 ? `Aguarde ${formatTimeLeft(downloadedTracksTime[track.id] || 0)} para baixar novamente` : 'Música já baixada' : "Download disponível"}
                                     >
                                         <Download size={16} />
                                         <span>{getDownloadButtonText(track.id)}</span>
@@ -720,7 +724,7 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                     {/* Curtir */}
                                     <button
                                         onClick={() => handleLikeClick(track.id)}
-                                        disabled={!session?.user?.is_vip || liking === track.id}
+                                        disabled={!session?.user?.is_vip && session?.user?.email !== 'edersonleonardo@nexorrecords.com.br' || liking === track.id}
                                         className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
                                 ${isTrackLiked(track.id)
                                                 ? 'bg-pink-600/80 text-white border border-pink-500/50 shadow-pink-500/25'

@@ -11,8 +11,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
         }
 
-        // Verificar se é VIP
-        if (!session.user.is_vip) {
+        // Verificar se é VIP ou admin
+        const isAdmin = session.user.email === 'edersonleonardo@nexorrecords.com.br';
+        if (!session.user.is_vip && !isAdmin) {
             return NextResponse.json({ error: 'Recurso apenas para usuários VIP' }, { status: 403 });
         }
 
@@ -32,11 +33,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Música não encontrada' }, { status: 404 });
         }
 
-        // Verificar se é um usuário admin especial
-        const isAdmin = session.user.id === 'admin-nextor-001' || (session.user as any).benefits?.adminAccess;
+        // Verificar se é um usuário admin especial (já definido acima)
+        const isSpecialAdmin = session.user.id === 'admin-nextor-001' || (session.user as any).benefits?.adminAccess;
 
         // Se for admin, retornar sucesso sem registrar no banco
-        if (isAdmin) {
+        if (isAdmin || isSpecialAdmin) {
             return NextResponse.json({
                 success: true,
                 message: 'Reprodução registrada com sucesso (Admin)'

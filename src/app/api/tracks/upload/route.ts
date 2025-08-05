@@ -21,7 +21,9 @@ export async function POST(request: NextRequest) {
             select: { is_vip: true }
         });
 
-        if (!user?.is_vip) {
+        // Verificar se é VIP ou admin
+        const isAdmin = session.user.email === 'edersonleonardo@nexorrecords.com.br';
+        if (!user?.is_vip && !isAdmin) {
             return NextResponse.json(
                 { success: false, error: 'Apenas usuários VIP podem fazer upload de músicas' },
                 { status: 403 }
