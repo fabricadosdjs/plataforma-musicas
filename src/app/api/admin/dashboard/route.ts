@@ -53,7 +53,21 @@ export async function GET(request: NextRequest) {
             prisma.download.count({ where: { downloadedAt: { gte: monthAgo } } })
         ]);
 
-        // Top downloaders (simplificado)
+        // Estatísticas de tracks
+        const [totalTracks, tracksAddedToday, tracksAddedWeek] = await Promise.all([
+            prisma.track.count(),
+            prisma.track.count({ where: { createdAt: { gte: today } } }),
+            prisma.track.count({ where: { createdAt: { gte: weekAgo } } })
+        ]);
+
+        // Estatísticas de likes
+        const [totalLikes, likesToday, likesWeek] = await Promise.all([
+            prisma.like.count(),
+            prisma.like.count({ where: { createdAt: { gte: today } } }),
+            prisma.like.count({ where: { createdAt: { gte: weekAgo } } })
+        ]);
+
+        // Top downloaders
         const topDownloaderToday = await prisma.user.findFirst({
             where: {
                 downloads: {
@@ -144,19 +158,9 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        // Estatísticas de músicas
-        const [totalTracks, tracksAddedToday, tracksAddedWeek] = await Promise.all([
-            prisma.track.count(),
-            prisma.track.count({ where: { createdAt: { gte: today } } }),
-            prisma.track.count({ where: { createdAt: { gte: weekAgo } } })
-        ]);
-
-        // Música mais baixada
+        // Top tracks
         const mostDownloadedTrack = await prisma.track.findFirst({
-            select: {
-                id: true,
-                songName: true,
-                artist: true,
+            include: {
                 _count: {
                     select: {
                         downloads: true
@@ -170,12 +174,8 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        // Música mais curtida
         const mostLikedTrack = await prisma.track.findFirst({
-            select: {
-                id: true,
-                songName: true,
-                artist: true,
+            include: {
                 _count: {
                     select: {
                         likes: true
@@ -189,38 +189,35 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        // Músicas recentes (limitado a 5 para performance)
         const recentTracks = await prisma.track.findMany({
-            select: {
-                id: true,
-                songName: true,
-                artist: true,
-                createdAt: true,
+            take: 5,
+            orderBy: {
+                createdAt: 'desc'
+            },
+            include: {
                 _count: {
                     select: {
                         downloads: true,
                         likes: true
                     }
                 }
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 5
+            }
         });
 
-        // Estatísticas de likes
-        const [totalLikes, likesToday, likesWeek] = await Promise.all([
-            prisma.like.count(),
-            prisma.like.count({ where: { createdAt: { gte: today } } }),
-            prisma.like.count({ where: { createdAt: { gte: weekAgo } } })
-        ]);
-
-        // Receita
+        // Estatísticas de receita
         const [totalRevenue, averageUserValue, vipPlansDistribution] = await Promise.all([
             prisma.user.aggregate({
-                _sum: { valor: true }
+                _sum: {
+                    valor: true
+                }
             }),
             prisma.user.aggregate({
-                _avg: { valor: true }
+                _avg: {
+                    valor: true
+                },
+                where: {
+                    valor: { not: null }
+                }
             }),
             prisma.user.groupBy({
                 by: ['valor'],

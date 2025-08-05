@@ -95,8 +95,10 @@ export default function DashboardPage() {
             // Atualizar a cada 60 segundos (reduzido para melhor performance)
             const interval = setInterval(fetchStats, 60000);
             return () => clearInterval(interval);
+        } else if (isLoaded && !session?.user?.isAdmin) {
+            setLoading(false);
         }
-    }, [session]);
+    }, [session, isLoaded]);
 
     const formatBytes = (bytes: number) => {
         if (bytes === 0) return '0 Bytes';
@@ -113,7 +115,7 @@ export default function DashboardPage() {
         return `${days}d ${hours}h ${minutes}m`;
     };
 
-    if (loading && !stats) {
+    if (loading || (!isLoaded)) {
         return (
             <div className="min-h-screen bg-[#202124] text-white flex items-center justify-center">
                 <div className="text-center">
