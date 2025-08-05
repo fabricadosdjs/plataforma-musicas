@@ -2,7 +2,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Play, Pause, Download, Heart, AlertTriangle, Copyright, Music } from 'lucide-react';
+import { Play, Pause, Download, Heart, AlertTriangle, Copyright, Music, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { Track } from '@/types/track';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
@@ -64,6 +64,12 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
     const [liking, setLiking] = useState<number | null>(null);
     // Estado para modal estiloso de download restrito 24h
     const [showRestrict24hModal, setShowRestrict24hModal] = useState<{ track: Track | null, open: boolean }>({ track: null, open: false });
+    
+    // Verificar se o usuário é admin
+    const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
+    
+    // Estado para controle de exclusão
+    const [deleting, setDeleting] = useState<number | null>(null);
 
     // Estado para guardar tempo restante para cada track (em segundos)
     const [downloadedTracksTime, setDownloadedTracksTime] = useState<{ [trackId: number]: number }>({});
@@ -368,6 +374,52 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
         }
     };
 
+    const handleDeleteClick = async (track: Track) => {
+        if (!isAdmin) {
+            showToast('Apenas administradores podem excluir músicas', 'error');
+            return;
+        }
+
+        // Confirmação antes de excluir
+        if (!confirm(`Tem certeza que deseja excluir "${track.artist} - ${track.songName}"?\n\nEsta ação irá:\n• Excluir a música do banco de dados\n• Remover o arquivo do storage\n\nEsta ação não pode ser desfeita.`)) {
+            return;
+        }
+
+        setDeleting(track.id);
+        
+        try {
+            const response = await fetch('/api/tracks/delete', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    trackId: track.id
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                showToast(`✅ Música excluída com sucesso: ${track.artist} - ${track.songName}`, 'success');
+                
+                // Remover a música da lista local
+                const updatedTracks = tracks.filter(t => t.id !== track.id);
+                // Notificar o componente pai sobre a remoção
+                if (onDownload) {
+                    onDownload(updatedTracks);
+                }
+            } else {
+                showToast(`❌ Erro ao excluir música: ${data.error || 'Erro desconhecido'}`, 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao excluir música:', error);
+            showToast('❌ Erro de rede ao excluir música', 'error');
+        } finally {
+            setDeleting(null);
+        }
+    };
+
 
     // Debug: Log tracks to check previewUrl
     useEffect(() => {
@@ -576,6 +628,25 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                         >
                                             <Copyright size={16} />
                                         </button>
+                                        {/* Excluir (Admin) */}
+                                        {isAdmin && (
+                                            <button
+                                                onClick={() => handleDeleteClick(track)}
+                                                disabled={deleting === track.id}
+                                                className={`inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg transform hover:scale-105 active:scale-95
+                                                    ${deleting === track.id
+                                                        ? 'bg-red-800 text-white border border-red-600 shadow-red-500/25 opacity-60 cursor-not-allowed'
+                                                        : 'bg-red-700 text-white hover:bg-red-800 border border-red-500 shadow-red-500/25'
+                                                    }`}
+                                                title="Excluir música (Apenas Admin)"
+                                            >
+                                                {deleting === track.id ? (
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                ) : (
+                                                    <Trash2 size={16} />
+                                                )}
+                                            </button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -683,6 +754,29 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
                                         <span>Copyright</span>
                                     </button>
                                 </div>
+
+                                {/* Excluir (Admin) - Mobile */}
+                                {isAdmin && (
+                                    <div className="mt-2">
+                                        <button
+                                            onClick={() => handleDeleteClick(track)}
+                                            disabled={deleting === track.id}
+                                            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
+                                                ${deleting === track.id
+                                                    ? 'bg-red-800/80 text-white border border-red-600/50 shadow-red-500/25 opacity-60 cursor-not-allowed'
+                                                    : 'bg-red-700/80 text-white hover:bg-red-800/80 border border-red-500/50 shadow-red-500/25'
+                                                }`}
+                                            title="Excluir música (Apenas Admin)"
+                                        >
+                                            {deleting === track.id ? (
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            ) : (
+                                                <Trash2 size={16} />
+                                            )}
+                                            <span>{deleting === track.id ? 'Excluindo...' : 'Excluir'}</span>
+                                        </button>
+                                    </div>
+                                )}
 
                                 {!session && (
                                     <Link href="/planos" className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 cursor-pointer tracking-wide shadow-lg bg-[#374151]/80 text-white hover:bg-[#4b5563]/80 border border-[#374151]/50 shadow-[#374151]/25">
