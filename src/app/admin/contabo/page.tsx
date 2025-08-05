@@ -70,7 +70,7 @@ export default function ContaboStoragePage() {
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState<'success' | 'error'>('success');
-    const [currentView, setCurrentView] = useState<'files' | 'import'>('files');
+    const [currentView, setCurrentView] = useState<'files' | 'import' | 'duplicates'>('files');
 
     // Estados de paginação para a aba de importação
     const [currentPage, setCurrentPage] = useState(0);
@@ -80,6 +80,13 @@ export default function ContaboStoragePage() {
     const [folders, setFolders] = useState<string[]>([]);
     const [selectedFolder, setSelectedFolder] = useState<string>('');
     const [showFolderSelector, setShowFolderSelector] = useState(false);
+
+    // Estados para detector de duplicatas
+    const [duplicateGroups, setDuplicateGroups] = useState<any[]>([]);
+    const [selectedDuplicates, setSelectedDuplicates] = useState<string[]>([]);
+    const [detectingDuplicates, setDetectingDuplicates] = useState(false);
+    const [deletingDuplicates, setDeletingDuplicates] = useState(false);
+    const [duplicateStats, setDuplicateStats] = useState<any>(null);
 
     if (isLoaded && !user) {
         redirect('/auth/sign-in');
@@ -316,6 +323,89 @@ export default function ContaboStoragePage() {
         setTimeout(() => setMessage(''), 5000);
     };
 
+    // Funções para detector de duplicatas
+    const detectDuplicates = async () => {
+        setDetectingDuplicates(true);
+        try {
+            const response = await fetch('/api/contabo/detect-duplicates', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setDuplicateGroups(data.duplicates || []);
+                setDuplicateStats(data.summary);
+                showMessage(`Encontradas ${data.duplicateGroups} grupos de duplicatas (${data.totalDuplicates} arquivos)`, 'success');
+            } else {
+                showMessage(data.error || 'Erro ao detectar duplicatas', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao detectar duplicatas:', error);
+            showMessage('Erro ao detectar duplicatas', 'error');
+        } finally {
+            setDetectingDuplicates(false);
+        }
+    };
+
+    const toggleDuplicateSelection = (fileKey: string) => {
+        setSelectedDuplicates(prev => 
+            prev.includes(fileKey) 
+                ? prev.filter(key => key !== fileKey)
+                : [...prev, fileKey]
+        );
+    };
+
+    const selectAllDuplicates = () => {
+        const allDuplicateKeys = duplicateGroups.flatMap(group => 
+            group.files.slice(1).map((file: any) => file.key) // Manter o primeiro arquivo de cada grupo
+        );
+        setSelectedDuplicates(allDuplicateKeys);
+    };
+
+    const clearDuplicateSelection = () => {
+        setSelectedDuplicates([]);
+    };
+
+    const deleteSelectedDuplicates = async () => {
+        if (selectedDuplicates.length === 0) {
+            showMessage('Nenhuma duplicata selecionada', 'error');
+            return;
+        }
+
+        setDeletingDuplicates(true);
+        try {
+            const response = await fetch('/api/contabo/delete-duplicates', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    filesToDelete: selectedDuplicates
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage(data.message, 'success');
+                setSelectedDuplicates([]);
+                // Recarregar duplicatas para atualizar a lista
+                await detectDuplicates();
+            } else {
+                showMessage(data.error || 'Erro ao excluir duplicatas', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao excluir duplicatas:', error);
+            showMessage('Erro ao excluir duplicatas', 'error');
+        } finally {
+            setDeletingDuplicates(false);
+        }
+    };
+
     const formatFileSize = (bytes: number) => {
         const units = ['B', 'KB', 'MB', 'GB'];
         let size = bytes;
@@ -537,6 +627,21 @@ export default function ContaboStoragePage() {
                                 <Import className="w-4 h-4 inline mr-2" />
                                 Importar ({importableFiles.length})
                             </button>
+                            <button
+                                onClick={() => {
+                                    setCurrentView('duplicates');
+                                    if (duplicateGroups.length === 0) {
+                                        detectDuplicates();
+                                    }
+                                }}
+                                className={`px-4 py-2 rounded-md transition-colors ${currentView === 'duplicates'
+                                    ? 'bg-red-600 text-white'
+                                    : 'text-gray-300 hover:text-white'
+                                    }`}
+                            >
+                                <Trash2 className="w-4 h-4 inline mr-2" />
+                                Duplicatas ({duplicateGroups.length})
+                            </button>
                         </div>
 
                         {/* Search */}
@@ -554,9 +659,11 @@ export default function ContaboStoragePage() {
                 </div>
 
                 {/* Content */}
-                {currentView === 'files' ? (
-                    /* Files View */
-                    <div className="bg-gray-800 rounded-xl overflow-hidden">
+                {(() => {
+                    if (currentView === 'files') {
+                        return (
+                            /* Files View */
+                            <div className="bg-gray-800 rounded-xl overflow-hidden">
                         <div className="px-6 py-4 bg-gray-700 border-b border-gray-600">
                             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                                 <Folder className="w-5 h-5 text-blue-300" />
@@ -646,8 +753,10 @@ export default function ContaboStoragePage() {
                             </div>
                         )}
                     </div>
-                ) : (
-                    /* Import View */
+                        );
+                    } else if (currentView === 'import') {
+                        return (
+                            /* Import View */
                     <div className="bg-gray-800 rounded-xl overflow-hidden">
                         <div className="px-6 py-4 bg-gray-700 border-b border-gray-600 flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -1063,7 +1172,296 @@ export default function ContaboStoragePage() {
                             })()
                         )}
                     </div>
-                )}
+                        );
+                    } else if (currentView === 'import') {
+                        return (
+                    /* Duplicates View */
+                    <div className="bg-gray-800 rounded-xl overflow-hidden">
+                        <div className="px-6 py-4 bg-gray-700 border-b border-gray-600 flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                <Trash2 className="w-5 h-5 text-red-300" />
+                                Detector de Duplicatas
+                            </h3>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={detectDuplicates}
+                                    disabled={detectingDuplicates}
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors flex items-center gap-2"
+                                >
+                                    {detectingDuplicates ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <RefreshCw className="w-4 h-4" />
+                                    )}
+                                    {detectingDuplicates ? 'Detectando...' : 'Detectar Duplicatas'}
+                                </button>
+                                {selectedDuplicates.length > 0 && (
+                                    <button
+                                        onClick={deleteSelectedDuplicates}
+                                        disabled={deletingDuplicates}
+                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors flex items-center gap-2"
+                                    >
+                                        {deletingDuplicates ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Trash2 className="w-4 h-4" />
+                                        )}
+                                        {deletingDuplicates ? 'Excluindo...' : `Excluir (${selectedDuplicates.length})`}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {duplicateStats && (
+                            <div className="px-6 py-4 bg-gray-700/50 border-b border-gray-600">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="bg-gray-800/50 rounded-lg p-3">
+                                        <div className="text-sm text-gray-400">Total de Arquivos</div>
+                                        <div className="text-xl font-bold text-white">{duplicateStats.totalFiles}</div>
+                                    </div>
+                                    <div className="bg-gray-800/50 rounded-lg p-3">
+                                        <div className="text-sm text-gray-400">Arquivos Únicos</div>
+                                        <div className="text-xl font-bold text-green-400">{duplicateStats.uniqueFiles}</div>
+                                    </div>
+                                    <div className="bg-gray-800/50 rounded-lg p-3">
+                                        <div className="text-sm text-gray-400">Grupos de Duplicatas</div>
+                                        <div className="text-xl font-bold text-yellow-400">{duplicateStats.duplicateGroups}</div>
+                                    </div>
+                                    <div className="bg-gray-800/50 rounded-lg p-3">
+                                        <div className="text-sm text-gray-400">Espaço a Economizar</div>
+                                        <div className="text-xl font-bold text-red-400">{formatFileSize(duplicateStats.sizeSaved)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {detectingDuplicates ? (
+                            <div className="p-8 text-center">
+                                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-400" />
+                                <p className="text-gray-400">Detectando duplicatas...</p>
+                            </div>
+                        ) : duplicateGroups.length === 0 ? (
+                            <div className="p-8 text-center">
+                                <Trash2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                                <h3 className="text-xl font-semibold text-gray-300 mb-2">
+                                    Nenhuma duplicata encontrada
+                                </h3>
+                                <p className="text-gray-500">
+                                    Clique em "Detectar Duplicatas" para analisar os arquivos
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-gray-700">
+                                {duplicateGroups.map((group, groupIndex) => (
+                                    <div key={groupIndex} className="p-4">
+                                        <div className="mb-3">
+                                            <h4 className="font-semibold text-white mb-2">
+                                                Grupo {groupIndex + 1} - {group.count} arquivos
+                                            </h4>
+                                            <div className="flex items-center gap-4 text-sm text-gray-400">
+                                                <span>Total: {formatFileSize(group.totalSize)}</span>
+                                                <span>Pode economizar: {formatFileSize(group.totalSize - Math.max(...group.files.map((f: any) => f.size)))}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                            {group.files.map((file: any, fileIndex: number) => (
+                                                <div key={file.key} className={`flex items-center justify-between p-3 rounded-lg ${
+                                                    fileIndex === 0 ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
+                                                }`}>
+                                                    <div className="flex items-center gap-3 flex-1">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedDuplicates.includes(file.key)}
+                                                            onChange={() => toggleDuplicateSelection(file.key)}
+                                                            disabled={fileIndex === 0} // Não permitir selecionar o primeiro arquivo
+                                                            className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-red-500 focus:ring-red-500 disabled:opacity-50"
+                                                        />
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-medium text-white">{file.filename}</span>
+                                                                {fileIndex === 0 && (
+                                                                    <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
+                                                                        Mantido
+                                                                    </span>
+                                                                )}
+                                                                {fileIndex > 0 && (
+                                                                    <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">
+                                                                        Duplicata
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex items-center gap-4 text-sm text-gray-400 mt-1">
+                                                                <span>{formatFileSize(file.size)}</span>
+                                                                <span>{new Date(file.lastModified).toLocaleDateString('pt-BR')}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => window.open(file.url, '_blank')}
+                                                            className="p-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors"
+                                                            title="Download"
+                                                        >
+                                                            <Download className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                        );
+                    } else if (currentView === 'duplicates') {
+                        return (
+                            /* Duplicates View */
+                            <div className="bg-gray-800 rounded-xl overflow-hidden">
+                                <div className="px-6 py-4 bg-gray-700 border-b border-gray-600 flex items-center justify-between">
+                                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                        <Trash2 className="w-5 h-5 text-red-300" />
+                                        Detector de Duplicatas
+                                    </h3>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={detectDuplicates}
+                                            disabled={detectingDuplicates}
+                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors flex items-center gap-2"
+                                        >
+                                            {detectingDuplicates ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <RefreshCw className="w-4 h-4" />
+                                            )}
+                                            {detectingDuplicates ? 'Detectando...' : 'Detectar Duplicatas'}
+                                        </button>
+                                        {selectedDuplicates.length > 0 && (
+                                            <button
+                                                onClick={deleteSelectedDuplicates}
+                                                disabled={deletingDuplicates}
+                                                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors flex items-center gap-2"
+                                            >
+                                                {deletingDuplicates ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <Trash2 className="w-4 h-4" />
+                                                )}
+                                                {deletingDuplicates ? 'Excluindo...' : `Excluir (${selectedDuplicates.length})`}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {duplicateStats && (
+                                    <div className="px-6 py-4 bg-gray-700/50 border-b border-gray-600">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div className="bg-gray-800/50 rounded-lg p-3">
+                                                <div className="text-sm text-gray-400">Total de Arquivos</div>
+                                                <div className="text-xl font-bold text-white">{duplicateStats.totalFiles}</div>
+                                            </div>
+                                            <div className="bg-gray-800/50 rounded-lg p-3">
+                                                <div className="text-sm text-gray-400">Arquivos Únicos</div>
+                                                <div className="text-xl font-bold text-green-400">{duplicateStats.uniqueFiles}</div>
+                                            </div>
+                                            <div className="bg-gray-800/50 rounded-lg p-3">
+                                                <div className="text-sm text-gray-400">Grupos de Duplicatas</div>
+                                                <div className="text-xl font-bold text-yellow-400">{duplicateStats.duplicateGroups}</div>
+                                            </div>
+                                            <div className="bg-gray-800/50 rounded-lg p-3">
+                                                <div className="text-sm text-gray-400">Espaço a Economizar</div>
+                                                <div className="text-xl font-bold text-red-400">{formatFileSize(duplicateStats.sizeSaved)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {detectingDuplicates ? (
+                                    <div className="p-8 text-center">
+                                        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-400" />
+                                        <p className="text-gray-400">Detectando duplicatas...</p>
+                                    </div>
+                                ) : duplicateGroups.length === 0 ? (
+                                    <div className="p-8 text-center">
+                                        <Trash2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                                        <h3 className="text-xl font-semibold text-gray-300 mb-2">
+                                            Nenhuma duplicata encontrada
+                                        </h3>
+                                        <p className="text-gray-500">
+                                            Clique em "Detectar Duplicatas" para analisar os arquivos
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-gray-700">
+                                        {duplicateGroups.map((group, groupIndex) => (
+                                            <div key={groupIndex} className="p-4">
+                                                <div className="mb-3">
+                                                    <h4 className="font-semibold text-white mb-2">
+                                                        Grupo {groupIndex + 1} - {group.count} arquivos
+                                                    </h4>
+                                                    <div className="flex items-center gap-4 text-sm text-gray-400">
+                                                        <span>Total: {formatFileSize(group.totalSize)}</span>
+                                                        <span>Pode economizar: {formatFileSize(group.totalSize - Math.max(...group.files.map((f: any) => f.size)))}</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="space-y-2">
+                                                    {group.files.map((file: any, fileIndex: number) => (
+                                                        <div key={file.key} className={`flex items-center justify-between p-3 rounded-lg ${
+                                                            fileIndex === 0 ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
+                                                        }`}>
+                                                            <div className="flex items-center gap-3 flex-1">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedDuplicates.includes(file.key)}
+                                                                    onChange={() => toggleDuplicateSelection(file.key)}
+                                                                    disabled={fileIndex === 0} // Não permitir selecionar o primeiro arquivo
+                                                                    className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-red-500 focus:ring-red-500 disabled:opacity-50"
+                                                                />
+                                                                <div className="flex-1">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="font-medium text-white">{file.filename}</span>
+                                                                        {fileIndex === 0 && (
+                                                                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
+                                                                                Mantido
+                                                                            </span>
+                                                                        )}
+                                                                        {fileIndex > 0 && (
+                                                                            <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">
+                                                                                Duplicata
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4 text-sm text-gray-400 mt-1">
+                                                                        <span>{formatFileSize(file.size)}</span>
+                                                                        <span>{new Date(file.lastModified).toLocaleDateString('pt-BR')}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={() => window.open(file.url, '_blank')}
+                                                                    className="p-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors"
+                                                                    title="Download"
+                                                                >
+                                                                    <Download className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
+                    return null;
+                })()}
             </div>
         </div>
     );

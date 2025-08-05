@@ -526,11 +526,11 @@ export default function ContaboSmartAdmin() {
                                 className="px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                             >
                                 <option value="all">Todos os estilos</option>
-                                {detectionResult?.statistics.byStyle.map(style => (
+                                {detectionResult?.statistics?.byStyle?.map(style => (
                                     <option key={style.style} value={style.style}>
                                         {style.style} ({style.count})
                                     </option>
-                                ))}
+                                )) || []}
                             </select>
 
                             {/* Filtro por pool */}
@@ -540,11 +540,11 @@ export default function ContaboSmartAdmin() {
                                 className="px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                             >
                                 <option value="all">Todos os pools</option>
-                                {detectionResult?.statistics.byPool.map(pool => (
+                                {detectionResult?.statistics?.byPool?.map(pool => (
                                     <option key={pool.pool} value={pool.pool}>
                                         {pool.pool} ({pool.count})
                                     </option>
-                                ))}
+                                )) || []}
                             </select>
 
                             {/* Ordenação */}
@@ -793,11 +793,11 @@ export default function ContaboSmartAdmin() {
                                             </div>
                                         </div>
 
-                                        {importResult.statistics.byStyle.length > 0 && (
+                                        {importResult.statistics?.byStyle?.length > 0 && (
                                             <div>
                                                 <h4 className="font-semibold mb-3">Por Estilo</h4>
                                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                                    {importResult.statistics.byStyle.map((style, index) => (
+                                                    {importResult.statistics?.byStyle?.map((style, index) => (
                                                         <div key={index} className="bg-gray-800/50 rounded-lg p-3">
                                                             <span className="text-sm text-gray-400">{style.style}</span>
                                                             <p className="font-semibold">{style._count}</p>

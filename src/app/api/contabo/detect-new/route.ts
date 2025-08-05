@@ -61,7 +61,7 @@ async function detectNewFiles(request: NextRequest) {
         // Análise prévia dos arquivos novos
         const previewTracks = newFiles.map(file => {
             console.log(`📝 Analisando arquivo: ${file.filename}`);
-            
+
             const nameWithoutExt = file.filename.replace(/\.(mp3|wav|flac|m4a|aac|ogg)$/i, '');
 
             // Extrair variação (CLEAN, DIRTY, EXPLICIT, etc) ao final
@@ -110,6 +110,19 @@ async function detectNewFiles(request: NextRequest) {
             return result;
         });
 
+        // Calcular estatísticas
+        const styleStats = previewTracks.reduce((acc, track) => {
+            const style = track.preview.style || 'Desconhecido';
+            acc[style] = (acc[style] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const poolStats = previewTracks.reduce((acc, track) => {
+            const pool = track.preview.pool || 'Desconhecido';
+            acc[pool] = (acc[pool] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
         const result = {
             success: true,
             totalFiles: audioFiles.length,
@@ -117,6 +130,11 @@ async function detectNewFiles(request: NextRequest) {
             newFiles: newFiles.length,
             newTracks: previewTracks,
             lastUpdate: new Date().toISOString(),
+            statistics: {
+                byStyle: Object.entries(styleStats).map(([style, count]) => ({ style, count })),
+                byPool: Object.entries(poolStats).map(([pool, count]) => ({ pool, count })),
+                averageConfidence: 0.8 // Valor padrão
+            },
             debug: {
                 audioFilesCount: audioFiles.length,
                 existingTracksCount: existingTracks.length,
