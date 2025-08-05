@@ -23,6 +23,7 @@
     "@prisma/client": "^6.13.0",
     "@stripe/stripe-js": "^7.5.0",
     "@types/bcryptjs": "^2.4.6",
+    "autoprefixer": "^10.4.21",
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
@@ -42,6 +43,7 @@
     "nodemailer": "^6.9.8",
     "oci-sdk": "^2.112.2",
     "pg": "^8.16.3",
+    "postcss": "^8.5.6",
     "postgres": "^3.4.7",
     "puppeteer": "^24.14.0",
     "react": "^18.2.0",
@@ -51,6 +53,7 @@
     "sonner": "^2.0.6",
     "stripe": "^18.3.0",
     "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^3.4.17",
     "tsx": "^4.20.3",
     "uuid": "^11.1.0",
     "wavesurfer.js": "^7.10.0"
@@ -58,7 +61,6 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@netlify/plugin-nextjs": "^5.12.0",
-    "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.17",
@@ -70,7 +72,6 @@
     "eslint-config-next": "15.4.1",
     "next-sitemap": "^4.2.3",
     "prisma": "^6.13.0",
-    "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5"
   }

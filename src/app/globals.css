@@ -16,7 +16,9 @@
   font-family: 'Roboto Mono', 'JetBrains Mono', 'Courier New', monospace !important;
 }
 
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
