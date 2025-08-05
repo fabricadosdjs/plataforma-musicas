@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
                 'Referer': 'https://catbox.moe/',
                 'Accept': 'audio/mpeg, application/octet-stream, */*',
             },
+            // Garantir que arquivos pequenos sejam baixados completamente
+            cache: 'no-cache',
         });
 
         if (!response.ok) {
@@ -51,12 +53,16 @@ export async function GET(request: NextRequest) {
         const fileBuffer = await response.arrayBuffer();
         const contentType = response.headers.get('content-type') || 'application/octet-stream';
 
+        // Log para debug
+        console.log(`📥 Download proxy: ${filename}, size: ${fileBuffer.byteLength} bytes`);
+
         // Retornar o arquivo com headers de download
         return new NextResponse(fileBuffer, {
             headers: {
                 'Content-Type': contentType,
                 'Content-Disposition': `attachment; filename="${filename || 'download.mp3'}"`,
                 'Content-Length': fileBuffer.byteLength.toString(),
+                'Cache-Control': 'no-cache',
             },
         });
 

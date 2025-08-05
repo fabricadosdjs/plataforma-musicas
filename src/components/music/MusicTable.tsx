@@ -242,8 +242,10 @@ const MusicTable = ({ tracks, onDownload, isDownloading }: MusicTableProps) => {
     const downloadTrack = async (track: Track) => {
         if (track.downloadUrl) {
             try {
-                // Fetch the file as blob to force download
-                const response = await fetch(track.downloadUrl);
+                // Usar o proxy de download para garantir que o arquivo seja baixado corretamente
+                const proxyUrl = `/api/download-proxy?url=${encodeURIComponent(track.downloadUrl)}&filename=${encodeURIComponent(`${track.artist} - ${track.songName}.mp3`)}`;
+                
+                const response = await fetch(proxyUrl);
                 if (!response.ok) {
                     throw new Error('Failed to fetch file');
                 }
