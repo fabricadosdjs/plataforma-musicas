@@ -6,6 +6,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    optimizePackageImports: ['@tailwindcss/postcss'],
+  },
   images: {
     domains: [
       'placehold.co',
