@@ -89,10 +89,8 @@ export default function DashboardPage() {
         }
     };
 
-    // Verificar se o usuário é admin
-    const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br' || 
-                   session?.user?.isAdmin === true ||
-                   session?.user?.benefits?.adminAccess === true;
+    // Verificar se o usuário é admin - apenas edersonleonardo@nexorrecords.com.br
+    const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
 
     useEffect(() => {
         if (isAdmin) {
@@ -138,35 +136,7 @@ export default function DashboardPage() {
                     <h1 className="text-2xl font-bold mb-4">Acesso Negado</h1>
                     <p className="text-gray-400">Você não tem permissão para acessar esta página.</p>
                     <p className="text-gray-500 mt-2">Email: {session?.user?.email}</p>
-                    <p className="text-gray-500">isAdmin: {session?.user?.isAdmin ? 'true' : 'false'}</p>
-                    <p className="text-gray-500">adminAccess: {session?.user?.benefits?.adminAccess ? 'true' : 'false'}</p>
-                    <p className="text-gray-500">Tipo de usuário: {session?.user?.benefits?.plan || 'N/A'}</p>
-                    
-                    {/* Debug: Verificar status de admin */}
-                    <div className="mt-6 p-4 bg-gray-800 rounded-lg">
-                        <h3 className="text-lg font-semibold mb-2">Debug - Verificar Status de Admin</h3>
-                        <p className="text-sm text-gray-400 mb-2">
-                            Se você é o administrador, pode verificar o status de admin do seu usuário:
-                        </p>
-                        <button
-                            onClick={async () => {
-                                try {
-                                    const response = await fetch(`/api/admin/check-admin?email=${session?.user?.email}`);
-                                    const data = await response.json();
-                                    if (data.success) {
-                                        alert(`Status atual: isAdmin = ${data.user.isAdmin}`);
-                                    } else {
-                                        alert(`Erro: ${data.error}`);
-                                    }
-                                } catch (error) {
-                                    alert('Erro ao verificar status');
-                                }
-                            }}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                        >
-                            Verificar Meu Status
-                        </button>
-                    </div>
+                    <p className="text-gray-500">Apenas edersonleonardo@nexorrecords.com.br tem acesso admin.</p>
                 </div>
             </div>
         );

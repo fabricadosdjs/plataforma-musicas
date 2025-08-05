@@ -7,10 +7,8 @@ export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
         
-        // Verificar se o usuário atual é admin
-        const currentUserIsAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br' || 
-                                 session?.user?.isAdmin === true ||
-                                 session?.user?.benefits?.adminAccess === true;
+        // Verificar se o usuário atual é admin - apenas edersonleonardo@nexorrecords.com.br
+        const currentUserIsAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
 
         if (!currentUserIsAdmin) {
             return NextResponse.json({
@@ -77,10 +75,8 @@ export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
         
-        // Verificar se o usuário atual é admin
-        const currentUserIsAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br' || 
-                                 session?.user?.isAdmin === true ||
-                                 session?.user?.benefits?.adminAccess === true;
+        // Verificar se o usuário atual é admin - apenas edersonleonardo@nexorrecords.com.br
+        const currentUserIsAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
 
         if (!currentUserIsAdmin) {
             return NextResponse.json({
