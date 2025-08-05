@@ -45,6 +45,24 @@ function NewPageContent() {
     setDownloading(false);
   };
 
+  const handleTracksUpdate = (updatedTracks: Track[]) => {
+    // Atualizar as tracks após exclusão
+    setTracks(updatedTracks);
+    
+    // Reorganizar as tracks por data
+    const newTracksByDate: { [date: string]: Track[] } = {};
+    updatedTracks.forEach(track => {
+      const date = track.releaseDate.split('T')[0];
+      if (!newTracksByDate[date]) {
+        newTracksByDate[date] = [];
+      }
+      newTracksByDate[date].push(track);
+    });
+    
+    setTracksByDate(newTracksByDate);
+    setSortedDates(Object.keys(newTracksByDate).sort((a, b) => b.localeCompare(a)));
+  };
+
   const [searchLoading, setSearchLoading] = useState(false);
   const [genres, setGenres] = useState<string[]>([]);
   const [artists, setArtists] = useState<string[]>([]);
@@ -529,7 +547,7 @@ function NewPageContent() {
                       </div>
                     </div>
                     <div className="glass-effect rounded-3xl overflow-hidden shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
-                      <MusicTable tracks={tracksByDate[date] || []} onDownload={handleDownloadTracks} isDownloading={downloading} />
+                      <MusicTable tracks={tracksByDate[date] || []} onDownload={handleTracksUpdate} isDownloading={downloading} />
                     </div>
                   </div>
                 ))}

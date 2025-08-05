@@ -89,16 +89,19 @@ export default function DashboardPage() {
         }
     };
 
+    // Verificar se o usuário é admin
+    const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
+
     useEffect(() => {
-        if (session?.user?.isAdmin) {
+        if (isAdmin) {
             fetchStats();
             // Atualizar a cada 60 segundos (reduzido para melhor performance)
             const interval = setInterval(fetchStats, 60000);
             return () => clearInterval(interval);
-        } else if (isLoaded && !session?.user?.isAdmin) {
+        } else if (isLoaded && !isAdmin) {
             setLoading(false);
         }
-    }, [session, isLoaded]);
+    }, [session, isLoaded, isAdmin]);
 
     const formatBytes = (bytes: number) => {
         if (bytes === 0) return '0 Bytes';
@@ -126,12 +129,13 @@ export default function DashboardPage() {
         );
     }
 
-    if (!session?.user?.isAdmin) {
+    if (!isAdmin) {
         return (
             <div className="min-h-screen bg-[#202124] text-white flex items-center justify-center">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold mb-4">Acesso Negado</h1>
                     <p className="text-gray-400">Você não tem permissão para acessar esta página.</p>
+                    <p className="text-gray-500 mt-2">Email: {session?.user?.email}</p>
                 </div>
             </div>
         );
