@@ -57,12 +57,12 @@ const Top100Trends = ({ tracks }: Top100TrendsProps) => {
                     </div>
                     <div className="space-y-2">
                         {risingTracks.map((track) => (
-                            <div key={track.id} className="flex items-center justify-between p-2 bg-green-900/30 rounded-lg">
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-sm font-bold text-white">#{track.position}</span>
-                                    <span className="text-xs text-gray-300 truncate">{track.songName}</span>
+                            <div key={track.id} className="flex items-center p-2 bg-green-900/30 rounded-lg">
+                                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                    <span className="text-sm font-bold text-white flex-shrink-0">#{track.position}</span>
+                                    <span className="text-xs text-gray-300 truncate flex-1">{track.songName}</span>
                                 </div>
-                                <div className="flex items-center space-x-1">
+                                <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                     {getChangeIcon(track.change)}
                                     <span className="text-xs text-green-500 font-bold">
                                         +{track.changeAmount || 1}
@@ -84,12 +84,12 @@ const Top100Trends = ({ tracks }: Top100TrendsProps) => {
                     </div>
                     <div className="space-y-2">
                         {fallingTracks.map((track) => (
-                            <div key={track.id} className="flex items-center justify-between p-2 bg-red-900/30 rounded-lg">
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-sm font-bold text-white">#{track.position}</span>
-                                    <span className="text-xs text-gray-300 truncate">{track.songName}</span>
+                            <div key={track.id} className="flex items-center p-2 bg-red-900/30 rounded-lg">
+                                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                    <span className="text-sm font-bold text-white flex-shrink-0">#{track.position}</span>
+                                    <span className="text-xs text-gray-300 truncate flex-1">{track.songName}</span>
                                 </div>
-                                <div className="flex items-center space-x-1">
+                                <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                     {getChangeIcon(track.change)}
                                     <span className="text-xs text-red-500 font-bold">
                                         -{track.changeAmount || 1}
@@ -111,12 +111,12 @@ const Top100Trends = ({ tracks }: Top100TrendsProps) => {
                     </div>
                     <div className="space-y-2">
                         {newTracks.map((track) => (
-                            <div key={track.id} className="flex items-center justify-between p-2 bg-yellow-900/30 rounded-lg">
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-sm font-bold text-white">#{track.position}</span>
-                                    <span className="text-xs text-gray-300 truncate">{track.songName}</span>
+                            <div key={track.id} className="flex items-center p-2 bg-yellow-900/30 rounded-lg">
+                                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                    <span className="text-sm font-bold text-white flex-shrink-0">#{track.position}</span>
+                                    <span className="text-xs text-gray-300 truncate flex-1">{track.songName}</span>
                                 </div>
-                                <div className="flex items-center space-x-1">
+                                <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                     {getChangeIcon(track.change)}
                                     <span className="text-xs text-yellow-500 font-bold">NEW</span>
                                 </div>
@@ -136,12 +136,12 @@ const Top100Trends = ({ tracks }: Top100TrendsProps) => {
                     </div>
                     <div className="space-y-2">
                         {hotTracks.map((track) => (
-                            <div key={track.id} className="flex items-center justify-between p-2 bg-orange-900/30 rounded-lg">
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-sm font-bold text-white">#{track.position}</span>
-                                    <span className="text-xs text-gray-300 truncate">{track.songName}</span>
+                            <div key={track.id} className="flex items-center p-2 bg-orange-900/30 rounded-lg">
+                                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                    <span className="text-sm font-bold text-white flex-shrink-0">#{track.position}</span>
+                                    <span className="text-xs text-gray-300 truncate flex-1">{track.songName}</span>
                                 </div>
-                                <div className="flex items-center space-x-1">
+                                <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                     {getTrendIcon(track.trend)}
                                     <span className="text-xs text-orange-500 font-bold">HOT</span>
                                 </div>
