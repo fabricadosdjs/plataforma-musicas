@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { Play, Pause, Download, Heart, AlertTriangle, Copyright, Music, Trash2, Loader2, DownloadCloud, Sparkles, Zap, Star, Shield, Eye, Clock, TrendingUp, Volume2, FileAudio, Headphones, Mic, Disc3, Radio, Music2, Music3, Music4, Plus, Minus, ShoppingCart, Package } from 'lucide-react';
+import { Play, Pause, Download, Heart, AlertTriangle, Copyright, Music, Trash2, Loader2, DownloadCloud, Sparkles, Zap, Star, Shield, Eye, Clock, TrendingUp, Volume2, FileAudio, Headphones, Mic, Disc3, Radio, Music2, Music3, Music4, Plus, Minus, ShoppingCart, Package, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { Track } from '@/types/track';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
@@ -114,7 +114,7 @@ interface TrackUIProps {
     isLiking: boolean;
     isDeleting: boolean;
     isAdmin: boolean;
-    canDownloadResult: { can: boolean; reason: string; timeLeft: string };
+    canDownloadResult: { can: boolean; reason: string; timeLeft: string; showUpgrade?: boolean };
     isInQueue: boolean;
     onPlayPause: (track: Track) => void;
     onDownload: (track: Track) => void;
@@ -126,74 +126,172 @@ interface TrackUIProps {
     onRemoveFromQueue: (track: Track) => void;
 }
 
-const TrackRow = React.memo(({
-    track, isCurrent, isPlaying, isLiked, isLiking, isDeleting, isAdmin, canDownloadResult, isInQueue,
-    onPlayPause, onDownload, onLike, onReport, onCopyright, onDelete, onAddToQueue, onRemoveFromQueue
-}: TrackUIProps) => {
-    const { userData } = useUserData();
-    const hasDownloaded = userData?.downloadedTrackIds?.includes(track.id) || false;
+const TrackRow = ({ track, isCurrent, isPlaying, isLiked, isLiking, isDeleting, isAdmin, canDownloadResult, isInQueue, onPlayPause, onDownload, onLike, onReport, onCopyright, onDelete, onAddToQueue, onRemoveFromQueue }: TrackUIProps) => {
+    const { data: session } = useSession();
+    const { showToast } = useToastContext();
+
+    const handleDownloadClick = () => {
+        if (!session?.user) {
+            showToast('👤 Faça login para fazer downloads', 'warning');
+            return;
+        }
+
+        if (!canDownloadResult.can) {
+            if (canDownloadResult.showUpgrade) {
+                showToast('🚀 Assine um plano VIP para downloads ilimitados!', 'warning');
+            } else {
+                showToast(canDownloadResult.reason, 'warning');
+            }
+            return;
+        }
+
+        onDownload(track);
+    };
+
+    const handleLikeClick = () => {
+        if (!session?.user) {
+            showToast('👤 Faça login para curtir músicas', 'warning');
+            return;
+        }
+        onLike(track.id);
+    };
+
+    const handleReportClick = () => {
+        if (!session?.user) {
+            showToast('👤 Faça login para reportar', 'warning');
+            return;
+        }
+        onReport(track);
+    };
+
+    const handleCopyrightClick = () => {
+        if (!session?.user) {
+            showToast('👤 Faça login para reportar copyright', 'warning');
+            return;
+        }
+        onCopyright(track);
+    };
+
+    const handleDeleteClick = () => {
+        if (!session?.user) {
+            showToast('👤 Faça login para deletar', 'warning');
+            return;
+        }
+        onDelete(track);
+    };
 
     return (
-        <tr className={clsx("group hover:bg-zinc-800/50 transition-all duration-200", { 'bg-blue-900/20': isCurrent })}>
-            <td className="px-4 py-3 align-middle w-[35%]">
+        <tr className={`hover:bg-zinc-800/50 transition-all duration-300 ${isCurrent ? 'bg-purple-600/20 border-l-4 border-purple-500' : ''}`}>
+            <td className="px-4 py-3">
                 <div className="flex items-center gap-4">
-                    <div className="relative flex-shrink-0 w-12 h-12 group-hover:scale-105 transition-transform duration-200">
-                        <img src={track.imageUrl || "https://i.ibb.co/FL1rxTtx/20250526-1938-Sound-Cloud-Cover-Design-remix-01jw7bwxq6eqj8sqztah5n296g.png"} alt={`Capa de ${track.songName}`} className="w-12 h-12 rounded-lg object-cover border border-zinc-700 shadow-md" />
-                        <button onClick={() => onPlayPause(track)} className={clsx("absolute inset-0 flex items-center justify-center rounded-lg transition-all duration-300 backdrop-blur-sm text-white bg-black/60 opacity-0 group-hover:opacity-100 hover:bg-black/80", { 'opacity-100': isCurrent })} title={isPlaying && isCurrent ? "Pausar" : "Tocar"}>
-                            {isPlaying && isCurrent ? <Pause size={24} className="text-blue-400" /> : <Play size={24} className="ml-1 text-white" />}
-                        </button>
+                    <div className="relative">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-200" onClick={() => onPlayPause(track)}>
+                            {isPlaying ? (
+                                <Pause className="h-6 w-6 text-white" />
+                            ) : (
+                                <Play className="h-6 w-6 text-white" />
+                            )}
+                        </div>
+                        {isCurrent && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full animate-pulse"></div>
+                        )}
                     </div>
-                    <div className="flex flex-col min-w-0">
-                        <span className="font-semibold text-gray-100 truncate" title={track.songName}>{track.songName}</span>
-                        <span className="text-sm text-gray-400 truncate" title={track.artist}>{track.artist}</span>
+                    <div className="flex-1 min-w-0">
+                        <div className="text-white font-medium truncate">{track.songName}</div>
+                        <div className="text-gray-400 text-sm truncate">{track.artist}</div>
                     </div>
                 </div>
             </td>
-            <td className="px-4 py-3 align-middle w-[15%]"><span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white tracking-wide shadow-sm">{track.style}</span></td>
-            <td className="px-4 py-3 align-middle w-[15%]"><span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-600 to-green-600 text-white tracking-wide shadow-sm">{track.pool || 'Nexor Records'}</span></td>
-            <td className="px-4 py-3 align-middle w-[35%]">
+            <td className="px-4 py-3">
+                <span className="px-3 py-1 bg-gradient-to-r from-purple-600/20 to-blue-600/20 text-purple-300 rounded-full text-sm font-medium border border-purple-500/30">
+                    {track.style}
+                </span>
+            </td>
+            <td className="px-4 py-3">
+                <span className="text-gray-300 text-sm">{track.pool || 'Nexor Records'}</span>
+            </td>
+            <td className="px-4 py-3">
                 <div className="flex items-center justify-end gap-2">
-                    {/* Botão Adicionar à Fila */}
+                    {/* Botão de Adicionar à Fila */}
                     <button
                         onClick={() => isInQueue ? onRemoveFromQueue(track) : onAddToQueue(track)}
-                        title={isInQueue ? "Remover da fila" : "Adicionar à fila"}
-                        className={clsx("flex items-center gap-2 p-2 rounded-lg font-bold transition-all duration-200 shadow-md hover:shadow-lg", {
-                            "bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white": isInQueue,
-                            "bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white": !isInQueue
-                        })}
+                        className={`p-2 rounded-lg transition-all duration-300 ${isInQueue
+                                ? 'bg-orange-600/20 text-orange-400 border border-orange-500/30 hover:bg-orange-600/30'
+                                : 'bg-green-600/20 text-green-400 border border-green-500/30 hover:bg-green-600/30'
+                            }`}
+                        title={isInQueue ? 'Remover da fila' : 'Adicionar à fila'}
                     >
-                        {isInQueue ? <Minus size={16} /> : <Plus size={16} />}
-                        <span className='text-xs'>
-                            {isInQueue ? 'REMOVER' : 'ADICIONAR'}
-                        </span>
+                        {isInQueue ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                     </button>
 
+                    {/* Botão de Download */}
                     <button
-                        onClick={() => onDownload(track)}
+                        onClick={handleDownloadClick}
                         disabled={!canDownloadResult.can}
-                        title={hasDownloaded ? "Você já baixou esta música" : canDownloadResult.reason}
-                        className={clsx("flex items-center gap-2 p-2 rounded-lg font-bold transition-all duration-200 shadow-md hover:shadow-lg", {
-                            "bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white": hasDownloaded && canDownloadResult.can,
-                            "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white": !hasDownloaded && canDownloadResult.can,
-                            "bg-zinc-700 text-gray-400 cursor-not-allowed opacity-60": !canDownloadResult.can
-                        })}
+                        className={`p-2 rounded-lg transition-all duration-300 ${canDownloadResult.can
+                                ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30'
+                                : 'bg-gray-600/20 text-gray-400 border border-gray-500/30 cursor-not-allowed'
+                            }`}
+                        title={canDownloadResult.reason}
                     >
-                        <DownloadCloud size={16} />
-                        <span className='text-xs'>
-                            {hasDownloaded ? 'BAIXADO' : (canDownloadResult.timeLeft || 'DOWNLOAD')}
-                        </span>
+                        <Download className="h-4 w-4" />
                     </button>
-                    <button onClick={() => onLike(track.id)} disabled={isLiking} title={isLiked ? "Descurtir" : "Curtir"} className={clsx("p-2 rounded-lg transition-all duration-200 hover:shadow-lg", { 'text-pink-500 fill-pink-500 bg-pink-500/10 hover:bg-pink-500/20': isLiked, 'text-gray-400 hover:text-pink-400 hover:bg-pink-500/10': !isLiked })}>
-                        {isLiking ? <Loader2 size={16} className="animate-spin" /> : <Heart size={16} />}
+
+                    {/* Botão de Like */}
+                    <button
+                        onClick={handleLikeClick}
+                        disabled={isLiking}
+                        className={`p-2 rounded-lg transition-all duration-300 ${isLiked
+                                ? 'bg-red-600/20 text-red-400 border border-red-500/30'
+                                : 'bg-gray-600/20 text-gray-400 border border-gray-500/30 hover:bg-red-600/20 hover:text-red-400 hover:border-red-500/30'
+                            }`}
+                        title={isLiked ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                    >
+                        {isLiking ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+                        )}
                     </button>
-                    <button onClick={() => onReport(track)} title="Reportar Problema" className="p-2 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 transition-all duration-200 rounded-lg"><AlertTriangle size={16} /></button>
-                    <button onClick={() => onCopyright(track)} title="Reportar Copyright" className="p-2 text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-200 rounded-lg"><Shield size={16} /></button>
-                    {isAdmin && <button onClick={() => onDelete(track)} disabled={isDeleting} title="Excluir Música" className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 rounded-lg">{isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}</button>}
+
+                    {/* Botão de Report */}
+                    <button
+                        onClick={handleReportClick}
+                        className="p-2 bg-gray-600/20 text-gray-400 border border-gray-500/30 rounded-lg hover:bg-gray-600/30 transition-all duration-300"
+                        title="Reportar problema"
+                    >
+                        <AlertTriangle className="h-4 w-4" />
+                    </button>
+
+                    {/* Botão de Copyright */}
+                    <button
+                        onClick={handleCopyrightClick}
+                        className="p-2 bg-gray-600/20 text-gray-400 border border-gray-500/30 rounded-lg hover:bg-gray-600/30 transition-all duration-300"
+                        title="Reportar copyright"
+                    >
+                        <Copyright className="h-4 w-4" />
+                    </button>
+
+                    {/* Botão de Delete (apenas para admin) */}
+                    {isAdmin && (
+                        <button
+                            onClick={handleDeleteClick}
+                            disabled={isDeleting}
+                            className="p-2 bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 transition-all duration-300 disabled:opacity-50"
+                            title="Deletar música"
+                        >
+                            {isDeleting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Trash2 className="h-4 w-4" />
+                            )}
+                        </button>
+                    )}
                 </div>
             </td>
         </tr>
     );
-});
+};
 TrackRow.displayName = 'TrackRow';
 
 const TrackCard = React.memo(({
@@ -252,12 +350,12 @@ const TrackCard = React.memo(({
                         <span className='text-xs'>
                             {hasDownloaded ? 'BAIXADO' : (canDownloadResult.timeLeft || 'DOWNLOAD')}
                         </span>
-                    </button>
+                </button>
                 </div>
                 <div className="flex items-center justify-between gap-2 mt-3">
                     <button onClick={() => onLike(track.id)} disabled={isLiking} title={isLiked ? "Descurtir" : "Curtir"} className={clsx("p-2 rounded-lg transition-all duration-200 hover:shadow-lg", { 'text-pink-500 fill-pink-500 bg-pink-500/10 hover:bg-pink-500/20': isLiked, 'text-gray-400 hover:text-pink-400 hover:bg-pink-500/10': !isLiked })}>
                         {isLiking ? <Loader2 size={16} className="animate-spin" /> : <Heart size={16} />}
-                    </button>
+                </button>
                     <button onClick={() => onReport(track)} title="Reportar Problema" className="p-2 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 transition-all duration-200 rounded-lg"><AlertTriangle size={16} /></button>
                     <button onClick={() => onCopyright(track)} title="Reportar Copyright" className="p-2 text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-200 rounded-lg"><Shield size={16} /></button>
                     {isAdmin && <button onClick={() => onDelete(track)} disabled={isDeleting} title="Excluir Música" className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 rounded-lg">{isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}</button>}
@@ -287,6 +385,29 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
 
     // Estados de UI
     const [downloadCooldowns, setDownloadCooldowns] = useState<{ [key: number]: number }>({});
+
+    // Persistência da fila de downloads
+    useEffect(() => {
+        const savedQueue = localStorage.getItem('downloadQueue');
+        if (savedQueue) {
+            try {
+                const parsedQueue = JSON.parse(savedQueue);
+                setDownloadQueue(parsedQueue);
+            } catch (error) {
+                console.error('Erro ao carregar fila de downloads:', error);
+                localStorage.removeItem('downloadQueue');
+            }
+        }
+    }, []);
+
+    // Salvar fila no localStorage sempre que mudar
+    useEffect(() => {
+        if (downloadQueue.length > 0) {
+            localStorage.setItem('downloadQueue', JSON.stringify(downloadQueue));
+        } else {
+            localStorage.removeItem('downloadQueue');
+        }
+    }, [downloadQueue]);
 
     // Constantes e Helpers
     const isAdmin = useMemo(() => session?.user?.email === 'edersonleonardo@nexorrecords.com.br', [session?.user?.email]);
@@ -451,28 +572,62 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
         return `${h}:${m}:${s}`;
     };
 
+    // Lógica de download otimizada
     const canDownload = useMemo(() => {
         return (trackId: number) => {
             // Para usuários VIP, sempre permitir download (apenas verificar cooldown)
             if (isVip) {
-                const cooldown = downloadCooldowns[trackId];
-                if (cooldown > 0) {
-                    const timeLeftFormatted = formatTimeLeft(cooldown);
-                    return { can: false, reason: `Aguarde ${timeLeftFormatted} para baixar novamente.`, timeLeft: timeLeftFormatted };
-                }
-                return { can: true, reason: 'Clique para baixar a música.', timeLeft: '' };
+        const cooldown = downloadCooldowns[trackId];
+        if (cooldown > 0) {
+            const timeLeftFormatted = formatTimeLeft(cooldown);
+            return { can: false, reason: `Aguarde ${timeLeftFormatted} para baixar novamente.`, timeLeft: timeLeftFormatted };
+        }
+        return { can: true, reason: 'Clique para baixar a música.', timeLeft: '' };
             }
 
             // Para usuários não-VIP
-            if (typeof downloadsLeft === 'number' && downloadsLeft <= 0) return { can: false, reason: 'Limite diário de downloads atingido.', timeLeft: '' };
+            if (typeof downloadsLeft === 'number' && downloadsLeft <= 0) {
+                return {
+                    can: false,
+                    reason: 'Limite diário de downloads atingido. Assine um plano VIP para downloads ilimitados!',
+                    timeLeft: '',
+                    showUpgrade: true
+                };
+            }
             const cooldown = downloadCooldowns[trackId];
             if (cooldown > 0) {
                 const timeLeftFormatted = formatTimeLeft(cooldown);
                 return { can: false, reason: `Aguarde ${timeLeftFormatted} para baixar novamente.`, timeLeft: timeLeftFormatted };
             }
-            return { can: true, reason: 'Clique para baixar a música.', timeLeft: '' };
+            return {
+                can: true,
+                reason: `Clique para baixar a música. (${downloadsLeft} restantes hoje)`,
+                timeLeft: '',
+                showUpgrade: false
+            };
         };
     }, [isVip, downloadsLeft, downloadCooldowns]);
+
+    // Atualizar a interface TrackUIProps para incluir showUpgrade
+    interface TrackUIProps {
+        track: Track;
+        isCurrent: boolean;
+        isPlaying: boolean;
+        isLiked: boolean;
+        isLiking: boolean;
+        isDeleting: boolean;
+        isAdmin: boolean;
+        canDownloadResult: { can: boolean; reason: string; timeLeft: string; showUpgrade?: boolean };
+        isInQueue: boolean;
+        onPlayPause: (track: Track) => void;
+        onDownload: (track: Track) => void;
+        onLike: (trackId: number) => void;
+        onReport: (track: Track) => void;
+        onCopyright: (track: Track) => void;
+        onDelete: (track: Track) => void;
+        onAddToQueue: (track: Track) => void;
+        onRemoveFromQueue: (track: Track) => void;
+    }
 
     // Handlers de Ações
     const handlePlayPauseClick = async (track: Track) => {
@@ -629,7 +784,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
     // --- RENDERIZAÇÃO PRINCIPAL ---
     return (
         <div className="relative w-full h-full text-sm text-gray-200 font-sans bg-[#1A1B1C]">
-
+            
             {/* NOVO: Bloco de estilo para a barra de rolagem */}
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar {
@@ -653,62 +808,102 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
                     scrollbar-color: #4b5563 #1f2937;
                 }
             `}</style>
-
-            {/* Fila de Downloads */}
+            
+            {/* Download Queue Section */}
             {downloadQueue.length > 0 && (
-                <div className="w-full mb-4 p-4 rounded-xl bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500/30 shadow-lg">
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-xl backdrop-blur-sm border border-blue-500/30">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                            <ShoppingCart className="text-purple-400" size={24} />
-                            <div>
-                                <h3 className="text-white font-bold text-lg">Fila de Downloads</h3>
-                                <p className="text-gray-300 text-sm">{downloadQueue.length} música{downloadQueue.length !== 1 ? 's' : ''} na fila</p>
-                            </div>
-                        </div>
                         <div className="flex items-center gap-2">
+                            <ShoppingCart className="h-5 w-5 text-blue-400" />
+                            <span className="text-white font-semibold">Fila de Downloads ({downloadQueue.length}/20)</span>
+                        </div>
+                        <div className="flex gap-2">
                             <button
                                 onClick={handleDownloadQueue}
                                 disabled={isDownloadingQueue}
-                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-green-500/20 disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all duration-300 disabled:opacity-50"
                             >
                                 {isDownloadingQueue ? (
-                                    <>
-                                        <Loader2 size={16} className="animate-spin" />
-                                        Baixando...
-                                    </>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                    <>
-                                        <Package size={16} />
-                                        Baixar ZIP ({downloadQueue.length})
-                                    </>
+                                    <Package className="h-4 w-4" />
                                 )}
+                                Baixar ZIP
                             </button>
                             <button
                                 onClick={() => setDownloadQueue([])}
-                                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-all duration-200"
+                                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-all duration-300"
                             >
                                 Limpar
                             </button>
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {downloadQueue.map((track, index) => (
-                            <div key={track.id} className="flex items-center justify-between p-2 bg-black/20 rounded-lg">
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                    <span className="text-purple-400 font-bold text-sm">{index + 1}</span>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {downloadQueue.map((track) => (
+                            <div key={track.id} className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                        <Music className="h-4 w-4 text-white" />
+                                    </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-white text-sm truncate">{track.songName}</p>
-                                        <p className="text-gray-400 text-xs truncate">{track.artist}</p>
+                                        <div className="text-white font-medium truncate">{track.songName}</div>
+                                        <div className="text-gray-400 text-sm truncate">{track.artist}</div>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => handleRemoveFromQueue(track)}
-                                    className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                                    className="p-1 text-red-400 hover:text-red-300 transition-colors"
                                 >
-                                    <Minus size={14} />
+                                    <Minus className="h-4 w-4" />
                                 </button>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Informação para usuários não-VIP */}
+            {!isVip && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-orange-600/20 to-red-600/20 rounded-xl backdrop-blur-sm border border-orange-500/30">
+                    <div className="flex items-start gap-3">
+                        <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg">
+                            <Crown className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-white font-semibold mb-2">🚀 Upgrade para VIP e Baixe Ilimitado!</h3>
+                            <p className="text-gray-300 text-sm mb-3">
+                                Você tem <span className="font-bold text-orange-400">{downloadsLeft}</span> downloads restantes hoje.
+                                Assine um plano VIP e tenha downloads ilimitados!
+                            </p>
+                            <div className="flex flex-wrap gap-2 text-xs text-gray-400 mb-3">
+                                <span className="flex items-center gap-1">
+                                    <Download className="h-3 w-3" />
+                                    Downloads ilimitados
+                                </span>
+                                <span className="flex items-center gap-1">
+                                    <Music className="h-3 w-3" />
+                                    Acesso premium
+                            </span>
+                                <span className="flex items-center gap-1">
+                                    <Star className="h-3 w-3" />
+                                    Benefícios exclusivos
+                            </span>
+                            </div>
+                            <div className="flex gap-2">
+                                <Link
+                                    href="/plans"
+                                    className="px-4 py-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white rounded-lg text-sm font-medium transition-all duration-300"
+                                >
+                                    Ver Planos VIP
+                                </Link>
+                                <Link
+                                    href="/profile"
+                                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-all duration-300"
+                                >
+                                    Meu Perfil
+                                </Link>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
