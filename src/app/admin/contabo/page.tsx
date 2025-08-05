@@ -88,6 +88,13 @@ export default function ContaboStoragePage() {
     const [deletingDuplicates, setDeletingDuplicates] = useState(false);
     const [duplicateStats, setDuplicateStats] = useState<any>(null);
 
+    // Estados para arquivos existentes no banco de dados
+    const [existingFiles, setExistingFiles] = useState<any[]>([]);
+    const [selectedExistingFiles, setSelectedExistingFiles] = useState<string[]>([]);
+    const [detectingExisting, setDetectingExisting] = useState(false);
+    const [deletingExisting, setDeletingExisting] = useState(false);
+    const [existingStats, setExistingStats] = useState<any>(null);
+
     if (isLoaded && !user) {
         redirect('/auth/sign-in');
     }
@@ -410,6 +417,95 @@ export default function ContaboStoragePage() {
             showMessage('Erro ao excluir duplicatas', 'error');
         } finally {
             setDeletingDuplicates(false);
+        }
+    };
+
+    // Funções para detectar e gerenciar arquivos existentes no banco de dados
+    const detectExistingFiles = async () => {
+        setDetectingExisting(true);
+        try {
+            const url = selectedFolder
+                ? `/api/contabo/detect-existing?prefix=${encodeURIComponent(selectedFolder)}`
+                : '/api/contabo/detect-existing';
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.success) {
+                setExistingFiles(data.existingFiles || []);
+                setExistingStats({
+                    totalFiles: data.totalFiles,
+                    existingCount: data.existingCount
+                });
+                showMessage(`${data.existingCount} arquivos já existem no banco de dados`, 'success');
+            } else {
+                showMessage(data.error || 'Erro ao detectar arquivos existentes', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao detectar arquivos existentes:', error);
+            showMessage('Erro ao detectar arquivos existentes', 'error');
+        } finally {
+            setDetectingExisting(false);
+        }
+    };
+
+    const toggleExistingFileSelection = (fileKey: string) => {
+        setSelectedExistingFiles(prev => 
+            prev.includes(fileKey) 
+                ? prev.filter(key => key !== fileKey)
+                : [...prev, fileKey]
+        );
+    };
+
+    const selectAllExistingFiles = () => {
+        const allExistingKeys = existingFiles.map(file => file.file.key);
+        setSelectedExistingFiles(allExistingKeys);
+    };
+
+    const clearExistingFileSelection = () => {
+        setSelectedExistingFiles([]);
+    };
+
+    const deleteSelectedExistingFiles = async () => {
+        if (selectedExistingFiles.length === 0) {
+            showMessage('Nenhum arquivo existente selecionado', 'error');
+            return;
+        }
+
+        console.log('🗑️ Iniciando exclusão de arquivos existentes selecionados:', selectedExistingFiles);
+
+        setDeletingExisting(true);
+        try {
+            const requestBody = {
+                filesToDelete: selectedExistingFiles
+            };
+            
+            console.log('📤 Enviando requisição para API:', requestBody);
+
+            const response = await fetch('/api/contabo/delete-duplicates', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            const data = await response.json();
+            console.log('📥 Resposta da API:', data);
+
+            if (data.success) {
+                showMessage(data.message, 'success');
+                setSelectedExistingFiles([]);
+                // Recarregar arquivos existentes para atualizar a lista
+                await detectExistingFiles();
+            } else {
+                showMessage(data.error || 'Erro ao excluir arquivos existentes', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao excluir arquivos existentes:', error);
+            showMessage('Erro ao excluir arquivos existentes', 'error');
+        } finally {
+            setDeletingExisting(false);
         }
     };
 
@@ -863,6 +959,19 @@ export default function ContaboStoragePage() {
                                     title="Limpar todas as seleções"
                                 >
                                     Limpar Seleções
+                                </button>
+                                <button
+                                    onClick={detectExistingFiles}
+                                    disabled={detectingExisting}
+                                    className="inline-flex items-center gap-2 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                    title="Detectar arquivos que já existem no banco de dados"
+                                >
+                                    {detectingExisting ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <CheckCircle className="w-4 h-4" />
+                                    )}
+                                    {detectingExisting ? 'Detectando...' : 'Detectar Existentes'}
                                 </button>
                                 <button
                                     onClick={importSelectedFiles}
@@ -1735,6 +1844,139 @@ export default function ContaboStoragePage() {
                                         ))}
                                     </div>
                                 )}
+
+                                {/* Seção de Arquivos Existentes no Banco de Dados */}
+                                <div className="mt-8 border-t border-gray-600 pt-8">
+                                    <div className="px-6 py-4 bg-gray-700/50 border-b border-gray-600 flex items-center justify-between">
+                                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                            <CheckCircle className="w-5 h-5 text-orange-300" />
+                                            Arquivos Existentes no Banco de Dados
+                                        </h3>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={detectExistingFiles}
+                                                disabled={detectingExisting}
+                                                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-800 text-white rounded-lg transition-colors flex items-center gap-2"
+                                            >
+                                                {detectingExisting ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <RefreshCw className="w-4 h-4" />
+                                                )}
+                                                {detectingExisting ? 'Detectando...' : 'Detectar Existentes'}
+                                            </button>
+                                            {selectedExistingFiles.length > 0 && (
+                                                <button
+                                                    onClick={deleteSelectedExistingFiles}
+                                                    disabled={deletingExisting}
+                                                    className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors flex items-center gap-2"
+                                                >
+                                                    {deletingExisting ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <Trash2 className="w-4 h-4" />
+                                                    )}
+                                                    {deletingExisting ? 'Excluindo...' : `Excluir (${selectedExistingFiles.length})`}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {existingStats && (
+                                        <div className="px-6 py-4 bg-gray-700/30 border-b border-gray-600">
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                                <div className="bg-gray-800/50 rounded-lg p-3">
+                                                    <div className="text-sm text-gray-400">Total de Arquivos</div>
+                                                    <div className="text-xl font-bold text-white">{existingStats.totalFiles}</div>
+                                                </div>
+                                                <div className="bg-gray-800/50 rounded-lg p-3">
+                                                    <div className="text-sm text-gray-400">Já no Banco</div>
+                                                    <div className="text-xl font-bold text-orange-400">{existingStats.existingCount}</div>
+                                                </div>
+                                                <div className="bg-gray-800/50 rounded-lg p-3">
+                                                    <div className="text-sm text-gray-400">Espaço Ocupado</div>
+                                                    <div className="text-xl font-bold text-red-400">
+                                                        {existingFiles.reduce((total, file) => total + file.file.size, 0).toLocaleString()} bytes
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {detectingExisting ? (
+                                        <div className="p-8 text-center">
+                                            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-400" />
+                                            <p className="text-gray-400">Detectando arquivos existentes...</p>
+                                        </div>
+                                    ) : existingFiles.length === 0 ? (
+                                        <div className="p-8 text-center">
+                                            <CheckCircle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                                            <h3 className="text-xl font-semibold text-gray-300 mb-2">
+                                                Nenhum arquivo existente encontrado
+                                            </h3>
+                                            <p className="text-gray-500">
+                                                Clique em "Detectar Existentes" para analisar os arquivos
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="divide-y divide-gray-700">
+                                            {existingFiles.map((file, index) => (
+                                                <div key={file.file.key} className="p-4">
+                                                    <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                                                        <div className="flex items-center gap-3 flex-1">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedExistingFiles.includes(file.file.key)}
+                                                                onChange={() => toggleExistingFileSelection(file.file.key)}
+                                                                className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-orange-500 focus:ring-orange-500"
+                                                            />
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="font-medium text-white">{file.file.filename}</span>
+                                                                    <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">
+                                                                        No Banco
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center gap-4 text-sm text-gray-400 mt-1">
+                                                                    <span>{formatFileSize(file.file.size)}</span>
+                                                                    <span>{new Date(file.file.lastModified).toLocaleDateString('pt-BR')}</span>
+                                                                    {file.existingTrack && (
+                                                                        <span className="text-green-400">
+                                                                            ID: {file.existingTrack.id}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {file.existingTrack && (
+                                                                    <div className="text-sm text-gray-500 mt-1">
+                                                                        <span>Artista: {file.existingTrack.artist}</span>
+                                                                        <span className="mx-2">•</span>
+                                                                        <span>Música: {file.existingTrack.songName}</span>
+                                                                        {file.existingTrack.style && (
+                                                                            <>
+                                                                                <span className="mx-2">•</span>
+                                                                                <span>Estilo: {file.existingTrack.style}</span>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => window.open(file.file.url, '_blank')}
+                                                                className="p-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors"
+                                                                title="Download"
+                                                            >
+                                                                <Download className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         );
                     }
