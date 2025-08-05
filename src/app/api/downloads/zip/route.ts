@@ -32,6 +32,8 @@ export async function POST(request: NextRequest) {
 
         // Criar ZIP
         const zip = new JSZip();
+        const totalTracks = tracks.length;
+        let processedTracks = 0;
 
         // Adicionar cada música ao ZIP
         for (const track of tracks) {
@@ -40,6 +42,7 @@ export async function POST(request: NextRequest) {
                 const audioResponse = await fetch(track.downloadUrl);
                 if (!audioResponse.ok) {
                     console.error(`Erro ao buscar áudio para ${track.songName}`);
+                    processedTracks++;
                     continue;
                 }
 
@@ -52,8 +55,10 @@ export async function POST(request: NextRequest) {
 
                 // Adicionar ao ZIP
                 zip.file(fileName, audioBuffer);
+                processedTracks++;
             } catch (error) {
                 console.error(`Erro ao processar ${track.songName}:`, error);
+                processedTracks++;
             }
         }
 
