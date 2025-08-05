@@ -247,27 +247,6 @@ function parseAudioFileNameAdvanced(filename: string): TrackMetadata {
             filesToProcess = audioFiles.filter(file => !existingUrls.has(file.url));
             console.log(`⭐ Novos arquivos para processar: ${filesToProcess.length}`);
         }
-        const audioFiles = await storage.listAudioFiles();
-        console.log(`📁 Encontrados ${audioFiles.length} arquivos no Contabo`);
-
-        // Verificar quais já existem no banco
-        const existingTracks = await prisma.track.findMany({
-            select: {
-                previewUrl: true,
-                downloadUrl: true,
-                songName: true,
-                artist: true
-            }
-        });
-
-        const existingUrls = new Set([
-            ...existingTracks.map(track => track.previewUrl),
-            ...existingTracks.map(track => track.downloadUrl)
-        ]);
-
-        // Filtrar apenas arquivos novos
-        const newFiles = audioFiles.filter(file => !existingUrls.has(file.url));
-        console.log(`⭐ Novos arquivos para processar: ${newFiles.length}`);
 
         if (filesToProcess.length === 0) {
             return NextResponse.json({
@@ -409,7 +388,7 @@ function parseAudioFileNameAdvanced(filename: string): TrackMetadata {
             message: `Importação concluída! ${importedTracks.length} músicas adicionadas${duplicatesFound.length > 0 ? `, ${duplicatesFound.length} duplicatas ignoradas` : ''}`,
             imported: importedTracks.length,
             duplicates: duplicatesFound.length,
-            total: audioFiles.length,
+            total: filesToProcess.length,
             newTracks: importedTracks,
             duplicatesFound: duplicatesFound,
             statistics: {
