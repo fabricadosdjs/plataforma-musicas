@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { Play, Pause, Download, Heart, AlertTriangle, Copyright, Music, Trash2, Loader2, DownloadCloud, Sparkles, Zap, Star, Shield, Eye, Clock, TrendingUp, Volume2, FileAudio, Headphones, Mic, Disc3, Radio, Music2, Music3, Music4 } from 'lucide-react';
+import { Play, Pause, Download, Heart, AlertTriangle, Copyright, Music, Trash2, Loader2, DownloadCloud, Sparkles, Zap, Star, Shield, Eye, Clock, TrendingUp, Volume2, FileAudio, Headphones, Mic, Disc3, Radio, Music2, Music3, Music4, Plus, Minus, ShoppingCart, Package } from 'lucide-react';
 import Link from 'next/link';
 import { Track } from '@/types/track';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
@@ -20,17 +20,20 @@ interface TrackUIProps {
     isDeleting: boolean;
     isAdmin: boolean;
     canDownloadResult: { can: boolean; reason: string; timeLeft: string };
+    isInQueue: boolean;
     onPlayPause: (track: Track) => void;
     onDownload: (track: Track) => void;
     onLike: (trackId: number) => void;
     onReport: (track: Track) => void;
     onCopyright: (track: Track) => void;
     onDelete: (track: Track) => void;
+    onAddToQueue: (track: Track) => void;
+    onRemoveFromQueue: (track: Track) => void;
 }
 
 const TrackRow = React.memo(({
-    track, isCurrent, isPlaying, isLiked, isLiking, isDeleting, isAdmin, canDownloadResult,
-    onPlayPause, onDownload, onLike, onReport, onCopyright, onDelete
+    track, isCurrent, isPlaying, isLiked, isLiking, isDeleting, isAdmin, canDownloadResult, isInQueue,
+    onPlayPause, onDownload, onLike, onReport, onCopyright, onDelete, onAddToQueue, onRemoveFromQueue
 }: TrackUIProps) => {
     const { userData } = useUserData();
     const hasDownloaded = userData?.downloadedTrackIds?.includes(track.id) || false;
@@ -55,6 +58,21 @@ const TrackRow = React.memo(({
             <td className="px-4 py-3 align-middle w-[15%]"><span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-600 to-green-600 text-white tracking-wide shadow-sm">{track.pool || 'Nexor Records'}</span></td>
             <td className="px-4 py-3 align-middle w-[35%]">
                 <div className="flex items-center justify-end gap-2">
+                    {/* Botão Adicionar à Fila */}
+                    <button
+                        onClick={() => isInQueue ? onRemoveFromQueue(track) : onAddToQueue(track)}
+                        title={isInQueue ? "Remover da fila" : "Adicionar à fila"}
+                        className={clsx("flex items-center gap-2 p-2 rounded-lg font-bold transition-all duration-200 shadow-md hover:shadow-lg", {
+                            "bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white": isInQueue,
+                            "bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white": !isInQueue
+                        })}
+                    >
+                        {isInQueue ? <Minus size={16} /> : <Plus size={16} />}
+                        <span className='text-xs'>
+                            {isInQueue ? 'REMOVER' : 'ADICIONAR'}
+                        </span>
+                    </button>
+
                     <button
                         onClick={() => onDownload(track)}
                         disabled={!canDownloadResult.can}
@@ -84,8 +102,8 @@ const TrackRow = React.memo(({
 TrackRow.displayName = 'TrackRow';
 
 const TrackCard = React.memo(({
-    track, isCurrent, isPlaying, isLiked, isLiking, isDeleting, isAdmin, canDownloadResult,
-    onPlayPause, onDownload, onLike, onReport, onCopyright, onDelete
+    track, isCurrent, isPlaying, isLiked, isLiking, isDeleting, isAdmin, canDownloadResult, isInQueue,
+    onPlayPause, onDownload, onLike, onReport, onCopyright, onDelete, onAddToQueue, onRemoveFromQueue
 }: TrackUIProps) => {
     const { userData } = useUserData();
     const hasDownloaded = userData?.downloadedTrackIds?.includes(track.id) || false;
@@ -99,35 +117,56 @@ const TrackCard = React.memo(({
                         {isPlaying && isCurrent ? <Pause size={28} className="text-blue-400" /> : <Play size={28} className="ml-1 text-white" />}
                     </button>
                 </div>
-                <div className="flex flex-col min-w-0">
-                    <span className="font-bold text-white text-lg truncate">{track.songName}</span>
-                    <span className="text-sm text-gray-400 truncate">{track.artist}</span>
+                <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-100 truncate" title={track.songName}>{track.songName}</h3>
+                    <p className="text-sm text-gray-400 truncate" title={track.artist}>{track.artist}</p>
                     <div className="flex items-center gap-2 mt-2">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-purple-600 to-blue-600 text-white">{track.style}</span>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-emerald-600 to-green-600 text-white">{track.pool || 'NR'}</span>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white">{track.style}</span>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-600 to-green-600 text-white">{track.pool || 'Nexor Records'}</span>
                     </div>
                 </div>
             </div>
-            <div className="p-4 grid grid-cols-2 gap-3">
-                <button
-                    onClick={() => onDownload(track)}
-                    disabled={!canDownloadResult.can}
-                    title={hasDownloaded ? "Você já baixou esta música" : canDownloadResult.reason}
-                    className={clsx("flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-all duration-200 shadow-lg text-sm", {
-                        "bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white": hasDownloaded && canDownloadResult.can,
-                        "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white": !hasDownloaded && canDownloadResult.can,
-                        "bg-zinc-700 text-gray-400 cursor-not-allowed opacity-70": !canDownloadResult.can
-                    })}
-                >
-                    <DownloadCloud size={16} />
-                    {hasDownloaded ? 'BAIXADO' : (canDownloadResult.timeLeft || 'DOWNLOAD')}
-                </button>
-                <button onClick={() => onLike(track.id)} disabled={isLiking} title={isLiked ? "Descurtir" : "Curtir"} className={clsx("flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-all duration-200 shadow-lg text-sm", { 'bg-gradient-to-r from-pink-600 to-pink-500 text-white': isLiked, 'bg-zinc-700 hover:bg-zinc-600 text-white': !isLiked })}>
-                    {isLiking ? <Loader2 size={16} className="animate-spin" /> : <Heart size={16} className={clsx({ "fill-current": isLiked })} />} {isLiked ? 'CURTIDO' : 'CURTIR'}
-                </button>
-                <button onClick={() => onReport(track)} title="Reportar Problema" className="flex items-center justify-center gap-2 py-2 rounded-lg bg-zinc-800/50 hover:bg-yellow-600/50 text-gray-300 hover:text-white transition-all duration-200 text-xs"><AlertTriangle size={14} /> Reportar</button>
-                <button onClick={() => onCopyright(track)} title="Reportar Copyright" className="flex items-center justify-center gap-2 py-2 rounded-lg bg-zinc-800/50 hover:bg-purple-600/50 text-gray-300 hover:text-white transition-all duration-200 text-xs"><Shield size={14} /> Copyright</button>
-                {isAdmin && <button onClick={() => onDelete(track)} disabled={isDeleting} title="Excluir Música" className="col-span-2 flex items-center justify-center gap-2 py-2 rounded-lg bg-red-800/60 hover:bg-red-700/60 text-white transition-all duration-200 font-semibold text-xs">{isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={14} />} {isDeleting ? 'Excluindo...' : 'Excluir Música'}</button>}
+            <div className="p-4">
+                <div className="flex items-center justify-between gap-2">
+                    {/* Botão Adicionar à Fila */}
+                    <button
+                        onClick={() => isInQueue ? onRemoveFromQueue(track) : onAddToQueue(track)}
+                        title={isInQueue ? "Remover da fila" : "Adicionar à fila"}
+                        className={clsx("flex items-center gap-2 px-3 py-2 rounded-lg font-bold transition-all duration-200 shadow-md hover:shadow-lg", {
+                            "bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white": isInQueue,
+                            "bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white": !isInQueue
+                        })}
+                    >
+                        {isInQueue ? <Minus size={16} /> : <Plus size={16} />}
+                        <span className='text-xs'>
+                            {isInQueue ? 'REMOVER' : 'ADICIONAR'}
+                        </span>
+                    </button>
+
+                    <button
+                        onClick={() => onDownload(track)}
+                        disabled={!canDownloadResult.can}
+                        title={hasDownloaded ? "Você já baixou esta música" : canDownloadResult.reason}
+                        className={clsx("flex items-center gap-2 px-3 py-2 rounded-lg font-bold transition-all duration-200 shadow-md hover:shadow-lg", {
+                            "bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white": hasDownloaded && canDownloadResult.can,
+                            "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white": !hasDownloaded && canDownloadResult.can,
+                            "bg-zinc-700 text-gray-400 cursor-not-allowed opacity-60": !canDownloadResult.can
+                        })}
+                    >
+                        <DownloadCloud size={16} />
+                        <span className='text-xs'>
+                            {hasDownloaded ? 'BAIXADO' : (canDownloadResult.timeLeft || 'DOWNLOAD')}
+                        </span>
+                    </button>
+                </div>
+                <div className="flex items-center justify-between gap-2 mt-3">
+                    <button onClick={() => onLike(track.id)} disabled={isLiking} title={isLiked ? "Descurtir" : "Curtir"} className={clsx("p-2 rounded-lg transition-all duration-200 hover:shadow-lg", { 'text-pink-500 fill-pink-500 bg-pink-500/10 hover:bg-pink-500/20': isLiked, 'text-gray-400 hover:text-pink-400 hover:bg-pink-500/10': !isLiked })}>
+                        {isLiking ? <Loader2 size={16} className="animate-spin" /> : <Heart size={16} />}
+                    </button>
+                    <button onClick={() => onReport(track)} title="Reportar Problema" className="p-2 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 transition-all duration-200 rounded-lg"><AlertTriangle size={16} /></button>
+                    <button onClick={() => onCopyright(track)} title="Reportar Copyright" className="p-2 text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-200 rounded-lg"><Shield size={16} /></button>
+                    {isAdmin && <button onClick={() => onDelete(track)} disabled={isDeleting} title="Excluir Música" className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 rounded-lg">{isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}</button>}
+                </div>
             </div>
         </div>
     );
@@ -138,21 +177,24 @@ TrackCard.displayName = 'TrackCard';
 // --- COMPONENTE PRINCIPAL ---
 const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tracks: Track[], onDownload?: (tracks: Track[]) => void, isDownloading?: boolean }) => {
     const { data: session } = useSession();
-    const user = session?.user;
     const { showToast } = useToastContext();
+    const { userData } = useUserData();
+    const { currentTrack, isPlaying, playTrack, pauseTrack } = useGlobalPlayer();
 
-    // Hooks de contexto e dados
-    const { currentTrack, isPlaying, playTrack, togglePlayPause } = useGlobalPlayer();
-    const { userData, updateLikedTrack, updateDownloadedTrack } = useUserData();
-
-    // Estados de UI
+    // Estados para likes e downloads
     const [liking, setLiking] = useState<number | null>(null);
     const [deleting, setDeleting] = useState<number | null>(null);
+
+    // Estado da fila de downloads
+    const [downloadQueue, setDownloadQueue] = useState<Track[]>([]);
+    const [isDownloadingQueue, setIsDownloadingQueue] = useState(false);
+
+    // Estados de UI
     const [downloadCooldowns, setDownloadCooldowns] = useState<{ [key: number]: number }>({});
 
     // Constantes e Helpers
-    const isAdmin = useMemo(() => user?.email === 'edersonleonardo@nexorrecords.com.br', [user?.email]);
-    const isVip = useMemo(() => !!user?.is_vip || isAdmin, [user?.is_vip, isAdmin]);
+    const isAdmin = useMemo(() => session?.user?.email === 'edersonleonardo@nexorrecords.com.br', [session?.user?.email]);
+    const isVip = useMemo(() => !!userData?.isVip || isAdmin, [userData?.isVip, isAdmin]);
 
     const downloadsToday = useMemo(() => userData?.dailyDownloadCount || 0, [userData?.dailyDownloadCount]);
     const dailyLimit = useMemo(() => userData?.dailyDownloadLimit || 50, [userData?.dailyDownloadLimit]);
@@ -185,6 +227,108 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
         }, 1000);
         return () => clearInterval(interval);
     }, []);
+
+    // Funções de gerenciamento da fila
+    const handleAddToQueue = useCallback((track: Track) => {
+        if (downloadQueue.length >= 20) {
+            showToast('❌ Limite máximo de 20 músicas na fila atingido!', 'error');
+            return;
+        }
+
+        if (downloadQueue.some(t => t.id === track.id)) {
+            showToast('⚠️ Esta música já está na fila!', 'warning');
+            return;
+        }
+
+        setDownloadQueue(prev => [...prev, track]);
+        showToast(`✅ "${track.songName}" adicionada à fila!`, 'success');
+    }, [downloadQueue, showToast]);
+
+    const handleRemoveFromQueue = useCallback((track: Track) => {
+        setDownloadQueue(prev => prev.filter(t => t.id !== track.id));
+        showToast(`🗑️ "${track.songName}" removida da fila!`, 'info');
+    }, [showToast]);
+
+    const handleDownloadQueue = useCallback(async () => {
+        if (downloadQueue.length === 0) {
+            showToast('❌ Nenhuma música na fila para baixar!', 'error');
+            return;
+        }
+
+        if (!session?.user) {
+            showToast('👤 Faça login para fazer downloads', 'warning');
+            return;
+        }
+
+        setIsDownloadingQueue(true);
+
+        try {
+            // Verificar se pode baixar (lógica de VIP e limites)
+            if (!isVip) {
+                const totalDownloads = downloadsToday + downloadQueue.length;
+                if (totalDownloads > dailyLimit) {
+                    showToast(`❌ Você só pode baixar ${dailyLimit - downloadsToday} músicas hoje!`, 'error');
+                    return;
+                }
+            }
+
+            // Fazer download de cada música da fila
+            for (const track of downloadQueue) {
+                try {
+                    const response = await fetch('/api/download', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ trackId: track.id })
+                    });
+
+                    if (!response.ok) {
+                        console.error(`Erro ao baixar ${track.songName}`);
+                    }
+                } catch (error) {
+                    console.error(`Erro ao baixar ${track.songName}:`, error);
+                }
+            }
+
+            // Baixar ZIP com todas as músicas
+            const response = await fetch('/api/downloads/zip', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    trackIds: downloadQueue.map(t => t.id),
+                    filename: `nexor-records-${new Date().toISOString().split('T')[0]}.zip`
+                })
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `nexor-records-${new Date().toISOString().split('T')[0]}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showToast(`✅ ${downloadQueue.length} músicas baixadas com sucesso!`, 'success');
+                setDownloadQueue([]); // Limpar fila
+            } else {
+                showToast('❌ Erro ao baixar arquivo ZIP!', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao baixar fila:', error);
+            showToast('❌ Erro ao baixar músicas da fila!', 'error');
+        } finally {
+            setIsDownloadingQueue(false);
+        }
+    }, [downloadQueue, session?.user, isVip, downloadsToday, dailyLimit, showToast]);
+
+    // Verificar se é VIP
+    useEffect(() => {
+        if (userData) {
+            // setIsVip(userData.isVip || false); // This line was removed as per the new_code
+        }
+    }, [userData]);
 
     // Funções de formatação e verificação
     const formatTimeLeft = (seconds: number): string => {
@@ -220,8 +364,8 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
 
     // Handlers de Ações
     const handlePlayPauseClick = async (track: Track) => {
-        if (!user) { showToast('👤 Faça login para ouvir as músicas', 'warning'); return; }
-        if (currentTrack?.id === track.id) { togglePlayPause(); }
+        if (!session?.user) { showToast('👤 Faça login para ouvir as músicas', 'warning'); return; }
+        if (currentTrack?.id === track.id) { pauseTrack(); }
         else {
             try { await playTrack(track, tracks); showToast(`🎵 Tocando "${track.songName}"`, 'info'); }
             catch (error) { showToast('❌ Erro ao reproduzir música', 'error'); }
@@ -229,7 +373,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
     };
 
     const handleDownloadClick = async (track: Track) => {
-        if (!user) {
+        if (!session?.user) {
             showToast('👤 Faça login para fazer downloads', 'warning');
             return;
         }
@@ -263,7 +407,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
             if (response.ok) {
                 const responseData = await response.json();
 
-                updateDownloadedTrack(track.id);
+                // updateDownloadedTrack(track.id); // This line was removed as per the new_code
 
                 // Definir cooldown de 24 horas (86400 segundos)
                 setDownloadCooldowns(prev => ({
@@ -302,7 +446,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
     };
 
     const handleLikeClick = async (trackId: number) => {
-        if (!user) {
+        if (!session?.user) {
             showToast('👤 Faça login para curtir músicas', 'warning');
             return;
         }
@@ -332,7 +476,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
             if (response.ok) {
                 const responseData = await response.json();
 
-                updateLikedTrack(trackId, !isLiked);
+                // updateLikedTrack(trackId, !isLiked); // This line was removed as per the new_code
                 showToast(
                     isLiked ? '💔 Música removida dos favoritos!' : '❤️ Música adicionada aos favoritos!',
                     'success'
@@ -417,6 +561,65 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
                 }
             `}</style>
 
+            {/* Fila de Downloads */}
+            {downloadQueue.length > 0 && (
+                <div className="w-full mb-4 p-4 rounded-xl bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500/30 shadow-lg">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                            <ShoppingCart className="text-purple-400" size={24} />
+                            <div>
+                                <h3 className="text-white font-bold text-lg">Fila de Downloads</h3>
+                                <p className="text-gray-300 text-sm">{downloadQueue.length} música{downloadQueue.length !== 1 ? 's' : ''} na fila</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleDownloadQueue}
+                                disabled={isDownloadingQueue}
+                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-green-500/20 disabled:opacity-50"
+                            >
+                                {isDownloadingQueue ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        Baixando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Package size={16} />
+                                        Baixar ZIP ({downloadQueue.length})
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setDownloadQueue([])}
+                                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-all duration-200"
+                            >
+                                Limpar
+                            </button>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {downloadQueue.map((track, index) => (
+                            <div key={track.id} className="flex items-center justify-between p-2 bg-black/20 rounded-lg">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <span className="text-purple-400 font-bold text-sm">{index + 1}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-white text-sm truncate">{track.songName}</p>
+                                        <p className="text-gray-400 text-xs truncate">{track.artist}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleRemoveFromQueue(track)}
+                                    className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                                >
+                                    <Minus size={14} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {!isVip && (
                 <div className="w-full flex items-center gap-4 text-center py-3 px-5 mb-4 rounded-xl bg-zinc-900/70 border border-zinc-800 shadow-lg">
                     <DownloadCloud className="text-blue-500 flex-shrink-0" size={28} />
@@ -469,7 +672,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
                     </thead>
                     <tbody className="divide-y divide-zinc-800/70">
                         {tracks.length > 0 ? (
-                            tracks.map(track => <TrackRow key={`desktop-${track.id}`} {...{ track, isCurrent: currentTrack?.id === track.id, isPlaying: isPlaying && currentTrack?.id === track.id, isLiked: userData?.likedTrackIds?.includes(track.id) ?? false, isLiking: liking === track.id, isDeleting: deleting === track.id, isAdmin, canDownloadResult: canDownload(track.id), onPlayPause: handlePlayPauseClick, onDownload: handleDownloadClick, onLike: handleLikeClick, onReport: handleReportClick, onCopyright: handleCopyrightClick, onDelete: handleDeleteClick }} />)
+                            tracks.map(track => <TrackRow key={`desktop-${track.id}`} {...{ track, isCurrent: currentTrack?.id === track.id, isPlaying: isPlaying && currentTrack?.id === track.id, isLiked: userData?.likedTrackIds?.includes(track.id) ?? false, isLiking: liking === track.id, isDeleting: deleting === track.id, isAdmin, canDownloadResult: canDownload(track.id), isInQueue: downloadQueue.some(t => t.id === track.id), onPlayPause: handlePlayPauseClick, onDownload: handleDownloadClick, onLike: handleLikeClick, onReport: handleReportClick, onCopyright: handleCopyrightClick, onDelete: handleDeleteClick, onAddToQueue: handleAddToQueue, onRemoveFromQueue: handleRemoveFromQueue }} />)
                         ) : (
                             <tr><td colSpan={5} className="text-center py-16 text-gray-500">Nenhuma música encontrada.</td></tr>
                         )}
@@ -478,7 +681,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
 
                 <div className="md:hidden flex flex-col gap-4 px-2">
                     {tracks.length > 0 ? (
-                        tracks.map(track => <TrackCard key={`mobile-${track.id}`} {...{ track, isCurrent: currentTrack?.id === track.id, isPlaying: isPlaying && currentTrack?.id === track.id, isLiked: userData?.likedTrackIds?.includes(track.id) ?? false, isLiking: liking === track.id, isDeleting: deleting === track.id, isAdmin, canDownloadResult: canDownload(track.id), onPlayPause: handlePlayPauseClick, onDownload: handleDownloadClick, onLike: handleLikeClick, onReport: handleReportClick, onCopyright: handleCopyrightClick, onDelete: handleDeleteClick }} />)
+                        tracks.map(track => <TrackCard key={`mobile-${track.id}`} {...{ track, isCurrent: currentTrack?.id === track.id, isPlaying: isPlaying && currentTrack?.id === track.id, isLiked: userData?.likedTrackIds?.includes(track.id) ?? false, isLiking: liking === track.id, isDeleting: deleting === track.id, isAdmin, canDownloadResult: canDownload(track.id), isInQueue: downloadQueue.some(t => t.id === track.id), onPlayPause: handlePlayPauseClick, onDownload: handleDownloadClick, onLike: handleLikeClick, onReport: handleReportClick, onCopyright: handleCopyrightClick, onDelete: handleDeleteClick, onAddToQueue: handleAddToQueue, onRemoveFromQueue: handleRemoveFromQueue }} />)
                     ) : (
                         <div className="text-center py-16 text-gray-500">Nenhuma música encontrada.</div>
                     )}
