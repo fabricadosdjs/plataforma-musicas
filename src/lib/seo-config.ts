@@ -193,6 +193,15 @@ export const SEO_CONFIG: Record<string, SEOConfig> = {
         keywords: 'registro, criar conta, música eletrônica, DJ',
         url: '/auth/sign-up',
         type: 'website'
+    },
+
+    // Pedidos
+    '/pedidos': {
+        title: 'Pedidos - Serviços Personalizados',
+        description: 'Solicite packs, playlists e serviços personalizados de música eletrônica. Atendimento premium para DJs.',
+        keywords: 'pedidos, packs, playlists, serviços personalizados, música eletrônica, DJ',
+        url: '/pedidos',
+        type: 'website'
     }
 };
 
