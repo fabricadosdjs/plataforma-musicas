@@ -100,14 +100,14 @@ export default function PWAInstaller() {
     }
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:w-96 bg-black/90 backdrop-blur-xl border border-gray-800/50 rounded-xl p-4 z-50 shadow-2xl">
+        <div className="fixed top-4 left-4 right-4 md:left-auto md:w-96 bg-black/90 backdrop-blur-xl border border-gray-800/50 rounded-xl p-4 z-50 shadow-2xl">
             <div className="flex items-start gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
                     <Download className="w-6 h-6 text-white" />
                 </div>
 
                 <div className="flex-1">
-                    <h3 className="text-white font-bold text-lg mb-1">Instalar DJ Pool</h3>
+                    <h3 className="text-white font-bold text-lg mb-1">Instalar Nexor Records Pools</h3>
                     <p className="text-gray-400 text-sm mb-3">
                         Adicione à tela inicial para acesso rápido e experiência nativa
                     </p>

@@ -1,6 +1,5 @@
 "use client";
 
-
 interface SEOHeadProps {
     title?: string;
     description?: string;
@@ -20,19 +19,19 @@ interface SEOHeadProps {
 }
 
 export default function SEOHead({
-    title = "Plataforma de Músicas - DJ Pool",
-    description = "Descubra, ouça e baixe as melhores músicas para DJs. Acesso VIP com downloads ilimitados e catálogo premium.",
-    keywords = "música, DJ, download, streaming, house, techno, eletrônica, remix, versão, club mix",
-    image = "/og-image.jpg",
+    title = "Nexor Records Pools - Sua Plataforma de música Eletrônicas",
+    description = "A melhor plataforma de músicas eletrônicas para DJs, com downloads exclusivos, streaming e lançamentos atualizados diariamente.",
+    keywords = "música eletrônica, DJ, download, streaming, house, techno, trance, remix, versão, club mix, nexor records, pools",
+    image = "/images/cover-picture_l.webp",
     url,
     type = "website",
-    siteName = "DJ Pool Platform",
+    siteName = "Nexor Records Pools",
     twitterCard = "summary_large_image",
     musicData
 }: SEOHeadProps) {
     const fullTitle = title.includes(siteName) ? title : `${title} - ${siteName}`;
-    const fullUrl = url ? `https://dj-pool.netlify.app${url}` : 'https://dj-pool.netlify.app';
-    const fullImage = image.startsWith('http') ? image : `https://dj-pool.netlify.app${image}`;
+    const fullUrl = url ? `https://djpools.nexorrecords.com.br${url}` : 'https://djpools.nexorrecords.com.br';
+    const fullImage = image.startsWith('http') ? image : `https://djpools.nexorrecords.com.br${image}`;
 
     // Schema.org JSON-LD
     const generateSchema = () => {
@@ -82,7 +81,7 @@ export default function SEOHead({
             {/* Meta tags básicas */}
             <meta name="description" content={description} />
             <meta name="keywords" content={keywords} />
-            <meta name="author" content="DJ Pool Platform" />
+            <meta name="author" content="Nexor Records" />
             <meta name="robots" content="index, follow, max-image-preview:large" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -110,8 +109,8 @@ export default function SEOHead({
             <meta name="twitter:title" content={fullTitle} />
             <meta name="twitter:description" content={description} />
             <meta name="twitter:image" content={fullImage} />
-            <meta name="twitter:site" content="@djpool" />
-            <meta name="twitter:creator" content="@djpool" />
+            <meta name="twitter:site" content="@nexorrecords" />
+            <meta name="twitter:creator" content="@nexorrecords" />
 
             {/* Favicon e ícones */}
             <link rel="icon" type="image/x-icon" href="/favicon.ico" />

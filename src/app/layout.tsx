@@ -33,60 +33,66 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'DJ Pool Platform - Sua Plataforma de Músicas para DJs',
-    template: '%s - DJ Pool Platform'
+    default: 'Nexor Records Pools - Sua Plataforma de música Eletrônicas',
+    template: '%s - Nexor Records Pools'
   },
-  description: 'Descubra, ouça e baixe as melhores músicas para DJs. Acesso VIP com downloads ilimitados, catálogo premium com house, techno, eletrônica e remixes exclusivos.',
+  description: 'A melhor plataforma de músicas eletrônicas para DJs, com downloads exclusivos, streaming e lançamentos atualizados diariamente.',
   keywords: [
+    'música eletrônica',
+    'DJ',
+    'download',
+    'streaming',
+    'house',
+    'techno',
+    'trance',
+    'remix',
+    'versão',
+    'club mix',
+    'nexor records',
+    'pools',
     'música para dj',
     'download música',
     'streaming dj',
-    'house music',
-    'techno',
     'big room',
-    'remix',
-    'versão club',
-    'dj pool',
-    'música eletrônica',
     'beats',
     'mixing',
     'djing'
   ],
-  authors: [{ name: 'DJ Pool Platform' }],
-  creator: 'DJ Pool Platform',
-  publisher: 'DJ Pool Platform',
+  authors: [{ name: 'Nexor Records' }],
+  creator: 'Nexor Records',
+  publisher: 'Nexor Records',
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://dj-pool.netlify.app'),
+  metadataBase: new URL('https://djpools.nexorrecords.com.br'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
-    url: 'https://dj-pool.netlify.app',
-    title: 'DJ Pool Platform - Sua Plataforma de Músicas para DJs',
-    description: 'Descubra, ouça e baixe as melhores músicas para DJs. Acesso VIP com downloads ilimitados e catálogo premium.',
-    siteName: 'DJ Pool Platform',
+    url: 'https://djpools.nexorrecords.com.br',
+    title: 'Nexor Records Pools - Sua Plataforma de música Eletrônicas',
+    description: 'A melhor plataforma de músicas eletrônicas para DJs, com downloads exclusivos, streaming e lançamentos atualizados diariamente.',
+    siteName: 'Nexor Records Pools',
     images: [
       {
-        url: '/images/og/home.jpg',
+        url: '/images/cover-picture_l.webp',
         width: 1200,
         height: 630,
-        alt: 'DJ Pool Platform - Plataforma de Músicas para DJs',
+        alt: 'Nexor Records Pools - Plataforma de Músicas Eletrônicas',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'DJ Pool Platform - Sua Plataforma de Músicas para DJs',
-    description: 'Descubra, ouça e baixe as melhores músicas para DJs. Acesso VIP com downloads ilimitados e catálogo premium.',
-    images: ['/images/og/home.jpg'],
-    creator: '@djpool',
-    site: '@djpool',
+    title: 'Nexor Records Pools - Sua Plataforma de música Eletrônicas',
+    description: 'A melhor plataforma de músicas eletrônicas para DJs, com downloads exclusivos, streaming e lançamentos atualizados diariamente.',
+    images: ['/images/cover-picture_l.webp'],
+    creator: '@nexorrecords',
+    site: '@nexorrecords',
   },
   robots: {
     index: true,
@@ -141,6 +147,24 @@ export default function RootLayout({
             </ToastProvider>
           </AppProvider>
         </AuthProvider>
+
+        {/* Tawk.to Script */}
+        <script
+          type="text/javascript"
+          dangerouslySetInnerHTML={{
+            __html: `
+              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+              (function(){
+                var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+                s1.async=true;
+                s1.src='https://embed.tawk.to/6872e7e08a0a5f1914737f11/1j00dji02';
+                s1.charset='UTF-8';
+                s1.setAttribute('crossorigin','*');
+                s0.parentNode.insertBefore(s1,s0);
+              })();
+            `
+          }}
+        />
       </body>
     </html>
   );

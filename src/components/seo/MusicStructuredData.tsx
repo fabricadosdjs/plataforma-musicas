@@ -1,86 +1,58 @@
 "use client";
 
-import { Track } from '@/types/track';
-import { useEffect } from 'react';
-
 interface MusicStructuredDataProps {
-    track: Track;
-    isPlaying?: boolean;
-    position?: number; // posição na playlist
-    playlistName?: string;
+    track: {
+        id: number;
+        songName: string;
+        artist: string;
+        style: string;
+        imageUrl: string;
+        downloadUrl: string;
+        releaseDate: string;
+        duration?: number;
+    };
+    url: string;
 }
 
-export default function MusicStructuredData({
-    track,
-    isPlaying = false,
-    position,
-    playlistName
-}: MusicStructuredDataProps) {
-    useEffect(() => {
-        // Criar dados estruturados para a música
-        const musicSchema: any = {
-            "@context": "https://schema.org",
-            "@type": "MusicRecording",
-            "name": track.songName,
+export default function MusicStructuredData({ track, url }: MusicStructuredDataProps) {
+    const fullUrl = `https://djpools.nexorrecords.com.br${url}`;
+    const fullImage = track.imageUrl.startsWith('http') ? track.imageUrl : `https://djpools.nexorrecords.com.br${track.imageUrl}`;
+
+    const musicSchema = {
+        "@context": "https://schema.org",
+        "@type": "MusicRecording",
+        "name": track.songName,
+        "description": `${track.songName} por ${track.artist} - ${track.style}`,
+        "image": fullImage,
+        "url": fullUrl,
+        "byArtist": {
+            "@type": "MusicGroup",
+            "name": track.artist
+        },
+        "genre": track.style,
+        "datePublished": track.releaseDate,
+        "duration": track.duration ? `PT${Math.floor(track.duration / 60)}M${track.duration % 60}S` : undefined,
+        "inAlbum": {
+            "@type": "MusicAlbum",
+            "name": "Nexor Records Pools",
             "byArtist": {
                 "@type": "MusicGroup",
-                "name": track.artist
-            },
-            "genre": track.style,
-            "image": track.imageUrl,
-            "audio": {
-                "@type": "AudioObject",
-                "contentUrl": track.previewUrl,
-                "encodingFormat": "audio/mpeg"
-            },
-            "datePublished": track.releaseDate,
-            "url": `https://dj-pool.netlify.app/track/${track.id}`,
-            "description": `${track.songName} por ${track.artist} - ${track.style} ${track.version}`,
-            "keywords": `${track.artist}, ${track.songName}, ${track.style}, ${track.version}, DJ, música eletrônica`,
-            "additionalProperty": [
-                {
-                    "@type": "PropertyValue",
-                    "name": "Version",
-                    "value": track.version
-                },
-                {
-                    "@type": "PropertyValue",
-                    "name": "Style",
-                    "value": track.style
-                }
-            ]
-        };
-
-        // Se faz parte de uma playlist, adicionar essa informação
-        if (playlistName && position) {
-            musicSchema.inPlaylist = {
-                "@type": "MusicPlaylist",
-                "name": playlistName,
-                "position": position
-            };
-        }
-
-        // Adicionar ou atualizar o script JSON-LD
-        const existingScript = document.getElementById('music-structured-data');
-        if (existingScript) {
-            existingScript.remove();
-        }
-
-        const script = document.createElement('script');
-        script.id = 'music-structured-data';
-        script.type = 'application/ld+json';
-        script.textContent = JSON.stringify(musicSchema);
-        document.head.appendChild(script);
-
-        // Cleanup quando o componente for desmontado
-        return () => {
-            const scriptToRemove = document.getElementById('music-structured-data');
-            if (scriptToRemove) {
-                scriptToRemove.remove();
+                "name": "Nexor Records"
             }
-        };
-    }, [track, isPlaying, position, playlistName]);
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Nexor Records",
+            "url": "https://djpools.nexorrecords.com.br"
+        }
+    };
 
-    // Este componente não renderiza nada visível
-    return null;
+    return (
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+                __html: JSON.stringify(musicSchema)
+            }}
+        />
+    );
 }

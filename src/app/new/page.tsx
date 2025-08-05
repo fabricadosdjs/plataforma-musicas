@@ -15,6 +15,8 @@ import FiltersModal from '@/components/music/FiltersModal';
 import { useMusicPageTitle } from '@/hooks/useDynamicTitle';
 import { Track } from '@/types/track';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSEO } from '@/hooks/useSEO';
+import SEOHead from '@/components/seo/SEOHead';
 
 function NewPageContent() {
   console.log('🎵 NewPage: Componente NewPageContent renderizado');
@@ -23,6 +25,10 @@ function NewPageContent() {
   const searchParams = useSearchParams();
   const { hasExtension, detectedExtensions } = useDownloadExtensionDetector();
   const { showToast } = useToast();
+
+  // SEO para a página
+  const { seoData } = useSEO();
+
   const [tracks, setTracks] = useState<Track[]>([]);
   const [tracksByDate, setTracksByDate] = useState<{ [date: string]: Track[] }>({});
   const [sortedDates, setSortedDates] = useState<string[]>([]);
@@ -330,6 +336,9 @@ function NewPageContent() {
 
   return (
     <div className="min-h-screen bg-[#1B1C1D] relative overflow-hidden">
+      {/* SEO Component */}
+      {seoData && <SEOHead {...seoData} />}
+
       {/* Animated background particles */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500/5 rounded-full blur-3xl animate-pulse"></div>
