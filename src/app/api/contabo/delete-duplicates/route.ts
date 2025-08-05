@@ -7,7 +7,10 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { filesToDelete } = body;
 
+        console.log('📥 Dados recebidos na API delete-duplicates:', body);
+
         if (!filesToDelete || !Array.isArray(filesToDelete)) {
+            console.error('❌ Lista de arquivos inválida:', filesToDelete);
             return NextResponse.json({
                 success: false,
                 error: 'Lista de arquivos para excluir é obrigatória'
@@ -15,6 +18,7 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`🗑️ Iniciando exclusão de ${filesToDelete.length} arquivos duplicados...`);
+        console.log('📋 Arquivos a serem excluídos:', filesToDelete);
 
         const storage = new ContaboStorage({
             endpoint: process.env.CONTABO_ENDPOINT!,

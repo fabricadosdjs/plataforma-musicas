@@ -376,19 +376,26 @@ export default function ContaboStoragePage() {
             return;
         }
 
+        console.log('🗑️ Iniciando exclusão de duplicatas selecionadas:', selectedDuplicates);
+
         setDeletingDuplicates(true);
         try {
+            const requestBody = {
+                filesToDelete: selectedDuplicates
+            };
+            
+            console.log('📤 Enviando requisição para API:', requestBody);
+
             const response = await fetch('/api/contabo/delete-duplicates', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    filesToDelete: selectedDuplicates
-                })
+                body: JSON.stringify(requestBody)
             });
 
             const data = await response.json();
+            console.log('📥 Resposta da API:', data);
 
             if (data.success) {
                 showMessage(data.message, 'success');

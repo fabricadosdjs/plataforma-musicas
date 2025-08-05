@@ -131,19 +131,58 @@ export class ContaboStorage {
     }
 
     /**
+     * Obtém informações de um arquivo específico
+     */
+    async getFileInfo(key: string): Promise<StorageFile | null> {
+        try {
+            const command = new ListObjectsV2Command({
+                Bucket: this.bucketName,
+                Prefix: key,
+                MaxKeys: 1,
+            });
+
+            const response = await this.s3Client.send(command);
+            
+            if (!response.Contents || response.Contents.length === 0) {
+                return null;
+            }
+
+            const obj = response.Contents[0];
+            if (obj.Key !== key) {
+                return null;
+            }
+
+            return {
+                key: obj.Key!,
+                url: this.getPublicUrl(obj.Key!),
+                size: obj.Size!,
+                lastModified: obj.LastModified || new Date(),
+                isAudio: this.isAudioFile(obj.Key!),
+                filename: obj.Key!.split('/').pop() || obj.Key!,
+            };
+        } catch (error) {
+            console.error('Erro ao obter informações do arquivo:', error);
+            return null;
+        }
+    }
+
+    /**
      * Deleta um arquivo
      */
     async deleteFile(key: string): Promise<void> {
         try {
+            console.log(`🗑️ Tentando excluir arquivo: ${key}`);
+            
             const command = new DeleteObjectCommand({
                 Bucket: this.bucketName,
                 Key: key,
             });
 
-            await this.s3Client.send(command);
+            const result = await this.s3Client.send(command);
+            console.log(`✅ Arquivo excluído com sucesso: ${key}`, result);
         } catch (error) {
-            console.error('Erro ao deletar arquivo:', error);
-            throw new Error('Falha ao deletar arquivo');
+            console.error(`❌ Erro ao deletar arquivo ${key}:`, error);
+            throw new Error(`Falha ao deletar arquivo: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
         }
     }
 
