@@ -227,19 +227,35 @@ function parseAudioFileName(filename: string) {
         if (match) {
             if (match[2]) {
                 // Tem artista
+                let songName = match[2].trim();
+                const version = match[3]?.trim() || null;
+                
+                // Adiciona parênteses ao nome da música se houver versão
+                if (version) {
+                    songName = `${songName} (${version})`;
+                }
+                
                 return {
                     artist: match[1].trim(),
-                    songName: match[2].trim(),
-                    version: match[3]?.trim() || null,
+                    songName: songName,
+                    version: version,
                     style: match[4]?.trim() || null,
                     variation
                 };
             } else {
                 // Só tem nome da música
+                let songName = match[1].trim();
+                const version = match[2]?.trim() || null;
+                
+                // Adiciona parênteses ao nome da música se houver versão
+                if (version) {
+                    songName = `${songName} (${version})`;
+                }
+                
                 return {
                     artist: 'Artista Desconhecido',
-                    songName: match[1].trim(),
-                    version: match[2]?.trim() || null,
+                    songName: songName,
+                    version: version,
                     style: null,
                     variation
                 };
