@@ -56,15 +56,83 @@ export async function POST(req: Request) {
         updatedAt: now,
       }));
 
-      // 5. Insere as novas músicas no banco de dados
-      console.log('💾 Inserindo músicas no banco de dados...');
-      const result = await prisma.track.createMany({
-        data: tracksToCreate,
-        skipDuplicates: true,
+      // 5. Verificar duplicados antes de inserir
+      console.log('🔍 Verificando duplicados...');
+      const existingTracks = await prisma.track.findMany({
+        select: {
+          songName: true,
+          artist: true,
+          previewUrl: true,
+          downloadUrl: true,
+        }
       });
 
-      console.log(`✅ ${result.count} músicas inseridas com sucesso!`);
-      return NextResponse.json({ message: `${result.count} músicas adicionadas com sucesso!` });
+      // Criar sets para verificação rápida
+      const existingUrls = new Set([
+        ...existingTracks.map(track => track.previewUrl),
+        ...existingTracks.map(track => track.downloadUrl)
+      ]);
+
+      const existingSongs = new Set(
+        existingTracks.map(track => `${track.artist} - ${track.songName}`.toLowerCase())
+      );
+
+      // Separar músicas únicas e duplicadas
+      const uniqueTracks = [];
+      const duplicateTracks = [];
+      const duplicateReasons = [];
+
+      for (const track of tracksToCreate) {
+        const songKey = `${track.artist} - ${track.songName}`.toLowerCase();
+        const isDuplicateUrl = existingUrls.has(track.previewUrl) || existingUrls.has(track.downloadUrl);
+        const isDuplicateSong = existingSongs.has(songKey);
+
+        if (isDuplicateUrl || isDuplicateSong) {
+          duplicateTracks.push(track);
+          if (isDuplicateUrl) {
+            duplicateReasons.push(`URL duplicada: ${track.artist} - ${track.songName}`);
+          } else {
+            duplicateReasons.push(`Música já existe: ${track.artist} - ${track.songName}`);
+          }
+        } else {
+          uniqueTracks.push(track);
+        }
+      }
+
+      console.log(`📊 Resumo da verificação:`);
+      console.log(`   - Total recebido: ${tracksToCreate.length}`);
+      console.log(`   - Únicas: ${uniqueTracks.length}`);
+      console.log(`   - Duplicadas: ${duplicateTracks.length}`);
+
+      // 6. Inserir apenas músicas únicas
+      let insertResult = null;
+      if (uniqueTracks.length > 0) {
+        console.log('💾 Inserindo músicas únicas no banco de dados...');
+        insertResult = await prisma.track.createMany({
+          data: uniqueTracks,
+          skipDuplicates: true,
+        });
+        console.log(`✅ ${insertResult.count} músicas inseridas com sucesso!`);
+      }
+
+      // 7. Preparar resposta detalhada
+      const response = {
+        success: true,
+        totalReceived: tracksToCreate.length,
+        totalInserted: insertResult?.count || 0,
+        totalDuplicates: duplicateTracks.length,
+        message: `${insertResult?.count || 0} músicas adicionadas com sucesso!`,
+        duplicates: duplicateReasons,
+        summary: {
+          received: tracksToCreate.length,
+          inserted: insertResult?.count || 0,
+          duplicates: duplicateTracks.length,
+          unique: uniqueTracks.length
+        }
+      };
+
+      console.log('📋 Resumo final:', response.summary);
+      return NextResponse.json(response);
 
     } else {
       // Formato antigo: campos separados

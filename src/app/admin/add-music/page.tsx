@@ -14,6 +14,7 @@ export default function AddMusicPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
   const [formData, setFormData] = useState({
     jsonData: ''
   });
@@ -50,11 +51,13 @@ export default function AddMusicPage() {
         const result = await response.json();
         setIsSuccess(true);
         setMessage(result.message || 'Músicas adicionadas com sucesso!');
+        setImportResult(result);
         setFormData({ jsonData: '' });
       } else {
         const errorText = await response.text();
         setIsSuccess(false);
         setMessage(`Erro ${response.status}: ${errorText}`);
+        setImportResult(null);
       }
     } catch (error) {
       console.error('Erro:', error);
@@ -67,8 +70,8 @@ export default function AddMusicPage() {
 
   return (
     <AdminAuth>
-      <div className="min-h-screen text-white" style={{ backgroundColor: '#202124' }}>
-        <header className="p-4" style={{ backgroundColor: '#2d2f32' }}>
+      <div className="min-h-screen text-white bg-[#1B1C1D]">
+        <header className="p-4 bg-[#2D2E2F]">
           <div className="flex items-center justify-between">
             <Link href="/admin" className="flex items-center gap-2">
               <Music size={24} />
@@ -93,6 +96,65 @@ export default function AddMusicPage() {
             </div>
           )}
 
+          {/* Resumo detalhado da importação */}
+          {importResult && importResult.success && (
+            <div className="bg-[#2D2E2F] border border-[#3D3E3F] rounded-xl p-6 mb-6">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-400" />
+                Resumo da Importação
+              </h3>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F]">
+                  <div className="text-2xl font-bold text-blue-400">{importResult.summary.received}</div>
+                  <div className="text-sm text-gray-400">Total Recebido</div>
+                </div>
+                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F]">
+                  <div className="text-2xl font-bold text-green-400">{importResult.summary.inserted}</div>
+                  <div className="text-sm text-gray-400">Inseridas</div>
+                </div>
+                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F]">
+                  <div className="text-2xl font-bold text-yellow-400">{importResult.summary.unique}</div>
+                  <div className="text-sm text-gray-400">Únicas</div>
+                </div>
+                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F]">
+                  <div className="text-2xl font-bold text-red-400">{importResult.summary.duplicates}</div>
+                  <div className="text-sm text-gray-400">Duplicadas</div>
+                </div>
+              </div>
+
+              {/* Lista de duplicados */}
+              {importResult.duplicates && importResult.duplicates.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-yellow-400" />
+                    Músicas Não Importadas ({importResult.duplicates.length})
+                  </h4>
+                  <div className="bg-[#1B1C1D] rounded-lg p-4 max-h-60 overflow-y-auto">
+                    <ul className="space-y-2">
+                      {importResult.duplicates.map((duplicate: string, index: number) => (
+                        <li key={index} className="text-sm text-gray-300 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                          {duplicate}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setImportResult(null)}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm"
+                >
+                  Limpar Resumo
+                </button>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -101,8 +163,7 @@ export default function AddMusicPage() {
               <textarea
                 value={formData.jsonData}
                 onChange={(e) => setFormData({ ...formData, jsonData: e.target.value })}
-                className="w-full h-96 p-4 border border-gray-600 rounded-lg text-white resize-none font-mono text-sm"
-                style={{ backgroundColor: '#2d2f32' }}
+                className="w-full h-96 p-4 border border-[#3D3E3F] rounded-xl text-white resize-none font-mono text-sm bg-[#2D2E2F] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300"
                 placeholder='Cole aqui o JSON das músicas...'
                 required
                 disabled={isLoading}
@@ -197,7 +258,7 @@ export default function AddMusicPage() {
             <button
               type="submit"
               disabled={isLoading || !formData.jsonData.trim()}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-purple-500/20 transform hover:scale-105 disabled:transform-none"
             >
               {isLoading ? (
                 <>
@@ -205,7 +266,10 @@ export default function AddMusicPage() {
                   Processando...
                 </>
               ) : (
-                'Adicionar Músicas'
+                <>
+                  <Music size={20} />
+                  Adicionar Músicas
+                </>
               )}
             </button>
           </form>
