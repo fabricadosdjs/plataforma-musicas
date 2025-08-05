@@ -9,6 +9,101 @@ import { useToastContext } from '@/context/ToastContext';
 import { useUserData } from '@/hooks/useUserData';
 import clsx from 'clsx';
 
+// Componente de Loading estilo Facebook
+const FacebookSkeleton = () => (
+    <div className="animate-pulse">
+        <div className="flex items-center gap-4 p-4">
+            <div className="w-12 h-12 bg-gray-700 rounded-lg"></div>
+            <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+            </div>
+            <div className="flex gap-2">
+                <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                <div className="w-8 h-8 bg-gray-700 rounded"></div>
+            </div>
+        </div>
+    </div>
+);
+
+// Componente de Loading para a tabela
+const TableSkeleton = () => (
+    <div className="animate-pulse">
+        <div className="hidden md:table min-w-full">
+            <thead className="sticky top-0 z-10 bg-[#1A1B1C]/80 backdrop-blur-sm">
+                <tr className="border-b border-zinc-800">
+                    <th className="px-4 py-3 w-[35%]">
+                        <div className="h-4 bg-gray-700 rounded w-24"></div>
+                    </th>
+                    <th className="px-4 py-3 w-[15%]">
+                        <div className="h-4 bg-gray-700 rounded w-16"></div>
+                    </th>
+                    <th className="px-4 py-3 w-[15%]">
+                        <div className="h-4 bg-gray-700 rounded w-12"></div>
+                    </th>
+                    <th className="px-4 py-3 w-[35%] text-right">
+                        <div className="h-4 bg-gray-700 rounded w-20 ml-auto"></div>
+                    </th>
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/70">
+                {Array.from({ length: 10 }).map((_, index) => (
+                    <tr key={index} className="animate-pulse">
+                        <td className="px-4 py-3">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-gray-700 rounded-lg"></div>
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                                    <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td className="px-4 py-3">
+                            <div className="h-6 bg-gray-700 rounded w-20"></div>
+                        </td>
+                        <td className="px-4 py-3">
+                            <div className="h-6 bg-gray-700 rounded w-16"></div>
+                        </td>
+                        <td className="px-4 py-3">
+                            <div className="flex items-center justify-end gap-2">
+                                <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                                <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                                <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                                <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                            </div>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </div>
+
+        <div className="md:hidden space-y-4">
+            {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="animate-pulse p-4 bg-zinc-800/50 rounded-xl">
+                    <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-gray-700 rounded-xl"></div>
+                        <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                            <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                            <div className="flex gap-2">
+                                <div className="h-6 bg-gray-700 rounded w-16"></div>
+                                <div className="h-6 bg-gray-700 rounded w-12"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-3">
+                        <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                        <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                        <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                        <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
 // --- SUBCOMPONENTES (Nenhuma alteração aqui) ---
 
 interface TrackUIProps {
@@ -184,6 +279,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
     // Estados para likes e downloads
     const [liking, setLiking] = useState<number | null>(null);
     const [deleting, setDeleting] = useState<number | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Estado da fila de downloads
     const [downloadQueue, setDownloadQueue] = useState<Track[]>([]);
@@ -204,6 +300,22 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
         }
         return Math.max((dailyLimit as number) - downloadsToday, 0);
     }, [dailyLimit, downloadsToday]);
+
+    // Efeito para simular loading inicial
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 800); // Simula tempo de carregamento
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Efeito para mostrar loading quando tracks mudam
+    useEffect(() => {
+        if (tracks.length > 0) {
+            setIsLoading(false);
+        }
+    }, [tracks]);
 
     // Função para verificar se o usuário já baixou a música
     const hasDownloadedTrack = useCallback((trackId: number) => {
@@ -341,9 +453,8 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
 
     const canDownload = useMemo(() => {
         return (trackId: number) => {
-            if (!isVip) return { can: false, reason: 'Apenas usuários VIP podem baixar músicas.', timeLeft: '' };
-            if (typeof dailyLimit === 'string' && dailyLimit === 'Ilimitado') {
-                // Para usuários VIP com downloads ilimitados, apenas verificar cooldown
+            // Para usuários VIP, sempre permitir download (apenas verificar cooldown)
+            if (isVip) {
                 const cooldown = downloadCooldowns[trackId];
                 if (cooldown > 0) {
                     const timeLeftFormatted = formatTimeLeft(cooldown);
@@ -351,7 +462,8 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
                 }
                 return { can: true, reason: 'Clique para baixar a música.', timeLeft: '' };
             }
-            // Para usuários não-VIP ou com limite
+
+            // Para usuários não-VIP
             if (typeof downloadsLeft === 'number' && downloadsLeft <= 0) return { can: false, reason: 'Limite diário de downloads atingido.', timeLeft: '' };
             const cooldown = downloadCooldowns[trackId];
             if (cooldown > 0) {
@@ -360,7 +472,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
             }
             return { can: true, reason: 'Clique para baixar a música.', timeLeft: '' };
         };
-    }, [isVip, downloadsLeft, downloadCooldowns, dailyLimit]);
+    }, [isVip, downloadsLeft, downloadCooldowns]);
 
     // Handlers de Ações
     const handlePlayPauseClick = async (track: Track) => {
@@ -375,11 +487,6 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
     const handleDownloadClick = async (track: Track) => {
         if (!session?.user) {
             showToast('👤 Faça login para fazer downloads', 'warning');
-            return;
-        }
-
-        if (!isVip) {
-            showToast('💎 Apenas usuários VIP podem baixar músicas', 'warning');
             return;
         }
 
@@ -399,49 +506,35 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
             const response = await fetch('/api/tracks/download', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    trackId: track.id.toString()
-                }),
+                body: JSON.stringify({ trackId: track.id })
             });
 
             if (response.ok) {
-                const responseData = await response.json();
+                const data = await response.json();
 
-                // updateDownloadedTrack(track.id); // This line was removed as per the new_code
+                // Forçar download do arquivo
+                const audioResponse = await fetch(data.downloadUrl);
+                const blob = await audioResponse.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${track.artist} - ${track.songName}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
 
-                // Definir cooldown de 24 horas (86400 segundos)
-                setDownloadCooldowns(prev => ({
-                    ...prev,
-                    [track.id]: 86400
-                }));
-
-                // Forçar download do arquivo (não abrir em nova aba)
-                if (track.downloadUrl) {
-                    // Criar um blob para forçar o download
-                    const response = await fetch(track.downloadUrl);
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `${track.artist} - ${track.songName}.mp3`;
-                    link.style.display = 'none';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    // Limpar o URL do blob
-                    window.URL.revokeObjectURL(url);
-                }
+                // Definir cooldown de 5 minutos
+                setDownloadCooldowns(prev => ({ ...prev, [track.id]: 300 }));
 
                 showToast(`✅ "${track.songName}" baixada com sucesso!`, 'success');
             } else {
                 const errorData = await response.json();
-                showToast(errorData.error || '❌ Erro ao fazer download', 'error');
+                showToast(errorData.error || '❌ Erro ao baixar música', 'error');
             }
         } catch (error) {
-            console.error('❌ Erro ao fazer download:', error);
-            showToast('❌ Erro ao fazer download', 'error');
+            console.error('Erro ao baixar música:', error);
+            showToast('❌ Erro ao baixar música', 'error');
         }
     };
 
@@ -620,25 +713,6 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
                 </div>
             )}
 
-            {!isVip && (
-                <div className="w-full flex items-center gap-4 text-center py-3 px-5 mb-4 rounded-xl bg-zinc-900/70 border border-zinc-800 shadow-lg">
-                    <DownloadCloud className="text-blue-500 flex-shrink-0" size={28} />
-                    <div className='text-left'>
-                        <p className="text-gray-300 text-base">
-                            Você tem{' '}
-                            <span className="font-black text-2xl text-cyan-400" style={{ textShadow: '0 0 8px rgba(56, 189, 248, 0.5)' }}>
-                                {downloadsLeft}
-                            </span>
-                            {' '} de {' '}
-                            <span className="font-bold text-xl text-gray-400">
-                                {dailyLimit}
-                            </span>
-                            {' '} downloads diários.
-                        </p>
-                    </div>
-                </div>
-            )}
-
             {/* ATUALIZADO: Adicionada a classe custom-scrollbar */}
             <div className="overflow-auto custom-scrollbar" style={{ maxHeight: '70vh' }}>
                 <table className="hidden md:table min-w-full text-left table-fixed">
@@ -671,7 +745,9 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/70">
-                        {tracks.length > 0 ? (
+                        {isLoading ? (
+                            <TableSkeleton />
+                        ) : tracks.length > 0 ? (
                             tracks.map(track => <TrackRow key={`desktop-${track.id}`} {...{ track, isCurrent: currentTrack?.id === track.id, isPlaying: isPlaying && currentTrack?.id === track.id, isLiked: userData?.likedTrackIds?.includes(track.id) ?? false, isLiking: liking === track.id, isDeleting: deleting === track.id, isAdmin, canDownloadResult: canDownload(track.id), isInQueue: downloadQueue.some(t => t.id === track.id), onPlayPause: handlePlayPauseClick, onDownload: handleDownloadClick, onLike: handleLikeClick, onReport: handleReportClick, onCopyright: handleCopyrightClick, onDelete: handleDeleteClick, onAddToQueue: handleAddToQueue, onRemoveFromQueue: handleRemoveFromQueue }} />)
                         ) : (
                             <tr><td colSpan={5} className="text-center py-16 text-gray-500">Nenhuma música encontrada.</td></tr>
@@ -680,7 +756,9 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading }: { tra
                 </table>
 
                 <div className="md:hidden flex flex-col gap-4 px-2">
-                    {tracks.length > 0 ? (
+                    {isLoading ? (
+                        <TableSkeleton />
+                    ) : tracks.length > 0 ? (
                         tracks.map(track => <TrackCard key={`mobile-${track.id}`} {...{ track, isCurrent: currentTrack?.id === track.id, isPlaying: isPlaying && currentTrack?.id === track.id, isLiked: userData?.likedTrackIds?.includes(track.id) ?? false, isLiking: liking === track.id, isDeleting: deleting === track.id, isAdmin, canDownloadResult: canDownload(track.id), isInQueue: downloadQueue.some(t => t.id === track.id), onPlayPause: handlePlayPauseClick, onDownload: handleDownloadClick, onLike: handleLikeClick, onReport: handleReportClick, onCopyright: handleCopyrightClick, onDelete: handleDeleteClick, onAddToQueue: handleAddToQueue, onRemoveFromQueue: handleRemoveFromQueue }} />)
                     ) : (
                         <div className="text-center py-16 text-gray-500">Nenhuma música encontrada.</div>
