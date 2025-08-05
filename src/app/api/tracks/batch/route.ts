@@ -91,6 +91,7 @@ export async function POST(req: Request) {
       // Buscar arquivos no storage
       const storageFiles = await storage.listFiles();
       const storageFileKeys = storageFiles.map(file => file.key);
+      console.log(`📁 Arquivos encontrados no storage: ${storageFileKeys.length}`);
 
       // Separar músicas únicas e duplicadas
       const uniqueTracks = [];
@@ -108,6 +109,10 @@ export async function POST(req: Request) {
         const fileName = downloadUrlParts[downloadUrlParts.length - 1];
         const isInStorage = storageFileKeys.some(key => key.includes(fileName));
 
+        console.log(`🔍 Verificando: ${track.artist} - ${track.songName}`);
+        console.log(`   📄 Nome do arquivo: ${fileName}`);
+        console.log(`   🗄️ Está no storage: ${isInStorage}`);
+
         if (isDuplicateUrl || isDuplicateSong || isInStorage) {
           duplicateTracks.push(track);
           
@@ -116,6 +121,7 @@ export async function POST(req: Request) {
             const exactKey = storageFileKeys.find(key => key.includes(fileName));
             if (exactKey) {
               duplicateFileKeys.push(exactKey);
+              console.log(`   ✅ Adicionado às chaves de exclusão: ${exactKey}`);
             }
             duplicateReasons.push(`Arquivo no storage: ${track.artist} - ${track.songName}`);
           } else if (isDuplicateUrl) {
@@ -132,6 +138,7 @@ export async function POST(req: Request) {
       console.log(`   - Total recebido: ${tracksToCreate.length}`);
       console.log(`   - Únicas: ${uniqueTracks.length}`);
       console.log(`   - Duplicadas: ${duplicateTracks.length}`);
+      console.log(`   - Chaves de exclusão encontradas: ${duplicateFileKeys.length}`);
 
       // 6. Inserir apenas músicas únicas
       let insertResult = null;
