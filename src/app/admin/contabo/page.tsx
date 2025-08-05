@@ -818,20 +818,44 @@ export default function ContaboStoragePage() {
 
                                 <button
                                     onClick={() => {
-                                        // Se estamos na página 1 e todas as 35 primeiras estão marcadas, desmarca todas
-                                        if (currentPage === 0 && selectedFiles.length === Math.min(35, importableFiles.length)) {
-                                            setSelectedFiles([]);
+                                        // Calcula os itens da página atual
+                                        const startIndex = currentPage * itemsPerPage;
+                                        const endIndex = startIndex + itemsPerPage;
+                                        const currentPageItems = importableFiles.slice(startIndex, endIndex);
+                                        const currentPageKeys = currentPageItems.map(f => f.file.key);
+                                        
+                                        // Verifica se todas as músicas da página atual estão selecionadas
+                                        const allCurrentPageSelected = currentPageKeys.every(key => selectedFiles.includes(key));
+                                        
+                                        if (allCurrentPageSelected) {
+                                            // Desmarca todas as músicas da página atual
+                                            setSelectedFiles(prev => prev.filter(key => !currentPageKeys.includes(key)));
                                         } else {
-                                            // Marca apenas as 35 primeiras músicas (página 1)
-                                            const first35Keys = importableFiles.slice(0, 35).map(f => f.file.key);
-                                            setSelectedFiles(first35Keys);
+                                            // Marca todas as músicas da página atual (mantendo as já selecionadas)
+                                            setSelectedFiles(prev => {
+                                                const newSelection = [...prev];
+                                                currentPageKeys.forEach(key => {
+                                                    if (!newSelection.includes(key)) {
+                                                        newSelection.push(key);
+                                                    }
+                                                });
+                                                return newSelection;
+                                            });
                                         }
                                     }}
                                     disabled={importing}
                                     className="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg transition-colors disabled:opacity-50 border border-gray-600"
-                                    title={currentPage === 0 && selectedFiles.length === Math.min(35, importableFiles.length) ? 'Desmarcar todas' : 'Marcar 35 primeiras'}
+                                    title="Marcar/Desmarcar todas as músicas da página atual"
                                 >
-                                    {currentPage === 0 && selectedFiles.length === Math.min(35, importableFiles.length) ? 'Desmarcar Todas' : 'Marcar 35 Primeiras'}
+                                    Marcar Página Atual
+                                </button>
+                                <button
+                                    onClick={() => setSelectedFiles([])}
+                                    disabled={importing || selectedFiles.length === 0}
+                                    className="inline-flex items-center gap-2 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                    title="Limpar todas as seleções"
+                                >
+                                    Limpar Seleções
                                 </button>
                                 <button
                                     onClick={importSelectedFiles}
@@ -843,21 +867,9 @@ export default function ContaboStoragePage() {
                                     ) : (
                                         <Import className="w-4 h-4" />
                                     )}
-                                    {importing ? 'Importando...' : `Importar (marcadas)`}
+                                    {importing ? 'Importando...' : `Importar (${selectedFiles.length})`}
                                 </button>
-                                <button
-                                    onClick={() => {
-                                        // Seleciona apenas as 35 primeiras músicas
-                                        const first35Keys = importableFiles.slice(0, 35).map(f => f.file.key);
-                                        setSelectedFiles(first35Keys);
-                                        setTimeout(importSelectedFiles, 0);
-                                    }}
-                                    disabled={importing}
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg transition-colors disabled:opacity-50"
-                                >
-                                    <Import className="w-4 h-4" />
-                                    Importar 35 Primeiras
-                                </button>
+
                                 <button
                                     onClick={() => {
                                         const selected = importableFiles.filter(item => selectedFiles.includes(item.file.key));
@@ -930,12 +942,22 @@ export default function ContaboStoragePage() {
                                     <div>
                                         {/* Informações da paginação */}
                                         <div className="px-6 py-3 bg-gray-700 border-b border-gray-600 flex items-center justify-between text-sm text-gray-300">
-                                            <span>
-                                                Mostrando {startIndex + 1}-{Math.min(endIndex, totalItems)} de {totalItems} músicas
-                                            </span>
-                                            <span>
-                                                Página {currentPage + 1} de {totalPages}
-                                            </span>
+                                            <div className="flex items-center gap-4">
+                                                <span>
+                                                    Mostrando {startIndex + 1}-{Math.min(endIndex, totalItems)} de {totalItems} músicas
+                                                </span>
+                                                <span>
+                                                    Página {currentPage + 1} de {totalPages}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <span className="text-purple-400">
+                                                    {currentPageKeys.filter(key => selectedFiles.includes(key)).length} de {currentPageKeys.length} selecionadas nesta página
+                                                </span>
+                                                <span className="text-green-400">
+                                                    {selectedFiles.length} total selecionadas
+                                                </span>
+                                            </div>
                                         </div>
 
                                         {/* Músicas da página atual */}
