@@ -1204,146 +1204,394 @@ export default function ContaboStoragePage() {
                         );
                     } else if (currentView === 'import') {
                         return (
-                    /* Duplicates View */
-                    <div className="bg-gray-800 rounded-xl overflow-hidden">
-                        <div className="px-6 py-4 bg-gray-700 border-b border-gray-600 flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                <Trash2 className="w-5 h-5 text-red-300" />
-                                Detector de Duplicatas
-                            </h3>
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={detectDuplicates}
-                                    disabled={detectingDuplicates}
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors flex items-center gap-2"
-                                >
-                                    {detectingDuplicates ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <RefreshCw className="w-4 h-4" />
-                                    )}
-                                    {detectingDuplicates ? 'Detectando...' : 'Detectar Duplicatas'}
-                                </button>
-                                {selectedDuplicates.length > 0 && (
-                                    <button
-                                        onClick={deleteSelectedDuplicates}
-                                        disabled={deletingDuplicates}
-                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors flex items-center gap-2"
-                                    >
-                                        {deletingDuplicates ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            <Trash2 className="w-4 h-4" />
+                            /* Import View */
+                            <div className="bg-gray-800 rounded-xl overflow-hidden">
+                                <div className="px-6 py-4 bg-gray-700 border-b border-gray-600 flex items-center justify-between">
+                                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                        <Import className="w-5 h-5 text-purple-300" />
+                                        Importar Músicas ({importableFiles.length})
+                                        {selectedFolder && (
+                                            <span className="text-sm text-purple-400 ml-2">
+                                                - Pasta: {selectedFolder}
+                                            </span>
                                         )}
-                                        {deletingDuplicates ? 'Excluindo...' : `Excluir (${selectedDuplicates.length})`}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
+                                    </h3>
 
-                        {duplicateStats && (
-                            <div className="px-6 py-4 bg-gray-700/50 border-b border-gray-600">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="bg-gray-800/50 rounded-lg p-3">
-                                        <div className="text-sm text-gray-400">Total de Arquivos</div>
-                                        <div className="text-xl font-bold text-white">{duplicateStats.totalFiles}</div>
-                                    </div>
-                                    <div className="bg-gray-800/50 rounded-lg p-3">
-                                        <div className="text-sm text-gray-400">Arquivos Únicos</div>
-                                        <div className="text-xl font-bold text-green-400">{duplicateStats.uniqueFiles}</div>
-                                    </div>
-                                    <div className="bg-gray-800/50 rounded-lg p-3">
-                                        <div className="text-sm text-gray-400">Grupos de Duplicatas</div>
-                                        <div className="text-xl font-bold text-yellow-400">{duplicateStats.duplicateGroups}</div>
-                                    </div>
-                                    <div className="bg-gray-800/50 rounded-lg p-3">
-                                        <div className="text-sm text-gray-400">Espaço a Economizar</div>
-                                        <div className="text-xl font-bold text-red-400">{formatFileSize(duplicateStats.sizeSaved)}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                                    <div className="flex gap-2 flex-wrap items-center">
+                                        {/* Seletor de Pasta */}
+                                        <div className="relative">
+                                            <button
+                                                onClick={() => setShowFolderSelector(!showFolderSelector)}
+                                                className="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg transition-colors border border-gray-600"
+                                            >
+                                                <Folder className="w-4 h-4" />
+                                                {selectedFolder ? 'Trocar Pasta' : 'Selecionar Pasta'}
+                                            </button>
 
-                        {detectingDuplicates ? (
-                            <div className="p-8 text-center">
-                                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-400" />
-                                <p className="text-gray-400">Detectando duplicatas...</p>
-                            </div>
-                        ) : duplicateGroups.length === 0 ? (
-                            <div className="p-8 text-center">
-                                <Trash2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                                <h3 className="text-xl font-semibold text-gray-300 mb-2">
-                                    Nenhuma duplicata encontrada
-                                </h3>
-                                <p className="text-gray-500">
-                                    Clique em "Detectar Duplicatas" para analisar os arquivos
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="divide-y divide-gray-700">
-                                {duplicateGroups.map((group, groupIndex) => (
-                                    <div key={groupIndex} className="p-4">
-                                        <div className="mb-3">
-                                            <h4 className="font-semibold text-white mb-2">
-                                                Grupo {groupIndex + 1} - {group.count} arquivos
-                                            </h4>
-                                            <div className="flex items-center gap-4 text-sm text-gray-400">
-                                                <span>Total: {formatFileSize(group.totalSize)}</span>
-                                                <span>Pode economizar: {formatFileSize(group.totalSize - Math.max(...group.files.map((f: any) => f.size)))}</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="space-y-2">
-                                            {group.files.map((file: any, fileIndex: number) => (
-                                                <div key={file.key} className={`flex items-center justify-between p-3 rounded-lg ${
-                                                    fileIndex === 0 ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
-                                                }`}>
-                                                    <div className="flex items-center gap-3 flex-1">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedDuplicates.includes(file.key)}
-                                                            onChange={() => toggleDuplicateSelection(file.key)}
-                                                            disabled={fileIndex === 0} // Não permitir selecionar o primeiro arquivo
-                                                            className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-red-500 focus:ring-red-500 disabled:opacity-50"
-                                                        />
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="font-medium text-white">{file.filename}</span>
-                                                                {fileIndex === 0 && (
-                                                                    <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
-                                                                        Mantido
-                                                                    </span>
-                                                                )}
-                                                                {fileIndex > 0 && (
-                                                                    <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">
-                                                                        Duplicata
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex items-center gap-4 text-sm text-gray-400 mt-1">
-                                                                <span>{formatFileSize(file.size)}</span>
-                                                                <span>{new Date(file.lastModified).toLocaleDateString('pt-BR')}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div className="flex items-center gap-2">
+                                            {showFolderSelector && (
+                                                <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto min-w-64">
+                                                    <div className="p-2">
                                                         <button
-                                                            onClick={() => window.open(file.url, '_blank')}
-                                                            className="p-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors"
-                                                            title="Download"
+                                                            onClick={handleClearFolderSelection}
+                                                            className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white text-sm"
                                                         >
-                                                            <Download className="w-4 h-4" />
+                                                            📁 Todas as Pastas
                                                         </button>
+                                                        <div className="border-t border-gray-600 my-1"></div>
+                                                        {folders.map((folder) => (
+                                                            <button
+                                                                key={folder}
+                                                                onClick={handleSelectFolder(folder)}
+                                                                className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white text-sm"
+                                                            >
+                                                                📁 {folder}
+                                                            </button>
+                                                        ))}
                                                     </div>
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
+
+                                        {/* Selecionar Todas da Pasta */}
+                                        {selectedFolder && (
+                                            <button
+                                                onClick={selectAllFromFolder}
+                                                disabled={importing}
+                                                className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                            >
+                                                <Folder className="w-4 h-4" />
+                                                Selecionar Todas da Pasta
+                                            </button>
+                                        )}
+
+                                        <button
+                                            onClick={() => {
+                                                // Calcula os itens da página atual
+                                                const startIndex = currentPage * itemsPerPage;
+                                                const endIndex = startIndex + itemsPerPage;
+                                                const currentPageItems = importableFiles.slice(startIndex, endIndex);
+                                                const currentPageKeys = currentPageItems.map(f => f.file.key);
+                                                
+                                                // Verifica se todas as músicas da página atual estão selecionadas
+                                                const allCurrentPageSelected = currentPageKeys.every(key => selectedFiles.includes(key));
+                                                
+                                                if (allCurrentPageSelected) {
+                                                    // Desmarca todas as músicas da página atual
+                                                    setSelectedFiles(prev => prev.filter(key => !currentPageKeys.includes(key)));
+                                                } else {
+                                                    // Marca todas as músicas da página atual (mantendo as já selecionadas)
+                                                    setSelectedFiles(prev => {
+                                                        const newSelection = [...prev];
+                                                        currentPageKeys.forEach(key => {
+                                                            if (!newSelection.includes(key)) {
+                                                                newSelection.push(key);
+                                                            }
+                                                        });
+                                                        return newSelection;
+                                                    });
+                                                }
+                                            }}
+                                            disabled={importing}
+                                            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg transition-colors disabled:opacity-50 border border-gray-600"
+                                            title="Marcar/Desmarcar todas as músicas da página atual"
+                                        >
+                                            Marcar Página Atual
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedFiles([])}
+                                            disabled={importing || selectedFiles.length === 0}
+                                            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                            title="Limpar todas as seleções"
+                                        >
+                                            Limpar Seleções
+                                        </button>
+                                        <button
+                                            onClick={importSelectedFiles}
+                                            disabled={importing || selectedFiles.length === 0}
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                        >
+                                            {importing ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <Import className="w-4 h-4" />
+                                            )}
+                                            {importing ? 'Importando...' : `Importar (${selectedFiles.length})`}
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                const selected = importableFiles.filter(item => selectedFiles.includes(item.file.key));
+                                                const text = selected.map(item => `${item.importData.songName} - ${item.importData.artist}\n${item.file.url}`).join('\n\n');
+                                                navigator.clipboard.writeText(text);
+                                            }}
+                                            disabled={selectedFiles.length === 0}
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg transition-colors disabled:opacity-50"
+                                        >
+                                            Copiar Todas
+                                        </button>
                                     </div>
-                                ))}
+                                </div>
+
+                                {loading ? (
+                                    <div className="p-8 text-center">
+                                        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-400" />
+                                        <p className="text-gray-400">Analisando arquivos para importação...</p>
+                                    </div>
+                                ) : importableFiles.length === 0 ? (
+                                    <div className="p-8 text-center">
+                                        <Music className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                                        <h3 className="text-xl font-semibold text-gray-300 mb-2">
+                                            Nenhum arquivo para importar
+                                        </h3>
+                                        <p className="text-gray-500 mb-4">
+                                            Todos os arquivos de áudio do storage já estão no banco de dados
+                                        </p>
+                                        <button
+                                            onClick={handleLoadImportableFiles}
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                                        >
+                                            <RefreshCw className="w-4 h-4" />
+                                            Verificar Novamente
+                                        </button>
+                                    </div>
+                                ) : (
+                                    (() => {
+                                        // Calcula a paginação
+                                        const totalItems = importableFiles.length;
+                                        const totalPages = Math.ceil(totalItems / itemsPerPage);
+                                        const startIndex = currentPage * itemsPerPage;
+                                        const endIndex = startIndex + itemsPerPage;
+
+                                        // Filtra os itens da página atual
+                                        const currentPageItems = importableFiles.slice(startIndex, endIndex);
+                                        const currentPageKeys = currentPageItems.map(f => f.file.key);
+
+                                        // Agrupa os itens da página atual por dia
+                                        const currentPageGroupedByDay: { [date: string]: ImportableFile[] } = {};
+                                        currentPageItems.forEach((item) => {
+                                            const date = item.importData.releaseDate ? new Date(item.importData.releaseDate) : null;
+                                            const dayKey = date ? date.toISOString().split('T')[0] : 'sem-data';
+                                            if (!currentPageGroupedByDay[dayKey]) currentPageGroupedByDay[dayKey] = [];
+                                            currentPageGroupedByDay[dayKey].push(item);
+                                        });
+                                        const currentPageDays = Object.keys(currentPageGroupedByDay).sort((a, b) => b.localeCompare(a));
+
+                                        return (
+                                            <div>
+                                                {/* Informações da paginação */}
+                                                <div className="px-6 py-3 bg-gray-700 border-b border-gray-600 flex items-center justify-between text-sm text-gray-300">
+                                                    <div className="flex items-center gap-4">
+                                                        <span>
+                                                            Mostrando {startIndex + 1}-{Math.min(endIndex, totalItems)} de {totalItems} músicas
+                                                        </span>
+                                                        <span>
+                                                            Página {currentPage + 1} de {totalPages}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="text-purple-400">
+                                                            {currentPageKeys.filter(key => selectedFiles.includes(key)).length} de {currentPageKeys.length} selecionadas nesta página
+                                                        </span>
+                                                        <span className="text-green-400">
+                                                            {selectedFiles.length} total selecionadas
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Músicas da página atual */}
+                                                {currentPageDays.map((day) => (
+                                                    <div key={day} className="mb-8">
+                                                        <h4 className="text-lg font-bold text-purple-300 mb-2 px-4 pt-4">{day === 'sem-data' ? 'Sem Data' : new Date(day).toLocaleDateString('pt-BR')}</h4>
+                                                        <div className="divide-y divide-gray-700">
+                                                            {currentPageGroupedByDay[day].map((item, index) => (
+                                                                <div key={item.file.key} className="p-4 flex items-start gap-4 hover:bg-gray-700/50">
+                                                                    {/* Checkbox para seleção */}
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="mt-2 mr-2 w-5 h-5 accent-purple-600"
+                                                                        checked={selectedFiles.includes(item.file.key)}
+                                                                        onChange={e => {
+                                                                            setSelectedFiles(prev =>
+                                                                                e.target.checked
+                                                                                    ? [...prev, item.file.key]
+                                                                                    : prev.filter(k => k !== item.file.key)
+                                                                            );
+                                                                        }}
+                                                                    />
+                                                                    <div className="p-2 bg-purple-600/20 rounded-lg mt-1">
+                                                                        <Music className="w-5 h-5 text-purple-400" />
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                            <div>
+                                                                                <h4 className="font-medium text-white mb-2">Arquivo Original</h4>
+                                                                                <p className="text-sm text-gray-300">{item.file.filename}</p>
+                                                                                <p className="text-xs text-gray-500">
+                                                                                    {formatFileSize(item.file.size)} •
+                                                                                    {new Date(item.file.lastModified).toLocaleDateString('pt-BR')}
+                                                                                </p>
+                                                                                <div className="mt-2">
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        readOnly
+                                                                                        value={item.file.url}
+                                                                                        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-green-400 font-mono cursor-pointer select-all"
+                                                                                        onClick={e => (e.target as HTMLInputElement).select()}
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+                                                                            <div>
+                                                                                <h4 className="font-medium text-white mb-2">Dados Detectados</h4>
+                                                                                <div className="space-y-1 text-sm">
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <span className="text-gray-500 w-16">Música:</span>
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white flex-1"
+                                                                                            value={item.importData.songName}
+                                                                                            onChange={e => {
+                                                                                                const newName = e.target.value;
+                                                                                                setImportableFiles((prev) => {
+                                                                                                    const updated = [...prev];
+                                                                                                    const fileIndex = prev.findIndex(p => p.file.key === item.file.key);
+                                                                                                    if (fileIndex > -1) {
+                                                                                                        updated[fileIndex] = {
+                                                                                                            ...updated[fileIndex],
+                                                                                                            importData: {
+                                                                                                                ...updated[fileIndex].importData,
+                                                                                                                songName: newName
+                                                                                                            }
+                                                                                                        };
+                                                                                                    }
+                                                                                                    return updated;
+                                                                                                });
+                                                                                            }}
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <span className="text-gray-500 w-16">Artista:</span>
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white flex-1"
+                                                                                            value={item.importData.artist}
+                                                                                            onChange={e => {
+                                                                                                const newArtist = e.target.value;
+                                                                                                setImportableFiles((prev) => {
+                                                                                                    const updated = [...prev];
+                                                                                                    const fileIndex = prev.findIndex(p => p.file.key === item.file.key);
+                                                                                                    if (fileIndex > -1) {
+                                                                                                        updated[fileIndex] = {
+                                                                                                            ...updated[fileIndex],
+                                                                                                            importData: {
+                                                                                                                ...updated[fileIndex].importData,
+                                                                                                                artist: newArtist
+                                                                                                            }
+                                                                                                        };
+                                                                                                    }
+                                                                                                    return updated;
+                                                                                                });
+                                                                                            }}
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <span className="text-gray-500 w-16">Estilo:</span>
+                                                                                        <select
+                                                                                            className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white flex-1"
+                                                                                            value={item.importData.style}
+                                                                                            onChange={e => {
+                                                                                                const newStyle = e.target.value;
+                                                                                                setImportableFiles((prev) => {
+                                                                                                    const updated = [...prev];
+                                                                                                    const fileIndex = prev.findIndex(p => p.file.key === item.file.key);
+                                                                                                    if (fileIndex > -1) {
+                                                                                                        updated[fileIndex] = {
+                                                                                                            ...updated[fileIndex],
+                                                                                                            importData: {
+                                                                                                                ...updated[fileIndex].importData,
+                                                                                                                style: newStyle
+                                                                                                            }
+                                                                                                        };
+                                                                                                    }
+                                                                                                    return updated;
+                                                                                                });
+                                                                                            }}
+                                                                                        >
+                                                                                            {styleOptions.map((style) => (
+                                                                                                <option key={style} value={style}>
+                                                                                                    {style}
+                                                                                                </option>
+                                                                                            ))}
+                                                                                        </select>
+                                                                                    </div>
+                                                                                    {item.importData.version && (
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <span className="text-gray-500 w-16">Versão:</span>
+                                                                                            <select
+                                                                                                className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white flex-1"
+                                                                                                value={item.importData.version}
+                                                                                                onChange={e => {
+                                                                                                    const newVersion = e.target.value;
+                                                                                                    setImportableFiles((prev) => {
+                                                                                                        const updated = [...prev];
+                                                                                                        const fileIndex = prev.findIndex(p => p.file.key === item.file.key);
+                                                                                                        if (fileIndex > -1) {
+                                                                                                            updated[fileIndex] = {
+                                                                                                                ...updated[fileIndex],
+                                                                                                                importData: {
+                                                                                                                    ...updated[fileIndex].importData,
+                                                                                                                    version: newVersion
+                                                                                                                }
+                                                                                                            };
+                                                                                                        }
+                                                                                                        return updated;
+                                                                                                    });
+                                                                                                }}
+                                                                                            >
+                                                                                                {versionOptions.map((version) => (
+                                                                                                    <option key={version} value={version}>
+                                                                                                        {version}
+                                                                                                    </option>
+                                                                                                ))}
+                                                                                            </select>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+
+                                                {/* Paginação */}
+                                                {totalPages > 1 && (
+                                                    <div className="px-6 py-4 bg-gray-700 border-t border-gray-600 flex items-center justify-between">
+                                                        <button
+                                                            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                                                            disabled={currentPage === 0}
+                                                            className="px-3 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white rounded-lg transition-colors disabled:opacity-50"
+                                                        >
+                                                            Anterior
+                                                        </button>
+                                                        <span className="text-gray-300">
+                                                            Página {currentPage + 1} de {totalPages}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                                                            disabled={currentPage === totalPages - 1}
+                                                            className="px-3 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white rounded-lg transition-colors disabled:opacity-50"
+                                                        >
+                                                            Próxima
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()
+                                )}
                             </div>
-                        )}
-                    </div>
                         );
                     } else if (currentView === 'duplicates') {
                         return (
