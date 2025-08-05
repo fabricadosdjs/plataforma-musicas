@@ -1,56 +1,8 @@
 'use client';
 
-import {
-    AlertCircle,
-    Brain,
-    CheckCircle,
-    Clock,
-    Database,
-    Download,
-    FileAudio,
-    Music,
-    Plus,
-    RefreshCw,
-    Search,
-    Trash2,
-    Zap,
-    Copy,
-    Check,
-    Edit,
-    Calendar,
-    Settings,
-    Link,
-    Eye,
-    EyeOff,
-    Save,
-    X,
-    Play,
-    Pause,
-    Volume2,
-    VolumeX,
-    Heart,
-    Copyright,
-    Filter,
-    SortAsc,
-    SortDesc,
-    Info,
-    AlertTriangle,
-    FileText,
-    Upload,
-    Target,
-    Sparkles
-} from 'lucide-react';
+import { Brain, Search, Upload, Database, Check, X, Play, Pause, Edit, Copy, Save, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { AdminAuth } from '@/components/admin/AdminAuth';
-
-interface StorageFile {
-    key: string;
-    url: string;
-    size: number;
-    lastModified: string;
-    isAudio: boolean;
-    filename: string;
-}
 
 interface NewTrackPreview {
     filename: string;
@@ -67,14 +19,9 @@ interface NewTrackPreview {
     selected?: boolean;
     customTitle?: string;
     customVersion?: string;
-    customDate?: string;
     customStyle?: string;
     customPool?: string;
-    downloadedEver?: boolean;
-    downloadedToday?: boolean;
-    liked?: boolean;
-    confidence?: number; // Confiança da detecção (0-100)
-    processingStatus?: 'pending' | 'processing' | 'success' | 'error';
+    confidence?: number;
 }
 
 interface DetectionResult {
@@ -96,7 +43,6 @@ interface ImportResult {
     message: string;
     imported: number;
     total: number;
-    newTracks: any[];
     statistics: {
         totalInDatabase: number;
         byStyle: Array<{ style: string; _count: number }>;
@@ -106,26 +52,20 @@ interface ImportResult {
 
 export default function ContaboSmartAdmin() {
     // Estados principais
-    const [files, setFiles] = useState<StorageFile[]>([]);
     const [newTracks, setNewTracks] = useState<NewTrackPreview[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [loading, setLoading] = useState(false);
     const [detecting, setDetecting] = useState(false);
     const [importing, setImporting] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
     const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
     
     // Estados de configuração
     const [autoDetectEnabled, setAutoDetectEnabled] = useState(true);
-    const [importDate, setImportDate] = useState('current');
-    const [customDate, setCustomDate] = useState('2024-12-01');
     const [showLinks, setShowLinks] = useState(true);
     const [editingTrack, setEditingTrack] = useState<number | null>(null);
     const [allSelected, setAllSelected] = useState(false);
-    const [copySuccess, setCopySuccess] = useState(false);
     
-    // Estados de filtros e ordenação
+    // Estados de filtros
     const [filterStyle, setFilterStyle] = useState('all');
     const [filterPool, setFilterPool] = useState('all');
     const [sortBy, setSortBy] = useState<'filename' | 'size' | 'date' | 'confidence'>('date');
@@ -134,9 +74,6 @@ export default function ContaboSmartAdmin() {
     // Estados do player
     const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [activePlayerIndex, setActivePlayerIndex] = useState<number | null>(null);
-    const [volume, setVolume] = useState(1.0);
-    const [isMuted, setIsMuted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -177,12 +114,11 @@ export default function ContaboSmartAdmin() {
             if (response.ok) {
                 const result: DetectionResult = await response.json();
                 setDetectionResult(result);
-                setNewTracks(result.newTracks || []);
                 
                 // Auto-selecionar tracks com alta confiança
                 const updatedTracks = result.newTracks.map(track => ({
                     ...track,
-                    selected: Boolean(track.confidence && track.confidence > 70)
+                    selected: track.confidence && track.confidence > 70
                 }));
                 setNewTracks(updatedTracks);
             } else {
@@ -202,19 +138,6 @@ export default function ContaboSmartAdmin() {
         
         const selectedTracks = newTracks.filter(track => track.selected);
         
-        if (selectedTracks.length === 0) {
-            setImportResult({
-                success: false,
-                message: 'Nenhuma track selecionada para importação',
-                imported: 0,
-                total: 0,
-                newTracks: [],
-                statistics: { totalInDatabase: 0, byStyle: [], byPool: [] }
-            });
-            setImporting(false);
-            return;
-        }
-        
         try {
             const response = await fetch('/api/contabo/smart-import', {
                 method: 'POST',
@@ -223,8 +146,6 @@ export default function ContaboSmartAdmin() {
                 },
                 body: JSON.stringify({
                     tracks: selectedTracks,
-                    importDate: importDate,
-                    customDate: customDate,
                     autoDetectStyles: true,
                     autoDetectPools: true,
                 }),
@@ -234,7 +155,6 @@ export default function ContaboSmartAdmin() {
             setImportResult(result);
             
             if (result.success) {
-                // Limpar tracks importadas
                 setNewTracks([]);
                 setDetectionResult(null);
             }
@@ -244,7 +164,6 @@ export default function ContaboSmartAdmin() {
                 message: 'Erro na importação: ' + (error as Error).message,
                 imported: 0,
                 total: 0,
-                newTracks: [],
                 statistics: { totalInDatabase: 0, byStyle: [], byPool: [] }
             });
         } finally {
@@ -286,7 +205,7 @@ export default function ContaboSmartAdmin() {
     // Função para alternar seleção de track
     const toggleTrackSelection = (index: number) => {
         const updatedTracks = [...newTracks];
-        updatedTracks[index].selected = Boolean(!updatedTracks[index].selected);
+        updatedTracks[index].selected = !updatedTracks[index].selected;
         setNewTracks(updatedTracks);
     };
 
@@ -294,7 +213,7 @@ export default function ContaboSmartAdmin() {
     const toggleAllSelection = () => {
         const updatedTracks = newTracks.map(track => ({
             ...track,
-            selected: Boolean(!allSelected)
+            selected: !allSelected
         }));
         setNewTracks(updatedTracks);
         setAllSelected(!allSelected);
@@ -323,8 +242,6 @@ export default function ContaboSmartAdmin() {
     const copyLink = async (url: string) => {
         try {
             await navigator.clipboard.writeText(url);
-            setCopySuccess(true);
-            setTimeout(() => setCopySuccess(false), 2000);
         } catch (error) {
             console.error('Erro ao copiar link:', error);
         }
@@ -342,7 +259,6 @@ export default function ContaboSmartAdmin() {
             }
         } else {
             setCurrentPlayingIndex(index);
-            setActivePlayerIndex(index);
             setIsPlaying(true);
             if (audioRef.current) {
                 audioRef.current.src = url;
@@ -354,7 +270,6 @@ export default function ContaboSmartAdmin() {
     const handleAudioEnded = () => {
         setIsPlaying(false);
         setCurrentPlayingIndex(null);
-        setActivePlayerIndex(null);
     };
 
     const handleTimeUpdate = () => {
@@ -410,7 +325,6 @@ export default function ContaboSmartAdmin() {
                                     onClick={() => setShowLinks(!showLinks)}
                                     className="bg-gray-800/50 text-white px-6 py-3 rounded-xl hover:bg-gray-800 disabled:opacity-50 flex items-center gap-3 border border-gray-700 transition-all shadow-lg font-semibold"
                                 >
-                                    {showLinks ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                     {showLinks ? 'Ocultar Links' : 'Mostrar Links'}
                                 </button>
                             </div>
@@ -504,68 +418,17 @@ export default function ContaboSmartAdmin() {
                         </div>
                     </div>
 
-                    {/* Filtros e busca */}
+                    {/* Busca */}
                     <div className="bg-gray-900/30 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-gray-800">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {/* Busca */}
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar tracks..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                />
-                            </div>
-
-                            {/* Filtro por estilo */}
-                            <select
-                                value={filterStyle}
-                                onChange={(e) => setFilterStyle(e.target.value)}
-                                className="px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            >
-                                <option value="all">Todos os estilos</option>
-                                {detectionResult?.statistics.byStyle.map(style => (
-                                    <option key={style.style} value={style.style}>
-                                        {style.style} ({style.count})
-                                    </option>
-                                ))}
-                            </select>
-
-                            {/* Filtro por pool */}
-                            <select
-                                value={filterPool}
-                                onChange={(e) => setFilterPool(e.target.value)}
-                                className="px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            >
-                                <option value="all">Todos os pools</option>
-                                {detectionResult?.statistics.byPool.map(pool => (
-                                    <option key={pool.pool} value={pool.pool}>
-                                        {pool.pool} ({pool.count})
-                                    </option>
-                                ))}
-                            </select>
-
-                            {/* Ordenação */}
-                            <div className="flex gap-2">
-                                <select
-                                    value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value as any)}
-                                    className="flex-1 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                >
-                                    <option value="date">Data</option>
-                                    <option value="filename">Nome</option>
-                                    <option value="size">Tamanho</option>
-                                    <option value="confidence">Confiança</option>
-                                </select>
-                                <button
-                                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                                    className="px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white hover:bg-gray-800 transition-all"
-                                >
-                                    {sortOrder === 'asc' ? <SortAsc className="h-5 w-5" /> : <SortDesc className="h-5 w-5" />}
-                                </button>
-                            </div>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Buscar tracks..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
                         </div>
                     </div>
 
@@ -792,20 +655,6 @@ export default function ContaboSmartAdmin() {
                                                 <p className="text-2xl font-bold">{importResult.statistics.totalInDatabase}</p>
                                             </div>
                                         </div>
-
-                                        {importResult.statistics.byStyle.length > 0 && (
-                                            <div>
-                                                <h4 className="font-semibold mb-3">Por Estilo</h4>
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                                    {importResult.statistics.byStyle.map((style, index) => (
-                                                        <div key={index} className="bg-gray-800/50 rounded-lg p-3">
-                                                            <span className="text-sm text-gray-400">{style.style}</span>
-                                                            <p className="font-semibold">{style._count}</p>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                 )}
 
@@ -831,4 +680,4 @@ export default function ContaboSmartAdmin() {
             </div>
         </AdminAuth>
     );
-}
+} 
