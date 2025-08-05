@@ -21,15 +21,15 @@
 @tailwind utilities;
 
 :root {
-  --background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
+  --background: #1B1C1D;
   --foreground: #ffffff;
-  --card-background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
-  --border-color: #4b5563;
-  --muted-background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
+  --card-background: #1B1C1D;
+  --border-color: #2D2E2F;
+  --muted-background: #1B1C1D;
   --accent-blue: #3b82f6;
   --accent-purple: #8b5cf6;
-  --gray-dark: #374151;
-  --gray-darker: #1f2937;
+  --gray-dark: #2D2E2F;
+  --gray-darker: #1B1C1D;
   --gray-light: #6b7280;
   /* A variável --font-poppins será gerada automaticamente pelo Next.js com base no layout.tsx */
 }
@@ -37,16 +37,16 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
+    --background: #1B1C1D;
     --foreground: #ffffff;
-    --card-background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
-    --border-color: #4b5563;
-    --muted-background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
+    --card-background: #1B1C1D;
+    --border-color: #2D2E2F;
+    --muted-background: #1B1C1D;
   }
 }
 
 body {
-  background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
+  background: #1B1C1D;
   color: var(--foreground);
   font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 400;

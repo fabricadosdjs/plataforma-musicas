@@ -5,7 +5,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Filter, Download, Heart, Play, Pause, Music, TrendingUp, Clock, Star, CheckCircle, Waves, Sparkles, Crown, BarChart3, Zap, Flame } from 'lucide-react';
+import { Search, Filter, Download, Heart, Play, Pause, Music, TrendingUp, Clock, Star, CheckCircle, Waves, Sparkles, Crown, BarChart3, Zap, Flame, X } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
 import { useToast } from '@/hooks/useToast';
@@ -402,36 +402,61 @@ function NewPageContent() {
           </div>
         </div>
         <div className="mb-8 glass-effect rounded-3xl p-6 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 beatport-hover">
-          <div className="flex flex-col items-center gap-4">
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex items-center w-full max-w-md glass-effect rounded-full px-4 py-3 focus-within:border-purple-400/70 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 pulse-button">
-              <Search className="h-5 w-5 text-purple-400 mr-3 animate-pulse" />
+          <div className="flex flex-col lg:flex-row items-center gap-4">
+            {/* Search Bar with Filters */}
+            <div className="flex items-center w-full max-w-2xl glass-effect rounded-full px-6 py-4 focus-within:border-purple-400/70 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 pulse-button">
+              <Search className="h-5 w-5 text-purple-400 mr-4 animate-pulse" />
               <input
                 type="text"
                 placeholder="Buscar músicas, artistas, estilos..."
                 className="flex-grow bg-transparent outline-none text-white placeholder-gray-400 text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               />
-            </form>
+              
+              {/* Quick Filters */}
+              <div className="flex items-center gap-2 ml-4">
+                <button
+                  onClick={() => setShowFiltersModal(true)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 beatport-hover pulse-button ${
+                    hasActiveFilters 
+                      ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50' 
+                      : 'bg-gray-800/50 text-gray-300 hover:bg-purple-600/20'
+                  }`}
+                >
+                  <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-purple-400 animate-pulse' : 'text-gray-300'}`} />
+                  <span className="text-sm font-medium">Filtros</span>
+                  {hasActiveFilters && (
+                    <span className="block h-2 w-2 rounded-full bg-purple-400 ring-2 ring-purple-600 animate-pulse ml-1"></span>
+                  )}
+                </button>
+                
+                {/* Quick Search Button */}
+                <button
+                  onClick={handleSearch}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 transform hover:scale-105"
+                >
+                  <Search className="h-4 w-4" />
+                  <span className="text-sm font-medium">Buscar</span>
+                </button>
+              </div>
+            </div>
 
-            {/* Filters Button */}
-            <button
-              onClick={() => setShowFiltersModal(true)}
-              className="flex items-center gap-2 px-6 py-3 glass-effect hover:bg-purple-600/20 text-white rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 beatport-hover pulse-button"
-            >
-              <Filter className={`h-4 w-4 ${hasActiveFilters ? 'text-purple-400 animate-pulse' : 'text-gray-300'}`} />
-              <span className="text-sm font-medium">Filtros</span>
-              {hasActiveFilters && (
-                <span className="block h-2 w-2 rounded-full bg-purple-400 ring-2 ring-purple-600 animate-pulse"></span>
-              )}
-            </button>
-
-            {/* Active Filters Indicator */}
+            {/* Active Filters Display */}
             {hasActiveFilters && (
-              <div className="flex items-center space-x-2 text-purple-400 animate-pulse">
-                <Filter className="h-4 w-4" />
-                <span className="text-sm">Filtros ativos</span>
+              <div className="flex items-center gap-3 text-purple-400 animate-pulse">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <span className="text-sm font-medium">Filtros ativos</span>
+                </div>
+                <button
+                  onClick={handleClearFilters}
+                  className="flex items-center gap-1 px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-full text-xs transition-all duration-300"
+                >
+                  <X className="h-3 w-3" />
+                  <span>Limpar</span>
+                </button>
               </div>
             )}
           </div>
