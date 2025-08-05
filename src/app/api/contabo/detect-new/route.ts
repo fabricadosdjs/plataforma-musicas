@@ -6,6 +6,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 
 export async function GET(request: NextRequest) {
+    return await detectNewFiles(request);
+}
+
+export async function POST(request: NextRequest) {
+    return await detectNewFiles(request);
+}
+
+async function detectNewFiles(request: NextRequest) {
     try {
         const storage = new ContaboStorage({
             endpoint: process.env.CONTABO_ENDPOINT!,
@@ -17,6 +25,7 @@ export async function GET(request: NextRequest) {
 
         // Buscar arquivos de áudio do Contabo
         const audioFiles = await storage.listAudioFiles();
+        console.log(`🔍 Detectados ${audioFiles.length} arquivos de áudio no Contabo`);
 
         // Verificar quais já existem no banco
         const existingTracks = await prisma.track.findMany({
@@ -29,16 +38,30 @@ export async function GET(request: NextRequest) {
             }
         });
 
+        console.log(`📊 Encontradas ${existingTracks.length} tracks no banco de dados`);
+
         const existingUrls = new Set([
-            ...existingTracks.map(track => track.previewUrl),
-            ...existingTracks.map(track => track.downloadUrl)
+            ...existingTracks.map(track => track.previewUrl).filter(Boolean),
+            ...existingTracks.map(track => track.downloadUrl).filter(Boolean)
         ]);
 
+        console.log(`🔗 URLs existentes no banco: ${existingUrls.size}`);
+
         // Filtrar apenas arquivos novos
-        const newFiles = audioFiles.filter(file => !existingUrls.has(file.url));
+        const newFiles = audioFiles.filter(file => {
+            const isNew = !existingUrls.has(file.url);
+            if (!isNew) {
+                console.log(`⏭️ Arquivo já existe: ${file.filename}`);
+            }
+            return isNew;
+        });
+
+        console.log(`🆕 Arquivos novos detectados: ${newFiles.length}`);
 
         // Análise prévia dos arquivos novos
         const previewTracks = newFiles.map(file => {
+            console.log(`📝 Analisando arquivo: ${file.filename}`);
+            
             const nameWithoutExt = file.filename.replace(/\.(mp3|wav|flac|m4a|aac|ogg)$/i, '');
 
             // Extrair variação (CLEAN, DIRTY, EXPLICIT, etc) ao final
@@ -71,7 +94,7 @@ export async function GET(request: NextRequest) {
             // Se houver variação, adiciona ao version
             const finalVersion = variation ? `${version} - ${variation}` : version;
 
-            return {
+            const result = {
                 filename: file.filename,
                 size: file.size,
                 lastModified: file.lastModified,
@@ -82,16 +105,29 @@ export async function GET(request: NextRequest) {
                     version: finalVersion.replace(/[\[\]]/g, '').trim()
                 }
             };
+
+            console.log(`✅ Processado: ${result.preview.artist} - ${result.preview.title} (${result.preview.version})`);
+            return result;
         });
 
-        return NextResponse.json({
+        const result = {
             success: true,
             totalFiles: audioFiles.length,
             existingFiles: audioFiles.length - newFiles.length,
             newFiles: newFiles.length,
             newTracks: previewTracks,
-            lastUpdate: new Date().toISOString()
-        });
+            lastUpdate: new Date().toISOString(),
+            debug: {
+                audioFilesCount: audioFiles.length,
+                existingTracksCount: existingTracks.length,
+                existingUrlsCount: existingUrls.size,
+                newFilesCount: newFiles.length,
+                processedTracksCount: previewTracks.length
+            }
+        };
+
+        console.log(`🎯 Resultado da detecção:`, result.debug);
+        return NextResponse.json(result);
 
     } catch (error) {
         console.error('Erro ao detectar novos arquivos:', error);
