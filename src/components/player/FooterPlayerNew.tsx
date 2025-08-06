@@ -7,16 +7,23 @@ import clsx from 'clsx';
 import Image from 'next/image';
 
 // --- Subcomponente: Barra de Progresso (Refinada) ---
-const ProgressBar = ({ currentTime, duration, onSeek, isDragging, setIsDragging }) => {
+interface ProgressBarProps {
+    currentTime: number;
+    duration: number;
+    onSeek: (time: number) => void;
+    isDragging: boolean;
+    setIsDragging: (drag: boolean) => void;
+}
+const ProgressBar = ({ currentTime, duration, onSeek, isDragging, setIsDragging }: ProgressBarProps) => {
     const progressBarRef = useRef<HTMLDivElement>(null);
-    const formatTime = (time) => {
+    const formatTime = (time: number) => {
         if (!time || isNaN(time)) return '0:00';
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
-    const handleSeek = useCallback((e) => {
+    const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         if (!progressBarRef.current || duration === 0) return;
         const rect = progressBarRef.current.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -25,7 +32,7 @@ const ProgressBar = ({ currentTime, duration, onSeek, isDragging, setIsDragging 
     }, [duration, onSeek]);
 
     useEffect(() => {
-        const handleMouseMove = (e) => isDragging && handleSeek(e);
+        const handleMouseMove = (e: MouseEvent) => isDragging && handleSeek(e as unknown as React.MouseEvent<HTMLDivElement, MouseEvent>);
         const handleMouseUp = () => setIsDragging(false);
         if (isDragging) {
             document.addEventListener('mousemove', handleMouseMove);
@@ -56,7 +63,13 @@ const ProgressBar = ({ currentTime, duration, onSeek, isDragging, setIsDragging 
 };
 
 // --- Subcomponente: Controle de Volume (Refinado) ---
-const VolumeControl = ({ volume, onVolumeChange, isMuted, toggleMute }) => {
+interface VolumeControlProps {
+    volume: number;
+    onVolumeChange: (volume: number) => void;
+    isMuted: boolean;
+    toggleMute: () => void;
+}
+const VolumeControl = ({ volume, onVolumeChange, isMuted, toggleMute }: VolumeControlProps) => {
     return (
         <div className="group flex items-center gap-2">
             <button onClick={toggleMute} className="p-2 text-gray-400 transition hover:text-white" title={isMuted ? "Ativar som" : "Silenciar"}>
@@ -77,8 +90,8 @@ const VolumeControl = ({ volume, onVolumeChange, isMuted, toggleMute }) => {
 
 // --- Componente Principal: FooterPlayer ---
 const FooterPlayer = () => {
-    const { currentTrack, isPlaying, togglePlayPause, stopTrack, nextTrack, previousTrack, audioRef, isLoading } = useGlobalPlayer();
-    
+    const { currentTrack, isPlaying, togglePlayPause, stopTrack, nextTrack, previousTrack, audioRef } = useGlobalPlayer();
+
     const [volume, setVolume] = useState(1.0);
     const [isMuted, setIsMuted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -95,30 +108,30 @@ const FooterPlayer = () => {
             setDuration(audio.duration || 0);
         };
         const handleEnded = () => nextTrack();
-        
+
         audio.addEventListener('timeupdate', updateState);
         audio.addEventListener('loadedmetadata', updateState);
         audio.addEventListener('ended', handleEnded);
-        
+
         return () => {
             audio.removeEventListener('timeupdate', updateState);
             audio.removeEventListener('loadedmetadata', updateState);
             audio.removeEventListener('ended', handleEnded);
         };
     }, [isDragging, nextTrack, audioRef]);
-    
+
     useEffect(() => {
         if (audioRef.current) audioRef.current.volume = isMuted ? 0 : volume;
     }, [volume, isMuted, audioRef]);
 
-    const handleSeek = useCallback((time) => {
+    const handleSeek = useCallback((time: number) => {
         if (audioRef.current) {
             audioRef.current.currentTime = time;
             setCurrentTime(time);
         }
     }, [audioRef]);
 
-    const handleVolumeChange = useCallback((newVolume) => {
+    const handleVolumeChange = useCallback((newVolume: number) => {
         setVolume(newVolume);
         if (isMuted) setIsMuted(false);
     }, [isMuted]);
@@ -140,16 +153,17 @@ const FooterPlayer = () => {
         )}>
             {/* Efeito de brilho para destacar o player */}
             <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/50 to-transparent blur-2xl" />
-            
+
             <div className="relative h-full rounded-t-xl border-t border-zinc-800 bg-[#1A1B1C]/80 backdrop-blur-xl">
                 {/* --- Layout Principal --- */}
                 <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center px-4">
-                    
+
                     {/* Coluna Esquerda: Informações da Música */}
                     <div className="flex items-center gap-3 min-w-0 justify-start">
                         <Image
-                            src={currentTrack.coverUrl || "/placeholder.png"}
-                            alt={currentTrack.songName}
+                            // @ts-expect-error: Garantir compatibilidade temporária
+                            src={currentTrack.imageUrl || "/placeholder.png"}
+                            alt={currentTrack.songName || "Capa da música"}
                             width={56} height={56}
                             className={clsx("rounded-md object-cover shadow-md transition-all duration-300", isMinimized ? "h-12 w-12" : "h-14 w-14")}
                         />
@@ -164,13 +178,13 @@ const FooterPlayer = () => {
                         <div className="flex items-center gap-4">
                             <button onClick={handlePrevious} className="p-2 text-gray-400 transition active:scale-90 hover:text-white" title="Anterior"><SkipBack size={20} fill="currentColor" /></button>
                             <button onClick={togglePlayPause} className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition active:scale-90 hover:scale-105" title={isPlaying ? "Pausar" : "Tocar"}>
-                                {isLoading ? <Loader2 size={18} className="animate-spin" /> : isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} className="ml-0.5" fill="currentColor" />}
+                                {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} className="ml-0.5" fill="currentColor" />}
                             </button>
                             <button onClick={nextTrack} className="p-2 text-gray-400 transition active:scale-90 hover:text-white" title="Próxima"><SkipForward size={20} fill="currentColor" /></button>
                         </div>
                         {/* A barra de progresso some e aparece com uma transição suave */}
                         <div className={clsx("w-full transition-all duration-300", isMinimized ? 'invisible h-0 opacity-0' : 'visible h-auto opacity-100')}>
-                           <ProgressBar currentTime={currentTime} duration={duration} onSeek={handleSeek} isDragging={isDragging} setIsDragging={setIsDragging} />
+                            <ProgressBar currentTime={currentTime} duration={duration} onSeek={handleSeek} isDragging={isDragging} setIsDragging={setIsDragging} />
                         </div>
                     </div>
 

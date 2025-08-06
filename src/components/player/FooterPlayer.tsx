@@ -18,11 +18,12 @@ import {
     Circle,
     Waves
 } from 'lucide-react';
-import { useAppContext } from '../../context/AppContext';
+import { useGlobalPlayer } from '@/context/GlobalPlayerContext'; // Alterado de useAppContext para useGlobalPlayer
 import { useSession } from 'next-auth/react';
 
 const FooterPlayer = () => {
-    const { currentTrack, isPlaying, togglePlayPause, nextTrack, previousTrack } = useAppContext();
+    // O hook foi alterado para useGlobalPlayer para consumir o estado correto
+    const { currentTrack, isPlaying, togglePlayPause, nextTrack, previousTrack } = useGlobalPlayer();
     const { data: session } = useSession();
 
     const [volume, setVolume] = useState(1.0); // Começar com 100%
