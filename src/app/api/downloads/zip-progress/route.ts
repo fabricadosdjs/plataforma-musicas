@@ -6,16 +6,23 @@ import JSZip from 'jszip';
 
 export async function POST(request: NextRequest) {
     try {
+        console.log('🔍 API ZIP chamada');
         const session = await getServerSession(authOptions);
 
         if (!session) {
+            console.log('❌ Usuário não autenticado');
             return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
         }
+
+        console.log('✅ Usuário autenticado:', session.user.email);
 
         const body = await request.json();
         const { trackIds, filename } = body;
 
+        console.log('📋 Dados recebidos:', { trackIds, filename });
+
         if (!trackIds || !Array.isArray(trackIds) || trackIds.length === 0) {
+            console.log('❌ IDs de músicas inválidos');
             return NextResponse.json({ error: 'IDs de músicas inválidos' }, { status: 400 });
         }
 
@@ -121,11 +128,26 @@ export async function POST(request: NextRequest) {
                     await Promise.all(downloadPromises);
 
                     // Enviar dados do ZIP
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                    console.log('📦 ZIP gerado com sucesso, tamanho:', zipBuffer.length, 'bytes');
+
+                    // Verificar se o ZIP não está vazio
+                    if (zipBuffer.length === 0) {
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                            type: 'error',
+                            message: 'ZIP vazio - nenhum arquivo foi processado'
+                        })}\n\n`));
+                        return;
+                    }
+
+                    const zipData = zipBuffer.toString('base64');
+                    const completeData = {
                         type: 'complete',
-                        zipData: zipBuffer.toString('base64'),
+                        zipData: zipData,
                         filename: filename || 'nexor-records.zip'
-                    })}\n\n`));
+                    };
+
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(completeData)}\n\n`));
+                    console.log('✅ Dados do ZIP enviados para o cliente');
 
                 } catch (error) {
                     console.error('Erro ao criar ZIP:', error);

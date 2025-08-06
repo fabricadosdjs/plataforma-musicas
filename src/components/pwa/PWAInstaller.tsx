@@ -41,12 +41,12 @@ export default function PWAInstaller() {
             e.preventDefault();
             setDeferredPrompt(e as BeforeInstallPromptEvent);
 
-            // Mostrar banner após 30 segundos se não estiver instalado
+            // Mostrar banner após 2 minutos se não estiver instalado
             setTimeout(() => {
                 if (!isInstalled) {
                     setShowInstallBanner(true);
                 }
-            }, 30000);
+            }, 120000); // 2 minutos
         };
 
         // Listener para quando o app é instalado
@@ -84,14 +84,24 @@ export default function PWAInstaller() {
 
     const handleDismiss = () => {
         setShowInstallBanner(false);
-        // Não mostrar novamente nesta sessão
-        sessionStorage.setItem('pwa-install-dismissed', 'true');
+        // Não mostrar novamente por 24 horas
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        localStorage.setItem('pwa-install-dismissed', tomorrow.toISOString());
     };
 
-    // Não mostrar se já foi dispensado nesta sessão
+    // Não mostrar se já foi dispensado nas últimas 24 horas
     useEffect(() => {
-        if (sessionStorage.getItem('pwa-install-dismissed')) {
-            setShowInstallBanner(false);
+        const dismissedUntil = localStorage.getItem('pwa-install-dismissed');
+        if (dismissedUntil) {
+            const dismissedDate = new Date(dismissedUntil);
+            const now = new Date();
+            if (now < dismissedDate) {
+                setShowInstallBanner(false);
+            } else {
+                // Limpar se já passou das 24 horas
+                localStorage.removeItem('pwa-install-dismissed');
+            }
         }
     }, []);
 

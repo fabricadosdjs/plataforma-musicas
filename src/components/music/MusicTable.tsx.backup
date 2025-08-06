@@ -80,14 +80,7 @@ const TrackRow = React.memo(({
                         </button>
                     </div>
                     <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-100 truncate">{track.songName}</span>
-                            {track.isCommunity && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-sm">
-                                    COMUNIDADE
-                                </span>
-                            )}
-                        </div>
+                        <span className="font-semibold text-gray-100 truncate">{track.songName}</span>
                         <span className="text-sm text-gray-400 truncate">{track.artist}</span>
                     </div>
                 </div>
@@ -143,14 +136,7 @@ const TrackCard = React.memo(({
                     </button>
                 </div>
                 <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-base truncate">{track.songName}</span>
-                        {track.isCommunity && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-sm">
-                                COMUNIDADE
-                            </span>
-                        )}
-                    </div>
+                    <span className="font-bold text-white text-base truncate">{track.songName}</span>
                     <span className="text-sm text-gray-400 truncate">{track.artist}</span>
                     <div className="flex items-center gap-2 mt-2">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-purple-600 to-blue-600 text-white">{track.style}</span>

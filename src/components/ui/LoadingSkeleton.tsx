@@ -21,54 +21,58 @@ export const FacebookSkeleton = () => (
 // Componente de Loading para a tabela
 export const TableSkeleton = () => (
     <div className="animate-pulse">
-        <div className="hidden md:table min-w-full">
-            <thead className="sticky top-0 z-10 bg-[#1A1B1C]/80 backdrop-blur-sm">
-                <tr className="border-b border-zinc-800">
-                    <th className="px-4 py-3 w-[35%]">
-                        <div className="h-4 bg-gray-700 rounded w-24"></div>
-                    </th>
-                    <th className="px-4 py-3 w-[15%]">
-                        <div className="h-4 bg-gray-700 rounded w-16"></div>
-                    </th>
-                    <th className="px-4 py-3 w-[15%]">
-                        <div className="h-4 bg-gray-700 rounded w-12"></div>
-                    </th>
-                    <th className="px-4 py-3 w-[35%] text-right">
-                        <div className="h-4 bg-gray-700 rounded w-20 ml-auto"></div>
-                    </th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/70">
-                {Array.from({ length: 10 }).map((_, index) => (
-                    <tr key={index} className="animate-pulse">
-                        <td className="px-4 py-3">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-gray-700 rounded-lg"></div>
-                                <div className="flex-1 space-y-2">
-                                    <div className="h-4 bg-gray-700 rounded w-3/4"></div>
-                                    <div className="h-3 bg-gray-700 rounded w-1/2"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td className="px-4 py-3">
-                            <div className="h-6 bg-gray-700 rounded w-20"></div>
-                        </td>
-                        <td className="px-4 py-3">
-                            <div className="h-6 bg-gray-700 rounded w-16"></div>
-                        </td>
-                        <td className="px-4 py-3">
-                            <div className="flex items-center justify-end gap-2">
-                                <div className="w-8 h-8 bg-gray-700 rounded"></div>
-                                <div className="w-8 h-8 bg-gray-700 rounded"></div>
-                                <div className="w-8 h-8 bg-gray-700 rounded"></div>
-                                <div className="w-8 h-8 bg-gray-700 rounded"></div>
-                            </div>
-                        </td>
+        {/* Desktop Table Skeleton */}
+        <div className="hidden md:block">
+            <table className="min-w-full">
+                <thead className="sticky top-0 z-10 bg-[#1A1B1C]/80 backdrop-blur-sm">
+                    <tr className="border-b border-zinc-800">
+                        <th className="px-4 py-3 w-[35%]">
+                            <div className="h-4 bg-gray-700 rounded w-24"></div>
+                        </th>
+                        <th className="px-4 py-3 w-[15%]">
+                            <div className="h-4 bg-gray-700 rounded w-16"></div>
+                        </th>
+                        <th className="px-4 py-3 w-[15%]">
+                            <div className="h-4 bg-gray-700 rounded w-12"></div>
+                        </th>
+                        <th className="px-4 py-3 w-[35%] text-right">
+                            <div className="h-4 bg-gray-700 rounded w-20 ml-auto"></div>
+                        </th>
                     </tr>
-                ))}
-            </tbody>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/70">
+                    {Array.from({ length: 10 }).map((_, index) => (
+                        <tr key={index} className="animate-pulse">
+                            <td className="px-4 py-3">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-gray-700 rounded-lg"></div>
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                                        <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="px-4 py-3">
+                                <div className="h-6 bg-gray-700 rounded w-20"></div>
+                            </td>
+                            <td className="px-4 py-3">
+                                <div className="h-6 bg-gray-700 rounded w-16"></div>
+                            </td>
+                            <td className="px-4 py-3">
+                                <div className="flex items-center justify-end gap-2">
+                                    <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                                    <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                                    <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                                    <div className="w-8 h-8 bg-gray-700 rounded"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
 
+        {/* Mobile Cards Skeleton */}
         <div className="md:hidden space-y-4">
             {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="animate-pulse p-4 bg-zinc-800/50 rounded-xl">
@@ -216,6 +220,54 @@ export const ModalSkeleton = () => (
     </div>
 );
 
+// Componente de Loading estilo YouTube
+export const YouTubeSkeleton = () => (
+    <div className="animate-pulse">
+        {/* Hero Section Skeleton */}
+        <div className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-16 h-16 bg-gray-700 rounded-full"></div>
+                <div className="flex-1">
+                    <div className="h-8 bg-gray-700 rounded w-48 mb-2"></div>
+                    <div className="h-4 bg-gray-700 rounded w-64"></div>
+                </div>
+            </div>
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="p-6 bg-zinc-800/50 rounded-xl">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-gray-700 rounded-lg"></div>
+                            <div className="flex-1">
+                                <div className="h-6 bg-gray-700 rounded w-16 mb-2"></div>
+                                <div className="h-4 bg-gray-700 rounded w-24"></div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Search Bar Skeleton */}
+        <div className="mb-8">
+            <div className="w-full p-6 bg-zinc-800/50 rounded-3xl">
+                <div className="flex items-center w-full max-w-2xl mx-auto">
+                    <div className="w-8 h-8 bg-gray-700 rounded mr-4"></div>
+                    <div className="flex-1 h-10 bg-gray-700 rounded-full"></div>
+                </div>
+            </div>
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="w-full">
+            <TableSkeleton />
+        </div>
+    </div>
+);
+
 export default {
     FacebookSkeleton,
     TableSkeleton,
@@ -227,5 +279,6 @@ export default {
     TextSkeleton,
     ListSkeleton,
     GridSkeleton,
-    ModalSkeleton
+    ModalSkeleton,
+    YouTubeSkeleton
 }; 

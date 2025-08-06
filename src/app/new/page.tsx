@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { Search, Filter, Music, Loader2, Sparkles, TrendingUp, Clock, Star, Zap, Flame, Crown, Gift, Heart, Download, Play, Pause, Volume2, FileAudio, Headphones, Mic, Disc3, Radio, Music2, Music3, Music4, Plus, Minus, ShoppingCart, Package, CheckCircle, Waves, BarChart3, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, Music, Loader2, Sparkles, Clock, Star, CheckCircle, Waves, ShoppingCart, Package, X, Crown, Play, Download, Heart, Users } from 'lucide-react';
 import { Track } from '@/types/track';
 import MusicTable from '@/components/music/MusicTable';
 import { useSEO } from '@/hooks/useSEO';
@@ -15,109 +15,70 @@ import FiltersModal from '@/components/music/FiltersModal';
 import { useAppContext } from '@/context/AppContext';
 import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
 import { useToast } from '@/hooks/useToast';
+import { YouTubeSkeleton } from '@/components/ui/LoadingSkeleton';
 import Link from 'next/link';
 
 // Componente de Loading para a página
-const PageSkeleton = () => (
-  <div className="animate-pulse">
-    {/* Hero Section Skeleton */}
-    <div className="text-center mb-12">
-      <div className="flex items-center justify-center gap-3 mb-6">
-        <div className="w-16 h-16 bg-gray-700 rounded-full"></div>
-      </div>
-      <div className="h-12 bg-gray-700 rounded w-3/4 mx-auto mb-4"></div>
-      <div className="h-6 bg-gray-700 rounded w-1/2 mx-auto"></div>
-    </div>
-
-    {/* Search Bar Skeleton */}
-    <div className="max-w-4xl mx-auto mb-8">
-      <div className="flex items-center gap-4 p-4 bg-zinc-800/50 rounded-xl">
-        <div className="w-8 h-8 bg-gray-700 rounded"></div>
-        <div className="flex-1 h-10 bg-gray-700 rounded"></div>
-        <div className="w-24 h-10 bg-gray-700 rounded"></div>
-      </div>
-    </div>
-
-    {/* Stats Skeleton */}
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div key={index} className="p-6 bg-zinc-800/50 rounded-xl">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gray-700 rounded-xl"></div>
-            <div className="flex-1">
-              <div className="h-4 bg-gray-700 rounded w-20 mb-2"></div>
-              <div className="h-6 bg-gray-700 rounded w-16"></div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-
-    {/* Table Skeleton */}
-    <div className="w-full">
-      <div className="hidden md:table min-w-full">
-        <thead className="sticky top-0 z-10 bg-[#1A1B1C]/80 backdrop-blur-sm">
-          <tr className="border-b border-zinc-800">
-            <th className="px-4 py-3 w-[35%]">
-              <div className="h-4 bg-gray-700 rounded w-24"></div>
-            </th>
-            <th className="px-4 py-3 w-[15%]">
-              <div className="h-4 bg-gray-700 rounded w-16"></div>
-            </th>
-            <th className="px-4 py-3 w-[15%]">
-              <div className="h-4 bg-gray-700 rounded w-12"></div>
-            </th>
-            <th className="px-4 py-3 w-[35%] text-right">
-              <div className="h-4 bg-gray-700 rounded w-20 ml-auto"></div>
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-zinc-800/70">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <tr key={index} className="animate-pulse">
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gray-700 rounded-lg"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-700 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-700 rounded w-1/2"></div>
-                  </div>
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="h-6 bg-gray-700 rounded w-20"></div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="h-6 bg-gray-700 rounded w-16"></div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center justify-end gap-2">
-                  <div className="w-8 h-8 bg-gray-700 rounded"></div>
-                  <div className="w-8 h-8 bg-gray-700 rounded"></div>
-                  <div className="w-8 h-8 bg-gray-700 rounded"></div>
-                  <div className="w-8 h-8 bg-gray-700 rounded"></div>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </div>
-    </div>
-  </div>
-);
+const PageSkeleton = () => <YouTubeSkeleton />;
 
 // Componente principal da página
 function NewPageContent() {
   const { data: session } = useSession();
-  const searchParams = useSearchParams();
-  const { hasExtension, detectedExtensions } = useDownloadExtensionDetector();
   const { showToast } = useToast();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('');
-  const [selectedPool, setSelectedPool] = useState('');
   const [showFiltersModal, setShowFiltersModal] = useState(false);
+  const [hasActiveFilters, setHasActiveFilters] = useState(false);
+
+  // Estados para filtros
+  const [selectedGenre, setSelectedGenre] = useState('all');
+  const [selectedArtist, setSelectedArtist] = useState('all');
+  const [selectedDateRange, setSelectedDateRange] = useState('all');
+  const [selectedVersion, setSelectedVersion] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [selectedPool, setSelectedPool] = useState('all');
+
+  // Estados para dados dos filtros
+  const [genres, setGenres] = useState<string[]>([]);
+  const [artists, setArtists] = useState<string[]>([]);
+  const [versions, setVersions] = useState<string[]>([]);
+  const [pools, setPools] = useState<string[]>([]);
+  const [monthOptions, setMonthOptions] = useState<Array<{ value: string; label: string }>>([]);
+
+  // Estados para fila de downloads (movidos da MusicTable)
+  const [downloadQueue, setDownloadQueue] = useState<Track[]>([]);
+  const [isDownloadingQueue, setIsDownloadingQueue] = useState(false);
+  const [zipProgress, setZipProgress] = useState<{
+    isActive: boolean;
+    progress: number;
+    current: number;
+    total: number;
+    trackName: string;
+    elapsedTime: number;
+    remainingTime: number;
+    isGenerating: boolean;
+  }>({
+    isActive: false,
+    progress: 0,
+    current: 0,
+    total: 0,
+    trackName: '',
+    elapsedTime: 0,
+    remainingTime: 0,
+    isGenerating: false
+  });
+
+  // Estado para controlar o cancelamento
+  const [cancelZipGeneration, setCancelZipGeneration] = useState(false);
+
+  // Estado para estatísticas reais
+  const [stats, setStats] = useState({
+    downloadsToday: 0,
+    totalLikes: 0,
+    vipUsersCount: 0,
+    totalTracks: 0
+  });
 
   // SEO para a página
   const { seoData } = useSEO({
@@ -126,91 +87,339 @@ function NewPageContent() {
     customKeywords: 'novos lançamentos, música eletrônica, house, techno, trance, DJ, downloads'
   });
 
-  // Estados otimizados
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [isSearching, setIsSearching] = useState(false);
+  // Calcular automaticamente se há filtros ativos
+  useEffect(() => {
+    const hasFilters = selectedGenre !== 'all' ||
+      selectedArtist !== 'all' ||
+      selectedDateRange !== 'all' ||
+      selectedVersion !== 'all' ||
+      selectedMonth !== 'all' ||
+      selectedPool !== 'all';
 
-  // Debounced search query
-  const debouncedSearchQuery = useMemo(() => {
-    const timer = setTimeout(() => {
-      setSearchQuery(searchParams.get('q') || '');
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchParams]);
+    setHasActiveFilters(hasFilters);
+  }, [selectedGenre, selectedArtist, selectedDateRange, selectedVersion, selectedMonth, selectedPool]);
 
-  // Fetch tracks with loading states
-  const fetchTracks = useCallback(async (showLoading = true) => {
-    if (showLoading) {
-      setIsSearching(true);
-    }
-
+  // Fetch estatísticas reais
+  const fetchStats = useCallback(async () => {
     try {
-      const params = new URLSearchParams();
-      if (searchQuery) params.append('q', searchQuery);
-      if (selectedGenre) params.append('genre', selectedGenre);
-      if (selectedPool) params.append('pool', selectedPool);
-
-      const response = await fetch(`/api/tracks?${params.toString()}`);
+      const response = await fetch('/api/stats');
       if (response.ok) {
         const data = await response.json();
-        setTracks(data.tracks || []);
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas:', error);
+    }
+  }, []);
+
+  // Fetch tracks com filtros
+  const fetchTracks = useCallback(async () => {
+    try {
+      setLoading(true);
+      showToast('🔄 Carregando músicas...', 'info');
+
+      const response = await fetch('/api/tracks');
+      if (response.ok) {
+        const data = await response.json();
+        // Corrige para aceitar diferentes formatos de resposta
+        let tracksData: Track[] = [];
+        if (Array.isArray(data.tracks)) {
+          tracksData = data.tracks;
+        } else if (Array.isArray(data)) {
+          tracksData = data;
+        } else if (Array.isArray(data.data?.tracks)) {
+          tracksData = data.data.tracks;
+        }
+
+        setTracks(tracksData);
+
+        // Extrair dados para filtros
+        const uniqueGenres = [...new Set(tracksData.map(track => track.style))];
+        const uniqueArtists = [...new Set(tracksData.map(track => track.artist))];
+        const uniqueVersions = [...new Set(tracksData.map(track => track.version || 'Original'))];
+        const uniquePools = [...new Set(tracksData.map(track => track.pool || 'Nexor Records'))];
+
+        setGenres(uniqueGenres);
+        setArtists(uniqueArtists);
+        setVersions(uniqueVersions);
+        setPools(uniquePools);
+
+        // Gerar opções de meses
+        const months = [
+          { value: 'Janeiro', label: 'Janeiro' },
+          { value: 'Fevereiro', label: 'Fevereiro' },
+          { value: 'Março', label: 'Março' },
+          { value: 'Abril', label: 'Abril' },
+          { value: 'Maio', label: 'Maio' },
+          { value: 'Junho', label: 'Junho' },
+          { value: 'Julho', label: 'Julho' },
+          { value: 'Agosto', label: 'Agosto' },
+          { value: 'Setembro', label: 'Setembro' },
+          { value: 'Outubro', label: 'Outubro' },
+          { value: 'Novembro', label: 'Novembro' },
+          { value: 'Dezembro', label: 'Dezembro' }
+        ];
+        setMonthOptions(months);
+
+        showToast(`✅ ${tracksData.length} músicas carregadas!`, 'success');
+      } else {
+        setTracks([]);
+        showToast('❌ Erro ao carregar músicas', 'error');
       }
     } catch (error) {
       console.error('Erro ao buscar músicas:', error);
+      setTracks([]);
+      showToast('❌ Erro ao carregar músicas', 'error');
     } finally {
-      setIsSearching(false);
       setLoading(false);
-      setIsInitialLoad(false);
     }
-  }, [searchQuery, selectedGenre, selectedPool]);
+  }, [showToast]);
 
-  // Initial load effect
+  // Carregamento inicial
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchTracks(false);
-    }, 500); // Simula tempo de carregamento inicial
+    fetchTracks();
+    fetchStats();
+  }, [fetchTracks, fetchStats]);
 
-    return () => clearTimeout(timer);
-  }, []);
+  // Funções para filtros
+  const handleGenreChange = (genre: string) => {
+    setSelectedGenre(genre);
+    showToast(`🎵 Filtro de gênero: ${genre}`, 'info');
+  };
 
-  // Search effect
-  useEffect(() => {
-    if (!isInitialLoad) {
-      fetchTracks();
+  const handleArtistChange = (artist: string) => {
+    setSelectedArtist(artist);
+    showToast(`🎤 Filtro de artista: ${artist}`, 'info');
+  };
+
+  const handleDateRangeChange = (dateRange: string) => {
+    setSelectedDateRange(dateRange);
+    showToast(`📅 Filtro de período: ${dateRange}`, 'info');
+  };
+
+  const handleVersionChange = (version: string) => {
+    setSelectedVersion(version);
+    showToast(`🎧 Filtro de versão: ${version}`, 'info');
+  };
+
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month);
+    showToast(`📆 Filtro de mês: ${month}`, 'info');
+  };
+
+  const handlePoolChange = (pool: string) => {
+    setSelectedPool(pool);
+    showToast(`🏢 Filtro de pool: ${pool}`, 'info');
+  };
+
+  const handleApplyFilters = () => {
+    // Verificar se há filtros ativos
+    const hasFilters = selectedGenre !== 'all' ||
+      selectedArtist !== 'all' ||
+      selectedDateRange !== 'all' ||
+      selectedVersion !== 'all' ||
+      selectedMonth !== 'all' ||
+      selectedPool !== 'all';
+
+    setHasActiveFilters(hasFilters);
+    showToast('✅ Filtros aplicados!', 'success');
+    setShowFiltersModal(false);
+  };
+
+  const handleClearFilters = () => {
+    setSelectedGenre('all');
+    setSelectedArtist('all');
+    setSelectedDateRange('all');
+    setSelectedVersion('all');
+    setSelectedMonth('all');
+    setSelectedPool('all');
+    setHasActiveFilters(false);
+    showToast('🧹 Filtros limpos!', 'success');
+  };
+
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      showToast(`🔍 Buscando por: "${searchQuery}"`, 'info');
     }
-  }, [fetchTracks, isInitialLoad]);
+  };
 
-  // Handle search input
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value);
-    const url = new URL(window.location.href);
-    if (value) {
-      url.searchParams.set('q', value);
+  // Função para adicionar/remover da fila
+  const onToggleQueue = (track: Track) => {
+    const isInQueue = downloadQueue.some(t => t.id === track.id);
+
+    if (!isInQueue) {
+      // Verificar limite de 20 músicas
+      if (downloadQueue.length >= 20) {
+        showToast('⚠️ Limite de 20 músicas atingido! Remova algumas músicas da fila antes de adicionar mais.', 'warning');
+        return;
+      }
+
+      // Avisar se o ZIP está sendo gerado
+      if (zipProgress.isActive) {
+        showToast('⚠️ ZIP em geração! A música será adicionada à fila atual.', 'info');
+      }
+
+      setDownloadQueue(prev => [...prev, track]);
+      showToast(`📦 "${track.songName}" adicionada à fila`, 'success');
+
+      // Adicionar classe de animação ao ícone
+      const icon = document.querySelector('.download-queue-icon');
+      if (icon) {
+        icon.classList.add('animate-bounce');
+        setTimeout(() => {
+          icon.classList.remove('animate-bounce');
+        }, 1000);
+      }
     } else {
-      url.searchParams.delete('q');
+      setDownloadQueue(prev => prev.filter(t => t.id !== track.id));
+      showToast(`📦 "${track.songName}" removida da fila`, 'success');
     }
-    window.history.pushState({}, '', url.toString());
-  }, []);
+  };
 
-  // Handle tracks update
-  const handleTracksUpdate = useCallback((updatedTracks: Track[]) => {
-    setTracks(updatedTracks);
-  }, []);
+  // Função para cancelar geração do ZIP
+  const handleCancelZipGeneration = () => {
+    setCancelZipGeneration(true);
+    setZipProgress(prev => ({ ...prev, isActive: false, isGenerating: false }));
+    setIsDownloadingQueue(false);
+    showToast('❌ Geração do ZIP cancelada', 'warning');
+  };
 
-  // Render music table with loading
-  const renderMusicTable = useCallback(() => {
-    if (loading || isInitialLoad) {
-      return <PageSkeleton />;
+  // Função para download em lote (ZIP)
+  const handleDownloadQueue = async () => {
+    if (!session?.user) {
+      showToast('👤 Faça login para fazer downloads', 'warning');
+      return;
     }
 
-    return (
-      <MusicTable
-        tracks={tracks}
-        onDownload={handleTracksUpdate}
-        isDownloading={isSearching}
-      />
-    );
-  }, [tracks, loading, isInitialLoad, isSearching, handleTracksUpdate]);
+    if (downloadQueue.length === 0) {
+      showToast('📦 Adicione músicas à fila primeiro', 'warning');
+      return;
+    }
+
+    setCancelZipGeneration(false);
+    setIsDownloadingQueue(true);
+    setZipProgress(prev => ({ ...prev, isActive: true, isGenerating: true }));
+
+    // Timeout de 5 minutos
+    const timeout = setTimeout(() => {
+      setZipProgress(prev => ({ ...prev, isActive: false, isGenerating: false }));
+      setIsDownloadingQueue(false);
+      showToast('⏰ Timeout - download em lote demorou muito', 'error');
+    }, 5 * 60 * 1000);
+
+    try {
+      const trackIds = downloadQueue.map(track => track.id);
+      const filename = `nexor-records-${new Date().toISOString().split('T')[0]}.zip`;
+
+      const response = await fetch('/api/downloads/zip-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackIds, filename })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao iniciar download em lote');
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Erro ao ler resposta do servidor');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        // Verificar se foi cancelado
+        if (cancelZipGeneration) {
+          break;
+        }
+
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        buffer += chunk;
+
+        // Processar linhas completas
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Manter linha incompleta no buffer
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonData = line.slice(6).trim();
+
+              // Verificar se a linha não está vazia
+              if (!jsonData) {
+                continue;
+              }
+
+              const data = JSON.parse(jsonData);
+
+              if (data.type === 'progress') {
+                setZipProgress(prev => ({
+                  ...prev,
+                  progress: data.progress,
+                  current: data.current,
+                  total: data.total,
+                  trackName: data.trackName,
+                  elapsedTime: data.elapsedTime,
+                  remainingTime: data.remainingTime
+                }));
+              } else if (data.type === 'complete') {
+                console.log('✅ ZIP gerado com sucesso');
+
+                // Verificar se zipData existe
+                if (!data.zipData) {
+                  throw new Error('Dados do ZIP não recebidos');
+                }
+
+                // Decodificar dados do ZIP
+                const zipBuffer = atob(data.zipData);
+                const bytes = new Uint8Array(zipBuffer.length);
+                for (let i = 0; i < zipBuffer.length; i++) {
+                  bytes[i] = zipBuffer.charCodeAt(i);
+                }
+
+                // Criar blob e fazer download
+                const blob = new Blob([bytes], { type: 'application/zip' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                // Limpar fila e estados
+                setDownloadQueue([]);
+                setZipProgress(prev => ({ ...prev, isActive: false, isGenerating: false }));
+                setIsDownloadingQueue(false);
+                clearTimeout(timeout);
+
+                showToast('✅ Download em lote concluído!', 'success');
+              } else if (data.type === 'error') {
+                throw new Error(data.message || 'Erro ao gerar ZIP');
+              }
+            } catch (error) {
+              console.error('Erro ao processar dados do ZIP:', error);
+              console.error('Linha problemática:', line);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro no download em lote:', error);
+      setZipProgress(prev => ({ ...prev, isActive: false, isGenerating: false }));
+      setIsDownloadingQueue(false);
+      clearTimeout(timeout);
+      showToast('❌ Erro ao fazer download em lote', 'error');
+    }
+  };
+
+
 
   return (
     <div className="min-h-screen bg-[#1B1C1D] relative overflow-hidden">
@@ -227,187 +436,267 @@ function NewPageContent() {
 
       <Header />
       <main className="container mx-auto px-4 py-8 pt-20 relative z-10">
-        {/* Hero Section */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full backdrop-blur-sm border border-purple-500/30 animate-pulse-glow">
-              <CheckCircle className="h-8 w-8 text-purple-400" />
+        {/* Hero Section - Primeiro Slide */}
+        <div className="mb-12">
+          {/* Header da página */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-white mb-2">Novidades</h1>
+            {hasActiveFilters && (
+              <div className="flex items-center space-x-2 text-orange-400 mt-2">
+                <Filter className="h-4 w-4" />
+                <span className="text-sm">Filtros ativos</span>
+              </div>
+            )}
+          </div>
+
+          {/* Stats Cards */}
+          <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-6 hover:scale-105 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <Music className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Total de Músicas</p>
+                  <p className="text-2xl font-bold text-white">{stats.totalTracks}</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-2 neon-text">
-                Novidades
-              </h1>
-              <p className="text-gray-300 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-purple-400 animate-float" />
-                As músicas mais recentes adicionadas ao catálogo
-              </p>
+
+            <div className="bg-gradient-to-r from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-6 hover:scale-105 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <Download className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Downloads Hoje</p>
+                  <p className="text-2xl font-bold text-white">{stats.downloadsToday}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-purple-500/20 to-pink-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-6 hover:scale-105 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <Heart className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Likes</p>
+                  <p className="text-2xl font-bold text-white">{stats.totalLikes}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-orange-500/20 to-red-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-6 hover:scale-105 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Usuários VIP</p>
+                  <p className="text-2xl font-bold text-white">{stats.vipUsersCount}</p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {!session && (
-            <div className="w-full flex items-center justify-center py-3 px-4 mb-4 rounded-xl shadow-md bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 text-gray-100 font-semibold text-center text-sm backdrop-blur-sm animate-pulse">
-              <Waves className="h-4 w-4 mr-2 text-orange-400" />
-              Atenção: Usuários sem plano não podem ouvir, baixar ou curtir músicas. Apenas a navegação no catálogo está disponível.
+          {/* Barra de Pesquisa e Filtros */}
+          <div className="mb-8">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Barra de Pesquisa */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar músicas..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchSubmit()}
+                  className="w-full pl-12 pr-4 py-4 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
+                />
+              </div>
+
+              {/* Botão de Filtros */}
+              <button
+                onClick={() => setShowFiltersModal(true)}
+                className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${hasActiveFilters
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/25'
+                  : 'bg-black/30 backdrop-blur-xl border border-white/10 text-gray-300 hover:bg-black/50 hover:border-white/20'
+                  }`}
+              >
+                <Filter className="h-5 w-5" />
+                <span>Filtros</span>
+                {hasActiveFilters && (
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                )}
+              </button>
             </div>
+          </div>
+
+          {/* Loading State */}
+          {loading ? (
+            <div className="flex items-center justify-center py-32">
+              <div className="text-center">
+                <div className="relative">
+                  <div className="w-20 h-20 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin mx-auto mb-6"></div>
+                  <Music className="h-8 w-8 text-blue-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Carregando Músicas</h3>
+                <p className="text-gray-400">Aguarde enquanto buscamos as melhores faixas para você...</p>
+              </div>
+            </div>
+          ) : tracks.length === 0 ? (
+            <div className="text-center py-32">
+              <div className="p-6 bg-gray-800/50 rounded-2xl inline-block mb-6">
+                <Search className="h-16 w-16 text-gray-400 mx-auto" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-4">Nenhuma música encontrada</h3>
+              <p className="text-gray-400 mb-8">
+                Tente ajustar seus filtros ou fazer uma nova busca.
+              </p>
+              <button
+                onClick={handleClearFilters}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Limpar Filtros
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Tabelas de Músicas Agrupadas por Data */}
+              <div className="space-y-8">
+                {/* Simular agrupamento por data - você pode implementar isso depois */}
+                <div className="space-y-4">
+                  {/* Header da Data */}
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <h2 className="text-2xl font-bold text-white capitalize">
+                      Hoje
+                    </h2>
+                  </div>
+
+                  {/* Tabela para esta data */}
+                  <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+                    <MusicTable tracks={tracks} onToggleQueue={onToggleQueue} externalDownloadQueue={downloadQueue} />
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
 
-        {/* Hero Section - Beatport Style */}
-        <div className="mb-8 glass-effect rounded-3xl p-8 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Featured Track */}
-            <div className="lg:col-span-2 bg-gradient-to-br from-purple-600/20 to-blue-600/20 rounded-2xl p-6 hover:from-purple-600/30 hover:to-blue-600/30 transition-all duration-300">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="h-5 w-5 text-purple-400" />
-                <span className="text-purple-400 font-semibold text-sm uppercase tracking-wide">Featured Track</span>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">As músicas mais quentes da semana</h3>
-              <p className="text-gray-300 mb-4">Descubra os últimos lançamentos que estão dominando as pistas de dança</p>
+        {/* Modal de Filtros */}
+        <FiltersModal
+          isOpen={showFiltersModal}
+          onClose={() => setShowFiltersModal(false)}
+          genres={genres}
+          artists={artists}
+          versions={versions}
+          pools={pools}
+          monthOptions={monthOptions}
+          selectedGenre={selectedGenre}
+          selectedArtist={selectedArtist}
+          selectedDateRange={selectedDateRange}
+          selectedVersion={selectedVersion}
+          selectedMonth={selectedMonth}
+          selectedPool={selectedPool}
+          onGenreChange={handleGenreChange}
+          onArtistChange={handleArtistChange}
+          onDateRangeChange={handleDateRangeChange}
+          onVersionChange={handleVersionChange}
+          onMonthChange={handleMonthChange}
+          onPoolChange={handlePoolChange}
+          onApplyFilters={handleApplyFilters}
+          onClearFilters={handleClearFilters}
+          isLoading={loading}
+          hasActiveFilters={hasActiveFilters}
+        />
 
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all duration-300">
-                  <div className="w-8 h-8 bg-purple-600/30 rounded-full flex items-center justify-center text-purple-400 font-bold text-sm">
-                    1
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white font-medium truncate">Loading...</div>
-                    <div className="text-gray-400 text-sm truncate">Loading...</div>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Play className="h-3 w-3" />
-                      0
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Download className="h-3 w-3" />
-                      0
-                    </span>
-                  </div>
+        {/* Ícone Flutuante da Fila de Downloads */}
+        {downloadQueue.length > 0 && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <button
+              onClick={handleDownloadQueue}
+              disabled={isDownloadingQueue || zipProgress.isActive}
+              className="relative group"
+              title={`Fila de Downloads (${downloadQueue.length}/20) - Máximo 20 músicas - Clique para gerar ZIP`}
+            >
+              {/* Ícone principal */}
+              <div className="relative">
+                <div className="download-queue-icon w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 group-hover:shadow-blue-500/50">
+                  {isDownloadingQueue || zipProgress.isActive ? (
+                    <Loader2 className="h-8 w-8 text-white animate-spin" />
+                  ) : (
+                    <ShoppingCart className="h-8 w-8 text-white" />
+                  )}
                 </div>
-              </div>
 
-              <div className="flex gap-3">
-                <Link href="/trending" className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2">
-                  <Play size={16} />
-                  Ver Trending
-                </Link>
-                <Link href="/top-100" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors duration-200">
-                  Top 100
-                </Link>
-              </div>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="space-y-4">
-              <div className="glass-effect rounded-xl p-4 hover:bg-white/10 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-600/20 rounded-lg">
-                    <Music className="h-5 w-5 text-green-400" />
-                  </div>
-                  <div>
-                    <div className="text-white font-semibold">{loading ? '...' : tracks.length}</div>
-                    <div className="text-gray-400 text-sm">Novas Músicas</div>
-                  </div>
+                {/* Contador */}
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                  {downloadQueue.length}
                 </div>
+
+                {/* Animação de pulso quando adiciona música */}
+                <div className="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-20"></div>
               </div>
 
-              <div className="glass-effect rounded-xl p-4 hover:bg-white/10 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-600/20 rounded-lg">
-                    <Star className="h-5 w-5 text-blue-400" />
+              {/* Tooltip */}
+              <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                {isDownloadingQueue || zipProgress.isActive ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {zipProgress.isGenerating ? 'Processando...' : 'Baixando...'}
                   </div>
-                  <div>
-                    <div className="text-white font-semibold">VIP</div>
-                    <div className="text-gray-400 text-sm">Acesso Premium</div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Gerar ZIP ({downloadQueue.length}/20 músicas)
                   </div>
-                </div>
-              </div>
-
-              <div className="glass-effect rounded-xl p-4 hover:bg-white/10 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-600/20 rounded-lg">
-                    <Clock className="h-5 w-5 text-purple-400" />
-                  </div>
-                  <div>
-                    <div className="text-white font-semibold">24/7</div>
-                    <div className="text-gray-400 text-sm">Updates</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Top 100 Promotion Box */}
-        <div className="mb-8">
-          <div className="bg-gradient-to-r from-yellow-600/20 via-orange-600/20 to-red-600/20 rounded-2xl p-6 border border-yellow-500/30 backdrop-blur-sm hover:shadow-lg hover:shadow-yellow-500/20 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-r from-yellow-500/30 to-orange-500/30 rounded-full">
-                  <Crown className="h-8 w-8 text-yellow-400" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-2">🎵 TOP 100 RANKING</h3>
-                  <p className="text-gray-300 mb-3">Descubra as músicas mais populares da plataforma em tempo real</p>
-                  <div className="flex items-center gap-4 text-sm text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <BarChart3 className="h-4 w-4 text-yellow-400" />
-                      Ranking em tempo real
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Zap className="h-4 w-4 text-orange-400" />
-                      Atualizado agora
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Flame className="h-4 w-4 text-red-400" />
-                      Trending tracks
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-3">
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-yellow-400">100</div>
-                  <div className="text-sm text-gray-400">Músicas</div>
-                </div>
-                <Link
-                  href="/top-100"
-                  className="px-6 py-3 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-yellow-500/20 transform hover:scale-105 flex items-center gap-2"
-                >
-                  <Crown className="h-5 w-5" />
-                  Ver Top 100
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Centralized Search Bar */}
-        <div className="mb-8">
-          <div className="w-full glass-effect rounded-3xl p-6 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 beatport-hover">
-            <div className="flex flex-col items-center gap-4">
-              {/* Search Bar */}
-              <div className="flex items-center w-full max-w-2xl glass-effect rounded-full px-6 py-4 focus-within:border-purple-400/70 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 pulse-button">
-                <Search className="h-5 w-5 text-purple-400 mr-4 animate-pulse" />
-                <input
-                  type="text"
-                  placeholder="Buscar músicas, artistas, estilos..."
-                  className="flex-grow bg-transparent outline-none text-white placeholder-gray-400 text-sm"
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                />
-                {isSearching && (
-                  <Loader2 className="h-5 w-5 text-purple-400 animate-spin" />
                 )}
               </div>
+            </button>
+
+            {/* Botão para limpar fila ou cancelar ZIP */}
+            <button
+              onClick={zipProgress.isActive ? handleCancelZipGeneration : () => setDownloadQueue([])}
+              disabled={isDownloadingQueue && !zipProgress.isActive}
+              className="absolute -top-2 -left-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={zipProgress.isActive ? "Cancelar geração do ZIP" : "Limpar fila"}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+
+        {/* Progress Bar Flutuante */}
+        {zipProgress.isActive && (
+          <div className="fixed bottom-24 right-6 z-50 w-80 bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-xl p-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-white font-medium">
+                  {zipProgress.trackName}
+                </span>
+                <button
+                  onClick={handleCancelZipGeneration}
+                  className="w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200"
+                  title="Cancelar geração do ZIP"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+              <span className="text-sm text-gray-300">
+                {zipProgress.current}/{zipProgress.total} ({zipProgress.progress}%)
+              </span>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div
+                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${zipProgress.progress}%` }}
+              ></div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Music Table */}
-        <div className="w-full">
-          {renderMusicTable()}
-        </div>
       </main>
     </div>
   );

@@ -4,7 +4,7 @@ import { GlobalPlayerProvider } from '@/context/GlobalPlayerContext';
 import MusicRouteHandler from '@/components/layout/MusicRouteHandler';
 import AudioPlayerRoot from '@/components/player/AudioPlayerRoot';
 import FooterPlayerNew from '@/components/player/FooterPlayerNew';
-import PWAInstaller from '@/components/pwa/PWAInstaller';
+
 import { AppProvider } from '@/context/AppContext';
 import AuthProvider from '@/context/AuthProvider';
 import type { Metadata } from 'next';
@@ -138,7 +138,6 @@ export default function RootLayout({
                 <ExtensionDetector />
                 <GlobalToastManager />
                 <DynamicGradientBackground />
-                <PWAInstaller />
                 {children}
                 {/* Player global sempre renderizado */}
                 <FooterPlayerNew />

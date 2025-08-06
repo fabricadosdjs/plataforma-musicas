@@ -11,24 +11,12 @@ import { Filter } from 'lucide-react'; // Certifique-se de que Filter está impo
 import { getSignInUrl } from '@/lib/utils';
 
 interface HeaderProps {
-  showSearchAndFilters?: boolean;
-  searchQuery?: string;
-  onSearchChange?: (query: string) => void;
-  onSearchSubmit?: () => void;
-  onFiltersClick?: () => void;
-  hasActiveFilters?: boolean;
+  // Props removidas - pesquisa e filtros agora estão na página
 }
 
 const NEW_LOGO_URL = 'https://i.ibb.co/Y7WKPY57/logo-nexor.png';
 
-const Header = ({
-  showSearchAndFilters = false,
-  searchQuery,
-  onSearchChange,
-  onSearchSubmit,
-  onFiltersClick,
-  hasActiveFilters = false, // Garante que hasActiveFilters sempre seja um booleano
-}: HeaderProps) => {
+const Header = ({}: HeaderProps) => {
   const { data: session } = useSession();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -534,6 +522,8 @@ const Header = ({
           )}
         </div>
       </div>
+
+      
 
       {/* Não há notificações locais aqui, elas são gerenciadas pelo AppContext */}
     </header>

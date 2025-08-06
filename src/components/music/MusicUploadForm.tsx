@@ -55,6 +55,7 @@ export default function MusicUploadForm() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isDragOver, setIsDragOver] = useState(false);
     const [formData, setFormData] = useState<UploadFormData>({
         songName: '',
         artist: '',
@@ -134,6 +135,10 @@ export default function MusicUploadForm() {
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
+        handleFileValidation(file);
+    };
+
+    const handleFileValidation = (file: File | null) => {
         if (file) {
             // Validar tipo de arquivo
             const audioTypes = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/aac', 'audio/ogg', 'audio/mp4'];
@@ -162,6 +167,27 @@ export default function MusicUploadForm() {
                     songName: parts[1].trim()
                 }));
             }
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            handleFileValidation(file);
         }
     };
 
@@ -269,7 +295,18 @@ export default function MusicUploadForm() {
                             <label className="block text-sm font-medium text-gray-300">
                                 Arquivo de Áudio *
                             </label>
-                            <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-purple-500 transition-colors">
+                            <div
+                                className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-300 cursor-pointer ${isDragOver
+                                        ? 'border-purple-500 bg-purple-500/10'
+                                        : selectedFile
+                                            ? 'border-green-500 bg-green-500/10'
+                                            : 'border-gray-600 hover:border-purple-500'
+                                    }`}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                onClick={() => fileInputRef.current?.click()}
+                            >
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -278,27 +315,38 @@ export default function MusicUploadForm() {
                                     className="hidden"
                                 />
                                 <div className="space-y-4">
-                                    <FileAudio className="w-12 h-12 text-gray-400 mx-auto" />
+                                    <FileAudio className={`w-12 h-12 mx-auto ${isDragOver ? 'text-purple-400' : selectedFile ? 'text-green-400' : 'text-gray-400'
+                                        }`} />
                                     <div>
                                         <p className="text-white font-medium">
-                                            {selectedFile ? selectedFile.name : 'Clique para selecionar um arquivo'}
+                                            {selectedFile
+                                                ? selectedFile.name
+                                                : isDragOver
+                                                    ? 'Solte o arquivo aqui'
+                                                    : 'Arraste e solte um arquivo aqui ou clique para selecionar'
+                                            }
                                         </p>
                                         <p className="text-sm text-gray-400 mt-1">
                                             MP3, WAV, FLAC, AAC, OGG, M4A (máx. 50MB)
                                         </p>
                                         {selectedFile && (
-                                            <p className="text-sm text-gray-500 mt-1">
-                                                Tamanho: {formatFileSize(selectedFile.size)}
+                                            <p className="text-sm text-green-400 mt-1">
+                                                ✓ Arquivo selecionado: {formatFileSize(selectedFile.size)}
                                             </p>
                                         )}
                                     </div>
-                                    <Button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="bg-purple-600 hover:bg-purple-700 text-white"
-                                    >
-                                        Selecionar Arquivo
-                                    </Button>
+                                    {!selectedFile && (
+                                        <Button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                fileInputRef.current?.click();
+                                            }}
+                                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                                        >
+                                            Selecionar Arquivo
+                                        </Button>
+                                    )}
                                 </div>
                             </div>
                         </div>

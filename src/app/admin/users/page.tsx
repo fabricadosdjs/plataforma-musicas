@@ -2,11 +2,12 @@
 import React from "react";
 // Interface do usuário
 interface User {
+    [x: string]: any;
     id: string;
     name: string;
     email: string;
     whatsapp?: string;
-    vvalor?: number;
+    valor?: number;
     vencimento?: string;
     dataPagamento?: string;
     status: string;
@@ -15,7 +16,7 @@ interface User {
     deezerEmail?: string;
     deezerPassword?: string;
     is_vip: boolean;
-    ddailyDownloadCount: number | null;
+    dailyDownloadCount: number | null;
     weeklyPackRequests?: number;
     weeklyPlaylistDownloads?: number;
     wweeklyPackRequestsUsed?: number;
@@ -30,7 +31,7 @@ interface User {
 
 // Imports
 import AdminAuth from '@/components/AdminAuth';
-import { Users, Crown, CheckCircle, DollarSign, Plus, Search, Filter, Copy, AlertCircle, Settings, Loader2, User, Edit, Trash, X, Download, Heart, Play } from 'lucide-react';
+import { Users, Crown, CheckCircle, DollarSign, Plus, Search, Filter, Copy, AlertCircle, Settings, Loader2, User, Edit, Trash, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { redirect } from 'next/navigation';
@@ -113,26 +114,26 @@ const BENEFIT_LABELS = {
     musicProduction: '🎼 Produção da sua Música'
 } as const;
 
-// Função para determinar o plano baseado no vvalor mensal
-const getUserPlan = (vvalor: number | null) => {
-    if (!vvalor || vvalor < VIP_PLANS.BASICO.minValue) {
+// Função para determinar o plano baseado no valor mensal
+const getUserPlan = (valor: number | null) => {
+    if (!valor || valor < VIP_PLANS.BASICO.minValue) {
         return null;
     }
 
-    if (vvalor >= VIP_PLANS.BASICO.minValue && vvalor <= VIP_PLANS.BASICO.maxValue) {
+    if (valor >= VIP_PLANS.BASICO.minValue && valor <= VIP_PLANS.BASICO.maxValue) {
         return VIP_PLANS.BASICO;
     }
 
-    if (vvalor >= VIP_PLANS.PADRAO.minValue && vvalor <= VIP_PLANS.PADRAO.maxValue) {
+    if (valor >= VIP_PLANS.PADRAO.minValue && valor <= VIP_PLANS.PADRAO.maxValue) {
         return VIP_PLANS.PADRAO;
     }
 
-    if (vvalor >= VIP_PLANS.COMPLETO.minValue && vvalor <= VIP_PLANS.COMPLETO.maxValue) {
+    if (valor >= VIP_PLANS.COMPLETO.minValue && valor <= VIP_PLANS.COMPLETO.maxValue) {
         return VIP_PLANS.COMPLETO;
     }
 
-    // Para vvalores acima do máximo, considera como VIP COMPLETO
-    if (vvalor > VIP_PLANS.COMPLETO.maxValue) {
+    // Para valores acima do máximo, considera como VIP COMPLETO
+    if (valor > VIP_PLANS.COMPLETO.maxValue) {
         return VIP_PLANS.COMPLETO;
     }
 
@@ -141,7 +142,7 @@ const getUserPlan = (vvalor: number | null) => {
 
 // Função para obter benefícios do usuário (padrão + personalizações)
 const getUserBenefits = (user: User, customBenefits: { [userId: string]: any }) => {
-    const defaultPlan = getUserPlan(user.vvalor || null);
+    const defaultPlan = getUserPlan(user.valor || null);
     const defaultBenefits = defaultPlan ? defaultPlan.benefits : VIP_BENEFITS.BASICO;
     const userCustom = customBenefits[user.id] || {};
 
@@ -178,7 +179,7 @@ export default function AdminUsersPage() {
         whatsapp: '',
         email: '',
         password: '',
-        vvalor: 0,
+        valor: 0,
         vencimento: '',
         dataPagamento: '',
         status: 'ativo',
@@ -187,7 +188,7 @@ export default function AdminUsersPage() {
         deezerEmail: '',
         deezerPassword: '',
         is_vip: true,
-        ddailyDownloadCount: 0
+        dailyDownloadCount: 0
     });
 
     useEffect(() => {
@@ -261,8 +262,8 @@ export default function AdminUsersPage() {
     // Função para calcular receita mensal
     const calculateMonthlyRevenue = () => {
         return users
-            .filter(user => user.is_vip && user.vvalor)
-            .reduce((acc, user) => acc + Number(user.vvalor || 0), 0);
+            .filter(user => user.is_vip && user.valor)
+            .reduce((acc, user) => acc + Number(user.valor || 0), 0);
     };
 
     // Função para verificar se a data de vencimento está próxima (3 dias)
@@ -547,7 +548,7 @@ export default function AdminUsersPage() {
             whatsapp: user.whatsapp || '',
             email: user.email || '',
             password: '', // Não mostrar senha existente por segurança
-            vvalor: user.vvalor || 0,
+            valor: user.valor || 0,
             vencimento: formatDateForInput(user.vencimento),
             dataPagamento: formatDateForInput(user.dataPagamento),
             status: user.status,
@@ -556,7 +557,7 @@ export default function AdminUsersPage() {
             deezerEmail: user.deezerEmail || '',
             deezerPassword: '', // Não mostrar senha existente por segurança
             is_vip: user.is_vip,
-            ddailyDownloadCount: user.ddailyDownloadCount || 0
+            dailyDownloadCount: user.dailyDownloadCount || 0
         });
     };
 
@@ -568,7 +569,7 @@ export default function AdminUsersPage() {
             whatsapp: '',
             email: '',
             password: '',
-            vvalor: 0,
+            valor: 0,
             vencimento: '',
             dataPagamento: '',
             status: 'ativo',
@@ -577,7 +578,7 @@ export default function AdminUsersPage() {
             deezerEmail: '',
             deezerPassword: '',
             is_vip: true,
-            ddailyDownloadCount: 0
+            dailyDownloadCount: 0
         });
     };
 
@@ -598,7 +599,7 @@ export default function AdminUsersPage() {
             whatsapp: '',
             email: '',
             password: '',
-            vvalor: 0,
+            valor: 0,
             vencimento: '',
             dataPagamento: '',
             status: 'ativo',
@@ -607,7 +608,7 @@ export default function AdminUsersPage() {
             deezerEmail: '',
             deezerPassword: '',
             is_vip: true,
-            ddailyDownloadCount: 0
+            dailyDownloadCount: 0
         });
     };
 
@@ -643,16 +644,23 @@ export default function AdminUsersPage() {
 
         setUpdating(editingUser.id);
         try {
+            const requestBody = {
+                userId: editingUser.id,
+                ...editForm
+            };
+
+            console.log('Dados sendo enviados para atualização:', requestBody);
+
             const response = await fetch('/api/admin/users', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    userId: editingUser.id,
-                    ...editForm
-                }),
+                body: JSON.stringify(requestBody),
             });
+
+            console.log('Status da resposta:', response.status);
+            console.log('Headers da resposta:', Object.fromEntries(response.headers.entries()));
 
             if (response.ok) {
                 const data = await response.json();
@@ -660,11 +668,13 @@ export default function AdminUsersPage() {
                 fetchUsers();
                 closeEditModal();
             } else {
-                throw new Error('Falha ao atualizar usuário');
+                const errorText = await response.text();
+                console.error('Resposta de erro do servidor:', errorText);
+                throw new Error(`Falha ao atualizar usuário: ${response.status} - ${errorText}`);
             }
         } catch (error) {
             console.error('Erro ao atualizar usuário:', error);
-            showMessage('Erro ao atualizar usuário', 'error');
+            showMessage(`Erro ao atualizar usuário: ${error instanceof Error ? error.message : 'Erro desconhecido'}`, 'error');
         } finally {
             setUpdating(null);
         }
@@ -774,59 +784,31 @@ export default function AdminUsersPage() {
                         </div>
                     )}
 
-                    {/* Statistics Cards - Cards Elegantes e Estreitos */}
-                    <div className="space-y-4 mb-6">
-                        {/* Primeira linha - Cards principais */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            {/* Total de Usuários */}
-                            <div className="bg-gradient-to-br from-blue-900/80 to-blue-700/80 rounded-xl p-4 flex items-center gap-3 shadow-lg border border-blue-500/30 backdrop-blur-sm">
-                                <div className="p-2 bg-blue-500/20 rounded-lg">
-                                    <Users className="w-5 h-5 text-blue-300" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-xs text-gray-300 font-medium">Total de Usuários</p>
-                                    <p className="text-2xl font-bold text-white">{users.length}</p>
-                                </div>
-                            </div>
-                            {/* Usuários VIP */}
-                            <div className="bg-gradient-to-br from-yellow-900/80 to-yellow-700/80 rounded-xl p-4 flex items-center gap-3 shadow-lg border border-yellow-500/30 backdrop-blur-sm">
-                                <div className="p-2 bg-yellow-500/20 rounded-lg">
-                                    <Crown className="w-5 h-5 text-yellow-300" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-xs text-gray-300 font-medium">Usuários VIP</p>
-                                    <p className="text-2xl font-bold text-yellow-400">{users.filter(u => u.is_vip).length}</p>
-                                </div>
-                            </div>
-                            {/* Usuários Ativos */}
-                            <div className="bg-gradient-to-br from-green-900/80 to-green-700/80 rounded-xl p-4 flex items-center gap-3 shadow-lg border border-green-500/30 backdrop-blur-sm">
-                                <div className="p-2 bg-green-500/20 rounded-lg">
-                                    <CheckCircle className="w-5 h-5 text-green-300" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-xs text-gray-300 font-medium">Usuários Ativos</p>
-                                    <p className="text-2xl font-bold text-green-400">{users.filter(u => u.status === 'ativo').length}</p>
-                                </div>
-                            </div>
-                            {/* Receita Mensal */}
-                            <div className="bg-gradient-to-br from-emerald-900/80 to-emerald-700/80 rounded-xl p-4 flex items-center gap-3 shadow-lg border border-emerald-500/30 backdrop-blur-sm">
-                                <div className="p-2 bg-emerald-500/20 rounded-lg">
-                                    <DollarSign className="w-5 h-5 text-emerald-300" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-xs text-gray-300 font-medium">Receita Mensal</p>
-                                    <p className="text-2xl font-bold text-emerald-400">R$ {calculateMonthlyRevenue().toFixed(2)}</p>
-                                </div>
-                            </div>
+                    {/* Statistics Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                        {/* Total de Usuários */}
+                        <div className="bg-gradient-to-br from-blue-900 to-blue-700 rounded-xl p-6 flex flex-col items-center justify-center shadow-lg border border-blue-500/30">
+                            <Users className="w-8 h-8 text-blue-300 mb-2" />
+                            <p className="text-sm text-gray-300">Total de Usuários</p>
+                            <p className="text-3xl font-bold text-white">{users.length}</p>
                         </div>
-
-                        {/* Segunda linha - Cards de estatísticas do usuário */}
-                        <div className="space-y-4">
-                            {/* Título Visão Geral */}
-                            <div className="mb-4">
-                                <h2 className="text-xl font-bold text-white mb-1">Visão Geral</h2>
-                                <p className="text-sm text-gray-400">Resumo das suas atividades e estatísticas</p>
-                            </div>
+                        {/* Usuários VIP */}
+                        <div className="bg-gradient-to-br from-yellow-900 to-yellow-700 rounded-xl p-6 flex flex-col items-center justify-center shadow-lg border border-yellow-500/30">
+                            <Crown className="w-8 h-8 text-yellow-300 mb-2" />
+                            <p className="text-sm text-gray-300">Usuários VIP</p>
+                            <p className="text-3xl font-bold text-yellow-400">{users.filter(u => u.is_vip).length}</p>
+                        </div>
+                        {/* Usuários Ativos */}
+                        <div className="bg-gradient-to-br from-green-900 to-green-700 rounded-xl p-6 flex flex-col items-center justify-center shadow-lg border border-green-500/30">
+                            <CheckCircle className="w-8 h-8 text-green-300 mb-2" />
+                            <p className="text-sm text-gray-300">Usuários Ativos</p>
+                            <p className="text-3xl font-bold text-green-400">{users.filter(u => u.status === 'ativo').length}</p>
+                        </div>
+                        {/* Receita Mensal */}
+                        <div className="bg-gradient-to-br from-emerald-900 to-emerald-700 rounded-xl p-6 flex flex-col items-center justify-center shadow-lg border border-emerald-500/30">
+                            <DollarSign className="w-8 h-8 text-emerald-300 mb-2" />
+                            <p className="text-sm text-gray-300">Receita Mensal</p>
+                            <p className="text-3xl font-bold text-emerald-400">R$ {calculateMonthlyRevenue().toFixed(2)}</p>
                         </div>
                     </div>
 
@@ -864,7 +846,7 @@ export default function AdminUsersPage() {
                                             E-mail
                                         </th>
                                         <th className="w-[12%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
-                                            vvalor
+                                            Valor
                                         </th>
                                         <th className="w-[11%] px-3 py-4 text-left text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                             Plano
@@ -928,12 +910,12 @@ export default function AdminUsersPage() {
                                             </td>
                                             <td className="px-3 py-4 whitespace-nowrap">
                                                 <span className="text-xs font-light text-emerald-300 bg-emerald-500/10 px-2 py-1 rounded-lg">
-                                                    {user.vvalor ? `R$ ${Number(user.vvalor).toFixed(2)}` : '-'}
+                                                    {user.valor ? `R$ ${Number(user.valor).toFixed(2)}` : '-'}
                                                 </span>
                                             </td>
                                             <td className="px-3 py-4">
                                                 {(() => {
-                                                    const userPlan = getUserPlan(user.vvalor || null);
+                                                    const userPlan = getUserPlan(user.valor || null);
                                                     const hasCustomBenefits = customBenefits[user.id] && Object.keys(customBenefits[user.id]).length > 0;
 
                                                     if (!userPlan) {
@@ -1090,15 +1072,15 @@ export default function AdminUsersPage() {
                         )}
                     </div>
 
-                    {/* Seção de Benefícios por vvalor */}
+                    {/* Seção de Benefícios por Vvalor */}
                     <div className="mt-8 bg-gray-900 rounded-xl overflow-hidden border border-gray-700">
                         <div className="px-6 py-4 bg-gray-950 border-b border-gray-700">
                             <h2 className="text-xl font-semibold text-white flex items-center gap-2">
                                 <Crown className="w-6 h-6 text-yellow-400" />
-                                Benefícios por vvalor Mensal
+                                Benefícios por Valor Mensal
                             </h2>
                             <p className="text-gray-300 text-sm mt-1">
-                                Configure os benefícios que cada usuário tem direito conforme seu vvalor mensal
+                                Configure os benefícios que cada usuário tem direito conforme seu valor mensal
                             </p>
                         </div>
 
@@ -1121,7 +1103,7 @@ export default function AdminUsersPage() {
 
                                         <div className="space-y-3">
                                             <div className="bg-gray-700 rounded-lg p-3">
-                                                <h4 className="font-semibold text-white mb-2">vvalor Mensal</h4>
+                                                <h4 className="font-semibold text-white mb-2">Valor Mensal</h4>
                                                 <p className="text-2xl font-bold text-green-400">
                                                     R$ {plan.minValue} - R$ {plan.maxValue}
                                                 </p>
@@ -1215,9 +1197,9 @@ export default function AdminUsersPage() {
                                         <p className="text-sm mb-4">
                                             Tem certeza que deseja excluir o usuário <strong>{userToDelete?.name}</strong>?
                                         </p>
-                                        {userToDelete?.vvalor && (
+                                        {userToDelete?.valor && (
                                             <p className="text-green-400 text-sm font-medium">
-                                                R$ {Number(userToDelete.vvalor).toFixed(2)}/mês
+                                                R$ {Number(userToDelete.valor).toFixed(2)}/mês
                                             </p>
                                         )}
                                     </div>
@@ -1373,13 +1355,13 @@ export default function AdminUsersPage() {
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                vvalor da Assinatura (R$)
+                                                Valor da Assinatura (R$)
                                             </label>
                                             <input
                                                 type="number"
                                                 step="0.01"
-                                                value={editForm.vvalor}
-                                                onChange={(e) => setEditForm(prev => ({ ...prev, vvalor: e.target.value === '' ? 0 : parseFloat(e.target.value) }))}
+                                                value={editForm.valor}
+                                                onChange={(e) => setEditForm(prev => ({ ...prev, valor: e.target.value === '' ? 0 : parseFloat(e.target.value) }))}
                                                 className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                                 placeholder="0.00"
                                             />
@@ -1564,7 +1546,7 @@ export default function AdminUsersPage() {
                                             <div>
                                                 <h3 className="text-xl font-semibold">Personalizar Benefícios</h3>
                                                 <p className="text-sm text-gray-400">
-                                                    {userForBenefits?.name} - {getUserPlan(userForBenefits?.vvalor || null)?.name || 'Sem plano'}
+                                                    {userForBenefits?.name} - {getUserPlan(userForBenefits?.valor || null)?.name || 'Sem plano'}
                                                 </p>
                                             </div>
                                         </div>
@@ -1609,7 +1591,7 @@ export default function AdminUsersPage() {
                                                     {(() => {
                                                         const customUsed = customBenefits[userForBenefits?.id || '']?.packRequests?.used;
                                                         const used = customUsed !== undefined ? customUsed : (userForBenefits?.wweeklyPackRequestsUsed || 0);
-                                                        const plan = getUserPlan(userForBenefits?.vvalor || null);
+                                                        const plan = getUserPlan(userForBenefits?.valor || null);
                                                         const customBenefit = customBenefits[userForBenefits?.id || '']?.packRequests;
                                                         const limit = customBenefit?.limit || plan?.benefits.packRequests?.limit || 1;
                                                         return `${used} / ${limit}`;
@@ -1622,7 +1604,7 @@ export default function AdminUsersPage() {
                                                             width: (() => {
                                                                 const customUsed = customBenefits[userForBenefits?.id]?.packRequests?.used;
                                                                 const used = customUsed !== undefined ? customUsed : (userForBenefits?.wweeklyPackRequestsUsed || 0);
-                                                                const plan = getUserPlan(userForBenefits?.vvalor || null);
+                                                                const plan = getUserPlan(userForBenefits?.valor || null);
                                                                 const customBenefit = customBenefits[userForBenefits?.id]?.packRequests;
                                                                 const limit = customBenefit?.limit || plan?.benefits.packRequests?.limit || 1;
                                                                 return `${(used / Math.max(1, limit)) * 100}%`;
@@ -1641,7 +1623,7 @@ export default function AdminUsersPage() {
                                                     {(() => {
                                                         const customUsed = customBenefits[userForBenefits?.id]?.playlistDownloads?.used;
                                                         const used = customUsed !== undefined ? customUsed : (userForBenefits?.wweeklyPlaylistDownloadsUsed || 0);
-                                                        const plan = getUserPlan(userForBenefits?.vvalor || null);
+                                                        const plan = getUserPlan(userForBenefits?.valor || null);
                                                         const customBenefit = customBenefits[userForBenefits?.id]?.playlistDownloads;
                                                         const limit = customBenefit?.limit || plan?.benefits.playlistDownloads?.limit || 0;
                                                         return `${used} / ${limit === -1 ? "∞" : limit}`;
@@ -1654,7 +1636,7 @@ export default function AdminUsersPage() {
                                                             width: `${(() => {
                                                                 const customUsed = customBenefits[userForBenefits?.id]?.playlistDownloads?.used;
                                                                 const used = customUsed !== undefined ? customUsed : (userForBenefits?.wweeklyPlaylistDownloadsUsed || 0);
-                                                                const plan = getUserPlan(userForBenefits?.vvalor || null);
+                                                                const plan = getUserPlan(userForBenefits?.valor || null);
                                                                 const customBenefit = customBenefits[userForBenefits?.id]?.playlistDownloads;
                                                                 const limit = customBenefit?.limit || plan?.benefits.playlistDownloads?.limit || 1;
                                                                 if (limit === -1) return 100;
@@ -1671,7 +1653,7 @@ export default function AdminUsersPage() {
                                                     <span className="text-xs text-gray-400">Hoje</span>
                                                 </div>
                                                 <div className="text-lg font-bold text-white">
-                                                    {userForBenefits?.ddailyDownloadCount || 0}
+                                                    {userForBenefits?.iddailyDownloadCount || 0}
                                                 </div>
                                                 <div className="text-xs text-gray-400 mt-1">
                                                     Último reset: {userForBenefits?.llastDownloadReset
@@ -1697,7 +1679,7 @@ export default function AdminUsersPage() {
                                                 </label>
                                                 <select
                                                     value={customBenefits[userForBenefits?.id]?.driveAccess?.enabled !== undefined
-                                                        ? customBenefits[userForBenefits?.id].driveAccess.enabled.toString()
+                                                        ? customBenefits[userForBenefits?.id]?.driveAccess?.enabled.toString()
                                                         : getUserBenefits(userForBenefits!, customBenefits).driveAccess.enabled.toString()}
                                                     onChange={(e) => {
                                                         const newValue = e.target.value === 'true';
@@ -1705,8 +1687,11 @@ export default function AdminUsersPage() {
                                                             ...prev,
                                                             [userForBenefits?.id]: {
                                                                 ...prev[userForBenefits?.id],
-                                                                driveAccess: { ...prev[userForBenefits?.id]?.driveAccess, enabled: newValue }
-                                                            }
+                                                                driveAccess: {
+                                                                    ...prev[userForBenefits?.id]?.driveAccess,
+                                                                    enabled: newValue,
+                                                                },
+                                                            },
                                                         }));
                                                     }}
                                                     className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
@@ -2119,4 +2104,3 @@ export default function AdminUsersPage() {
         </AdminAuth>
     );
 }
-

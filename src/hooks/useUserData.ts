@@ -25,6 +25,8 @@ export const useUserData = (): UseUserDataReturn => {
     const [error, setError] = useState<string | null>(null);
     const lastFetchRef = useRef<string | null>(null);
     const isFetchingRef = useRef(false);
+    const lastFetchTimeRef = useRef<number>(0);
+    const CACHE_DURATION = 30000; // 30 segundos
 
     const fetchUserData = useCallback(async () => {
         // Evitar chamadas simultâneas
@@ -32,7 +34,13 @@ export const useUserData = (): UseUserDataReturn => {
 
         // Verificar se o usuário mudou
         const currentUserEmail = session?.user?.email;
-        if (lastFetchRef.current === currentUserEmail) return;
+        if (lastFetchRef.current === currentUserEmail) {
+            // Verificar se o cache ainda é válido
+            const now = Date.now();
+            if (now - lastFetchTimeRef.current < CACHE_DURATION) {
+                return;
+            }
+        }
 
         if (!currentUserEmail) {
             setUserData(null);
@@ -53,6 +61,7 @@ export const useUserData = (): UseUserDataReturn => {
             const data = await res.json();
             setUserData(data);
             lastFetchRef.current = currentUserEmail;
+            lastFetchTimeRef.current = Date.now();
         } catch (err) {
             console.error('Erro ao buscar dados do usuário:', err);
             setError(err instanceof Error ? err.message : 'Erro desconhecido');
