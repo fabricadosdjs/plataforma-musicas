@@ -95,6 +95,7 @@ export async function GET(req: Request) {
                 deezerPremium: user.deezerPremium,
                 deezerEmail: user.deezerEmail,
                 deezerPassword: user.deezerPassword,
+                password: user.password, // Adicionar campo password para verificar se existe
                 dailyDownloadCount: user.dailyDownloadCount,
                 weeklyPackRequests: user.weeklyPackRequests,
                 weeklyPlaylistDownloads: user.weeklyPlaylistDownloads,
@@ -243,9 +244,14 @@ export async function PATCH(req: Request) {
             return new NextResponse("UserId é obrigatório", { status: 400 });
         }
 
+        // Processar senha
         if (updateData.password && updateData.password.trim()) {
+            console.log('🔐 Processando nova senha para usuário:', userId);
+            console.log('📋 Senha original (não hash):', updateData.password.substring(0, 3) + '***');
             updateData.password = await bcrypt.hash(updateData.password, 10);
+            console.log('✅ Senha hash gerada com sucesso');
         } else {
+            console.log('⚠️ Senha vazia ou não fornecida - mantendo senha atual');
             delete updateData.password; // Não atualiza a senha se estiver vazia
         }
 

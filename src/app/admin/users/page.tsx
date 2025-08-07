@@ -670,7 +670,7 @@ export default function AdminUsersPage() {
             name: user.name || '',
             whatsapp: user.whatsapp || '',
             email: user.email || '',
-            password: '', // Não mostrar senha existente por segurança
+            password: user.password || '', // Mostrar senha atual se existir
             valor: user.valor || 0,
             vencimento: formatDateForInput(user.vencimento),
             dataPagamento: formatDateForInput(user.dataPagamento),
@@ -678,7 +678,7 @@ export default function AdminUsersPage() {
             deemix: user.deemix,
             deezerPremium: user.deezerPremium || false,
             deezerEmail: user.deezerEmail || '',
-            deezerPassword: '', // Não mostrar senha existente por segurança
+            deezerPassword: user.deezerPassword || '', // Mostrar senha atual se existir
             is_vip: user.is_vip,
             isUploader: user.isUploader || false,
             dailyDownloadCount: user.dailyDownloadCount || 0
@@ -770,12 +770,20 @@ export default function AdminUsersPage() {
 
         setUpdating(editingUser.id);
         try {
+            // Preparar dados para envio
             const requestBody = {
                 userId: editingUser.id,
                 ...editForm
             };
 
-            console.log('Dados sendo enviados para atualização:', requestBody);
+            // Log detalhado para debug
+            console.log('🔧 Dados sendo enviados para atualização:', {
+                userId: editingUser.id,
+                email: editForm.email,
+                hasPassword: !!editForm.password,
+                passwordLength: editForm.password?.length || 0,
+                isPasswordEmpty: !editForm.password?.trim()
+            });
 
             const response = await fetch('/api/admin/users', {
                 method: 'PATCH',
@@ -785,21 +793,21 @@ export default function AdminUsersPage() {
                 body: JSON.stringify(requestBody),
             });
 
-            console.log('Status da resposta:', response.status);
-            console.log('Headers da resposta:', Object.fromEntries(response.headers.entries()));
+            console.log('📊 Status da resposta:', response.status);
 
             if (response.ok) {
                 const data = await response.json();
+                console.log('✅ Usuário atualizado com sucesso:', data.message);
                 showMessage(data.message, 'success');
                 fetchUsers();
                 closeEditModal();
             } else {
                 const errorText = await response.text();
-                console.error('Resposta de erro do servidor:', errorText);
+                console.error('❌ Resposta de erro do servidor:', errorText);
                 throw new Error(`Falha ao atualizar usuário: ${response.status} - ${errorText}`);
             }
         } catch (error) {
-            console.error('Erro ao atualizar usuário:', error);
+            console.error('❌ Erro ao atualizar usuário:', error);
             showMessage(`Erro ao atualizar usuário: ${error instanceof Error ? error.message : 'Erro desconhecido'}`, 'error');
         } finally {
             setUpdating(null);
@@ -1529,22 +1537,34 @@ export default function AdminUsersPage() {
                                                             value={editForm.password}
                                                             onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
                                                             className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                            placeholder="Senha forte para novo usuário"
+                                                            placeholder="Senha simples para novo usuário"
                                                             autoComplete="new-password"
                                                         />
                                                         <button
                                                             type="button"
                                                             className="px-4 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl"
                                                             onClick={() => {
-                                                                const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
+                                                                // Gerar senha mais simples e confiável
+                                                                const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                                                                const numbers = "0123456789";
                                                                 let password = "";
-                                                                for (let i = 0, n = charset.length; i < 14; ++i) {
-                                                                    password += charset.charAt(Math.floor(Math.random() * n));
+
+                                                                // Garantir pelo menos 2 letras e 2 números
+                                                                password += letters.charAt(Math.floor(Math.random() * letters.length));
+                                                                password += letters.charAt(Math.floor(Math.random() * letters.length));
+                                                                password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+                                                                password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+
+                                                                // Adicionar mais caracteres aleatórios
+                                                                const allChars = letters + numbers;
+                                                                for (let i = 4; i < 8; ++i) {
+                                                                    password += allChars.charAt(Math.floor(Math.random() * allChars.length));
                                                                 }
+
                                                                 setEditForm(prev => ({ ...prev, password }));
                                                             }}
                                                         >
-                                                            Gerar senha forte
+                                                            Gerar senha simples
                                                         </button>
                                                     </div>
                                                 </div>
@@ -1552,7 +1572,7 @@ export default function AdminUsersPage() {
                                             {editingUser && (
                                                 <div className="md:col-span-2">
                                                     <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                        Senha (deixe em branco para não alterar)
+                                                        Senha {editingUser.password ? '(usuário tem senha definida)' : '(usuário sem senha)'}
                                                     </label>
                                                     <div className="flex gap-2">
                                                         <input
@@ -1560,24 +1580,75 @@ export default function AdminUsersPage() {
                                                             value={editForm.password}
                                                             onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
                                                             className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                            placeholder="Nova senha (opcional)"
+                                                            placeholder={editingUser.password ? "Nova senha (deixe em branco para manter atual)" : "Defina uma nova senha"}
                                                             autoComplete="new-password"
                                                         />
                                                         <button
                                                             type="button"
                                                             className="px-4 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl"
                                                             onClick={() => {
-                                                                const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
+                                                                // Gerar senha mais simples e confiável
+                                                                const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                                                                const numbers = "0123456789";
                                                                 let password = "";
-                                                                for (let i = 0, n = charset.length; i < 14; ++i) {
-                                                                    password += charset.charAt(Math.floor(Math.random() * n));
+
+                                                                // Garantir pelo menos 2 letras e 2 números
+                                                                password += letters.charAt(Math.floor(Math.random() * letters.length));
+                                                                password += letters.charAt(Math.floor(Math.random() * letters.length));
+                                                                password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+                                                                password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+
+                                                                // Adicionar mais caracteres aleatórios
+                                                                const allChars = letters + numbers;
+                                                                for (let i = 4; i < 8; ++i) {
+                                                                    password += allChars.charAt(Math.floor(Math.random() * allChars.length));
                                                                 }
+
                                                                 setEditForm(prev => ({ ...prev, password }));
                                                             }}
                                                         >
-                                                            Gerar senha forte
+                                                            Gerar senha simples
                                                         </button>
+                                                        {editingUser.password && (
+                                                            <button
+                                                                type="button"
+                                                                className="px-4 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl"
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(editingUser.password);
+                                                                    showMessage('Senha copiada para a área de transferência!', 'success');
+                                                                }}
+                                                                title="Copiar senha atual"
+                                                            >
+                                                                📋 Copiar
+                                                            </button>
+                                                        )}
                                                     </div>
+                                                    {editingUser.password && (
+                                                        <div className="mt-2 p-3 bg-gray-800/50 rounded-lg border border-gray-600">
+                                                            <p className="text-xs text-gray-300 mb-2">
+                                                                💡 <strong>Senha atual do usuário:</strong>
+                                                            </p>
+                                                            <div className="flex items-center gap-2">
+                                                                <code className="text-sm bg-gray-900 px-2 py-1 rounded text-green-400 font-mono">
+                                                                    {editingUser.password}
+                                                                </code>
+                                                                <button
+                                                                    type="button"
+                                                                    className="text-xs text-blue-400 hover:text-blue-300"
+                                                                    onClick={() => {
+                                                                        navigator.clipboard.writeText(editingUser.password);
+                                                                        showMessage('Senha copiada!', 'success');
+                                                                    }}
+                                                                >
+                                                                    📋 Copiar
+                                                                </button>
+                                                            </div>
+                                                            <p className="text-xs text-gray-400 mt-2">
+                                                                ⚠️ <strong>Importante:</strong> Esta senha está visível apenas para administradores.
+                                                                Use o botão "Copiar" para compartilhar com o cliente de forma segura.
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
 
@@ -1834,18 +1905,55 @@ export default function AdminUsersPage() {
                                             <div className="md:col-span-2">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                        Senha Deezer Premium
+                                                        Senha Deezer Premium {editingUser?.deezerPassword ? '(definida)' : '(não definida)'}
                                                     </label>
-                                                    <input
-                                                        type="password"
-                                                        value={editForm.deezerPassword || ''}
-                                                        onChange={(e) => setEditForm(prev => ({ ...prev, deezerPassword: e.target.value }))}
-                                                        placeholder="••••••••"
-                                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                    />
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={editForm.deezerPassword || ''}
+                                                            onChange={(e) => setEditForm(prev => ({ ...prev, deezerPassword: e.target.value }))}
+                                                            placeholder="Senha do Deezer Premium"
+                                                            className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                        />
+                                                        {editingUser?.deezerPassword && (
+                                                            <button
+                                                                type="button"
+                                                                className="px-4 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl"
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(editingUser.deezerPassword);
+                                                                    showMessage('Senha do Deezer copiada!', 'success');
+                                                                }}
+                                                                title="Copiar senha atual do Deezer"
+                                                            >
+                                                                📋 Copiar
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                     <p className="text-xs text-gray-400 mt-2">
                                                         Senha para acesso ao Deezer Premium
                                                     </p>
+                                                    {editingUser?.deezerPassword && (
+                                                        <div className="mt-2 p-3 bg-gray-800/50 rounded-lg border border-gray-600">
+                                                            <p className="text-xs text-gray-300 mb-2">
+                                                                💡 <strong>Senha atual do Deezer:</strong>
+                                                            </p>
+                                                            <div className="flex items-center gap-2">
+                                                                <code className="text-sm bg-gray-900 px-2 py-1 rounded text-green-400 font-mono">
+                                                                    {editingUser.deezerPassword}
+                                                                </code>
+                                                                <button
+                                                                    type="button"
+                                                                    className="text-xs text-blue-400 hover:text-blue-300"
+                                                                    onClick={() => {
+                                                                        navigator.clipboard.writeText(editingUser.deezerPassword);
+                                                                        showMessage('Senha do Deezer copiada!', 'success');
+                                                                    }}
+                                                                >
+                                                                    📋 Copiar
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

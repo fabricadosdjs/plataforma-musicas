@@ -71,7 +71,7 @@ const TrackRow = React.memo(({
             "group transition-all duration-300 ease-in-out border-l-4 hover:shadow-lg",
             isCurrent ? 'bg-zinc-900/50 border-blue-500 shadow-blue-500/20' : 'border-transparent hover:bg-zinc-800/60 hover:shadow-zinc-800/20'
         )}>
-            <td className="px-4 py-3 align-middle w-[12%]">
+            <td className="px-4 py-3 align-middle w-[40%]">
                 <div className="flex items-center gap-4">
                     <div className="relative flex-shrink-0 w-12 h-12">
                         <img src={track.imageUrl || "/images/default-track.jpg"} alt={`Capa de ${track.songName}`} className="w-12 h-12 rounded-lg object-cover border border-zinc-700/50" />
@@ -81,7 +81,7 @@ const TrackRow = React.memo(({
                     </div>
                     <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-100 truncate text-sm">{track.songName}</span>
+                            <span className="font-medium text-gray-100 truncate text-[12px]">{track.songName}</span>
                             {track.isCommunity && (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-sm">
                                     <Users size={12} strokeWidth={2} />
@@ -89,13 +89,13 @@ const TrackRow = React.memo(({
                                 </span>
                             )}
                         </div>
-                        <span className="text-xs text-gray-400 truncate">{track.artist}</span>
+                        <span className="text-[11px] text-gray-400 truncate">{track.artist}</span>
                     </div>
                 </div>
             </td>
-            <td className="px-4 py-3 align-middle w-[43%]"><span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white tracking-wide shadow-sm">{track.style}</span></td>
-            <td className="px-4 py-3 align-middle w-[15%]"><span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-600 to-green-600 text-white tracking-wide shadow-sm">{track.pool || 'Nexor Records'}</span></td>
-            <td className="px-4 py-3 align-middle w-[35%]">
+            <td className="px-4 py-3 align-middle w-[20%] text-center"><span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white tracking-wide shadow-sm whitespace-nowrap">{track.style}</span></td>
+            <td className="px-4 py-3 align-middle w-[10%] text-center"><span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-emerald-600 to-green-600 text-white tracking-wide shadow-sm whitespace-nowrap">{track.pool || 'Nexor Records'}</span></td>
+            <td className="px-4 py-3 align-middle w-[30%]">
                 <div className="flex items-center justify-end gap-1">
                     <button onClick={() => onDownload(track)} disabled={!canDownloadResult.can} title={canDownloadResult.reason} className={clsx("flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-lg text-xs min-w-[120px] justify-center", hasDownloaded ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-green-500/25 cursor-default" : canDownloadResult.can ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-blue-500/25" : "bg-gradient-to-r from-zinc-700 to-zinc-600 text-gray-400 cursor-not-allowed shadow-zinc-500/25 opacity-60")}>
                         {hasDownloaded ? <CheckCircle size={16} strokeWidth={2} /> : <Download size={16} strokeWidth={2} />}
@@ -671,6 +671,8 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                 .music-table {
                     border-collapse: separate;
                     border-spacing: 0;
+                    table-layout: fixed;
+                    width: 100%;
                 }
                 
                 .music-table thead th {
@@ -680,6 +682,11 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                     background: #1A1B1C;
                     backdrop-filter: blur(10px);
                     border-bottom: 2px solid #374151;
+                }
+                
+                .music-table tbody td {
+                    word-wrap: break-word;
+                    overflow: hidden;
                 }
             `}</style>
 
@@ -695,13 +702,13 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                     e.stopPropagation();
                 }}
             >
-                <table className="music-table hidden md:table min-w-full text-left table-fixed">
+                <table className="music-table hidden md:table min-w-full text-left">
                     <thead>
                         <tr className="border-b border-zinc-800">
-                            <th className="px-4 py-3 font-bold text-gray-400 tracking-wider w-[12%]"><div className="flex items-center gap-2"><Music2 strokeWidth={1.5} className="h-5 w-5 text-purple-400" />MÚSICA</div></th>
-                            <th className="px-4 py-3 font-bold text-blue-400 tracking-wider w-[43%]"><div className="flex items-center gap-2"><Sparkles strokeWidth={1.5} className="h-5 w-5 text-blue-400" />GÊNERO</div></th>
-                            <th className="px-4 py-3 font-bold text-yellow-400 tracking-wider w-[15%]"><div className="flex items-center gap-2"><Star strokeWidth={1.5} className="h-5 w-5 text-yellow-400" />POOL/LABEL</div></th>
-                            <th className="px-4 py-3 font-bold text-gray-400 tracking-wider w-[35%] text-right"><div className="flex items-center justify-end gap-2"><Zap strokeWidth={1.5} className="h-5 w-5 text-green-400" />AÇÕES</div></th>
+                            <th className="px-4 py-3 font-bold text-gray-400 tracking-wider w-[40%]"><div className="flex items-center gap-2"><Music2 strokeWidth={1.5} className="h-5 w-5 text-purple-400" />MÚSICA</div></th>
+                            <th className="px-4 py-3 font-bold text-blue-400 tracking-wider w-[20%] text-center"><div className="flex items-center justify-center gap-2"><Sparkles strokeWidth={1.5} className="h-5 w-5 text-blue-400" />GÊNERO</div></th>
+                            <th className="px-4 py-3 font-bold text-yellow-400 tracking-wider w-[10%] text-center"><div className="flex items-center justify-center gap-2"><Star strokeWidth={1.5} className="h-5 w-5 text-yellow-400" />POOL/LABEL</div></th>
+                            <th className="px-4 py-3 font-bold text-gray-400 tracking-wider w-[30%] text-right"><div className="flex items-center justify-end gap-2"><Zap strokeWidth={1.5} className="h-5 w-5 text-green-400" />AÇÕES</div></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/70">

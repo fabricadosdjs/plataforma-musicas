@@ -26,16 +26,16 @@ export const TableSkeleton = () => (
             <table className="min-w-full">
                 <thead className="sticky top-0 z-10 bg-[#1A1B1C]/80 backdrop-blur-sm">
                     <tr className="border-b border-zinc-800">
-                        <th className="px-4 py-3 w-[35%]">
+                        <th className="px-4 py-3 w-[40%]">
                             <div className="h-4 bg-gray-700 rounded w-24"></div>
                         </th>
-                        <th className="px-4 py-3 w-[15%]">
+                        <th className="px-4 py-3 w-[20%]">
                             <div className="h-4 bg-gray-700 rounded w-16"></div>
                         </th>
-                        <th className="px-4 py-3 w-[15%]">
+                        <th className="px-4 py-3 w-[10%]">
                             <div className="h-4 bg-gray-700 rounded w-12"></div>
                         </th>
-                        <th className="px-4 py-3 w-[35%] text-right">
+                        <th className="px-4 py-3 w-[30%] text-right">
                             <div className="h-4 bg-gray-700 rounded w-20 ml-auto"></div>
                         </th>
                     </tr>
