@@ -153,7 +153,7 @@ const allSolutions: SolutionItem[] = [
 
 export default function SolutionsPage() {
     return (
-        <main className="min-h-screen bg-[#18181b] text-gray-200 font-sans flex flex-col items-center py-12 px-4">
+        <main className="min-h-screen bg-[#18181b] text-gray-200 font-sans flex flex-col items-center py-12 px-4 z-0" style={{ zIndex: 0 }}>
             <div className="w-full max-w-3xl rounded-2xl shadow-lg bg-[#232326] border border-gray-800 p-8">
                 <h1 className="text-3xl font-bold mb-6 text-white text-center tracking-tight flex items-center justify-center gap-3">
                     <Lightbulb className="w-8 h-8 text-yellow-400" />

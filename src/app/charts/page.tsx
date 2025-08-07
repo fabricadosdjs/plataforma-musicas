@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function ChartsPage() {
     return (
-        <div className="min-h-screen flex items-center justify-center text-white text-2xl font-bold p-4">
+        <div className="min-h-screen flex items-center justify-center text-white text-2xl font-bold p-4 z-0" style={{ backgroundColor: '#1B1C1D', zIndex: 0 }}>
             Página de Rankings (Charts)
         </div>
     );

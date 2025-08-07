@@ -11,6 +11,8 @@ import type { Metadata } from 'next';
 import { Lato, Inter } from 'next/font/google'; // Lato como fonte principal, Inter para elementos específicos
 import './globals.css';
 import '../styles/beatport-effects.css';
+import '../styles/mobile-optimizations.css';
+import '../styles/profile-modern.css';
 import { ExtensionDetector } from '@/components/layout/ExtensionDetector';
 import { GlobalToastManager } from '@/components/layout/GlobalToastManager';
 import { ToastProvider } from '@/context/ToastContext';

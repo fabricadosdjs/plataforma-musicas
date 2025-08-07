@@ -7,8 +7,8 @@ async function addTestMusic() {
     try {
         console.log('🎵 Adicionando música de teste...');
 
-        // releaseDate: garantir data válida
-        let releaseDate = new Date();
+        // releaseDate: garantir data válida no timezone do Brasil
+        let releaseDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
         if (isNaN(releaseDate.getTime())) {
             releaseDate = new Date('2025-07-28T00:00:00.000Z'); // fallback seguro
         }

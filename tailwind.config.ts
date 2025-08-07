@@ -25,6 +25,50 @@ const config: Config = {
                 sans: ['Lato', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
                 mono: ['Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'monospace'],
             },
+            keyframes: {
+                slideInLeft: {
+                    '0%': {
+                        transform: 'translateX(-100%)',
+                        opacity: '0'
+                    },
+                    '100%': {
+                        transform: 'translateX(0)',
+                        opacity: '1'
+                    }
+                },
+                slideOutLeft: {
+                    '0%': {
+                        transform: 'translateX(0)',
+                        opacity: '1'
+                    },
+                    '100%': {
+                        transform: 'translateX(-100%)',
+                        opacity: '0'
+                    }
+                },
+                fadeIn: {
+                    '0%': {
+                        opacity: '0'
+                    },
+                    '100%': {
+                        opacity: '1'
+                    }
+                },
+                fadeOut: {
+                    '0%': {
+                        opacity: '1'
+                    },
+                    '100%': {
+                        opacity: '0'
+                    }
+                }
+            },
+            animation: {
+                'slideInLeft': 'slideInLeft 0.3s ease-out',
+                'slideOutLeft': 'slideOutLeft 0.3s ease-in',
+                'fadeIn': 'fadeIn 0.2s ease-out',
+                'fadeOut': 'fadeOut 0.2s ease-in'
+            }
         },
     },
     plugins: [],

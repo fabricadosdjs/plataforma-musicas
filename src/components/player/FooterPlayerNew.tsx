@@ -144,52 +144,71 @@ const FooterPlayer = () => {
 
     if (!currentTrack) return null;
 
+    // Garantir que imageUrl seja uma string válida
+    const getImageUrl = () => {
+        if (typeof currentTrack.imageUrl === 'string' && currentTrack.imageUrl.startsWith('http')) {
+            return currentTrack.imageUrl;
+        }
+        return "/images/BeatportHype.png";
+    };
+    
+    const imageUrl = getImageUrl();
+
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
     return (
-        <footer className={clsx(
-            "fixed bottom-0 left-0 right-0 z-50 transform-gpu transition-all duration-500 ease-in-out",
-            isMinimized ? 'h-16' : 'h-[88px]' // 88px = h-22
-        )}>
+        <footer
+            className={clsx(
+                "fixed bottom-0 left-0 right-0 z-[9997] transform-gpu transition-all duration-500 ease-in-out",
+                isMinimized ? 'h-16' : 'h-[88px]'
+            )}
+        >
             {/* Efeito de brilho para destacar o player */}
             <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/50 to-transparent blur-2xl" />
 
             <div className="relative h-full rounded-t-xl border-t border-zinc-800 bg-[#1A1B1C]/80 backdrop-blur-xl">
-                {/* --- Layout Principal --- */}
-                <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center px-4">
-
-                    {/* Coluna Esquerda: Informações da Música */}
-                    <div className="flex items-center gap-3 min-w-0 justify-start">
-                        <Image
-                            // @ts-expect-error: Garantir compatibilidade temporária
-                            src={currentTrack.imageUrl || "/placeholder.png"}
-                            alt={currentTrack.songName || "Capa da música"}
-                            width={56} height={56}
-                            className={clsx("rounded-md object-cover shadow-md transition-all duration-300", isMinimized ? "h-12 w-12" : "h-14 w-14")}
-                        />
+                {/* Layout responsivo: mobile = coluna, desktop = grid */}
+                <div className="flex flex-col sm:grid h-full sm:grid-cols-[1fr_auto_1fr] items-center px-2 sm:px-4 py-2 gap-2 sm:gap-0">
+                    {/* Música e info */}
+                    <div className="flex items-center gap-2 min-w-0 justify-center sm:justify-start w-full sm:w-auto order-1">
+                        {/* Imagem só aparece em desktop */}
+                        <div className="hidden sm:block">
+                            <Image
+                                src={imageUrl}
+                                alt={currentTrack.songName || "Capa da música"}
+                                width={48} height={48}
+                                className={clsx("rounded-md object-cover shadow-md transition-all duration-300", isMinimized ? "h-10 w-10" : "h-12 w-12")}
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    if (!target.src.endsWith('/images/BeatportHype.png')) {
+                                        target.src = '/images/BeatportHype.png';
+                                    }
+                                }}
+                            />
+                        </div>
                         <div className="min-w-0">
-                            <p className="truncate font-bold text-white text-sm">{currentTrack.songName}</p>
-                            <p className="truncate text-xs text-gray-400">{currentTrack.artist}</p>
+                            <p className="truncate font-bold text-white text-xs sm:text-sm max-w-[200px] sm:max-w-none text-center sm:text-left">{currentTrack.songName}</p>
+                            <p className="truncate text-[11px] sm:text-xs text-gray-400 max-w-[200px] sm:max-w-none text-center sm:text-left">{currentTrack.artist}</p>
                         </div>
                     </div>
 
-                    {/* Coluna Central: Controles e Progresso */}
-                    <div className="flex flex-col items-center justify-center gap-2">
-                        <div className="flex items-center gap-4">
+                    {/* Controles centrais */}
+                    <div className="flex flex-col items-center justify-center gap-1 w-full order-3 sm:order-2">
+                        <div className="flex items-center justify-center gap-3">
                             <button onClick={handlePrevious} className="p-2 text-gray-400 transition active:scale-90 hover:text-white" title="Anterior"><SkipBack size={20} fill="currentColor" /></button>
                             <button onClick={togglePlayPause} className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition active:scale-90 hover:scale-105" title={isPlaying ? "Pausar" : "Tocar"}>
                                 {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} className="ml-0.5" fill="currentColor" />}
                             </button>
                             <button onClick={nextTrack} className="p-2 text-gray-400 transition active:scale-90 hover:text-white" title="Próxima"><SkipForward size={20} fill="currentColor" /></button>
                         </div>
-                        {/* A barra de progresso some e aparece com uma transição suave */}
-                        <div className={clsx("w-full transition-all duration-300", isMinimized ? 'invisible h-0 opacity-0' : 'visible h-auto opacity-100')}>
+                        {/* Barra de progresso: sempre centralizada e com padding extra no mobile */}
+                        <div className={clsx("w-full px-2 sm:px-0 transition-all duration-300", isMinimized ? 'invisible h-0 opacity-0' : 'visible h-auto opacity-100')}>
                             <ProgressBar currentTime={currentTime} duration={duration} onSeek={handleSeek} isDragging={isDragging} setIsDragging={setIsDragging} />
                         </div>
                     </div>
 
-                    {/* Coluna Direita: Volume e Ações */}
-                    <div className="flex items-center justify-end gap-2">
+                    {/* Volume e ações */}
+                    <div className="flex items-center justify-center sm:justify-end gap-2 w-full sm:w-auto order-2 sm:order-3">
                         <div className={clsx("flex items-center gap-2 transition-all duration-300", isMinimized && 'invisible w-0 opacity-0')}>
                             <VolumeControl volume={volume} onVolumeChange={handleVolumeChange} isMuted={isMuted} toggleMute={toggleMute} />
                             <button onClick={stopTrack} className="p-2 text-gray-400 transition active:scale-90 hover:text-red-500" title="Fechar player"><X size={20} /></button>

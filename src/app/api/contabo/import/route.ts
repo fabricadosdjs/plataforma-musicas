@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
                         imageUrl: importData.imageUrl,
                         previewUrl: importData.previewUrl,
                         downloadUrl: importData.downloadUrl,
-                        releaseDate: new Date(importData.releaseDate)
+                        releaseDate: new Date(new Date(importData.releaseDate).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }))
                     }
                 });
 
@@ -229,12 +229,12 @@ function parseAudioFileName(filename: string) {
                 // Tem artista
                 let songName = match[2].trim();
                 const version = match[3]?.trim() || null;
-                
+
                 // Adiciona parênteses ao nome da música se houver versão
                 if (version) {
                     songName = `${songName} (${version})`;
                 }
-                
+
                 return {
                     artist: match[1].trim(),
                     songName: songName,
@@ -246,12 +246,12 @@ function parseAudioFileName(filename: string) {
                 // Só tem nome da música
                 let songName = match[1].trim();
                 const version = match[2]?.trim() || null;
-                
+
                 // Adiciona parênteses ao nome da música se houver versão
                 if (version) {
                     songName = `${songName} (${version})`;
                 }
-                
+
                 return {
                     artist: 'Artista Desconhecido',
                     songName: songName,

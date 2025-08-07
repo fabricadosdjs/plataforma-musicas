@@ -31,6 +31,31 @@ const VIP_PLANS = {
     }
 } as const;
 
+// Uploader Plans
+const UPLOADER_PLANS = {
+    BASIC: {
+        name: 'UPLOADER BÁSICO',
+        basePrice: 15,
+        color: 'bg-orange-500',
+        gradient: 'from-orange-500 to-orange-600',
+        icon: '📤'
+    },
+    PRO: {
+        name: 'UPLOADER PRO',
+        basePrice: 25,
+        color: 'bg-orange-600',
+        gradient: 'from-orange-600 to-orange-700',
+        icon: '🚀'
+    },
+    ELITE: {
+        name: 'UPLOADER ELITE',
+        basePrice: 35,
+        color: 'bg-orange-700',
+        gradient: 'from-orange-700 to-orange-800',
+        icon: '🏆'
+    }
+} as const;
+
 // Subscription periods
 const SUBSCRIPTION_PERIODS = {
     MONTHLY: {
@@ -76,27 +101,99 @@ const DEEMIX_PRICING = {
     }
 } as const;
 
+// Function to calculate real price based on plan + add-ons
+const calculateUserRealPrice = (basePrice: number, hasDeemix: boolean, hasDeezerPremium: boolean) => {
+    let totalPrice = basePrice;
+
+    // Se não é VIP, não pode ter add-ons
+    if (basePrice < 35) {
+        return basePrice;
+    }
+
+    // Determinar plano VIP baseado no preço base
+    let planKey: keyof typeof DEEMIX_PRICING = 'BASICO';
+    if (basePrice >= 50) {
+        planKey = 'COMPLETO';
+    } else if (basePrice >= 42) {
+        planKey = 'PADRAO';
+    }
+
+    // Adicionar Deemix se ativo
+    if (hasDeemix && planKey in DEEMIX_PRICING) {
+        const deemixPricing = DEEMIX_PRICING[planKey];
+        if (typeof deemixPricing === 'object' && 'finalPrice' in deemixPricing) {
+            totalPrice += deemixPricing.finalPrice;
+        }
+    }
+
+    // Adicionar Deezer Premium se ativo (e se não já incluído no plano)
+    if (hasDeezerPremium) {
+        // VIP Completo já inclui Deezer Premium grátis
+        if (planKey !== 'COMPLETO') {
+            // Se tem Deemix, Deezer Premium é grátis, senão paga
+            if (!hasDeemix) {
+                totalPrice += 9.75; // DEEZER_PREMIUM_PRICING
+            }
+        }
+    }
+
+    return Math.round(totalPrice * 100) / 100; // Arredondar para 2 casas decimais
+};
+
+// Function to get base price from total price (reverse calculation)
+const getBasePriceFromTotal = (totalPrice: number, hasDeemix: boolean, hasDeezerPremium: boolean) => {
+    // Se é valor baixo, provavelmente é só o plano base
+    if (totalPrice < 35) {
+        return totalPrice;
+    }
+
+    // Tentar diferentes planos base para ver qual bate
+    const basePrices = [35, 42, 50]; // BASICO, PADRAO, COMPLETO
+
+    for (const basePrice of basePrices) {
+        const calculatedTotal = calculateUserRealPrice(basePrice, hasDeemix, hasDeezerPremium);
+        if (Math.abs(calculatedTotal - totalPrice) < 0.01) {
+            return basePrice;
+        }
+    }
+
+    // Se não encontrou correspondência exata, retornar o valor total mesmo
+    return totalPrice;
+};
+
 // Function to determine user's plan based on monthly value
-const getUserPlan = (valor: number | null) => {
-    if (!valor || valor < 35) {
+const getUserPlan = (valor: number | null, hasDeemix?: boolean, hasDeezerPremium?: boolean) => {
+    if (!valor || valor < 15) {
         return null;
     }
 
-    if (valor === 35) {
-        return VIP_PLANS.BASICO;
+    // Se temos informações sobre add-ons, calcular o preço base
+    const basePrice = (hasDeemix !== undefined && hasDeezerPremium !== undefined)
+        ? getBasePriceFromTotal(valor, hasDeemix, hasDeezerPremium)
+        : valor;
+
+    // Uploader Plans
+    if (basePrice === 15) {
+        return { ...UPLOADER_PLANS.BASIC, type: 'UPLOADER' };
+    }
+    if (basePrice === 25) {
+        return { ...UPLOADER_PLANS.PRO, type: 'UPLOADER' };
+    }
+    if (basePrice === 35 && basePrice < 42) {
+        return { ...UPLOADER_PLANS.ELITE, type: 'UPLOADER' };
     }
 
-    if (valor === 42) {
-        return VIP_PLANS.PADRAO;
+    // VIP Plans baseados no preço BASE
+    if (basePrice >= 35 && basePrice < 42) {
+        return { ...VIP_PLANS.BASICO, type: 'VIP' };
     }
 
-    if (valor === 50) {
-        return VIP_PLANS.COMPLETO;
+    if (basePrice >= 42 && basePrice < 50) {
+        return { ...VIP_PLANS.PADRAO, type: 'VIP' };
     }
 
-    // For values above 50, consider as VIP COMPLETO
-    if (valor > 50) {
-        return VIP_PLANS.COMPLETO;
+    if (basePrice >= 50) {
+        return { ...VIP_PLANS.COMPLETO, type: 'VIP' };
     }
 
     return null;
@@ -127,6 +224,34 @@ export default function PlansTogglePage() {
     const [daysUsed, setDaysUsed] = useState(0);
     const [calculation, setCalculation] = useState<any>(null);
 
+    // Processar parâmetros da URL
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const planParam = urlParams.get('plan');
+            const periodParam = urlParams.get('period');
+            const deemixParam = urlParams.get('deemix');
+
+            if (planParam) {
+                setSelectedPlan(planParam);
+            }
+            if (periodParam) {
+                const periodMap: { [key: string]: keyof typeof SUBSCRIPTION_PERIODS } = {
+                    'monthly': 'MONTHLY',
+                    'quarterly': 'QUARTERLY',
+                    'semiannual': 'SEMIANNUAL',
+                    'annual': 'ANNUAL'
+                };
+                if (periodMap[periodParam]) {
+                    setSelectedPeriod(periodMap[periodParam]);
+                }
+            }
+            if (deemixParam === 'true') {
+                setIncludeDeemix(true);
+            }
+        }
+    }, []);
+
     useEffect(() => {
         if (session?.user) {
             const valor = session.user.valor;
@@ -148,6 +273,43 @@ export default function PlansTogglePage() {
     }, [session]);
 
     const getPlanPrice = (planKey: string, period: keyof typeof SUBSCRIPTION_PERIODS, includeDeemix: boolean) => {
+        // Verificar se é um plano Uploader
+        if (planKey.startsWith('uploader-')) {
+            const uploaderKey = planKey.replace('uploader-', '').toUpperCase() as keyof typeof UPLOADER_PLANS;
+            const plan = UPLOADER_PLANS[uploaderKey];
+            const periodConfig = SUBSCRIPTION_PERIODS[period];
+
+            // Planos Uploader não incluem Deemix
+            return plan.basePrice * (1 - periodConfig.discount) * periodConfig.months;
+        }
+
+        // Verificar se é um plano VIP
+        if (planKey.startsWith('vip-')) {
+            const vipKey = planKey.replace('vip-', '').toUpperCase() as keyof typeof VIP_PLANS;
+            const plan = VIP_PLANS[vipKey];
+            const periodConfig = SUBSCRIPTION_PERIODS[period];
+
+            // Calcular preço base do plano com desconto do período
+            let basePrice = plan.basePrice * (1 - periodConfig.discount);
+
+            if (!includeDeemix || periodConfig.deemixFree) {
+                return basePrice * periodConfig.months;
+            }
+
+            // Calcular preço do Deemix com desconto do período
+            const deemixPricing = DEEMIX_PRICING[vipKey as keyof typeof DEEMIX_PRICING];
+            let deemixPrice = 0;
+
+            if (typeof deemixPricing === 'object' && 'finalPrice' in deemixPricing) {
+                deemixPrice = deemixPricing.finalPrice * (1 - periodConfig.deemixDiscount);
+            } else if (typeof deemixPricing === 'number') {
+                deemixPrice = deemixPricing * (1 - periodConfig.deemixDiscount);
+            }
+
+            return (basePrice + deemixPrice) * periodConfig.months;
+        }
+
+        // Fallback para planos antigos
         const plan = VIP_PLANS[planKey as keyof typeof VIP_PLANS];
         const periodConfig = SUBSCRIPTION_PERIODS[period];
 
@@ -292,9 +454,9 @@ export default function PlansTogglePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen" style={{ backgroundColor: '#1B1C1D' }}>
+            <div className="min-h-screen z-0" style={{ backgroundColor: '#1B1C1D', zIndex: 0 }}>
                 <Header />
-                <div className="flex items-center justify-center min-h-screen">
+                <div className="flex items-center justify-center min-h-screen z-0" style={{ zIndex: 0 }}>
                     <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
                 </div>
             </div>
@@ -302,7 +464,7 @@ export default function PlansTogglePage() {
     }
 
     return (
-        <div className="min-h-screen" style={{ backgroundColor: '#1B1C1D' }}>
+        <div className="min-h-screen z-0" style={{ backgroundColor: '#1B1C1D', zIndex: 0 }}>
             <Header />
             <main className="container mx-auto px-4 py-8 pt-20">
 
@@ -343,7 +505,7 @@ export default function PlansTogglePage() {
                             </div>
                             <div className="bg-purple-500/10 rounded-lg p-4">
                                 <div className="text-2xl font-bold text-purple-400">
-                                    R$ {((session?.user?.valor / 30) * (30 - daysUsed)).toFixed(2).replace('.', ',')}
+                                    R$ {(((session?.user?.valor ?? 0) / 30) * (30 - daysUsed)).toFixed(2).replace('.', ',')}
                                 </div>
                                 <div className="text-sm text-gray-400">Valor Restante</div>
                             </div>

@@ -254,7 +254,7 @@ export default function PedidosPage() {
 
     if (status === 'loading') {
         return (
-            <div className="min-h-screen bg-[#1B1C1D] flex items-center justify-center">
+            <div className="min-h-screen bg-[#1B1C1D] flex items-center justify-center z-0" style={{ zIndex: 0 }}>
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto"></div>
                     <p className="text-white mt-4">Carregando...</p>
@@ -264,7 +264,7 @@ export default function PedidosPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#1B1C1D] relative overflow-hidden">
+        <div className="min-h-screen bg-[#1B1C1D] relative overflow-hidden z-0" style={{ zIndex: 0 }}>
             {/* SEO Component */}
             {seoData && <SEOHead {...seoData} />}
 
@@ -299,8 +299,8 @@ export default function PedidosPage() {
                         <div
                             key={service.id}
                             className={`glass-effect rounded-2xl p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${activeTab === service.id
-                                    ? 'border-purple-500/50 bg-purple-600/10'
-                                    : 'border-gray-800/50 hover:border-purple-500/30'
+                                ? 'border-purple-500/50 bg-purple-600/10'
+                                : 'border-gray-800/50 hover:border-purple-500/30'
                                 }`}
                             onClick={() => {
                                 setActiveTab(service.id as any);

@@ -57,7 +57,7 @@ export default function ProfilePage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-[#17171A] via-[#1a1122] to-[#0d1a22] flex flex-col items-center py-10">
+      <div className="min-h-screen bg-gradient-to-br from-[#17171A] via-[#1a1122] to-[#0d1a22] flex flex-col items-center py-10 z-0" style={{ zIndex: 0 }}>
         {/* Header do perfil */}
         <div className="w-full max-w-3xl flex flex-col md:flex-row items-center md:items-end gap-6 mb-10 p-8 rounded-3xl shadow-lg" style={{ background: "linear-gradient(135deg, #220D16 0%, #190D22 100%)" }}>
           <div className="flex flex-col items-center md:items-start gap-2">

@@ -229,3 +229,26 @@ code {
 .animate-shimmer {
   animation: shimmer 2s ease-in-out infinite;
 }
+
+/* Estilos específicos para o menu móvel */
+.mobile-menu-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 999999 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+.mobile-menu-drawer {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  height: 100vh !important;
+  width: 320px !important;
+  max-width: 85vw !important;
+  z-index: 999999 !important;
+  transform: translateX(0) !important;
+}

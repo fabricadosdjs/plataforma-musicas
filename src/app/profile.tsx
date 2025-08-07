@@ -9,7 +9,7 @@ export default function ProfilePage() {
 
     if (status === "loading") {
         return (
-            <div className="min-h-screen bg-[#1B1C1D] flex flex-col items-center justify-center text-white">
+            <div className="min-h-screen bg-[#1B1C1D] flex flex-col items-center justify-center text-white z-0" style={{ zIndex: 0 }}>
                 <Loader2 className="w-8 h-8 text-green-600 animate-spin mb-4" />
                 <div className="text-white text-lg">Carregando...</div>
             </div>
@@ -17,7 +17,7 @@ export default function ProfilePage() {
     }
     if (!user) {
         return (
-            <div className="min-h-screen bg-[#1B1C1D] flex flex-col items-center justify-center text-white">
+            <div className="min-h-screen bg-[#1B1C1D] flex flex-col items-center justify-center text-white z-0" style={{ zIndex: 0 }}>
                 <XCircle className="w-10 h-10 text-red-500 mb-4" />
                 <div className="text-white text-lg">Usuário não encontrado ou não logado.</div>
             </div>
@@ -25,7 +25,7 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#1B1C1D] text-white py-10 px-4">
+        <div className="min-h-screen bg-[#1B1C1D] text-white py-10 px-4 z-0" style={{ zIndex: 0 }}>
             <div className="max-w-3xl mx-auto space-y-8">
                 {/* Card principal */}
                 <div className="bg-gray-900 rounded-2xl shadow-lg p-8 flex items-center gap-6">

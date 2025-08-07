@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
                 imageUrl,
                 previewUrl,
                 downloadUrl,
-                releaseDate: new Date(releaseDate),
+                releaseDate: new Date(new Date(releaseDate).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })),
                 isCommunity: true,
                 uploadedBy: session.user.id,
             }

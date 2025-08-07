@@ -113,7 +113,7 @@ async function autoImportMusic() {
                             style: genre,
                             version: 'Original',
                             imageUrl: 'https://via.placeholder.com/300x300?text=Music',
-                            releaseDate: new Date(),
+                            releaseDate: new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })),
                             createdAt: new Date(),
                             updatedAt: new Date()
                         }

@@ -11,6 +11,7 @@ import { useAppContext } from '@/context/AppContext';
 import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
 import { useToast } from '@/hooks/useToast';
 import { Track } from '@/types/track';
+import { getCurrentDateBrazil } from '@/utils/dateUtils';
 
 interface TrendingTrack {
     id: number;
@@ -95,9 +96,9 @@ function TrendingPageContent() {
             imageUrl: track.imageUrl,
             version: 'original', // Default value
             previewUrl: track.downloadUrl, // Use downloadUrl as preview
-            releaseDate: new Date().toISOString(), // Default value
-            createdAt: new Date().toISOString(), // Added
-            updatedAt: new Date().toISOString(), // Added
+            releaseDate: getCurrentDateBrazil().toISOString(), // Default value
+            createdAt: getCurrentDateBrazil().toISOString(), // Added
+            updatedAt: getCurrentDateBrazil().toISOString(), // Added
             pool: 'Nexor Records' // Added
         };
 
@@ -115,9 +116,9 @@ function TrendingPageContent() {
                 imageUrl: t.imageUrl,
                 version: 'original',
                 previewUrl: t.downloadUrl,
-                releaseDate: new Date().toISOString(),
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                releaseDate: getCurrentDateBrazil().toISOString(),
+                createdAt: getCurrentDateBrazil().toISOString(),
+                updatedAt: getCurrentDateBrazil().toISOString(),
                 pool: 'Nexor Records'
             })));
         }
@@ -265,7 +266,7 @@ function TrendingPageContent() {
     };
 
     return (
-        <div className="min-h-screen" style={{ backgroundColor: '#1B1C1D' }}>
+        <div className="min-h-screen z-0" style={{ backgroundColor: '#1B1C1D', zIndex: 0 }}>
             <Header />
             <main className="container mx-auto px-4 py-8 pt-20">
 
@@ -582,7 +583,7 @@ export default function TrendingPage() {
     }, [trendingTracks.length, hasExtension, detectedExtensions, showToast]);
 
     return (
-        <div className="min-h-screen bg-black">
+        <div className="min-h-screen bg-black z-0" style={{ zIndex: 0 }}>
             <TrendingPageContent />
         </div>
     );

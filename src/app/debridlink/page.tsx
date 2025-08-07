@@ -119,7 +119,7 @@ export default function DebridLinkPage() {
 
     return (
         <>
-            <div className="min-h-screen text-white bg-gradient-to-br from-[#04060E] via-gray-900 to-black">
+            <div className="min-h-screen text-white bg-gradient-to-br from-[#04060E] via-gray-900 to-black z-0" style={{ zIndex: 0 }}>
                 <Header />
 
                 {/* Premium Hero Section */}

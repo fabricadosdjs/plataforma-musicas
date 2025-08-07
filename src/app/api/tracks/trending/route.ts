@@ -91,6 +91,8 @@ export async function GET(request: NextRequest) {
                     downloadCount,
                     likeCount,
                     downloadUrl: track.downloadUrl,
+                    isCommunity: track.isCommunity || false,
+                    uploadedBy: track.uploadedBy || null,
                     weekNumber: week.weekNumber,
                     weekStart: week.start.toISOString()
                 };

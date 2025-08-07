@@ -175,7 +175,7 @@ export async function POST(req: Request) {
           downloadUrl: downloadsArray[index].trim(),
           style,
           version,
-          releaseDate: new Date(releaseDate),
+          releaseDate: new Date(new Date(releaseDate).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })),
           // URL de imagem genérica por enquanto
           imageUrl: `https://placehold.co/64x64/333/fff?text=${artist ? artist.substring(0, 2) : '??'}`,
         };

@@ -34,6 +34,8 @@ model User {
   isPro                   Boolean?   @default(false)
   isAdmin                  Boolean?   @default(false)
   password                String?
+          // Campo do uploader (opção adicional aos planos VIP)
+        isUploader              Boolean?   @default(false)
   downloads               Download[]
   likes                   Like[]
   plays                   Play[]

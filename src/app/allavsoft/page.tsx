@@ -86,7 +86,7 @@ export default function AllavsoftPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#04060E] text-white">
+        <div className="min-h-screen bg-[#04060E] text-white z-0" style={{ zIndex: 0 }}>
             <Header />
             {/* Hero Section */}
             <section className="relative overflow-hidden pt-24 py-20 lg:py-32">

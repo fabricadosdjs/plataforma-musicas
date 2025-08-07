@@ -17,6 +17,16 @@ import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetect
 import { useToast } from '@/hooks/useToast';
 import { YouTubeSkeleton } from '@/components/ui/LoadingSkeleton';
 import Link from 'next/link';
+import {
+  getCurrentDateBrazil,
+  convertToBrazilTimezone,
+  getDateOnlyBrazil,
+  compareDatesOnly,
+  isTodayBrazil,
+  isYesterdayBrazil,
+  formatDateBrazil,
+  getDateKeyBrazil
+} from '@/utils/dateUtils';
 
 // Componente de Loading para a página
 const PageSkeleton = () => <YouTubeSkeleton />;
@@ -86,6 +96,55 @@ function NewPageContent() {
     customDescription: 'Descubra os mais recentes lançamentos de música eletrônica. House, Techno, Trance e muito mais em alta qualidade.',
     customKeywords: 'novos lançamentos, música eletrônica, house, techno, trance, DJ, downloads'
   });
+
+  // Função para agrupar músicas por data de lançamento
+  const groupTracksByReleaseDate = useMemo(() => {
+    const grouped: { [key: string]: Track[] } = {};
+
+    tracks.forEach(track => {
+      if (track.releaseDate) {
+        // Usar timezone do Brasil
+        const dateKey = getDateKeyBrazil(track.releaseDate);
+
+        if (!grouped[dateKey]) {
+          grouped[dateKey] = [];
+        }
+        grouped[dateKey].push(track);
+      } else {
+        // Se não tem releaseDate, colocar em "Sem Data"
+        if (!grouped['no-date']) {
+          grouped['no-date'] = [];
+        }
+        grouped['no-date'].push(track);
+      }
+    });
+
+    // Ordenar as chaves para exibir na ordem correta
+    const sortedKeys = Object.keys(grouped).sort((a, b) => {
+      if (a === 'future') return -1;
+      if (b === 'future') return 1;
+      if (a === 'today') return -1;
+      if (b === 'today') return 1;
+      if (a === 'yesterday') return -1;
+      if (b === 'yesterday') return 1;
+      if (a === 'no-date') return 1;
+      if (b === 'no-date') return 1;
+      return b.localeCompare(a); // Ordem decrescente para datas passadas
+    });
+
+    return { grouped, sortedKeys };
+  }, [tracks]);
+
+  // Função para obter o label da data
+  const getDateLabel = (dateKey: string) => {
+    if (dateKey === 'today') return 'Hoje';
+    if (dateKey === 'yesterday') return 'Ontem';
+    if (dateKey === 'future') return 'Próximos Lançamentos';
+    if (dateKey === 'no-date') return 'Sem Data';
+
+    // Para datas específicas, usar timezone do Brasil
+    return formatDateBrazil(dateKey);
+  };
 
   // Calcular automaticamente se há filtros ativos
   useEffect(() => {
@@ -422,7 +481,7 @@ function NewPageContent() {
 
 
   return (
-    <div className="min-h-screen bg-[#1B1C1D] relative overflow-hidden">
+    <div className="min-h-screen bg-[#1B1C1D] relative overflow-hidden z-0" style={{ zIndex: 0 }}>
       {/* SEO Components */}
       {seoData && <SEOHead {...seoData} />}
       {tracks.length > 0 && <MusicStructuredData track={tracks[0]} url={window.location.href} />}
@@ -435,12 +494,12 @@ function NewPageContent() {
       </div>
 
       <Header />
-      <main className="container mx-auto px-4 py-8 pt-20 relative z-10">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 pt-16 sm:pt-20 relative z-10">
         {/* Hero Section - Primeiro Slide */}
-        <div className="mb-12">
+        <div className="mb-8 sm:mb-12">
           {/* Header da página */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">Novidades</h1>
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">Novidades</h1>
             {hasActiveFilters && (
               <div className="flex items-center space-x-2 text-orange-400 mt-2">
                 <Filter className="h-4 w-4" />
@@ -565,21 +624,30 @@ function NewPageContent() {
             <>
               {/* Tabelas de Músicas Agrupadas por Data */}
               <div className="space-y-8">
-                {/* Simular agrupamento por data - você pode implementar isso depois */}
-                <div className="space-y-4">
-                  {/* Header da Data */}
-                  <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <h2 className="text-2xl font-bold text-white capitalize">
-                      Hoje
-                    </h2>
-                  </div>
+                {groupTracksByReleaseDate.sortedKeys.map((dateKey) => {
+                  const tracksForDate = groupTracksByReleaseDate.grouped[dateKey];
+                  const dateLabel = getDateLabel(dateKey);
 
-                  {/* Tabela para esta data */}
-                  <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-                    <MusicTable tracks={tracks} onToggleQueue={onToggleQueue} externalDownloadQueue={downloadQueue} />
-                  </div>
-                </div>
+                  return (
+                    <div key={dateKey} className="space-y-4">
+                      {/* Header da Data */}
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <h2 className="text-2xl font-bold text-white capitalize">
+                          {dateLabel}
+                        </h2>
+                        <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">
+                          {tracksForDate.length} {tracksForDate.length === 1 ? 'música' : 'músicas'}
+                        </span>
+                      </div>
+
+                      {/* Tabela para esta data */}
+                      <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+                        <MusicTable tracks={tracksForDate} onToggleQueue={onToggleQueue} externalDownloadQueue={downloadQueue} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}

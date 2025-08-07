@@ -464,7 +464,7 @@ const Top100Page = () => {
         return (
             <>
                 <Header />
-                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center pt-20">
+                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center pt-20 z-0" style={{ zIndex: 0 }}>
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
                         <p className="text-white mt-4 text-lg">Carregando Top 100...</p>
@@ -478,7 +478,7 @@ const Top100Page = () => {
         return (
             <>
                 <Header />
-                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center pt-20">
+                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center pt-20 z-0" style={{ zIndex: 0 }}>
                     <div className="text-center">
                         <p className="text-red-400 text-lg">{error}</p>
                         <button
@@ -498,7 +498,7 @@ const Top100Page = () => {
         return (
             <>
                 <Header />
-                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 pt-20">
+                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 pt-20 z-0" style={{ zIndex: 0 }}>
                     <div className="max-w-7xl mx-auto px-4 py-8">
                         <div className="bg-gradient-to-r from-blue-900/50 via-purple-900/50 to-pink-900/50 border-b border-gray-800/50">
                             <div className="max-w-7xl mx-auto px-4 py-8">
@@ -542,7 +542,7 @@ const Top100Page = () => {
     return (
         <>
             <Header />
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 pt-20">
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 pt-20 z-0" style={{ zIndex: 0 }}>
                 {/* Header inspirado no Traxsource */}
                 <div className="bg-gradient-to-r from-blue-900/50 via-purple-900/50 to-pink-900/50 border-b border-gray-800/50">
                     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -679,14 +679,14 @@ const Top100Page = () => {
                                         <p className="text-white font-medium truncate">{track.songName}</p>
                                         <p className="text-gray-400 text-sm truncate">{track.artist}</p>
                                     </div>
-                            <button
+                                    <button
                                         onClick={() => onToggleQueue(track)}
                                         disabled={isDownloadingQueue || zipProgress.isActive}
                                         className="ml-2 p-1 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded transition-all duration-200 disabled:opacity-50"
                                         title="Remover da fila"
                                     >
                                         <X className="h-4 w-4" />
-                            </button>
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -747,8 +747,8 @@ const Top100Page = () => {
                                                         className={clsx(
                                                             "absolute inset-0 flex items-center justify-center rounded-lg transition-all duration-300",
                                                             currentTrack?.id === track.id && isPlaying
-                                                            ? 'bg-blue-600/80 text-white'
-                                                            : 'bg-black/60 text-gray-200 hover:bg-blue-600/80 hover:text-white'
+                                                                ? 'bg-blue-600/80 text-white'
+                                                                : 'bg-black/60 text-gray-200 hover:bg-blue-600/80 hover:text-white'
                                                         )}
                                                     >
                                                         {isPlaying && currentTrack?.id === track.id ?

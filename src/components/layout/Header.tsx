@@ -16,7 +16,7 @@ interface HeaderProps {
 
 const NEW_LOGO_URL = 'https://i.ibb.co/Y7WKPY57/logo-nexor.png';
 
-const Header = ({}: HeaderProps) => {
+const Header = ({ }: HeaderProps) => {
   const { data: session } = useSession();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -48,6 +48,26 @@ const Header = ({}: HeaderProps) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showProfileMenu, showNotifications]);
+
+  // Previne scroll quando menu móvel está aberto
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      console.log('🔍 Menu móvel aberto - z-index:', 'z-[999999]');
+    } else {
+      document.body.style.overflow = 'unset';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    };
+  }, [mobileMenuOpen]);
 
   // Usando a função de alerta do AppContext
   const { showAlert } = useAppContext();
@@ -109,18 +129,23 @@ const Header = ({}: HeaderProps) => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSearchSubmit) {
-      onSearchSubmit();
-    }
+    // Search functionality removed - handled by individual pages
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-40 bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-md shadow-lg border-b border-gray-700/30 py-3">
+    <header className="fixed top-0 left-0 w-full z-[9998] bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-md shadow-lg border-b border-gray-700/30 py-3">
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center space-x-4 md:space-x-6">
           {/* Mobile menu button */}
-          <button className="md:hidden flex items-center justify-center p-2 rounded-lg text-gray-200 hover:bg-[#374151] focus:outline-none" onClick={() => setMobileMenuOpen(true)} aria-label="Abrir menu">
-            <Menu className="h-7 w-7" />
+          <button
+            className="md:hidden flex items-center justify-center p-2 rounded-lg text-gray-200 hover:bg-gray-700/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 bg-gray-800/50"
+            onClick={() => {
+              console.log('🔘 Botão do menu clicado');
+              setMobileMenuOpen(true);
+            }}
+            aria-label="Abrir menu"
+          >
+            <Menu className="h-6 w-6" />
           </button>
           <Link href="/">
             <div className="relative h-10 w-auto">
@@ -224,11 +249,14 @@ const Header = ({}: HeaderProps) => {
         </div>
         {/* Professional Mobile Drawer */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 flex">
+          <div className="mobile-menu-overlay flex">
             {/* Enhanced Overlay */}
-            <div className="fixed inset-0 bg-black/70 backdrop-blur-md" onClick={() => setMobileMenuOpen(false)}></div>
+            <div
+              className="mobile-menu-overlay bg-black/70 backdrop-blur-md animate-fadeIn"
+              onClick={() => setMobileMenuOpen(false)}
+            />
             {/* Professional Drawer */}
-            <div className="relative bg-gradient-to-br from-gray-900/98 via-gray-800/98 to-black/98 backdrop-blur-xl w-80 max-w-[85vw] h-full shadow-2xl border-r border-gray-600/30 animate-slideInLeft flex flex-col overflow-hidden">
+            <div className="mobile-menu-drawer bg-gradient-to-br from-gray-900/98 via-gray-800/98 to-black/98 backdrop-blur-xl shadow-2xl border-r border-gray-600/30 animate-slideInLeft flex flex-col overflow-hidden">
               {/* Header with Close Button */}
               <div className="relative p-6 border-b border-gray-700/30 bg-gradient-to-r from-gray-800/50 via-gray-900/50 to-black/50">
                 <button
@@ -250,7 +278,7 @@ const Header = ({}: HeaderProps) => {
               </div>
 
               {/* Professional Navigation */}
-              <nav className="flex flex-col gap-2 px-6 py-4 flex-1">
+              <nav className="flex flex-col gap-2 px-6 py-4 flex-1 overflow-y-auto">
                 <Link
                   href="/"
                   className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-blue-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-blue-300 hover:scale-[1.02] transform border border-transparent hover:border-blue-500/30 shadow-lg hover:shadow-blue-500/20"
@@ -523,7 +551,7 @@ const Header = ({}: HeaderProps) => {
         </div>
       </div>
 
-      
+
 
       {/* Não há notificações locais aqui, elas são gerenciadas pelo AppContext */}
     </header>

@@ -60,7 +60,7 @@ const FeatureCard = ({ icon: Icon, title, description, color }: FeatureCardProps
 // --- Componente Principal da Página ---
 export default function Deemix() {
     return (
-        <div className="min-h-screen bg-[#04060E] text-white">
+        <div className="min-h-screen bg-[#04060E] text-white z-0" style={{ zIndex: 0 }}>
             <Header />
 
             {/* Hero Section */}

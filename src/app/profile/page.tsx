@@ -2,6 +2,7 @@
 
 import { useSession, signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/useToast";
 // ...existing code...
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,7 +50,9 @@ import {
     Info,
     Monitor,
     Diamond,
-    Database
+    Database,
+    MessageCircle,
+    Ban
 } from "lucide-react";
 import Link from "next/link";
 
@@ -130,6 +133,7 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
     const [pixModalOpen, setPixModalOpen] = useState(false);
     const [activeSection, setActiveSection] = useState('overview');
+    const { showSuccessToast, showErrorToast } = useToast();
 
     // Menu items da sidebar
     const menuItems = [
@@ -254,11 +258,17 @@ export default function ProfilePage() {
         }
     };
 
-    const copyToClipboard = async (text: string) => {
+    const copyToClipboard = async (text: string, credentialName?: string) => {
         try {
             await navigator.clipboard.writeText(text);
+            if (credentialName) {
+                showSuccessToast(`${credentialName} copiado com sucesso!`, 3000);
+            } else {
+                showSuccessToast('Copiado para a área de transferência!', 3000);
+            }
         } catch (err) {
             console.error('Erro ao copiar:', err);
+            showErrorToast('Erro ao copiar para a área de transferência', 3000);
         }
     };
 
@@ -392,13 +402,13 @@ export default function ProfilePage() {
         );
     }
 
-    const statusDisplay = getVencimentoStatusDisplay(userData.vencimentoInfo);
+    const statusDisplay = getVencimentoStatusDisplay(userData?.vencimentoInfo);
 
     return (
         <>
             <Header />
             <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white pt-16">
-                <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
+                <div className="w-full px-3 py-4 sm:px-4 sm:py-6">
                     <div className="max-w-7xl mx-auto">
 
                         {/* Layout com Sidebar */}
@@ -411,22 +421,22 @@ export default function ProfilePage() {
                                     <div className="text-center mb-8 pb-6 border-b border-gray-600/50">
                                         <div className="relative w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl ring-4 ring-purple-500/20">
                                             <User className="w-10 h-10 text-white" />
-                                            {userData.is_vip && (
+                                            {userData?.is_vip && (
                                                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg">
                                                     <Crown className="w-4 h-4 text-black" />
                                                 </div>
                                             )}
                                         </div>
                                         <h2 className="text-xl font-bold text-white truncate tracking-wide">
-                                            {userData.name || "USUÁRIO"}
+                                            {userData?.name || "USUÁRIO"}
                                         </h2>
-                                        <p className="text-sm text-gray-400 truncate font-mono">{userData.email}</p>
+                                        <p className="text-sm text-gray-400 truncate font-mono">{userData?.email}</p>
                                         <div className="flex items-center justify-center gap-3 mt-4">
-                                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${statusDisplay.bgColor} ${statusDisplay.color} border border-current/20`}>
-                                                {statusDisplay.icon}
-                                                <span >{statusDisplay.text}</span>
+                                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${statusDisplay?.bgColor || 'bg-gray-500/10'} ${statusDisplay?.color || 'text-gray-400'} border border-current/20`}>
+                                                {statusDisplay?.icon || <></>}
+                                                <span>{statusDisplay?.text || 'N/D'}</span>
                                             </div>
-                                            {userData.is_vip && (
+                                            {userData?.is_vip && (
                                                 <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-lg animate-pulse">
                                                     <Crown className="w-3 h-3" />
                                                     <span >VIP</span>
@@ -549,13 +559,13 @@ export default function ProfilePage() {
                                         <div className="flex flex-col gap-4">
                                             {/* Downloads Diários - Apenas para usuários não-VIP */}
                                             {typeof userData?.dailyDownloadLimit !== 'string' && (
-                                                <Card className="border-gray-700/50 bg-gradient-to-br from-blue-900/20 to-cyan-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-blue-500/50 transition-all duration-300">
+                                                <Card className="border-gray-700/50 bg-gradient-to-br from-blue-900/20 to-cyan-900/20 backdrop-blur-sm shadow-2xl border border-gray-600/30 hover:border-blue-500/50 transition-all duration-300">
                                                     <CardContent className="p-6">
                                                         <div className="flex items-center justify-between mb-4">
                                                             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
                                                                 <Download className="w-5 h-5 text-white" />
                                                             </div>
-                                                            <span className="text-xs text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">Hoje</span>
+                                                            <span className="text-xs text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full font-medium">Hoje</span>
                                                         </div>
                                                         <h3 className="text-lg font-bold text-white mb-2">Downloads</h3>
                                                         <div className="flex items-baseline gap-2 mb-3">
@@ -570,7 +580,7 @@ export default function ProfilePage() {
                                                                 }}
                                                             />
                                                         </div>
-                                                        <p className="text-xs text-gray-400 mt-2">
+                                                        <p className="text-xs text-gray-400 mt-2 font-medium">
                                                             {typeof userData?.dailyDownloadLimit === 'string' && userData?.dailyDownloadLimit === 'Ilimitado' ? 'Downloads ilimitados' :
                                                                 userData?.dailyDownloadCount === 0 ? 'Nenhum download hoje' :
                                                                     `${(typeof userData?.dailyDownloadLimit === 'number' ? userData.dailyDownloadLimit : 10) - (userData?.dailyDownloadCount || 0)} restantes`}
@@ -578,17 +588,23 @@ export default function ProfilePage() {
                                                     </CardContent>
                                                 </Card>
                                             )}
-                                            <div className="bg-pink-500/10 rounded-xl p-3 text-center border border-pink-500/20 flex flex-col items-center justify-center min-h-[70px]">
+                                            <div className="relative bg-gradient-to-br from-pink-500/10 to-rose-500/10 rounded-xl p-4 text-center border border-pink-500/20 hover:border-pink-400/40 transition-all duration-300 flex flex-col items-center justify-center min-h-[80px] group">
+                                                <div className="absolute top-2 right-2">
+                                                    <div className="w-2 h-2 bg-pink-400 rounded-full"></div>
+                                                </div>
                                                 <div className="text-xl font-bold text-pink-400 mb-1">
-                                                    {userData.likesCount}
+                                                    {userData?.likesCount || 0}
                                                 </div>
                                                 <div className="text-xs text-gray-400 font-medium">
                                                     CURTIDAS
                                                 </div>
                                             </div>
-                                            <div className="bg-green-500/10 rounded-xl p-3 text-center border border-green-500/20 flex flex-col items-center justify-center min-h-[70px]">
+                                            <div className="relative bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-xl p-4 text-center border border-green-500/20 hover:border-green-400/40 transition-all duration-300 flex flex-col items-center justify-center min-h-[80px] group">
+                                                <div className="absolute top-2 right-2">
+                                                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                                                </div>
                                                 <div className="text-xl font-bold text-green-400 mb-1">
-                                                    {userData.playsCount}
+                                                    {userData?.playsCount || 0}
                                                 </div>
                                                 <div className="text-xs text-gray-400 font-medium">
                                                     PLAYS
@@ -609,6 +625,8 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </div>
+
+
 
             {renderModals()}
         </>
@@ -643,44 +661,52 @@ export default function ProfilePage() {
     // Seção de Visão Geral
     function renderOverviewSection() {
         return (
-            <div className="space-y-6">
-                {/* Título da Seção */}
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
-                        <BarChart3 className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                        <h2 className="text-3xl font-bold text-white">Visão Geral</h2>
-                        <p className="text-gray-400">Resumo das suas atividades e estatísticas</p>
+            <div className="space-y-8">
+                {/* Header Moderno */}
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <BarChart3 className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="text-left">
+                            <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Visão Geral</h2>
+                            <p className="text-gray-400 text-sm font-medium">Resumo das suas atividades e estatísticas</p>
+                        </div>
                     </div>
                 </div>
 
-                {/* Cards de Estatísticas */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Cards de Estatísticas Modernos */}
+                <div className="space-y-3 sm:space-y-4 max-w-2xl mx-auto">
                     {/* Downloads Diários - Apenas para usuários não-VIP */}
                     {typeof userData?.dailyDownloadLimit !== 'string' && (
-                        <Card className="border-gray-700/50 bg-gradient-to-br from-blue-900/20 to-cyan-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-blue-500/50 transition-all duration-300">
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                                        <Download className="w-5 h-5 text-white" />
+                        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-500/10 via-blue-600/10 to-cyan-500/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <CardContent className="relative p-6 sm:p-8">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                            <Download className="w-8 h-8 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">Downloads</h3>
+                                            <p className="text-gray-400 text-sm">Downloads diários disponíveis</p>
+                                        </div>
                                     </div>
-                                    <span className="text-xs text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">Hoje</span>
+                                    <span className="text-sm font-bold text-blue-400 bg-blue-500/20 px-4 py-2 rounded-full border border-blue-500/30">HOJE</span>
                                 </div>
-                                <h3 className="text-lg font-bold text-white mb-2">Downloads</h3>
-                                <div className="flex items-baseline gap-2 mb-3">
-                                    <span className="text-2xl font-bold text-white">{userData?.dailyDownloadCount || 0}</span>
-                                    <span className="text-sm text-gray-400">/ {typeof userData?.dailyDownloadLimit === 'string' && userData?.dailyDownloadLimit === 'Ilimitado' ? '∞' : (userData?.dailyDownloadLimit ?? 10)}</span>
+                                <div className="flex items-baseline gap-3 mb-6">
+                                    <span className="text-4xl sm:text-5xl font-bold text-white">{userData?.dailyDownloadCount || 0}</span>
+                                    <span className="text-lg text-gray-400">/ {typeof userData?.dailyDownloadLimit === 'string' && userData?.dailyDownloadLimit === 'Ilimitado' ? '∞' : (userData?.dailyDownloadLimit ?? 10)}</span>
                                 </div>
-                                <div className="w-full bg-gray-700/50 rounded-full h-2">
+                                <div className="w-full bg-gray-700/30 rounded-full h-4 mb-4">
                                     <div
-                                        className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full transition-all duration-700"
+                                        className="bg-gradient-to-r from-blue-500 to-cyan-500 h-4 rounded-full transition-all duration-700 shadow-lg"
                                         style={{
                                             width: typeof userData?.dailyDownloadLimit === 'string' && userData?.dailyDownloadLimit === 'Ilimitado' ? '100%' : `${Math.min(100, ((userData?.dailyDownloadCount || 0) / (typeof userData?.dailyDownloadLimit === 'number' ? userData.dailyDownloadLimit : 1)) * 100)}%`
                                         }}
                                     />
                                 </div>
-                                <p className="text-xs text-gray-400 mt-2">
+                                <p className="text-base text-gray-300 font-medium">
                                     {typeof userData?.dailyDownloadLimit === 'string' && userData?.dailyDownloadLimit === 'Ilimitado' ? 'Downloads ilimitados' :
                                         userData?.dailyDownloadCount === 0 ? 'Nenhum download hoje' :
                                             `${(typeof userData?.dailyDownloadLimit === 'number' ? userData.dailyDownloadLimit : 10) - (userData?.dailyDownloadCount || 0)} restantes`}
@@ -690,20 +716,29 @@ export default function ProfilePage() {
                     )}
 
                     {/* Total de Downloads */}
-                    <Card className="border-gray-700/50 bg-gradient-to-br from-green-900/20 to-emerald-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-green-500/50 transition-all duration-300">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                                    <Download className="w-5 h-5 text-white" />
+                    <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-green-500/10 via-emerald-600/10 to-green-500/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
+                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <CardContent className="relative p-6 sm:p-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <Download className="w-8 h-8 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">Downloads</h3>
+                                        <p className="text-gray-400 text-sm">Sua biblioteca pessoal</p>
+                                    </div>
                                 </div>
-                                <span className="text-xs text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">Total</span>
+                                <span className="text-sm font-bold text-green-400 bg-green-500/20 px-4 py-2 rounded-full border border-green-500/30">TOTAL</span>
                             </div>
-                            <h3 className="text-lg font-bold text-white mb-2">Downloads</h3>
-                            <div className="flex items-baseline gap-2 mb-3">
-                                <span className="text-2xl font-bold text-white">{userData?.downloadsCount || 0}</span>
-                                <span className="text-sm text-gray-400">músicas</span>
+                            <div className="flex items-baseline gap-3 mb-6">
+                                <span className="text-4xl sm:text-5xl font-bold text-white">{userData?.downloadsCount || 0}</span>
+                                <span className="text-lg text-gray-400">músicas</span>
                             </div>
-                            <p className="text-xs text-gray-400">
+                            <div className="w-full bg-gray-700/30 rounded-full h-4 mb-4">
+                                <div className="bg-gradient-to-r from-green-500 to-emerald-500 h-4 rounded-full transition-all duration-700 shadow-lg" style={{ width: '100%' }} />
+                            </div>
+                            <p className="text-base text-gray-300 font-medium">
                                 {userData?.downloadsCount === 0 ? 'Nenhum download ainda' :
                                     'Sua biblioteca pessoal'}
                             </p>
@@ -711,20 +746,29 @@ export default function ProfilePage() {
                     </Card>
 
                     {/* Likes */}
-                    <Card className="border-gray-700/50 bg-gradient-to-br from-pink-900/20 to-rose-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-pink-500/50 transition-all duration-300">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-rose-500 rounded-lg flex items-center justify-center">
-                                    <Heart className="w-5 h-5 text-white" />
+                    <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-pink-500/10 via-rose-600/10 to-pink-500/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
+                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 to-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <CardContent className="relative p-6 sm:p-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <Heart className="w-8 h-8 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">Curtidas</h3>
+                                        <p className="text-gray-400 text-sm">Suas músicas favoritas</p>
+                                    </div>
                                 </div>
-                                <span className="text-xs text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">Favoritos</span>
+                                <span className="text-sm font-bold text-pink-400 bg-pink-500/20 px-4 py-2 rounded-full border border-pink-500/30">FAVORITOS</span>
                             </div>
-                            <h3 className="text-lg font-bold text-white mb-2">Curtidas</h3>
-                            <div className="flex items-baseline gap-2 mb-3">
-                                <span className="text-2xl font-bold text-white">{userData?.likesCount || 0}</span>
-                                <span className="text-sm text-gray-400">músicas</span>
+                            <div className="flex items-baseline gap-3 mb-6">
+                                <span className="text-4xl sm:text-5xl font-bold text-white">{userData?.likesCount || 0}</span>
+                                <span className="text-lg text-gray-400">músicas</span>
                             </div>
-                            <p className="text-xs text-gray-400">
+                            <div className="w-full bg-gray-700/30 rounded-full h-4 mb-4">
+                                <div className="bg-gradient-to-r from-pink-500 to-rose-500 h-4 rounded-full transition-all duration-700 shadow-lg" style={{ width: '100%' }} />
+                            </div>
+                            <p className="text-base text-gray-300 font-medium">
                                 {userData?.likesCount === 0 ? 'Nenhuma curtida ainda' :
                                     'Suas músicas favoritas'}
                             </p>
@@ -732,20 +776,29 @@ export default function ProfilePage() {
                     </Card>
 
                     {/* Plays */}
-                    <Card className="border-gray-700/50 bg-gradient-to-br from-purple-900/20 to-violet-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-purple-500/50 transition-all duration-300">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-violet-500 rounded-lg flex items-center justify-center">
-                                    <Play className="w-5 h-5 text-white" />
+                    <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-purple-500/10 via-violet-600/10 to-purple-500/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-violet-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <CardContent className="relative p-6 sm:p-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-violet-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <Play className="w-8 h-8 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">Plays</h3>
+                                        <p className="text-gray-400 text-sm">Suas sessões de música</p>
+                                    </div>
                                 </div>
-                                <span className="text-xs text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">Reproduções</span>
+                                <span className="text-sm font-bold text-purple-400 bg-purple-500/20 px-4 py-2 rounded-full border border-purple-500/30">REPRODUÇÕES</span>
                             </div>
-                            <h3 className="text-lg font-bold text-white mb-2">Plays</h3>
-                            <div className="flex items-baseline gap-2 mb-3">
-                                <span className="text-2xl font-bold text-white">{userData?.playsCount || 0}</span>
-                                <span className="text-sm text-gray-400">vezes</span>
+                            <div className="flex items-baseline gap-3 mb-6">
+                                <span className="text-4xl sm:text-5xl font-bold text-white">{userData?.playsCount || 0}</span>
+                                <span className="text-lg text-gray-400">vezes</span>
                             </div>
-                            <p className="text-xs text-gray-400">
+                            <div className="w-full bg-gray-700/30 rounded-full h-4 mb-4">
+                                <div className="bg-gradient-to-r from-purple-500 to-violet-500 h-4 rounded-full transition-all duration-700 shadow-lg" style={{ width: '100%' }} />
+                            </div>
+                            <p className="text-base text-gray-300 font-medium">
                                 {userData?.playsCount === 0 ? 'Nenhuma reprodução ainda' :
                                     'Suas sessões de música'}
                             </p>
@@ -753,92 +806,187 @@ export default function ProfilePage() {
                     </Card>
                 </div>
 
+                {/* Espaçamento entre seções */}
+                <div className="h-8"></div>
+
+                {/* Título da Atividade Total */}
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-xl flex items-center justify-center">
+                        <Activity className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="text-2xl font-bold text-white">Atividade Total</h3>
+                        <p className="text-gray-400">Resumo das suas interações</p>
+                    </div>
+                </div>
+
                 {/* Card de Atividade Total */}
-                <Card className="border-gray-700/50 bg-gradient-to-br from-indigo-900/20 to-blue-900/20 backdrop-blur-sm shadow-2xl border-2">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-xl flex items-center justify-center">
-                                    <Activity className="w-6 h-6 text-white" />
+                <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-indigo-500/10 via-blue-600/10 to-indigo-500/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <CardContent className="relative p-6 sm:p-8">
+                        {/* Header Moderno */}
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-6">
+                                <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-3xl flex items-center justify-center shadow-lg">
+                                    <Activity className="w-10 h-10 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-white">Atividade Total</h3>
-                                    <p className="text-sm text-gray-400">Resumo das suas interações</p>
+                                    <h4 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Atividade Total</h4>
                                 </div>
                             </div>
-                            <span className="text-3xl font-bold text-white">
-                                {(userData?.downloadsCount || 0) + (userData?.likesCount || 0) + (userData?.playsCount || 0)}
-                            </span>
+                            <div className="text-right">
+                                <div className="text-5xl sm:text-6xl font-bold text-white mb-2">
+                                    {(userData?.downloadsCount || 0) + (userData?.likesCount || 0) + (userData?.playsCount || 0)}
+                                </div>
+                                <div className="text-base text-gray-400 font-medium">Total de Interações</div>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                                <Download className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-                                <div className="text-lg font-bold text-white">{userData?.downloadsCount || 0}</div>
-                                <div className="text-xs text-gray-400">Downloads</div>
+
+                        {/* Grid de Estatísticas */}
+                        <div className="grid grid-cols-3 gap-6">
+                            <div className="relative p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-2xl border border-blue-500/20 hover:border-blue-400/40 transition-all duration-300 group">
+                                <div className="absolute top-3 right-3">
+                                    <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                                </div>
+                                <div className="text-center">
+                                    <Download className="w-8 h-8 text-blue-400 mx-auto mb-3" />
+                                    <div className="text-2xl font-bold text-white mb-1">{userData?.downloadsCount || 0}</div>
+                                    <div className="text-sm text-gray-400 font-medium">Downloads</div>
+                                </div>
                             </div>
-                            <div className="text-center p-4 bg-pink-500/10 rounded-lg border border-pink-500/20">
-                                <Heart className="w-6 h-6 text-pink-400 mx-auto mb-2" />
-                                <div className="text-lg font-bold text-white">{userData?.likesCount || 0}</div>
-                                <div className="text-xs text-gray-400">Curtidas</div>
+                            <div className="relative p-6 bg-gradient-to-br from-pink-500/10 to-rose-500/10 rounded-2xl border border-pink-500/20 hover:border-pink-400/40 transition-all duration-300 group">
+                                <div className="absolute top-3 right-3">
+                                    <div className="w-3 h-3 bg-pink-400 rounded-full"></div>
+                                </div>
+                                <div className="text-center">
+                                    <Heart className="w-8 h-8 text-pink-400 mx-auto mb-3" />
+                                    <div className="text-2xl font-bold text-white mb-1">{userData?.likesCount || 0}</div>
+                                    <div className="text-sm text-gray-400 font-medium">Curtidas</div>
+                                </div>
                             </div>
-                            <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                                <Play className="w-6 h-6 text-green-400 mx-auto mb-2" />
-                                <div className="text-lg font-bold text-white">{userData?.playsCount || 0}</div>
-                                <div className="text-xs text-gray-400">Plays</div>
+                            <div className="relative p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl border border-green-500/20 hover:border-green-400/40 transition-all duration-300 group">
+                                <div className="absolute top-3 right-3">
+                                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                                </div>
+                                <div className="text-center">
+                                    <Play className="w-8 h-8 text-green-400 mx-auto mb-3" />
+                                    <div className="text-2xl font-bold text-white mb-1">{userData?.playsCount || 0}</div>
+                                    <div className="text-sm text-gray-400 font-medium">Plays</div>
+                                </div>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
+                {/* Espaçamento entre seções */}
+                <div className="h-8"></div>
+
+
+
                 {/* Status do Plano */}
-                <Card className="border-gray-700/50 bg-gradient-to-br from-yellow-900/20 to-orange-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-yellow-500/50 transition-all duration-300">
-                    <CardContent className="p-6">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center">
-                                <Crown className="w-8 h-8 text-white" />
+                <Card className="border-gray-700/50 bg-gradient-to-br from-slate-900/40 to-gray-900/40 backdrop-blur-sm shadow-2xl border border-gray-600/30 hover:border-gray-500/50 transition-all duration-300">
+                    <CardContent className="p-4 sm:p-8">
+                        {/* Header Profissional */}
+                        <div className="flex items-center justify-between mb-6 sm:mb-8">
+                            <div className="flex items-center gap-2 sm:gap-4">
+                                <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+                                    <Crown className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
+                                </div>
+
                             </div>
-                            <div>
-                                <h3 className="text-2xl font-bold text-white">Status do Plano</h3>
-                                <p className="text-gray-400">Gerencie sua assinatura e benefícios</p>
+                            <div className="hidden sm:flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                <span className="text-xs text-gray-400 font-medium">Sistema Ativo</span>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div className="text-center p-6 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
-                                <div className="text-3xl font-bold text-white mb-2">{getPlanInfo(userData?.valor ?? null).name}</div>
-                                <div className="text-lg font-bold text-green-400">{formatCurrency(userData?.valor ?? null)}/mês</div>
-                                <div className="text-xs text-gray-400 mt-1">Plano Atual</div>
-                            </div>
-                            <div className="text-center p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/20">
-                                <div className="text-sm text-gray-400 mb-2">Vencimento</div>
-                                <div className="text-lg font-bold text-white">{formatDate(userData?.vencimento ?? null)}</div>
-                                <div className="text-xs text-gray-400 mt-1">
-                                    {userData?.vencimentoInfo?.daysRemaining ?
-                                        `${userData.vencimentoInfo.daysRemaining} dias restantes` :
-                                        'Sem vencimento definido'}
+                        {/* Grid de Informações */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                            {/* Plano Atual */}
+                            <div className="relative p-4 sm:p-6 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-xl sm:rounded-2xl border border-amber-500/20 hover:border-amber-400/40 transition-all duration-300 group">
+                                <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-amber-400 rounded-full"></div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-xs text-amber-400 font-semibold uppercase tracking-wider mb-2">Plano Atual</div>
+                                    <div className="text-lg sm:text-2xl font-bold text-white mb-1">{getPlanInfo(userData?.valor ?? null).name}</div>
+                                    <div className="text-sm sm:text-lg font-semibold text-amber-400">{formatCurrency(userData?.valor ?? null)}/mês</div>
+                                    <div className="text-xs text-gray-400 mt-2 mb-3">Informações detalhadas do seu plano VIP</div>
+                                    <Button
+                                        onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de informações sobre meu plano atual.')}
+                                        className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+                                    >
+                                        <MessageCircle className="w-4 h-4" />
+                                        FALAR CONOSCO
+                                    </Button>
                                 </div>
                             </div>
-                            <div className="text-center p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20">
-                                <div className="text-sm text-gray-400 mb-2">Status</div>
-                                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${statusDisplay.bgColor} ${statusDisplay.color}`}>
-                                    {statusDisplay.icon}
-                                    {statusDisplay.text}
+
+                            {/* Vencimento */}
+                            <div className="relative p-4 sm:p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl sm:rounded-2xl border border-blue-500/20 hover:border-blue-400/40 transition-all duration-300 group">
+                                <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-400 rounded-full"></div>
                                 </div>
-                                <div className="text-xs text-gray-400 mt-2">
-                                    {userData?.is_vip ? 'Usuário VIP' : 'Usuário Regular'}
+                                <div className="text-center">
+                                    <div className="text-xs text-blue-400 font-semibold uppercase tracking-wider mb-2">Vencimento</div>
+                                    <div className="text-sm sm:text-lg font-bold text-white mb-1">{formatDate(userData?.vencimento ?? null)}</div>
+                                    <div className="text-xs sm:text-sm text-gray-300 mb-3">
+                                        {userData?.vencimentoInfo?.daysRemaining ?
+                                            `${userData.vencimentoInfo.daysRemaining} dias restantes` :
+                                            'Sem vencimento definido'}
+                                    </div>
+                                    {userData?.vencimentoInfo?.isExpiringSoon && userData?.vencimentoInfo?.daysRemaining && userData.vencimentoInfo.daysRemaining <= 7 ? (
+                                        <Button
+                                            onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de renovar meu plano.')}
+                                            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+                                        >
+                                            <CreditCard className="w-4 h-4" />
+                                            PAGAR PLANO
+                                        </Button>
+                                    ) : userData?.vencimentoInfo?.isExpired ? (
+                                        <Button
+                                            onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de renovar meu plano que expirou.')}
+                                            className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+                                        >
+                                            <CreditCard className="w-4 h-4" />
+                                            RENOVAR PLANO
+                                        </Button>
+                                    ) : (
+                                        <div className="text-xs text-green-400 font-medium">Plano em dia</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Status */}
+                            <div className="relative p-4 sm:p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-xl sm:rounded-2xl border border-green-500/20 hover:border-green-400/40 transition-all duration-300 group sm:col-span-2 lg:col-span-1">
+                                <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-xs text-green-400 font-semibold uppercase tracking-wider mb-2">Status</div>
+                                    <div className={`inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold ${statusDisplay?.bgColor || 'bg-gray-500/10'} ${statusDisplay?.color || 'text-gray-400'} mb-2`}>
+                                        {statusDisplay?.icon || <></>}
+                                        {statusDisplay?.text || 'N/D'}
+                                    </div>
+                                    <div className="text-xs text-gray-400">
+                                        {userData?.is_vip ? 'Usuário VIP' : 'Usuário Regular'}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex justify-center">
-                            <Button
-                                onClick={() => window.location.href = '/plans'}
-                                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 cursor-pointer px-8 py-4 text-base font-semibold rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
-                            >
-                                <Settings className="w-5 h-5 mr-2" />
-                                Gerenciar Plano
-                            </Button>
+                        {/* Barra de Progresso do Plano */}
+                        <div className="mb-6 sm:mb-8">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs sm:text-sm font-medium text-gray-300">Progresso do Plano</span>
+                                <span className="text-xs sm:text-sm text-gray-400">100%</span>
+                            </div>
+                            <div className="w-full bg-gray-700/50 rounded-full h-2">
+                                <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full transition-all duration-700" style={{ width: '100%' }}></div>
+                            </div>
                         </div>
+
+
                     </CardContent>
                 </Card>
             </div>
@@ -848,9 +996,9 @@ export default function ProfilePage() {
     // Seção do Deemix
     function renderDeemixSection() {
         return (
-            <div className="space-y-6">
+            <div className="space-y-8">
                 {/* Título da Seção */}
-                <div className="flex items-center gap-4 mb-6">
+                <div className="flex items-center gap-4 mb-8">
                     <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
                         <Disc className="w-6 h-6 text-white" />
                     </div>
@@ -875,6 +1023,17 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
 
+                {/* Título do Status */}
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                        <CheckCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="text-2xl font-bold text-white">Deemix - Acesso Liberado</h3>
+                        <p className="text-gray-400">Sua conta está ativa</p>
+                    </div>
+                </div>
+
                 {/* Box 1: Status de Acesso */}
                 {userData?.deemix ? (
                     // Box Verde - Usuário tem acesso
@@ -886,8 +1045,8 @@ export default function ProfilePage() {
                                         <CheckCircle className="w-5 h-5 text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-bold text-white font-inter">Deemix - Acesso Liberado</h3>
-                                        <p className="text-sm text-gray-400 font-inter">Sua conta está ativa</p>
+                                        <h3 className="text-lg font-bold text-white font-inter">Deemix Ativo</h3>
+                                        <p className="text-sm text-gray-400 font-inter">Sua conta está funcionando</p>
                                     </div>
                                 </div>
                                 <span className="text-xs text-green-400 bg-green-500/20 px-3 py-1 rounded-full font-semibold">ATIVO</span>
@@ -909,6 +1068,17 @@ export default function ProfilePage() {
                                     <CheckCircle className="w-4 h-4 text-green-400" />
                                     <span className="text-sm text-gray-300 font-inter">ARL Premium disponível</span>
                                 </div>
+                            </div>
+
+                            {/* Botão Gerenciar Deemix */}
+                            <div className="mt-6 pt-4 border-t border-green-500/20">
+                                <Button
+                                    onClick={() => window.open('https://plataformavip.nexorrecords.com.br/deemix-gerenciar', '_blank')}
+                                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+                                >
+                                    <Settings className="w-4 h-4" />
+                                    GERENCIAR DEEMIX
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -985,6 +1155,17 @@ export default function ProfilePage() {
                     </Card>
                 )}
 
+                {/* Título das Credenciais */}
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                        <Key className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="text-2xl font-bold text-white">🔑 Credenciais de Acesso</h3>
+                        <p className="text-gray-400">Suas credenciais para acessar o Deemix</p>
+                    </div>
+                </div>
+
                 {/* Box 2: Credenciais (se tiver acesso) */}
                 {userData?.deemix && (
                     <Card className="border-gray-700/50 bg-gradient-to-br from-blue-900/20 to-cyan-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-blue-500/50 transition-all duration-300">
@@ -994,8 +1175,8 @@ export default function ProfilePage() {
                                     <Key className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold text-white font-inter">🔑 Credenciais de Acesso</h3>
-                                    <p className="text-sm text-gray-400 font-inter">Suas credenciais para acessar o Deemix</p>
+                                    <h3 className="text-lg font-bold text-white font-inter">Credenciais do Deemix</h3>
+                                    <p className="text-sm text-gray-400 font-inter">Configure seu acesso</p>
                                 </div>
                             </div>
 
@@ -1007,7 +1188,7 @@ export default function ProfilePage() {
                                             JMgQuuKI1LDiXBm
                                         </div>
                                         <Button
-                                            onClick={() => copyToClipboard('JMgQuuKI1LDiXBm')}
+                                            onClick={() => copyToClipboard('JMgQuuKI1LDiXBm', 'Client ID')}
                                             className="bg-blue-600 hover:bg-blue-700 p-3"
                                         >
                                             <Copy className="w-4 h-4" />
@@ -1022,10 +1203,80 @@ export default function ProfilePage() {
                                             048bf08a0ad1e6f2cac6a80cea2aeab3c001e355054391fb196b388ecc19c6e72b1c790a2803788084ae8132a9f28b69704ab230c6450bb7fdd1d186fb51e7349bf536d4116e0c12d8f0e888c8c42f8f01953cddf587eca8b4f257396915225e
                                         </div>
                                         <Button
-                                            onClick={() => copyToClipboard('048bf08a0ad1e6f2cac6a80cea2aeab3c001e355054391fb196b388ecc19c6e72b1c790a2803788084ae8132a9f28b69704ab230c6450bb7fdd1d186fb51e7349bf536d4116e0c12d8f0e888c8c42f8f01953cddf587eca8b4f257396915225e')}
+                                            onClick={() => copyToClipboard('048bf08a0ad1e6f2cac6a80cea2aeab3c001e355054391fb196b388ecc19c6e72b1c790a2803788084ae8132a9f28b69704ab230c6450bb7fdd1d186fb51e7349bf536d4116e0c12d8f0e888c8c42f8f01953cddf587eca8b4f257396915225e', 'ARL Premium')}
                                             className="bg-blue-600 hover:bg-blue-700 p-3"
                                         >
                                             <Copy className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* Seção de Credenciais do Spotify */}
+                                <div className="mt-6 pt-6 border-t border-blue-500/20">
+                                    <div className="mb-4">
+                                        <h4 className="text-lg font-bold text-white font-inter mb-2">🎵 Configurações do Spotify (se necessário):</h4>
+                                        <p className="text-sm text-gray-400 font-inter">Use estas credenciais para configurar o Spotify no Deemix</p>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2 font-inter">Client ID:</label>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 bg-gray-800/50 rounded-lg p-3 font-mono text-white text-sm border border-gray-700">
+                                                    JMgQuuKI1LDiXBm
+                                                </div>
+                                                <Button
+                                                    onClick={() => copyToClipboard('JMgQuuKI1LDiXBm', 'Senha')}
+                                                    className="bg-blue-600 hover:bg-blue-700 p-3"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2 font-inter">Client Secret:</label>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 bg-gray-800/50 rounded-lg p-3 font-mono text-white text-sm border border-gray-700">
+                                                    d8db5aeefe6e439a951e5da66f392889
+                                                </div>
+                                                <Button
+                                                    onClick={() => copyToClipboard('d8db5aeefe6e439a951e5da66f392889', 'Client Secret')}
+                                                    className="bg-blue-600 hover:bg-blue-700 p-3"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2 font-inter">User:</label>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 bg-gray-800/50 rounded-lg p-3 font-mono text-white text-sm border border-gray-700">
+                                                    31psvp6pv6rhvjz7zfkcn4bv2ksm
+                                                </div>
+                                                <Button
+                                                    onClick={() => copyToClipboard('31psvp6pv6rhvjz7zfkcn4bv2ksm', 'User')}
+                                                    className="bg-blue-600 hover:bg-blue-700 p-3"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Botão Baixar Deemix */}
+                                <div className="mt-6 pt-6 border-t border-blue-500/20">
+                                    <div className="text-center">
+                                        <h4 className="text-lg font-bold text-white font-inter mb-4">Baixar Deemix</h4>
+                                        <p className="text-sm text-gray-400 font-inter mb-6">Instale o Deemix em seu dispositivo</p>
+                                        <Button
+                                            onClick={() => window.open('https://workupload.com/file/AvaE2nLGqhn', '_blank')}
+                                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            BAIXAR DEEMIX
                                         </Button>
                                     </div>
                                 </div>
@@ -1124,6 +1375,8 @@ export default function ProfilePage() {
                         </CardContent>
                     </Card>
                 )}
+
+
             </div>
         );
     }
@@ -1158,110 +1411,139 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
 
-                {/* Box 1: Status de Acesso */}
+                {/* Status de Acesso */}
                 {userData?.deezerPremium ? (
-                    // Box Verde - Usuário tem acesso
-                    <Card className="border-gray-700/50 bg-gradient-to-br from-green-900/20 to-emerald-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-green-500/50 transition-all duration-300">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                                        <CheckCircle className="w-5 h-5 text-white" />
+                    // Usuário TEM acesso ao Deezer Premium
+                    <>
+                        {/* Título do Status - Acesso Liberado */}
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                                <CheckCircle className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-white">Deezer Premium - Acesso Liberado</h3>
+                                <p className="text-gray-400">Sua conta está ativa</p>
+                            </div>
+                        </div>
+
+                        {/* Box Verde - Usuário tem acesso */}
+                        <Card className="border-gray-700/50 bg-gradient-to-br from-green-900/20 to-emerald-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-green-500/50 transition-all duration-300">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                                            <CheckCircle className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-white font-inter">Deezer Premium Ativo</h3>
+                                            <p className="text-sm text-gray-400 font-inter">Sua conta está funcionando</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-xs text-green-400 bg-green-500/20 px-3 py-1 rounded-full font-semibold">ATIVO</span>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle className="w-4 h-4 text-green-400" />
+                                        <span className="text-sm text-gray-300 font-inter">Streaming sem anúncios</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle className="w-4 h-4 text-green-400" />
+                                        <span className="text-sm text-gray-300 font-inter">Qualidade FLAC/320kbps</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle className="w-4 h-4 text-green-400" />
+                                        <span className="text-sm text-gray-300 font-inter">Downloads offline</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle className="w-4 h-4 text-green-400" />
+                                        <span className="text-sm text-gray-300 font-inter">Playlists personalizadas</span>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                ) : (
+                    // Usuário NÃO TEM acesso ao Deezer Premium
+                    <>
+
+
+                        {/* Box Vermelho - Usuário não tem acesso */}
+                        <Card className="border-gray-700/50 bg-gradient-to-br from-red-900/20 to-rose-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-red-500/50 transition-all duration-300">
+                            <CardContent className="p-6">
+                                {/* Header com design melhorado */}
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
+                                        <XCircle className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-bold text-white font-inter">Deezer Premium - Acesso Liberado</h3>
-                                        <p className="text-sm text-gray-400 font-inter">Sua conta está ativa</p>
+                                        <h3 className="text-xl font-bold text-white font-inter bg-gradient-to-r from-red-400 to-rose-400 bg-clip-text text-transparent">
+                                            Acesso Não Disponível
+                                        </h3>
+                                        <p className="text-sm text-gray-300 font-inter">Adicione ao seu plano</p>
                                     </div>
-                                </div>
-                                <span className="text-xs text-green-400 bg-green-500/20 px-3 py-1 rounded-full font-semibold">ATIVO</span>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="w-4 h-4 text-green-400" />
-                                    <span className="text-sm text-gray-300 font-inter">Streaming sem anúncios</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="w-4 h-4 text-green-400" />
-                                    <span className="text-sm text-gray-300 font-inter">Qualidade FLAC/320kbps</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="w-4 h-4 text-green-400" />
-                                    <span className="text-sm text-gray-300 font-inter">Downloads offline</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="w-4 h-4 text-green-400" />
-                                    <span className="text-sm text-gray-300 font-inter">Playlists personalizadas</span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    // Box Vermelho - Usuário não tem acesso
-                    <Card className="border-gray-700/50 bg-gradient-to-br from-red-900/20 to-rose-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-red-500/50 transition-all duration-300">
-                        <CardContent className="p-6">
-                            {/* Header com design melhorado */}
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
-                                    <XCircle className="w-6 h-6 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-white font-inter bg-gradient-to-r from-red-400 to-rose-400 bg-clip-text text-transparent">
-                                        Deezer Premium - Acesso Não Disponível
-                                    </h3>
-                                    <p className="text-sm text-gray-300 font-inter">O Deezer Premium não está incluído no seu plano atual</p>
-                                </div>
-                            </div>
-
-                            {/* Benefícios em cards individuais */}
-                            <div className="space-y-3 mb-6">
-                                <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                                        <Headphones className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span className="text-sm text-gray-300 font-inter">Streaming sem anúncios</span>
                                 </div>
 
-                                <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                                    <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                                        <Music className="w-4 h-4 text-white" />
+                                {/* Benefícios em cards individuais */}
+                                <div className="space-y-3 mb-6">
+                                    <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
+                                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                                            <Headphones className="w-4 h-4 text-white" />
+                                        </div>
+                                        <span className="text-sm text-gray-300 font-inter">Streaming sem anúncios</span>
                                     </div>
-                                    <span className="text-sm text-gray-300 font-inter">Qualidade FLAC/320kbps</span>
+
+                                    <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
+                                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                                            <Music className="w-4 h-4 text-white" />
+                                        </div>
+                                        <span className="text-sm text-gray-300 font-inter">Qualidade FLAC/320kbps</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
+                                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                                            <Download className="w-4 h-4 text-white" />
+                                        </div>
+                                        <span className="text-sm text-gray-300 font-inter">Downloads offline</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
+                                        <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                                            <ListMusic className="w-4 h-4 text-white" />
+                                        </div>
+                                        <span className="text-sm text-gray-300 font-inter">Playlists personalizadas</span>
+                                    </div>
                                 </div>
 
-                                <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                                    <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center">
-                                        <Download className="w-4 h-4 text-white" />
+                                {/* Call-to-action melhorado */}
+                                <div className="pt-4 border-t border-gray-700/50">
+                                    <div className="mb-3 text-center">
+                                        <p className="text-xs text-gray-400 font-inter mb-2">🎵 Desbloqueie a experiência premium</p>
+                                        <div className="flex items-center justify-center gap-2 text-sm text-gray-300">
+                                            <span className="line-through">R$ 35,00/mês</span>
+                                            <span className="text-green-400 font-semibold">R$ 9,75/mês</span>
+                                        </div>
                                     </div>
-                                    <span className="text-sm text-gray-300 font-inter">Downloads offline</span>
+                                    {userData?.is_vip && userData?.valor && userData.valor >= 50 ? (
+                                        <Button
+                                            onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de solicitar acesso ao Deezer Premium gratuito.')}
+                                            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-sm font-inter font-medium px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+                                        >
+                                            <MessageCircle className="w-4 h-4" />
+                                            SOLICITAR ACESSO GRATUITO
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            onClick={() => window.open('https://mpago.la/2BcS59a', '_blank')}
+                                            className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-sm font-inter font-medium px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+                                        >
+                                            <CreditCard className="w-4 h-4" />
+                                            Assinar Deezer Premium
+                                        </Button>
+                                    )}
                                 </div>
-
-                                <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                                    <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-                                        <ListMusic className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span className="text-sm text-gray-300 font-inter">Playlists personalizadas</span>
-                                </div>
-                            </div>
-
-                            {/* Call-to-action melhorado */}
-                            <div className="pt-4 border-t border-gray-700/50">
-                                <div className="mb-3 text-center">
-                                    <p className="text-xs text-gray-400 font-inter mb-2">🎵 Desbloqueie a experiência premium</p>
-                                    <div className="flex items-center justify-center gap-2 text-sm text-gray-300">
-                                        <span className="line-through">R$ 35,00/mês</span>
-                                        <span className="text-green-400 font-semibold">R$ 9,75/mês</span>
-                                    </div>
-                                </div>
-                                <Button
-                                    onClick={() => window.open('https://mpago.la/2BcS59a', '_blank')}
-                                    className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-sm font-inter font-medium px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
-                                >
-                                    <CreditCard className="w-4 h-4" />
-                                    Assinar Deezer Premium
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </>
                 )}
 
                 {/* Box 2: Credenciais de Acesso (se disponível) */}
@@ -1678,8 +1960,15 @@ export default function ProfilePage() {
                             </p>
                         </div>
 
-                        {/* Botão Cancelar Plano */}
-                        <div className="mt-4 flex justify-center">
+                        {/* Botões de Ação */}
+                        <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-center">
+                            <Button
+                                onClick={() => window.location.href = '/plans'}
+                                className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-inter font-semibold px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+                            >
+                                <Settings className="w-4 h-4" />
+                                GERENCIAR PLANO
+                            </Button>
                             <Button
                                 onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de solicitar o cancelamento do meu plano.')}
                                 className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-inter font-semibold px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
@@ -1988,25 +2277,7 @@ export default function ProfilePage() {
                     </Card>
 
                     {/* Deemix Section */}
-                    <Card className="border-gray-700/50 bg-gradient-to-br from-purple-900/20 to-pink-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-purple-500/50 transition-all duration-300">
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                                    <Zap className="w-6 h-6 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-3xl font-bold text-white">Deemix - Downloads Ilimitados</h2>
-                                    <p className="text-gray-400">Ferramenta avançada para baixar músicas em alta qualidade</p>
-                                </div>
-                            </div>
-                            {/* Box de descrição justificada */}
-                            <div className="bg-gradient-to-br from-purple-900/10 to-pink-900/10 border border-purple-500/20 rounded-xl p-6 mb-6">
-                                <p className="text-gray-300 text-sm leading-relaxed text-justify font-inter">
-                                    O Deemix é uma das ferramentas mais populares para baixar músicas em alta qualidade diretamente de plataformas como Deezer. Com suporte a FLAC, MP3 320kbps e playlists completas, oferece praticidade e velocidade para DJs, colecionadores e amantes da música. Permite organizar downloads, buscar faixas específicas, baixar álbuns inteiros e gerenciar sua biblioteca musical com facilidade. Ideal para quem busca qualidade máxima e controle total sobre seus arquivos de áudio. Experimente o Deemix e leve sua experiência musical para outro nível!
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
+
 
                     {/* Curtidas Recentes */}
                     <Card className="border-gray-700/50 bg-gradient-to-br from-pink-900/20 to-rose-900/20 backdrop-blur-sm shadow-2xl border-2 hover:border-pink-500/50 transition-all duration-300">
@@ -2376,92 +2647,93 @@ export default function ProfilePage() {
     // Seção de Upload de Músicas
     function renderUploadSection() {
         return (
-            <div className="space-y-8">
-                {/* Header Elegante */}
-                <div className="relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-orange-600/20 via-red-600/20 to-pink-600/20 rounded-3xl"></div>
-                    <div className="relative flex items-center gap-6 p-8">
-                        <div className="w-16 h-16 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-2xl">
-                            <Upload className="w-8 h-8 text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-4xl font-bold bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 bg-clip-text text-transparent">
-                                Upload de Músicas
-                            </h2>
-                            <p className="text-lg text-gray-300 mt-2">Compartilhe suas músicas com a comunidade</p>
-                        </div>
+            <div className="space-y-6">
+                {/* Título da Seção */}
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
+                        <Upload className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h2 className="text-3xl font-bold text-white font-inter">Upload de Músicas</h2>
+                        <p className="text-gray-400 font-inter">Compartilhe suas músicas com a comunidade</p>
                     </div>
                 </div>
 
                 {/* Cards de Informações */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4 max-w-2xl mx-auto">
                     {/* Card de Status */}
-                    <div className="group relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-green-600/20 to-emerald-600/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                        <Card className="relative border-0 bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-xl shadow-2xl hover:shadow-green-500/25 transition-all duration-500 hover:scale-105">
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
-                                        <CheckCircle className="w-6 h-6 text-white" />
+                    <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-green-500/10 via-emerald-600/10 to-green-500/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
+                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <CardContent className="relative p-6 sm:p-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <CheckCircle className="w-8 h-8 text-white" />
                                     </div>
-                                    <span className="text-xs text-green-300 bg-green-500/20 px-3 py-1 rounded-full font-semibold">ATIVO</span>
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-3">Status de Upload</h3>
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <CheckCircle className="w-4 h-4 text-green-400" />
-                                        <span className="text-sm text-gray-300">Uploads ilimitados</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <CheckCircle className="w-4 h-4 text-green-400" />
-                                        <span className="text-sm text-gray-300">Formatos: MP3, WAV, FLAC</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <CheckCircle className="w-4 h-4 text-green-400" />
-                                        <span className="text-sm text-gray-300">Tamanho máximo: 50MB</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <CheckCircle className="w-4 h-4 text-green-400" />
-                                        <span className="text-sm text-gray-300">Metadados automáticos</span>
+                                    <div>
+                                        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">Status de Upload</h3>
+                                        <p className="text-gray-400 text-sm">Sistema ativo e funcionando</p>
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                <span className="text-sm font-bold text-green-400 bg-green-500/20 px-4 py-2 rounded-full border border-green-500/30">ATIVO</span>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <CheckCircle className="w-5 h-5 text-green-400" />
+                                    <span className="text-base text-gray-300">Uploads ilimitados</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <CheckCircle className="w-5 h-5 text-green-400" />
+                                    <span className="text-base text-gray-300">Formatos: MP3, WAV, FLAC</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <CheckCircle className="w-5 h-5 text-green-400" />
+                                    <span className="text-base text-gray-300">Tamanho máximo: 50MB</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <CheckCircle className="w-5 h-5 text-green-400" />
+                                    <span className="text-base text-gray-300">Metadados automáticos</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
 
                     {/* Card de Estatísticas */}
-                    <div className="group relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                        <Card className="relative border-0 bg-gradient-to-br from-blue-900/40 to-cyan-900/40 backdrop-blur-xl shadow-2xl hover:shadow-blue-500/25 transition-all duration-500 hover:scale-105">
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-                                        <BarChart3 className="w-6 h-6 text-white" />
+                    <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-500/10 via-cyan-600/10 to-blue-500/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <CardContent className="relative p-6 sm:p-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <BarChart3 className="w-8 h-8 text-white" />
                                     </div>
-                                    <span className="text-xs text-blue-300 bg-blue-500/20 px-3 py-1 rounded-full font-semibold">ESTATÍSTICAS</span>
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-3">Suas Contribuições</h3>
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-300">Músicas enviadas:</span>
-                                        <span className="text-lg font-bold text-white">0</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-300">Downloads totais:</span>
-                                        <span className="text-lg font-bold text-white">0</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-300">Curtidas recebidas:</span>
-                                        <span className="text-lg font-bold text-white">0</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-300">Reproduções:</span>
-                                        <span className="text-lg font-bold text-white">0</span>
+                                    <div>
+                                        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">Suas Contribuições</h3>
+                                        <p className="text-gray-400 text-sm">Estatísticas das suas músicas</p>
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                <span className="text-sm font-bold text-blue-400 bg-blue-500/20 px-4 py-2 rounded-full border border-blue-500/30">ESTATÍSTICAS</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="text-center">
+                                    <div className="text-3xl sm:text-4xl font-bold text-white mb-1">0</div>
+                                    <div className="text-sm text-gray-400">Músicas enviadas</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-3xl sm:text-4xl font-bold text-white mb-1">0</div>
+                                    <div className="text-sm text-gray-400">Downloads totais</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-3xl sm:text-4xl font-bold text-white mb-1">0</div>
+                                    <div className="text-sm text-gray-400">Curtidas recebidas</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-3xl sm:text-4xl font-bold text-white mb-1">0</div>
+                                    <div className="text-sm text-gray-400">Reproduções</div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Formulário de Upload */}

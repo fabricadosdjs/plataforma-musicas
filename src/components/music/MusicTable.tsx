@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { Play, Pause, Download, Heart, AlertTriangle, Copyright, Music, Trash2, Loader2, DownloadCloud, Sparkles, Zap, Star, Crown, X, CheckCircle, Plus, Minus, ShoppingCart, Package, Music2 } from 'lucide-react';
+import { Play, Pause, Download, Heart, AlertTriangle, Copyright, Music, Trash2, Loader2, DownloadCloud, Sparkles, Zap, Star, Crown, X, CheckCircle, Plus, Minus, ShoppingCart, Package, Music2, Users } from 'lucide-react';
 import Link from 'next/link';
 import { Track } from '@/types/track';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
@@ -68,10 +68,10 @@ const TrackRow = React.memo(({
 }: TrackUIProps) => {
     return (
         <tr className={clsx(
-            "group transition-all duration-300 ease-in-out border-l-4",
-            isCurrent ? 'bg-zinc-900/50 border-blue-500' : 'border-transparent hover:bg-zinc-800/60'
+            "group transition-all duration-300 ease-in-out border-l-4 hover:shadow-lg",
+            isCurrent ? 'bg-zinc-900/50 border-blue-500 shadow-blue-500/20' : 'border-transparent hover:bg-zinc-800/60 hover:shadow-zinc-800/20'
         )}>
-            <td className="px-4 py-3 align-middle w-[35%]">
+            <td className="px-4 py-3 align-middle w-[12%]">
                 <div className="flex items-center gap-4">
                     <div className="relative flex-shrink-0 w-12 h-12">
                         <img src={track.imageUrl || "/images/default-track.jpg"} alt={`Capa de ${track.songName}`} className="w-12 h-12 rounded-lg object-cover border border-zinc-700/50" />
@@ -81,24 +81,25 @@ const TrackRow = React.memo(({
                     </div>
                     <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-100 truncate">{track.songName}</span>
+                            <span className="font-medium text-gray-100 truncate text-sm">{track.songName}</span>
                             {track.isCommunity && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-sm">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-sm">
+                                    <Users size={12} strokeWidth={2} />
                                     COMUNIDADE
                                 </span>
                             )}
                         </div>
-                        <span className="text-sm text-gray-400 truncate">{track.artist}</span>
+                        <span className="text-xs text-gray-400 truncate">{track.artist}</span>
                     </div>
                 </div>
             </td>
-            <td className="px-4 py-3 align-middle w-[15%]"><span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white tracking-wide shadow-sm">{track.style}</span></td>
+            <td className="px-4 py-3 align-middle w-[43%]"><span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white tracking-wide shadow-sm">{track.style}</span></td>
             <td className="px-4 py-3 align-middle w-[15%]"><span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-600 to-green-600 text-white tracking-wide shadow-sm">{track.pool || 'Nexor Records'}</span></td>
             <td className="px-4 py-3 align-middle w-[35%]">
                 <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => onDownload(track)} disabled={!canDownloadResult.can} title={canDownloadResult.reason} className={clsx("flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-lg text-xs", hasDownloaded ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-green-500/25 cursor-default" : canDownloadResult.can ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-blue-500/25" : "bg-gradient-to-r from-zinc-700 to-zinc-600 text-gray-400 cursor-not-allowed shadow-zinc-500/25 opacity-60")}>
+                    <button onClick={() => onDownload(track)} disabled={!canDownloadResult.can} title={canDownloadResult.reason} className={clsx("flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-lg text-xs min-w-[120px] justify-center", hasDownloaded ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-green-500/25 cursor-default" : canDownloadResult.can ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-blue-500/25" : "bg-gradient-to-r from-zinc-700 to-zinc-600 text-gray-400 cursor-not-allowed shadow-zinc-500/25 opacity-60")}>
                         {hasDownloaded ? <CheckCircle size={16} strokeWidth={2} /> : <Download size={16} strokeWidth={2} />}
-                        <span>{hasDownloaded ? 'BAIXADO' : canDownloadResult.timeLeft || 'DOWNLOAD'}</span>
+                        <span className="whitespace-nowrap">{hasDownloaded ? 'BAIXADO' : canDownloadResult.timeLeft || 'DOWNLOAD'}</span>
                     </button>
                     <button
                         onClick={() => onToggleQueue(track)}
@@ -146,7 +147,8 @@ const TrackCard = React.memo(({
                     <div className="flex items-center gap-2">
                         <span className="font-bold text-white text-base truncate">{track.songName}</span>
                         {track.isCommunity && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-sm">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-sm">
+                                <Users size={12} strokeWidth={2} />
                                 COMUNIDADE
                             </span>
                         )}
@@ -159,9 +161,9 @@ const TrackCard = React.memo(({
                 </div>
             </div>
             <div className="p-3 grid grid-cols-2 gap-2">
-                <button onClick={() => onDownload(track)} disabled={!canDownloadResult.can} title={canDownloadResult.reason} className={clsx("flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all text-xs active:scale-95 shadow-lg", hasDownloaded ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-green-500/25 cursor-default" : canDownloadResult.can ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-blue-500/25" : "bg-gradient-to-r from-zinc-700 to-zinc-600 text-gray-400 cursor-not-allowed shadow-zinc-500/25")}>
+                <button onClick={() => onDownload(track)} disabled={!canDownloadResult.can} title={canDownloadResult.reason} className={clsx("flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all text-xs active:scale-95 shadow-lg min-w-[100px]", hasDownloaded ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-green-500/25 cursor-default" : canDownloadResult.can ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-blue-500/25" : "bg-gradient-to-r from-zinc-700 to-zinc-600 text-gray-400 cursor-not-allowed shadow-zinc-500/25")}>
                     {hasDownloaded ? <CheckCircle size={18} strokeWidth={2} /> : <Download size={18} strokeWidth={2} />}
-                    {hasDownloaded ? 'BAIXADO' : canDownloadResult.timeLeft || 'DOWNLOAD'}
+                    <span className="whitespace-nowrap">{hasDownloaded ? 'BAIXADO' : canDownloadResult.timeLeft || 'DOWNLOAD'}</span>
                 </button>
                 <button onClick={() => onLike(track.id)} disabled={isLiking} title={isLiked ? "Descurtir" : "Curtir"} className={clsx("flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all text-xs active:scale-95 shadow-lg", isLiked ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-pink-500/25" : "bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500 text-white shadow-zinc-500/25")}>
                     {isLiking ? <Loader2 size={18} strokeWidth={2} className="animate-spin" /> : <Heart size={18} strokeWidth={2} className={clsx({ "fill-current": isLiked })} />}
@@ -198,7 +200,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
     // Hooks e Estados
     const { data: session } = useSession();
     const { showToast } = useToastContext();
-    const { userData } = useUserData();
+    const { userData, updateLikedTrack, updateDownloadedTrack } = useUserData();
     const { currentTrack, isPlaying, playTrack, togglePlayPause } = useGlobalPlayer();
     const [liking, setLiking] = useState<number | null>(null);
     const [deleting, setDeleting] = useState<number | null>(null);
@@ -301,6 +303,9 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                 return;
             }
 
+            // Atualizar estado local imediatamente após registro bem-sucedido
+            updateDownloadedTrack(track.id);
+
             // Se o registro foi bem-sucedido, baixar o arquivo
             if (track.downloadUrl) {
                 showToast('🔄 Baixando arquivo...', 'info');
@@ -346,6 +351,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                 } catch (error) {
                     console.error('Erro ao baixar arquivo:', error);
                     showToast('❌ Erro ao baixar arquivo', 'error');
+                    return;
                 }
 
                 showToast(`✅ "${track.songName}" baixada com sucesso!`, 'success');
@@ -357,7 +363,59 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
             showToast('❌ Erro ao fazer download', 'error');
         }
     };
-    const handleLikeClick = (trackId: number) => { /* ... sua lógica de like ... */ };
+    const handleLikeClick = async (trackId: number) => {
+        if (!session?.user) {
+            showToast('👤 Faça login para curtir músicas', 'warning');
+            return;
+        }
+
+        try {
+            setLiking(trackId);
+
+            // Verificar se já curtiu
+            const isCurrentlyLiked = userData?.likedTrackIds?.includes(trackId) || false;
+            const action = isCurrentlyLiked ? 'unlike' : 'like';
+
+            const response = await fetch('/api/tracks/like', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    trackId: trackId,
+                    action: action
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+
+                if (result.success) {
+                    // Atualizar estado local
+                    updateLikedTrack(trackId, action === 'like');
+
+                    const track = tracks?.find(t => t.id === trackId);
+                    const trackName = track?.songName || 'Música';
+
+                    if (action === 'like') {
+                        showToast(`❤️ "${trackName}" adicionada aos favoritos!`, 'success');
+                    } else {
+                        showToast(`💔 "${trackName}" removida dos favoritos`, 'success');
+                    }
+                } else {
+                    showToast('❌ Erro ao processar curtida', 'error');
+                }
+            } else {
+                const errorData = await response.json();
+                showToast(`❌ ${errorData.error || 'Erro ao processar curtida'}`, 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao curtir música:', error);
+            showToast('❌ Erro ao processar curtida', 'error');
+        } finally {
+            setLiking(null);
+        }
+    };
     const handleDeleteClick = (track: Track) => { /* ... sua lógica de delete ... */ };
 
     // Função para reportar problema
@@ -578,20 +636,71 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
     return (
         <div className="relative w-full h-full text-sm text-gray-200 font-sans bg-[#1A1B1C]">
             <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background-color: #1f2937; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 10px; border: 2px solid #1f2937; }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #6b7280; }
-                .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #4b5563 #1f2937; }
+                .music-table-scrollbar::-webkit-scrollbar { 
+                    width: 12px; 
+                    height: 12px; 
+                }
+                .music-table-scrollbar::-webkit-scrollbar-track { 
+                    background-color: #1f2937; 
+                    border-radius: 8px;
+                }
+                .music-table-scrollbar::-webkit-scrollbar-thumb { 
+                    background: linear-gradient(135deg, #4b5563, #6b7280);
+                    border-radius: 8px; 
+                    border: 2px solid #1f2937;
+                    transition: all 0.3s ease;
+                }
+                .music-table-scrollbar::-webkit-scrollbar-thumb:hover { 
+                    background: linear-gradient(135deg, #6b7280, #9ca3af);
+                    transform: scale(1.05);
+                }
+                .music-table-scrollbar::-webkit-scrollbar-corner {
+                    background-color: #1f2937;
+                }
+                .music-table-scrollbar { 
+                    scrollbar-width: thin; 
+                    scrollbar-color: #4b5563 #1f2937; 
+                }
+                
+                /* Prevenir scroll da página quando mouse está sobre a tabela */
+                .music-table-container {
+                    overscroll-behavior: contain;
+                }
+                
+                /* Melhorar a aparência da tabela */
+                .music-table {
+                    border-collapse: separate;
+                    border-spacing: 0;
+                }
+                
+                .music-table thead th {
+                    position: sticky;
+                    top: 0;
+                    z-index: 20;
+                    background: #1A1B1C;
+                    backdrop-filter: blur(10px);
+                    border-bottom: 2px solid #374151;
+                }
             `}</style>
 
-            <div className="overflow-auto custom-scrollbar" style={{ maxHeight: '90vh' }}>
-                <table className="hidden md:table min-w-full text-left table-fixed">
-                    <thead className="sticky top-0 z-10 bg-[#1A1B1C]/80 backdrop-blur-sm">
+            <div
+                className="music-table-container overflow-auto music-table-scrollbar"
+                style={{
+                    maxHeight: 'calc(80 * 88px)', // 80 músicas × 88px por linha (incluindo padding e bordas)
+                    minHeight: '400px', // Altura mínima para telas pequenas
+                    overscrollBehavior: 'contain'
+                }}
+                onWheel={(e) => {
+                    // Prevenir scroll da página quando rolando a tabela
+                    e.stopPropagation();
+                }}
+            >
+                <table className="music-table hidden md:table min-w-full text-left table-fixed">
+                    <thead>
                         <tr className="border-b border-zinc-800">
-                            <th className="px-4 py-3 font-bold text-gray-400 tracking-wider w-[35%]"><div className="flex items-center gap-2"><Music2 strokeWidth={1.5} className="h-5 w-5 text-purple-400" />MÚSICA</div></th>
-                            <th className="px-4 py-3 font-bold text-gray-400 tracking-wider w-[15%]"><div className="flex items-center gap-2"><Sparkles strokeWidth={1.5} className="h-5 w-5 text-blue-400" />GÊNERO</div></th>
-                            <th className="px-4 py-3 font-bold text-gray-400 tracking-wider w-[15%]"><div className="flex items-center gap-2"><Star strokeWidth={1.5} className="h-5 w-5 text-yellow-400" />POOL</div></th>
+                            <th className="px-4 py-3 font-bold text-gray-400 tracking-wider w-[12%]"><div className="flex items-center gap-2"><Music2 strokeWidth={1.5} className="h-5 w-5 text-purple-400" />MÚSICA</div></th>
+                            <th className="px-4 py-3 font-bold text-blue-400 tracking-wider w-[43%]"><div className="flex items-center gap-2"><Sparkles strokeWidth={1.5} className="h-5 w-5 text-blue-400" />GÊNERO</div></th>
+                            <th className="px-4 py-3 font-bold text-yellow-400 tracking-wider w-[15%]"><div className="flex items-center gap-2"><Star strokeWidth={1.5} className="h-5 w-5 text-yellow-400" />POOL/LABEL</div></th>
                             <th className="px-4 py-3 font-bold text-gray-400 tracking-wider w-[35%] text-right"><div className="flex items-center justify-end gap-2"><Zap strokeWidth={1.5} className="h-5 w-5 text-green-400" />AÇÕES</div></th>
                         </tr>
                     </thead>

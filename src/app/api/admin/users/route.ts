@@ -70,9 +70,9 @@ export async function GET(req: Request) {
 
         function getVipPlan(valor: number | null) {
             if (!valor) return null;
-            if (valor >= 43) return 'COMPLETO';
-            if (valor >= 36) return 'PADRAO';
-            if (valor >= 30) return 'BASICO';
+            if (valor >= 50) return 'COMPLETO';
+            if (valor >= 42) return 'PADRAO';
+            if (valor >= 35) return 'BASICO';
             return null;
         }
 
@@ -263,6 +263,30 @@ export async function PATCH(req: Request) {
             updateData.lastWeekReset = parseDateInput(updateData.lastWeekReset);
         }
 
+        // Se o valor está sendo atualizado diretamente, não precisa recalcular
+        // Se Deemix ou Deezer Premium estão sendo alterados, precisa recalcular o valor
+        if ((updateData.deemix !== undefined || updateData.deezerPremium !== undefined) && updateData.valor === undefined) {
+            // Busca o usuário atual para pegar o valor existente
+            const currentUser = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { valor: true, deemix: true, deezerPremium: true }
+            });
+
+            if (currentUser && currentUser.valor) {
+                // Recalcula o valor baseado nos novos add-ons
+                const newDeemix = updateData.deemix !== undefined ? updateData.deemix : (currentUser.deemix || false);
+                const newDeezerPremium = updateData.deezerPremium !== undefined ? updateData.deezerPremium : (currentUser.deezerPremium || false);
+
+                updateData.valor = calculateNewValue(
+                    currentUser.valor,
+                    currentUser.deemix || false,
+                    currentUser.deezerPremium || false,
+                    newDeemix,
+                    newDeezerPremium
+                );
+            }
+        }
+
         await prisma.user.update({
             where: { id: userId },
             data: updateData
@@ -273,4 +297,73 @@ export async function PATCH(req: Request) {
         console.error("[USERS_PATCH_ERROR]", error);
         return new NextResponse("Erro Interno do Servidor", { status: 500 });
     }
+}
+
+// Tipos para os planos
+type PlanType = 'BASICO' | 'PADRAO' | 'COMPLETO';
+
+// Função auxiliar para recalcular o valor quando add-ons são alterados
+function calculateNewValue(currentTotal: number, oldDeemix: boolean, oldDeezerPremium: boolean, newDeemix: boolean, newDeezerPremium: boolean): number {
+    // Definições de preços dos planos e add-ons
+    const VIP_PLANS: Record<PlanType, number> = {
+        BASICO: 35,
+        PADRAO: 42,
+        COMPLETO: 50
+    };
+
+    const DEEMIX_PRICING: Record<PlanType, { value: number; discount: number }> = {
+        BASICO: { value: 14.99, discount: 0.35 },
+        PADRAO: { value: 14.99, discount: 0.42 },
+        COMPLETO: { value: 14.99, discount: 0.60 }
+    };
+
+    const DEEZER_PREMIUM_PRICING = 9.75;
+
+    // Primeiro, calcula o preço base removendo os add-ons antigos
+    let basePrice = currentTotal;
+
+    if (oldDeemix) {
+        // Remove o preço do Deemix antigo
+        const plan = getBasePlan(currentTotal);
+        if (plan && DEEMIX_PRICING[plan]) {
+            const deemixPrice = DEEMIX_PRICING[plan].value * (1 - DEEMIX_PRICING[plan].discount);
+            basePrice -= deemixPrice;
+        }
+    }
+
+    if (oldDeezerPremium) {
+        // Remove o preço do Deezer Premium antigo (se não era gratuito)
+        const plan = getBasePlan(currentTotal);
+        if (plan === 'BASICO') {
+            basePrice -= DEEZER_PREMIUM_PRICING;
+        }
+    }
+
+    // Agora adiciona os novos add-ons
+    let newTotal = basePrice;
+
+    if (newDeemix) {
+        const plan = getBasePlan(basePrice);
+        if (plan && DEEMIX_PRICING[plan]) {
+            const deemixPrice = DEEMIX_PRICING[plan].value * (1 - DEEMIX_PRICING[plan].discount);
+            newTotal += deemixPrice;
+        }
+    }
+
+    if (newDeezerPremium) {
+        const plan = getBasePlan(basePrice);
+        if (plan === 'BASICO') {
+            newTotal += DEEZER_PREMIUM_PRICING;
+        }
+    }
+
+    return Math.round(newTotal * 100) / 100; // Arredonda para 2 casas decimais
+}
+
+// Função auxiliar para determinar o plano base pelo valor
+function getBasePlan(valor: number): PlanType | null {
+    if (valor >= 50) return 'COMPLETO';
+    if (valor >= 42) return 'PADRAO';
+    if (valor >= 35) return 'BASICO';
+    return null;
 }

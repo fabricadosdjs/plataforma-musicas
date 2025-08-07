@@ -6,46 +6,73 @@ const { ContaboStorage } = require('./src/lib/contabo-storage.ts');
 dotenv.config({ path: '.env.local' });
 
 async function testContaboConnection() {
+    console.log('🧪 Testando conexão com Contabo Storage...');
+
+    // Verificar variáveis de ambiente
+    const requiredEnvVars = [
+        'CONTABO_ENDPOINT',
+        'CONTABO_REGION',
+        'CONTABO_ACCESS_KEY_ID',
+        'CONTABO_SECRET_ACCESS_KEY',
+        'CONTABO_BUCKET_NAME'
+    ];
+
+    console.log('\n📋 Variáveis de ambiente necessárias:');
+    requiredEnvVars.forEach(varName => {
+        const value = process.env[varName];
+        if (value) {
+            console.log(`✅ ${varName}: ${varName.includes('KEY') ? '***' : value}`);
+        } else {
+            console.log(`❌ ${varName}: NÃO DEFINIDA`);
+        }
+    });
+
+    // Verificar se todas as variáveis estão definidas
+    const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+    if (missingVars.length > 0) {
+        console.log('\n❌ ERRO: Variáveis de ambiente faltando:');
+        missingVars.forEach(varName => console.log(`   - ${varName}`));
+        console.log('\n💡 Configure essas variáveis no painel do Netlify ou no arquivo .env.local');
+        return;
+    }
+
     try {
-        console.log('🔍 Testando conexão com Contabo Storage...');
+        // Criar instância do ContaboStorage
+        const storage = new ContaboStorage({
+            endpoint: process.env.CONTABO_ENDPOINT,
+            region: process.env.CONTABO_REGION,
+            accessKeyId: process.env.CONTABO_ACCESS_KEY_ID,
+            secretAccessKey: process.env.CONTABO_SECRET_ACCESS_KEY,
+            bucketName: process.env.CONTABO_BUCKET_NAME,
+        });
 
-        // Verificar variáveis de ambiente
-        console.log('\n📋 Variáveis de Ambiente:');
-        console.log('CONTABO_ENDPOINT:', process.env.CONTABO_ENDPOINT ? '✅ Configurado' : '❌ Não configurado');
-        console.log('CONTABO_REGION:', process.env.CONTABO_REGION ? '✅ Configurado' : '❌ Não configurado');
-        console.log('CONTABO_ACCESS_KEY:', process.env.CONTABO_ACCESS_KEY ? '✅ Configurado' : '❌ Não configurado');
-        console.log('CONTABO_SECRET_KEY:', process.env.CONTABO_SECRET_KEY ? '✅ Configurado' : '❌ Não configurado');
-        console.log('CONTABO_BUCKET_NAME:', process.env.CONTABO_BUCKET_NAME ? '✅ Configurado' : '❌ Não configurado');
+        console.log('\n🔗 Testando conexão...');
 
-        // Testar listagem de arquivos
-        console.log('\n🔄 Testando listagem de arquivos...');
-        const files = await contaboStorage.listFiles();
-        console.log(`✅ Conexão bem-sucedida! Encontrados ${files.length} arquivos.`);
+        // Tentar listar arquivos
+        const files = await storage.listFiles();
+        console.log(`✅ Conexão bem-sucedida! ${files.length} arquivos encontrados`);
 
-        // Testar upload de arquivo pequeno
-        console.log('\n📤 Testando upload de arquivo...');
-        const testBuffer = Buffer.from('test file content');
-        const testKey = 'test/connection-test.txt';
-
-        const uploadUrl = await contaboStorage.uploadFile(testKey, testBuffer, 'text/plain');
-        console.log('✅ Upload bem-sucedido!');
-        console.log('URL:', uploadUrl);
-
-        // Limpar arquivo de teste
-        console.log('\n🗑️ Limpando arquivo de teste...');
-        await contaboStorage.deleteFile(testKey);
-        console.log('✅ Arquivo de teste removido!');
-
-        console.log('\n🎉 Todos os testes passaram! A conexão está funcionando corretamente.');
+        // Mostrar alguns arquivos de exemplo
+        if (files.length > 0) {
+            console.log('\n📁 Primeiros 5 arquivos:');
+            files.slice(0, 5).forEach(file => {
+                console.log(`   - ${file.filename} (${file.size} bytes)`);
+            });
+        }
 
     } catch (error) {
-        console.error('\n❌ Erro na conexão:', error);
-        console.error('\n🔧 Possíveis soluções:');
-        console.error('1. Verifique se as variáveis de ambiente estão configuradas');
-        console.error('2. Verifique se as credenciais do Contabo estão corretas');
-        console.error('3. Verifique se o bucket existe e está acessível');
-        console.error('4. Verifique se a região está correta');
+        console.error('\n❌ ERRO na conexão:', error.message);
+        console.error('\n🔍 Detalhes do erro:', error);
+
+        if (error.code === 'CredentialsError') {
+            console.log('\n💡 Verifique suas credenciais do Contabo');
+        } else if (error.code === 'NoSuchBucket') {
+            console.log('\n💡 Verifique o nome do bucket');
+        } else if (error.code === 'NetworkingError') {
+            console.log('\n💡 Verifique o endpoint e região');
+        }
     }
 }
 
-testContaboConnection();
+testContaboConnection().catch(console.error);

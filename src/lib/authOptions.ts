@@ -270,6 +270,7 @@ export const authOptions: AuthOptions = {
                 token.vencimento = (user as any).vencimento;
                 // Add any other user data from the database that you need in the token
                 token.deemix = (user as any).deemix;
+                token.deezerPremium = (user as any).deezerPremium;
                 token.lastDownloadReset = (user as any).lastDownloadReset;
                 token.lastWeekReset = (user as any).lastWeekReset;
                 token.customBenefits = (user as any).customBenefits;
@@ -292,6 +293,7 @@ export const authOptions: AuthOptions = {
                 (session.user as any).vencimento = token.vencimento as string;
                 // Ensure these are also correctly typed and passed if needed
                 (session.user as any).deemix = token.deemix as boolean;
+                (session.user as any).deezerPremium = token.deezerPremium as boolean;
                 (session.user as any).lastDownloadReset = token.lastDownloadReset as string;
                 (session.user as any).lastWeekReset = token.lastWeekReset as string;
                 (session.user as any).customBenefits = token.customBenefits as any;

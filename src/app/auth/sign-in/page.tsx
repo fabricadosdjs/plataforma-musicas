@@ -48,19 +48,19 @@ export default function SignInPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 overflow-hidden"
-      style={{ backgroundColor: '#212121' }}
+      className="min-h-screen flex items-center justify-center p-4 overflow-hidden z-0"
+      style={{ backgroundColor: '#212121', zIndex: 0 }}
     >
       <div className="w-full max-w-xl">
         {/* Logo/Header */}
         <div className="text-center mb-4">
           {/* Logo Real da Nextor Records */}
-          <div className="inline-flex items-center justify-center mb-3">
+          <div className="inline-flex items-center justify-center mb-3 w-full">
             <img
               src="https://i.ibb.co/Y7WKPY57/logo-nexor.png"
               alt="Nextor Records"
-              className="h-28 w-auto object-contain"
-              style={{ maxWidth: '500px', width: '500px' }}
+              className="object-contain h-20 sm:h-28 w-full max-w-xs sm:max-w-lg"
+              style={{}}
             />
           </div>
           <h1 className="text-xl font-bold text-white mb-1">Plataforma de Músicas</h1>

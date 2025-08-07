@@ -1,6 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useToast } from '@/hooks/useToast';
 
 interface Track {
     id: number;
@@ -30,6 +32,8 @@ interface GlobalPlayerContextType {
 const GlobalPlayerContext = createContext<GlobalPlayerContextType | undefined>(undefined);
 
 export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { data: session } = useSession();
+    const { showToast } = useToast();
     const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [playlist, setPlaylist] = useState<Track[]>([]);
@@ -86,6 +90,12 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
 
     const playTrack = async (track: Track, newPlaylist?: Track[]) => {
+        // Verificar se o usuário está logado
+        if (!session?.user) {
+            showToast('🔒 Faça login para reproduzir músicas', 'error');
+            return;
+        }
+
         console.log('🎵 GlobalPlayer: playTrack called with:', {
             id: track.id,
             songName: track.songName,

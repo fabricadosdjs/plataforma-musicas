@@ -4,63 +4,62 @@ import Link from "next/link";
 
 // Definição original de relatórios (com status)
 const relatoriosBase = [
-    {
-        title: 'Contador do botão Baixar',
-        description: 'O contador regressivo (horas/minutos/segundos) não está sendo exibido após o download. Precisa corrigir para mostrar o tempo restante até liberar novamente.',
-        status: 'nok',
-    },
-    {
-        title: 'Remoção do Drizzle e migração para Prisma',
-        description: 'Todo o backend foi migrado para Prisma, removendo vestígios do Drizzle. Endpoints e scripts ajustados.',
-        status: 'ok',
-    },
-    {
-        title: 'Correção de erros de sintaxe e build',
-        description: 'Erros de import/export, headers/cookies, e problemas de Next.js 14+ foram resolvidos.',
-        status: 'ok',
-    },
-    {
-        title: 'Autenticação NextAuth',
-        description: 'Login funcional, autenticação robusta, integração com tabela de usuários.',
-        status: 'ok',
-    },
-    {
-        title: 'Página de perfil completa',
-        // ATUALIZADO: Status e descrição para 'Não concluído'
-        description: 'Página /profile mostra todas as informações do usuário.',
-        status: 'nok',
-    },
-    {
-        title: 'Tabela de músicas (MusicTable)',
-        description: 'UI/UX refinada, dark theme, botões coloridos, download, like, report, copyright, notificações globais.',
-        status: 'ok',
-    },
-    {
-        title: 'Botão Like',
-        description: 'O botão de curtir fica vermelho quando ativo e salva o status corretamente no banco de dados.',
-        status: 'ok',
-    },
-    {
-        title: 'Botão Baixar',
-        description: 'O botão muda de cor após o download, mas a persistência da cor "Baixado" após o recarregamento da página ainda não está funcionando. Além disso, o contador regressivo não está sendo exibido.',
-        status: 'nok',
-    },
-    {
-        title: 'Notificações globais',
-        // ATUALIZADO: Status e descrição para 'Não concluído'
-        description: 'Notificações com react-toastify, topo da página, estilizadas, visíveis e responsivas.',
-        status: 'nok',
-    },
-    {
-        title: 'Botão Reportar erro',
-        description: 'Botão vermelho, report enviado diretamente, modal removido conforme solicitado.',
-        status: 'ok',
-    },
-    {
-        title: 'Página de relatórios',
-        description: 'Página /relatorios criada com tema escuro, visual moderno e status das tarefas.',
-        status: 'ok',
-    },
+  {
+    title: 'Contador do botão Baixar',
+    description: 'O contador regressivo (horas/minutos/segundos) não está sendo exibido após o download. Precisa corrigir para mostrar o tempo restante até liberar novamente.',
+    status: 'nok',
+  },
+  {
+    title: 'Remoção do Drizzle e migração para Prisma',
+    description: 'Todo o backend foi migrado para Prisma, removendo vestígios do Drizzle. Endpoints e scripts ajustados.',
+    status: 'ok',
+  },
+  {
+    title: 'Correção de erros de sintaxe e build',
+    description: 'Erros de import/export, headers/cookies, e problemas de Next.js 14+ foram resolvidos.',
+    status: 'ok',
+  },
+  {
+    title: 'Autenticação NextAuth',
+    description: 'Login funcional, autenticação robusta, integração com tabela de usuários.',
+    status: 'ok',
+  },
+  {
+    title: 'Página de perfil completa',
+    description: 'Página /profile com design profissional, responsiva, otimizada para mobile e todas as seções implementadas (Visão Geral, Atividade Total, Status do Plano, Deemix, Deezer Premium, Allavsoft, VIP, Upload, Atividade, Dados Pessoais). Botão "GERENCIAR PLANO" adicionado ao lado do botão "CANCELAR PLANO" na seção "Meu Plano". ✅ CONCLUÍDO em /profile',
+    status: 'ok',
+  },
+  {
+    title: 'Tabela de músicas (MusicTable)',
+    description: 'UI/UX refinada, dark theme, botões coloridos, download, like, report, copyright, notificações globais.',
+    status: 'ok',
+  },
+  {
+    title: 'Botão Like',
+    description: 'O botão de curtir fica vermelho quando ativo e salva o status corretamente no banco de dados.',
+    status: 'ok',
+  },
+  {
+    title: 'Botão Baixar',
+    description: 'O botão muda de cor após o download, mas a persistência da cor "Baixado" após o recarregamento da página ainda não está funcionando. Além disso, o contador regressivo não está sendo exibido.',
+    status: 'nok',
+  },
+  {
+    title: 'Notificações globais',
+    // ATUALIZADO: Status e descrição para 'Não concluído'
+    description: 'Notificações com react-toastify, topo da página, estilizadas, visíveis e responsivas.',
+    status: 'nok',
+  },
+  {
+    title: 'Botão Reportar erro',
+    description: 'Botão vermelho, report enviado diretamente, modal removido conforme solicitado.',
+    status: 'ok',
+  },
+  {
+    title: 'Página de relatórios',
+    description: 'Página /relatorios criada com tema escuro, visual moderno e status das tarefas.',
+    status: 'ok',
+  },
 ];
 
 // Definição original de completedItems
@@ -116,7 +115,7 @@ const combinedFeatures = (() => {
   completedItemsBase.forEach(item => {
     // Normaliza títulos para correspondência
     const normalizedTitle = item.title.replace('Botão Bug Report', 'Botão Reportar erro')
-                                       .replace('Favoritos Funcionando', 'Botão Like');
+      .replace('Favoritos Funcionando', 'Botão Like');
 
     // Verifica se já existe um item com o título original ou normalizado
     const existing = featuresMap.get(item.title) || featuresMap.get(normalizedTitle);
@@ -128,7 +127,7 @@ const combinedFeatures = (() => {
       // Se já existe, atualiza apenas se o status existente for 'nok'
       // Exceção: 'Botão Baixar', 'Página de perfil completa', 'Notificações globais' devem permanecer 'nok' se relatoriosBase os define assim
       const titlesToKeepNok = ['Botão Baixar', 'Página de perfil completa', 'Notificações globais'];
-      
+
       if (existing.status === 'nok' && !titlesToKeepNok.includes(existing.title)) {
         // Se o item existente estava como 'nok' e NÃO é um dos itens que deve SEMPRE ser 'nok'
         featuresMap.set(item.title, { ...existing, status: 'ok' });
@@ -145,37 +144,37 @@ const combinedFeatures = (() => {
 
 
 export default function RelatoriosPage() {
-    return (
-        <main className="min-h-screen bg-[#18181b] text-gray-200 font-sans flex flex-col items-center py-12 px-4">
-            <div className="w-full max-w-2xl rounded-2xl shadow-lg bg-[#232326] border border-gray-800 p-8">
-                <h1 className="text-3xl font-bold mb-6 text-white text-center tracking-tight">Relatório de Funcionalidades</h1>
-                <ul className="space-y-6">
-                    {combinedFeatures.map((item, idx) => ( // Usando a lista combinada
-                        <li key={idx} className="rounded-xl bg-[#202124] border border-gray-700 p-5 flex flex-col gap-2 shadow">
-                            <div className="flex items-center justify-between">
-                                <span className="text-lg font-semibold text-white">{item.title}</span>
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${item.status === "ok"
-                                    ? "bg-green-700 text-green-200 border border-green-600"
-                                    : item.status === "nok"
-                                        ? "bg-red-700 text-red-200 border border-red-600"
-                                        : "bg-yellow-700 text-yellow-200 border border-yellow-600"
-                                    }`}>
-                                    {item.status === "ok" ? <CheckCircle size={16} /> : item.status === "nok" ? <XCircle size={16} /> : <Clock size={16} />}
-                                    {item.status === "ok" ? "Concluído" : item.status === "nok" ? "Não concluído" : "Pendente"}
-                                </span>
-                            </div>
-                            <p className="text-gray-300 text-sm mt-1">{item.description}</p>
-                        </li>
-                    ))}
-                </ul>
-                <div className="mt-10 text-center text-xs text-gray-500">Atualizado em 25/07/2025</div>
-                <div className="flex justify-center mt-6">
-                    <a href="/new" className="inline-block px-6 py-3 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-semibold text-base shadow transition-all duration-200 border border-blue-900">
-                        Ir para Nova Música
-                    </a>
-                </div>
-            </div>
-            {/* Removido o segundo bloco "Funcionalidades Concluídas" duplicado */}
-        </main>
-    );
+  return (
+    <main className="min-h-screen bg-[#18181b] text-gray-200 font-sans flex flex-col items-center py-12 px-4 z-0" style={{ zIndex: 0 }}>
+      <div className="w-full max-w-2xl rounded-2xl shadow-lg bg-[#232326] border border-gray-800 p-8">
+        <h1 className="text-3xl font-bold mb-6 text-white text-center tracking-tight">Relatório de Funcionalidades</h1>
+        <ul className="space-y-6">
+          {combinedFeatures.map((item, idx) => ( // Usando a lista combinada
+            <li key={idx} className="rounded-xl bg-[#202124] border border-gray-700 p-5 flex flex-col gap-2 shadow">
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-semibold text-white">{item.title}</span>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${item.status === "ok"
+                  ? "bg-green-700 text-green-200 border border-green-600"
+                  : item.status === "nok"
+                    ? "bg-red-700 text-red-200 border border-red-600"
+                    : "bg-yellow-700 text-yellow-200 border border-yellow-600"
+                  }`}>
+                  {item.status === "ok" ? <CheckCircle size={16} /> : item.status === "nok" ? <XCircle size={16} /> : <Clock size={16} />}
+                  {item.status === "ok" ? "Concluído" : item.status === "nok" ? "Não concluído" : "Pendente"}
+                </span>
+              </div>
+              <p className="text-gray-300 text-sm mt-1">{item.description}</p>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-10 text-center text-xs text-gray-500">Atualizado em 25/07/2025</div>
+        <div className="flex justify-center mt-6">
+          <a href="/new" className="inline-block px-6 py-3 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-semibold text-base shadow transition-all duration-200 border border-blue-900">
+            Ir para Nova Música
+          </a>
+        </div>
+      </div>
+      {/* Removido o segundo bloco "Funcionalidades Concluídas" duplicado */}
+    </main>
+  );
 }

@@ -16,7 +16,7 @@ export default function Error({
     }, [error])
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="min-h-screen flex items-center justify-center bg-gray-900 z-0" style={{ zIndex: 0 }}>
             <div className="text-center">
                 <h2 className="text-4xl font-bold text-red-600 mb-4">Algo deu errado!</h2>
                 <p className="text-gray-600 mb-8">Ocorreu um erro inesperado.</p>
