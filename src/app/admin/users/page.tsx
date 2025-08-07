@@ -1223,6 +1223,31 @@ export default function AdminUsersPage() {
                                 </button>
                             </div>
                         )}
+
+                        {/* Botão para copiar emails dos VIPs */}
+                        {users.filter(u => u.is_vip).length > 0 && (
+                            <div className="px-6 py-4 border-t border-gray-700 bg-gray-950 flex justify-end">
+                                <button
+                                    onClick={() => {
+                                        const vipEmails = users
+                                            .filter(user => user.is_vip && user.email)
+                                            .map(user => user.email)
+                                            .join(', ');
+
+                                        if (vipEmails) {
+                                            copyToClipboard(vipEmails, 'Emails dos VIPs');
+                                        } else {
+                                            showMessage('Nenhum email de VIP encontrado', 'error');
+                                        }
+                                    }}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all duration-300 font-medium shadow-lg hover:shadow-blue-500/25"
+                                    title="Copiar todos os emails dos usuários VIP separados por vírgula"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                    Copiar Emails VIP ({users.filter(u => u.is_vip).length})
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Seção de Benefícios por Vvalor */}
