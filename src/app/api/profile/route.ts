@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Usuário não autenticado' }, { status: 401 });
         }
 
-        // Buscar dados completos do usuário
+        // Buscar dados completos do usuário (todos os campos escalares + relações)
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
             include: {
@@ -150,17 +150,20 @@ export async function GET(request: NextRequest) {
             status: user.status,
             valor: user.valor,
             vencimento: user.vencimento,
+            dataPagamento: user.dataPagamento,
+            dataPrimeiroPagamento: user.dataPrimeiroPagamento,
             dailyDownloadCount,
             dailyDownloadLimit: vipPlan ? 'Ilimitado' : 10,
-            weeklyPackRequests: null,
-            weeklyPlaylistDownloads: null,
-            weeklyPackRequestsUsed: null,
-            weeklyPlaylistDownloadsUsed: null,
-            customBenefits: null,
+            weeklyPackRequests: user.weeklyPackRequests,
+            weeklyPlaylistDownloads: user.weeklyPlaylistDownloads,
+            weeklyPackRequestsUsed: user.weeklyPackRequestsUsed,
+            weeklyPlaylistDownloadsUsed: user.weeklyPlaylistDownloadsUsed,
+            customBenefits: user.customBenefits,
             deemix: user.deemix,
             deezerPremium: user.deezerPremium,
             deezerEmail: user.deezerEmail,
             deezerPassword: user.deezerPassword,
+            isUploader: user.isUploader,
             downloadsCount,
             likesCount,
             playsCount,

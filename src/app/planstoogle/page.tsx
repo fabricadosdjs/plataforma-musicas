@@ -101,15 +101,15 @@ const SUBSCRIPTION_PERIODS = {
 } as const;
 
 const DEEMIX_PRICING = {
-    STANDALONE: 35,
+    STANDALONE: 38,
     BASICO: {
-        finalPrice: 22.75 // R$ 35 - 35% desconto
+        finalPrice: 23.56 // R$ 38 - 38% desconto
     },
     PADRAO: {
-        finalPrice: 20.30 // R$ 35 - 42% desconto
+        finalPrice: 22.04 // R$ 38 - 42% desconto
     },
     COMPLETO: {
-        finalPrice: 14.00 // R$ 35 - 60% desconto
+        finalPrice: 15.20 // R$ 38 - 60% desconto
     }
 } as const;
 
@@ -231,6 +231,7 @@ export default function PlansTogglePage() {
     const [includeDeemix, setIncludeDeemix] = useState(false);
     const [daysUsed, setDaysUsed] = useState(0);
     const [calculation, setCalculation] = useState<any>(null);
+    const [includeUploader, setIncludeUploader] = useState(false);
 
     // Processar parâmetros da URL
     useEffect(() => {
@@ -281,7 +282,7 @@ export default function PlansTogglePage() {
     }, [sessionUser]);
 
     // Adiciona parâmetro isUploader para aplicar regras do uploader
-    const getPlanPrice = (planKey: string, period: keyof typeof SUBSCRIPTION_PERIODS, includeDeemix: boolean, isUploader: boolean = false) => {
+    const getPlanPrice = (planKey: string, period: keyof typeof SUBSCRIPTION_PERIODS, includeDeemix: boolean, isUploader: boolean = false, includeUploader: boolean = false) => {
         // Verificar se é um plano Uploader
         if (planKey.startsWith('uploader-')) {
             const uploaderKey = planKey.replace('uploader-', '').toUpperCase() as keyof typeof UPLOADER_PLANS;
@@ -301,7 +302,7 @@ export default function PlansTogglePage() {
             let basePrice = plan.basePrice * (1 - periodConfig.discount);
 
             // Lógica do uploader para planos VIP
-            if (isUploader) {
+            if (includeUploader) {
                 if (period === 'MONTHLY') {
                     basePrice += 10; // Mensal: +R$10
                 } else if (period === 'QUARTERLY') {
@@ -356,7 +357,7 @@ export default function PlansTogglePage() {
         if (!selectedPlan || !sessionUser?.valor) return;
 
         const currentValue = Number(sessionUser.valor ?? 0);
-        const newValue = getPlanPrice(selectedPlan, selectedPeriod, includeDeemix);
+        const newValue = getPlanPrice(selectedPlan, selectedPeriod, includeDeemix, false, includeUploader);
 
         const result = calculateProRata(currentValue, newValue, daysUsed);
         setCalculation({
@@ -371,7 +372,7 @@ export default function PlansTogglePage() {
         if (!selectedPlan || !sessionUser?.valor) return;
 
         const currentValue = Number(sessionUser.valor ?? 0);
-        const newValue = getPlanPrice(selectedPlan, selectedPeriod, includeDeemix);
+        const newValue = getPlanPrice(selectedPlan, selectedPeriod, includeDeemix, false, includeUploader);
 
         const result = calculateProRata(currentValue, newValue, daysUsed);
         setCalculation({
@@ -386,7 +387,7 @@ export default function PlansTogglePage() {
         if (!selectedPlan) return;
 
         const currentValue = Number(sessionUser?.valor ?? 0);
-        const newValue = getPlanPrice(selectedPlan, selectedPeriod, includeDeemix);
+        const newValue = getPlanPrice(selectedPlan, selectedPeriod, includeDeemix, false, includeUploader);
 
         if (newValue > Number(currentValue)) {
             calculateUpgrade();
@@ -508,7 +509,7 @@ export default function PlansTogglePage() {
                                 <div className="text-4xl">{userPlan.icon}</div>
                                 <div>
                                     <h3 className="text-2xl font-bold text-white">{userPlan.name}</h3>
-                                    <p className="text-gray-400">R$ {sessionUser?.valor}/mês</p>
+                                    <p className="text-gray-400">R$ {userPlan.basePrice ?? userPlan.value}/mês</p>
                                 </div>
                             </div>
                         </div>
@@ -570,6 +571,21 @@ export default function PlansTogglePage() {
                             />
                         </button>
                         <span className="text-sm text-gray-400">Com Deemix</span>
+                    </div>
+                    {/* Uploader Toggle */}
+                    <div className="flex items-center justify-center gap-4 mb-6">
+                        <span className="text-sm text-gray-400">Sem Uploader</span>
+                        <button
+                            onClick={() => setIncludeUploader(!includeUploader)}
+                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${includeUploader ? 'bg-orange-600' : 'bg-gray-600'
+                                }`}
+                        >
+                            <span
+                                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${includeUploader ? 'translate-x-7' : 'translate-x-1'
+                                    }`}
+                            />
+                        </button>
+                        <span className="text-sm text-gray-400">Com Uploader</span>
                     </div>
 
                     {/* Period Selection */}

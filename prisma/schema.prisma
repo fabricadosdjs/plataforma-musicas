@@ -21,6 +21,8 @@ model User {
   vencimento              DateTime?
   customBenefits          Json?
   dataPagamento           DateTime?
+  dataPrimeiroPagamento   DateTime?  // Nova coluna para data do primeiro pagamento
+  planName                String?    // Nome do plano salvo manualmente
   lastWeekReset           DateTime?
   weeklyPackRequests      Int?       @default(0)
   weeklyPlaylistDownloads Int?       @default(0)

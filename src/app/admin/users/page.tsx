@@ -36,6 +36,7 @@ import { Users, Crown, CheckCircle, DollarSign, Plus, Search, Filter, Copy, Aler
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 // ...existing code (VIP_BENEFITS, VIP_PLANS, BENEFIT_LABELS, getUserPlan, getUserBenefits) should remain outside the component, as constants/helpers
 const VIP_BENEFITS = {
@@ -90,15 +91,15 @@ const UPLOADER_OPTION = {
 const VIP_PLANS = {
     BASICO: {
         name: 'VIP BÁSICO',
-        minValue: 30,
-        maxValue: 35,
+        minValue: 38,
+        maxValue: 38,
         color: 'bg-blue-600',
         icon: '🥉',
         benefits: VIP_BENEFITS.BASICO
     },
     PADRAO: {
         name: 'VIP PADRÃO',
-        minValue: 36,
+        minValue: 39,
         maxValue: 42,
         color: 'bg-green-600',
         icon: '🥈',
@@ -150,13 +151,13 @@ const calculateUserRealPrice = (basePrice: number, hasDeemix: boolean, hasDeezer
     let totalPrice = basePrice;
 
     // Se não é VIP, não pode ter add-ons
-    if (basePrice < 35) {
+    if (basePrice < 38) {
         return basePrice;
     }
 
     // Determinar plano VIP baseado no preço base
     let planKey: keyof typeof DEEMIX_PRICING = 'BASICO';
-    if (basePrice >= 50) {
+    if (basePrice >= 60) {
         planKey = 'COMPLETO';
     } else if (basePrice >= 42) {
         planKey = 'PADRAO';
@@ -188,14 +189,14 @@ const calculateUserRealPrice = (basePrice: number, hasDeemix: boolean, hasDeezer
 const getBasePriceFromTotal = (totalPrice: number, hasDeemix: boolean, hasDeezerPremium: boolean) => {
     // Como Deemix e Deezer Premium não alteram mais o preço,
     // o único add-on que afeta preço é o Uploader (R$ 10)
-    if (totalPrice < 35) {
+    if (totalPrice < 38) {
         return totalPrice;
     }
 
     // Incluir todos os valores possíveis dos planos (com e sem Deemix)
     const basePrices = [
         // Planos básicos mensais
-        35, 38, 42, 60,
+        38, 42, 60,
         // Planos com Deemix mensais  
         61.56, 64.04, 75.20,
         // Outros valores comuns
@@ -242,7 +243,7 @@ const BENEFIT_LABELS = {
 
 // Função para determinar o plano baseado no valor BASE (sem add-ons)
 const getUserPlan = (valor: number | null, hasDeemix?: boolean, hasDeezerPremium?: boolean) => {
-    if (!valor || valor < 35) {
+    if (!valor || valor < 38) {
         return null;
     }
 
@@ -303,7 +304,7 @@ function calculateUserPlanWithUploader(
     let total = basePrice;
 
     // Apenas UPLOADER adiciona custo extra
-    if (basePrice >= 35 && isUploader) {
+    if (basePrice >= 38 && isUploader) {
         const UPLOADER_MONTHLY = 10.00;
 
         if (period === 'MONTHLY') {
@@ -322,6 +323,7 @@ function calculateUserPlanWithUploader(
 
 export default function AdminUsersPage() {
     const { data: session, status } = useSession();
+    const router = useRouter();
     const [users, setUsers] = useState<User[]>([]);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -343,6 +345,7 @@ export default function AdminUsersPage() {
         whatsapp: '',
         email: '',
         password: '',
+        planName: '',
         valor: 0,
         isUploader: false,
         vencimento: '',
@@ -447,7 +450,7 @@ export default function AdminUsersPage() {
         let total = basePrice;
 
         // Apenas UPLOADER adiciona custo extra
-        if (basePrice >= 35 && isUploader) {
+        if (basePrice >= 38 && isUploader) {
             const UPLOADER_MONTHLY = 10.00;
 
             if (period === 'MONTHLY') {
@@ -854,6 +857,7 @@ export default function AdminUsersPage() {
             whatsapp: user.whatsapp || '',
             email: user.email || '',
             password: '', // Não mostrar senha existente por segurança
+            planName: user.planName || '',
             valor: user.valor || 0,
             vencimento: formatDateForInput(user.vencimento),
             dataPagamento: formatDateForInput(user.dataPagamento),
@@ -876,6 +880,7 @@ export default function AdminUsersPage() {
             whatsapp: '',
             email: '',
             password: '',
+            planName: '',
             valor: 0,
             vencimento: '',
             dataPagamento: '',
@@ -907,6 +912,7 @@ export default function AdminUsersPage() {
             whatsapp: '',
             email: '',
             password: '',
+            planName: '',
             valor: 0,
             vencimento: '',
             dataPagamento: '',
@@ -1130,7 +1136,7 @@ export default function AdminUsersPage() {
                     {/* Add User Button */}
                     <div className="mb-6 flex justify-end">
                         <button
-                            onClick={openAddModal}
+                            onClick={() => router.push('/admin/users/new')}
                             className="inline-flex items-center gap-2 px-6 py-3 pink-gradient-button text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-pink-500/25"
                         >
                             <Plus className="w-5 h-5" />
@@ -1418,7 +1424,7 @@ export default function AdminUsersPage() {
                                     Comece adicionando seu primeiro usuário VIP
                                 </p>
                                 <button
-                                    onClick={openAddModal}
+                                    onClick={() => router.push('/admin/users/new')}
                                     className="inline-flex items-center gap-2 px-6 py-3 pink-gradient-button text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-pink-500/25"
                                 >
                                     <Plus className="w-4 h-4" />
@@ -1512,15 +1518,15 @@ export default function AdminUsersPage() {
                                                 </th>
                                                 <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
                                                     🥉 VIP BÁSICO<br />
-                                                    <span className="text-xs text-gray-400">R$ 30-35</span>
+                                                    <span className="text-xs text-gray-400">R$ 38,00</span>
                                                 </th>
                                                 <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
                                                     🥈 VIP PADRÃO<br />
-                                                    <span className="text-xs text-gray-400">R$ 36-42</span>
+                                                    <span className="text-xs text-gray-400">R$ 42,00</span>
                                                 </th>
                                                 <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
                                                     🥇 VIP COMPLETO<br />
-                                                    <span className="text-xs text-gray-400">R$ 43-60</span>
+                                                    <span className="text-xs text-gray-400">R$ 60,00</span>
                                                 </th>
                                             </tr>
                                         </thead>
@@ -1762,31 +1768,26 @@ export default function AdminUsersPage() {
                                             <div className="group">
                                                 <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
                                                     <Crown className="w-4 h-4 text-yellow-400" />
-                                                    Plano Base do Usuário (somente títulos)
+                                                    Nome do Plano (personalizável)
                                                 </label>
-                                                <div className="relative">
-                                                    <select
-                                                        value={selectedPlanKey}
-                                                        onChange={(e) => {
-                                                            const key = e.target.value;
-                                                            setSelectedPlanKey(key);
-                                                            recomputeValorFromSelections(key, uploaderOptionKey);
-                                                        }}
-                                                        className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
-                                                    >
-                                                        <option value="" className="bg-gray-900 text-gray-100">Selecione um plano</option>
-                                                        {PLAN_OPTIONS.map(opt => (
-                                                            <option key={opt.key} value={opt.key} className="bg-gray-900 text-gray-100">
-                                                                {opt.title}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-20">
-                                                        <ChevronDown className="w-5 h-5 text-gray-400" />
-                                                    </div>
-                                                </div>
-                                                <div className="mt-3 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-xl text-sm text-gray-300">
-                                                    Valor total configurado: <strong>R$ {editForm.valor.toFixed(2)}</strong>
+                                                <input
+                                                    type="text"
+                                                    value={editForm.planName || ''}
+                                                    onChange={e => setEditForm(prev => ({ ...prev, planName: e.target.value }))}
+                                                    className="w-full px-4 py-4 bg-gray-900/50 border border-yellow-500/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300"
+                                                    placeholder="Digite o nome do plano"
+                                                />
+                                                <div className="mt-3">
+                                                    <label className="block text-sm font-medium text-gray-300 mb-2">Valor Mensal (R$)</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.01"
+                                                        value={editForm.valor}
+                                                        onChange={e => setEditForm(prev => ({ ...prev, valor: parseFloat(e.target.value) || 0 }))}
+                                                        className="w-full px-4 py-4 bg-gray-900/50 border border-yellow-500/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300"
+                                                        placeholder="Digite o valor mensal"
+                                                    />
                                                 </div>
                                             </div>
 

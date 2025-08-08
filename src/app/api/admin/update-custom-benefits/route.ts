@@ -10,34 +10,10 @@ export async function POST(request: NextRequest) {
         const session = await getServerSession(authOptions);
         console.log('👤 Session:', session?.user?.email);
 
-        // Temporariamente remover verificação de admin para debug
-        /*
-        if (!session?.user?.email) {
+        if (!session?.user?.id) {
             console.log('❌ Usuário não autenticado');
             return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
         }
-
-        // Verificar se o usuário é admin
-        const adminUser = await prisma.user.findUnique({
-            where: { email: session.user.email },
-            select: { id: true, email: true }
-        });
-
-        console.log('🔍 Admin user:', adminUser);
-
-        // Verificação de admin
-        const adminEmails = [
-            'djpoolrecordsbrazil@gmail.com',
-            'admin@nexorrecords.com.br'
-        ];
-
-        const isAdmin = adminEmails.includes(adminUser?.email || '');
-
-        if (!adminUser || !isAdmin) {
-            console.log('❌ Acesso negado - Admin necessário');
-            return NextResponse.json({ error: 'Acesso negado - Admin necessário' }, { status: 403 });
-        }
-        */
 
         const body = await request.json();
         console.log('📥 Body recebido:', body);
@@ -52,7 +28,7 @@ export async function POST(request: NextRequest) {
         // Verificar se o usuário existe
         const targetUser = await prisma.user.findUnique({
             where: { id: userId },
-            select: { id: true, email: true }
+            select: { id: true, email: true, customBenefits: true }
         });
 
         console.log('🎯 Target user:', targetUser);
@@ -64,7 +40,7 @@ export async function POST(request: NextRequest) {
 
         console.log('💾 Salvando customBenefits:', customBenefits);
 
-        // Preparar os dados para atualização
+        // Preparar os dados para atualização - usar o método PATCH da nossa API existente
         const updateData: any = {
             customBenefits: customBenefits || {}
         };
@@ -86,14 +62,40 @@ export async function POST(request: NextRequest) {
             if (customBenefits.deemix !== undefined) {
                 updateData.deemix = customBenefits.deemix;
             }
+            if (customBenefits.deezerPremium !== undefined) {
+                updateData.deezerPremium = customBenefits.deezerPremium;
+            }
         }
 
         console.log('📊 Dados para atualização:', updateData);
 
-        // Atualizar os benefícios personalizados do usuário
-        const updatedUser = await prisma.user.update({
+        // Usar nossa API existente para atualizar - chamada interna
+        const updateRequest = {
+            userId: userId,
+            ...updateData
+        };
+
+        // Chama a função PATCH da nossa API de users
+        const patchResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/admin/users`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cookie': request.headers.get('cookie') || ''
+            },
+            body: JSON.stringify(updateRequest)
+        });
+
+        if (!patchResponse.ok) {
+            const errorData = await patchResponse.text();
+            console.error('❌ Erro ao atualizar via API users:', errorData);
+            return NextResponse.json({ error: 'Erro ao atualizar usuário' }, { status: 500 });
+        }
+
+        console.log('✅ Usuário atualizado via API users');
+
+        // Buscar dados atualizados
+        const updatedUser = await prisma.user.findUnique({
             where: { id: userId },
-            data: updateData,
             select: {
                 id: true,
                 email: true,
@@ -102,11 +104,10 @@ export async function POST(request: NextRequest) {
                 weeklyPlaylistDownloads: true,
                 weeklyPackRequestsUsed: true,
                 weeklyPlaylistDownloadsUsed: true,
-                deemix: true
+                deemix: true,
+                deezerPremium: true
             }
         });
-
-        console.log('✅ Usuário atualizado:', updatedUser);
 
         return NextResponse.json({
             success: true,

@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Play, Pause, Download, Heart, AlertTriangle, Copyright, Music, Trash2, Loader2, DownloadCloud, Sparkles, Zap, Star, Crown, X, CheckCircle, Plus, Minus, ShoppingCart, Package, Music2, Users } from 'lucide-react';
 import Link from 'next/link';
-import { Track } from '@/types/track';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { useToastContext } from '@/context/ToastContext';
 import { useUserData } from '@/hooks/useUserData';
@@ -726,3 +725,40 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
 }
 
 export default MusicTable;
+
+// Track type definition for music tracks
+export interface Track {
+    id: number;
+    songName: string;
+    artist: string;
+    imageUrl?: string;
+    style: string;
+    pool?: string;
+    downloadUrl?: string;
+    isCommunity?: boolean;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+    duration?: number;
+    bpm?: number;
+    key?: string;
+    mode?: string;
+    sampleRate?: number;
+    channels?: number;
+    bitDepth?: number;
+    fileSize?: number;
+    downloadCount?: number;
+    likeCount?: number;
+    isPrivate?: boolean;
+    isDeleted?: boolean;
+    isExplicit?: boolean;
+    lyrics?: string;
+    producerId?: number;
+    artistId?: number;
+    albumId?: number;
+    labelId?: number;
+    releaseDate?: string;
+    coverArt?: string;
+    tags?: string[];
+    [key: string]: any;
+}

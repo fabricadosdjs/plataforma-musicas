@@ -14,6 +14,7 @@ declare module "next-auth" {
             name?: string | null;
             email?: string | null;
             image?: string | null;
+            is_vip?: boolean;
         }
     }
 }
@@ -65,14 +66,34 @@ export async function GET(req: Request) {
         // Busca todos os usuários e JÁ INCLUI a contagem de likes e downloads em uma única consulta
         const users = await prisma.user.findMany({
             orderBy: { createdAt: 'desc' },
-            include: {
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                whatsapp: true,
+                valor: true,
+                vencimento: true,
+                dataPagamento: true,
+                dataPrimeiroPagamento: true,
+                status: true,
+                is_vip: true,
+                deemix: true,
+                deezerPremium: true,
+                deezerEmail: true,
+                deezerPassword: true,
+                isUploader: true,
+                dailyDownloadCount: true,
+                weeklyPackRequests: true,
+                weeklyPlaylistDownloads: true,
+                lastDownloadReset: true,
+                lastWeekReset: true,
                 _count: {
                     select: {
-                        downloads: true, // Substitua 'downloads' pelo nome da sua relação no schema.prisma
-                        likes: true,     // Substitua 'likes' pelo nome da sua relação no schema.prisma
-                    },
-                },
-            },
+                        downloads: true,
+                        likes: true,
+                    }
+                }
+            }
         });
 
         // ========== DEFINIÇÃO DOS BENEFÍCIOS DOS PLANOS ==========
@@ -112,46 +133,37 @@ export async function GET(req: Request) {
         // Usar função centralizada da configuração de planos
 
         // ========== MAPEAMENTO DOS USUÁRIOS COM BENEFÍCIOS ==========
-        const usersWithBenefits = users.map(user => {
+
+        const usersWithBenefits = users.map((user: any) => {
             const planKey = getVipPlan(user.valor);
             const benefits = planKey ? VIP_BENEFITS[planKey] : null;
-
+            const planName = user.planName && user.planName.trim() !== '' ? user.planName : (benefits?.name || 'Sem Plano');
             return {
-                // ========== 📋 DADOS BÁSICOS DO USUÁRIO ==========
                 id: user.id,
                 name: user.name,
                 email: user.email,
                 whatsapp: user.whatsapp,
-
-                // ========== 💰 INFORMAÇÕES FINANCEIRAS ==========
                 valor: user.valor,
                 vencimento: user.vencimento,
                 dataPagamento: user.dataPagamento,
+                dataPrimeiroPagamento: user.dataPrimeiroPagamento,
                 status: user.status,
-
-                // ========== 🏆 STATUS E PLANOS ==========
                 is_vip: user.is_vip,
                 plan: planKey,
                 planIcon: benefits?.icon || '📦',
-                planName: benefits?.name || 'Sem Plano',
-
-                // ========== 🎵 ADD-ONS E SERVIÇOS ==========
+                planName,
                 deemix: user.deemix,
                 deezerPremium: user.deezerPremium,
                 deezerEmail: user.deezerEmail,
                 deezerPassword: user.deezerPassword,
                 isUploader: user.isUploader,
-
-                // ========== 📊 ESTATÍSTICAS DE USO ==========
                 dailyDownloadCount: user.dailyDownloadCount,
                 weeklyPackRequests: user.weeklyPackRequests,
                 weeklyPlaylistDownloads: user.weeklyPlaylistDownloads,
                 lastDownloadReset: user.lastDownloadReset,
                 lastWeekReset: user.lastWeekReset,
-                downloadsCount: user._count.downloads,
-                likesCount: user._count.likes,
-
-                // ========== 🎁 BENEFÍCIOS DO PLANO ==========
+                downloadsCount: user._count?.downloads ?? 0,
+                likesCount: user._count?.likes ?? 0,
                 benefits: benefits ? {
                     driveAccess: benefits.driveAccess,
                     packRequestsLimit: benefits.packRequestsLimit,
@@ -227,7 +239,7 @@ export async function DELETE_BY_EMAIL(req: Request) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, email, password, isAdmin, whatsapp, valor, vencimento, dataPagamento, status, deemix, deezerPremium, deezerEmail, deezerPassword, is_vip, isPro, dailyDownloadCount, lastDownloadReset, weeklyPackRequests, weeklyPlaylistDownloads, lastWeekReset, customBenefits, isUploader } = body;
+        const { name, email, password, isAdmin, whatsapp, valor, vencimento, dataPagamento, dataPrimeiroPagamento, planName, status, deemix, deezerPremium, deezerEmail, deezerPassword, is_vip, isPro, dailyDownloadCount, lastDownloadReset, weeklyPackRequests, weeklyPlaylistDownloads, lastWeekReset, customBenefits, isUploader } = body;
 
         // ========== ✅ VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS ==========
         if (!name || !email || !password) {
@@ -261,6 +273,7 @@ export async function POST(req: Request) {
                 valor: valor !== undefined ? valor : null,
                 vencimento: parseDateInput(vencimento),
                 dataPagamento: parseDateInput(dataPagamento),
+                dataPrimeiroPagamento: parseDateInput(dataPrimeiroPagamento),
 
                 // ========== 🎵 ADD-ONS E SERVIÇOS ==========
                 deemix: !!deemix,
@@ -308,12 +321,16 @@ export async function PATCH(req: Request) {
             return new NextResponse("UserId é obrigatório", { status: 400 });
         }
 
+
         // ========== 🔐 PROCESSAMENTO DA SENHA ==========
         if (updateData.password && updateData.password.trim()) {
             updateData.password = await bcrypt.hash(updateData.password, 10);
         } else {
             delete updateData.password; // Não atualiza a senha se estiver vazia
         }
+
+        // ========== PERMITIR SALVAR planName ==========
+        // planName agora é persistido no banco, não remover
 
         // ========== 📅 PROCESSAMENTO DE DATAS ==========
         if (updateData.vencimento !== undefined) {

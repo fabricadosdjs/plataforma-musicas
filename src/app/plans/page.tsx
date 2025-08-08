@@ -9,40 +9,40 @@ import Header from '@/components/layout/Header';
 // VIP Benefits
 const VIP_BENEFITS = {
     BASICO: {
-        dailyDownloads: { enabled: true, limit: 50, description: '50 músicas/dia' },
-        driveAccess: { enabled: false, description: 'Não disponível' },
-        packRequests: { enabled: false, description: 'Não disponível' },
+        dailyDownloads: { enabled: true, limit: -1, description: 'Ilimitado' },
+        driveAccess: { enabled: true, description: 'Disponível' },
+        packRequests: { enabled: true, description: 'Disponível' },
         individualContent: { enabled: true, description: 'Sim' },
-        extraPacks: { enabled: false, description: 'Não disponível' },
+        extraPacks: { enabled: true, description: 'Sim' },
         playlistDownloads: { enabled: true, limit: 2, description: '2 por dia' },
-        deezerPremium: { enabled: false, description: 'R$ 9,75/mês' },
-        deemixAccess: { enabled: false, description: 'Avulso R$ 38,00/mês' },
-        arlPremium: { enabled: false, description: 'Não disponível' },
-        musicProduction: { enabled: false, description: 'Não disponível' }
+        deezerPremium: { enabled: true, description: 'R$ 9,75/mês' },
+        deemixAccess: { enabled: true, description: 'Disponível (R$ 23,56)' },
+        arlPremium: { enabled: false, description: '❌ Não disponível' },
+        musicProduction: { enabled: false, description: '❌ Não disponível' }
     },
     PADRAO: {
-        dailyDownloads: { enabled: true, limit: 100, description: '100 músicas/dia' },
-        driveAccess: { enabled: true, description: 'Sim' },
-        packRequests: { enabled: true, description: 'Sim' },
+        dailyDownloads: { enabled: true, limit: -1, description: 'Ilimitado' },
+        driveAccess: { enabled: true, description: 'Disponível' },
+        packRequests: { enabled: true, description: 'Disponível' },
         individualContent: { enabled: true, description: 'Sim' },
         extraPacks: { enabled: true, description: 'Sim' },
         playlistDownloads: { enabled: true, limit: 5, description: '5 por dia' },
-        deezerPremium: { enabled: false, description: 'R$ 9,75/mês' },
-        deemixAccess: { enabled: false, description: 'Avulso R$ 38,00/mês' },
-        arlPremium: { enabled: false, description: 'Não disponível' },
-        musicProduction: { enabled: false, description: 'Não disponível' }
+        deezerPremium: { enabled: true, description: 'R$ 9,75/mês' },
+        deemixAccess: { enabled: true, description: 'Disponível (R$ 22,04)' },
+        arlPremium: { enabled: false, description: '❌ Não disponível' },
+        musicProduction: { enabled: false, description: '❌ Não disponível' }
     },
     COMPLETO: {
         dailyDownloads: { enabled: true, limit: -1, description: 'Ilimitado' },
-        driveAccess: { enabled: true, description: 'Sim' },
-        packRequests: { enabled: true, description: 'Sim' },
+        driveAccess: { enabled: true, description: 'Disponível' },
+        packRequests: { enabled: true, description: 'Disponível' },
         individualContent: { enabled: true, description: 'Sim' },
         extraPacks: { enabled: true, description: 'Sim' },
-        playlistDownloads: { enabled: true, limit: -1, description: 'Ilimitado (máx. 4 por dia)' },
-        deezerPremium: { enabled: true, description: 'Incluído' },
-        deemixAccess: { enabled: false, description: 'Avulso R$ 38,00/mês' },
-        arlPremium: { enabled: true, description: 'Sim (automático se Deemix)' },
-        musicProduction: { enabled: true, description: 'Sim' }
+        playlistDownloads: { enabled: true, limit: -1, description: 'Ilimitado' },
+        deezerPremium: { enabled: true, description: 'Grátis' },
+        deemixAccess: { enabled: true, description: 'Disponível (R$ 15,20)' },
+        arlPremium: { enabled: false, description: '❌ Não disponível' },
+        musicProduction: { enabled: true, description: 'Disponível' }
     }
 } as const;
 

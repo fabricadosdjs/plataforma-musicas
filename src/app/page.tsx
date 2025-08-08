@@ -3,6 +3,40 @@
 
 import Header from '@/components/layout/Header';
 import { useSession } from 'next-auth/react';
+
+// Extend NextAuth session user type to include is_vip
+import type { Session } from 'next-auth';
+
+declare module 'next-auth' {
+  interface User {
+    valor: any;
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    is_vip?: boolean;
+  }
+  interface Session {
+    user: {
+      valor: any;
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      is_vip?: boolean;
+    };
+  }
+}
+
+type SessionUser = {
+  valor: any;
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  is_vip?: boolean;
+};
+
 import { useEffect, useState } from 'react';
 import { Heart, Music, TrendingUp, Database, Upload, AlertTriangle, CheckCircle, Clock, Star, Zap, Play, Download, Users, Award, Globe, Headphones, Crown, Sparkles, Target, ArrowRight, ChevronRight, Shuffle, Volume2, Disc3, Mic2, Radio, Disc, Disc2 } from 'lucide-react';
 import Link from 'next/link';
@@ -432,10 +466,10 @@ function HomePageContent() {
                 <div className="bg-black/20 rounded-2xl p-8 mb-8">
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-amber-200 font-semibold text-lg">Progresso da Migração</span>
-                    <span className="text-amber-300 font-bold text-xl">1.5%</span>
+                    <span className="text-amber-300 font-bold text-xl">5%</span>
                   </div>
                   <div className="w-full bg-amber-900/50 rounded-full h-4 mb-4">
-                    <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-4 rounded-full transition-all duration-1000" style={{ width: '1.5%' }}></div>
+                    <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-4 rounded-full transition-all duration-1000" style={{ width: '5%' }}></div>
                   </div>
                   <div className="flex items-center justify-center text-amber-200">
                     <Clock className="h-5 w-5 mr-2" />
