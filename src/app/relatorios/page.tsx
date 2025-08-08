@@ -26,8 +26,9 @@ const relatoriosBase = [
   },
   {
     title: 'Página de perfil completa',
-    description: 'Página /profile com design profissional, responsiva, otimizada para mobile e todas as seções implementadas (Visão Geral, Atividade Total, Status do Plano, Deemix, Deezer Premium, Allavsoft, VIP, Upload, Atividade, Dados Pessoais). Botão "GERENCIAR PLANO" adicionado ao lado do botão "CANCELAR PLANO" na seção "Meu Plano". ✅ CONCLUÍDO em /profile',
-    status: 'ok',
+    // ATUALIZADO: Status e descrição para 'Não concluído'
+    description: 'Página /profile mostra todas as informações do usuário.',
+    status: 'nok',
   },
   {
     title: 'Tabela de músicas (MusicTable)',

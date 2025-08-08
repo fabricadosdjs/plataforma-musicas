@@ -5,29 +5,41 @@ import { useEffect, useState } from 'react';
 import { Check, Crown, Star, Zap, Music, Download, Users, Headphones, Database, Gift, CreditCard, User, MessageSquare, Hand, Calendar, Clock, Calculator, ArrowUp, ArrowDown, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import Header from '@/components/layout/Header';
+import { VIP_PLANS_CONFIG, ADDONS_CONFIG, getVipPlan, getPlanInfo } from '@/lib/plans-config';
 
-// Plan definitions (mesmo da página plans)
+// Interface customizada para o usuário da sessão
+interface SessionUser {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    valor?: number | string;
+    vencimento?: string;
+    isUploader?: boolean;
+    [key: string]: any;
+}
+
+// ========== 🏆 CONFIGURAÇÃO DOS PLANOS VIP ==========
 const VIP_PLANS = {
     BASICO: {
-        name: 'VIP BÁSICO',
-        basePrice: 35,
+        name: VIP_PLANS_CONFIG.BASICO.name,
+        basePrice: VIP_PLANS_CONFIG.BASICO.value,
         color: 'bg-blue-600',
         gradient: 'from-blue-600 to-blue-700',
-        icon: '🥉'
+        icon: VIP_PLANS_CONFIG.BASICO.icon
     },
     PADRAO: {
-        name: 'VIP PADRÃO',
-        basePrice: 42,
+        name: VIP_PLANS_CONFIG.PADRAO.name,
+        basePrice: VIP_PLANS_CONFIG.PADRAO.value,
         color: 'bg-green-600',
         gradient: 'from-green-600 to-green-700',
-        icon: '🥈'
+        icon: VIP_PLANS_CONFIG.PADRAO.icon
     },
     COMPLETO: {
-        name: 'VIP COMPLETO',
-        basePrice: 50,
+        name: VIP_PLANS_CONFIG.COMPLETO.name,
+        basePrice: VIP_PLANS_CONFIG.COMPLETO.value,
         color: 'bg-purple-600',
         gradient: 'from-purple-600 to-purple-700',
-        icon: '🥇'
+        icon: VIP_PLANS_CONFIG.COMPLETO.icon
     }
 } as const;
 
@@ -105,18 +117,14 @@ const DEEMIX_PRICING = {
 const calculateUserRealPrice = (basePrice: number, hasDeemix: boolean, hasDeezerPremium: boolean) => {
     let totalPrice = basePrice;
 
-    // Se não é VIP, não pode ter add-ons
-    if (basePrice < 35) {
-        return basePrice;
+    // ========== ✅ VALIDAÇÃO DE PLANO VIP ==========
+    if (basePrice < VIP_PLANS_CONFIG.BASICO.value) {
+        return basePrice; // Não é VIP, não pode ter add-ons
     }
 
-    // Determinar plano VIP baseado no preço base
-    let planKey: keyof typeof DEEMIX_PRICING = 'BASICO';
-    if (basePrice >= 50) {
-        planKey = 'COMPLETO';
-    } else if (basePrice >= 42) {
-        planKey = 'PADRAO';
-    }
+    // ========== 🎯 DETECÇÃO DO PLANO VIP ==========
+    const planType = getVipPlan(basePrice);
+    const planKey: keyof typeof DEEMIX_PRICING = planType || 'BASICO';
 
     // Adicionar Deemix se ativo
     if (hasDeemix && planKey in DEEMIX_PRICING) {
@@ -147,8 +155,12 @@ const getBasePriceFromTotal = (totalPrice: number, hasDeemix: boolean, hasDeezer
         return totalPrice;
     }
 
-    // Tentar diferentes planos base para ver qual bate
-    const basePrices = [35, 42, 50]; // BASICO, PADRAO, COMPLETO
+    // ========== 🔍 TENTATIVA DE DETECÇÃO DE PLANO BASE ==========
+    const basePrices = [
+        VIP_PLANS_CONFIG.BASICO.value,    // 🥉 VIP BÁSICO
+        VIP_PLANS_CONFIG.PADRAO.value,    // 🥈 VIP PADRÃO
+        VIP_PLANS_CONFIG.COMPLETO.value   // 🥇 VIP COMPLETO
+    ];
 
     for (const basePrice of basePrices) {
         const calculatedTotal = calculateUserRealPrice(basePrice, hasDeemix, hasDeezerPremium);
@@ -183,17 +195,11 @@ const getUserPlan = (valor: number | null, hasDeemix?: boolean, hasDeezerPremium
         return { ...UPLOADER_PLANS.ELITE, type: 'UPLOADER' };
     }
 
-    // VIP Plans baseados no preço BASE
-    if (basePrice >= 35 && basePrice < 42) {
-        return { ...VIP_PLANS.BASICO, type: 'VIP' };
-    }
-
-    if (basePrice >= 42 && basePrice < 50) {
-        return { ...VIP_PLANS.PADRAO, type: 'VIP' };
-    }
-
-    if (basePrice >= 50) {
-        return { ...VIP_PLANS.COMPLETO, type: 'VIP' };
+    // ========== 🏆 DETECÇÃO DE PLANOS VIP ==========
+    // Usar a função centralizada para detectar plano VIP
+    const vipPlanType = getVipPlan(basePrice);
+    if (vipPlanType) {
+        return { ...VIP_PLANS[vipPlanType], type: 'VIP' };
     }
 
     return null;
@@ -216,6 +222,8 @@ const calculateProRata = (currentValue: number, newValue: number, daysUsed: numb
 
 export default function PlansTogglePage() {
     const { data: session } = useSession();
+    // Forçar tipagem customizada
+    const sessionUser = session?.user as SessionUser | undefined;
     const [userPlan, setUserPlan] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [selectedPlan, setSelectedPlan] = useState<string>('');
@@ -253,15 +261,15 @@ export default function PlansTogglePage() {
     }, []);
 
     useEffect(() => {
-        if (session?.user) {
-            const valor = session.user.valor;
+        if (sessionUser) {
+            const valor = sessionUser.valor;
             const valorNumerico = typeof valor === 'string' ? parseFloat(valor) : Number(valor);
             const currentPlan = getUserPlan(valorNumerico || null);
             setUserPlan(currentPlan);
 
             // Calcular dias usados baseado no vencimento
-            if (session.user.vencimento) {
-                const vencimento = new Date(session.user.vencimento);
+            if (sessionUser.vencimento) {
+                const vencimento = new Date(sessionUser.vencimento);
                 const hoje = new Date();
                 const diffTime = vencimento.getTime() - hoje.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -270,15 +278,15 @@ export default function PlansTogglePage() {
             }
         }
         setLoading(false);
-    }, [session]);
+    }, [sessionUser]);
 
-    const getPlanPrice = (planKey: string, period: keyof typeof SUBSCRIPTION_PERIODS, includeDeemix: boolean) => {
+    // Adiciona parâmetro isUploader para aplicar regras do uploader
+    const getPlanPrice = (planKey: string, period: keyof typeof SUBSCRIPTION_PERIODS, includeDeemix: boolean, isUploader: boolean = false) => {
         // Verificar se é um plano Uploader
         if (planKey.startsWith('uploader-')) {
             const uploaderKey = planKey.replace('uploader-', '').toUpperCase() as keyof typeof UPLOADER_PLANS;
             const plan = UPLOADER_PLANS[uploaderKey];
             const periodConfig = SUBSCRIPTION_PERIODS[period];
-
             // Planos Uploader não incluem Deemix
             return plan.basePrice * (1 - periodConfig.discount) * periodConfig.months;
         }
@@ -291,6 +299,17 @@ export default function PlansTogglePage() {
 
             // Calcular preço base do plano com desconto do período
             let basePrice = plan.basePrice * (1 - periodConfig.discount);
+
+            // Lógica do uploader para planos VIP
+            if (isUploader) {
+                if (period === 'MONTHLY') {
+                    basePrice += 10; // Mensal: +R$10
+                } else if (period === 'QUARTERLY') {
+                    basePrice += 10 * (1 - 0.05); // Trimestral: +R$10 com 5% desconto
+                } else if (period === 'SEMIANNUAL' || period === 'ANNUAL') {
+                    // Semestral/Anual: uploader grátis (não adiciona nada)
+                }
+            }
 
             if (!includeDeemix || periodConfig.deemixFree) {
                 return basePrice * periodConfig.months;
@@ -334,9 +353,9 @@ export default function PlansTogglePage() {
     };
 
     const calculateUpgrade = () => {
-        if (!selectedPlan || !session?.user?.valor) return;
+        if (!selectedPlan || !sessionUser?.valor) return;
 
-        const currentValue = session.user.valor as number;
+        const currentValue = Number(sessionUser.valor ?? 0);
         const newValue = getPlanPrice(selectedPlan, selectedPeriod, includeDeemix);
 
         const result = calculateProRata(currentValue, newValue, daysUsed);
@@ -349,9 +368,9 @@ export default function PlansTogglePage() {
     };
 
     const calculateDowngrade = () => {
-        if (!selectedPlan || !session?.user?.valor) return;
+        if (!selectedPlan || !sessionUser?.valor) return;
 
-        const currentValue = session.user.valor as number;
+        const currentValue = Number(sessionUser.valor ?? 0);
         const newValue = getPlanPrice(selectedPlan, selectedPeriod, includeDeemix);
 
         const result = calculateProRata(currentValue, newValue, daysUsed);
@@ -366,12 +385,12 @@ export default function PlansTogglePage() {
     const handleCalculate = () => {
         if (!selectedPlan) return;
 
-        const currentValue = session?.user?.valor || 0;
+        const currentValue = Number(sessionUser?.valor ?? 0);
         const newValue = getPlanPrice(selectedPlan, selectedPeriod, includeDeemix);
 
-        if (newValue > currentValue) {
+        if (newValue > Number(currentValue)) {
             calculateUpgrade();
-        } else if (newValue < currentValue) {
+        } else if (newValue < Number(currentValue)) {
             calculateDowngrade();
         } else {
             setCalculation({
@@ -389,7 +408,7 @@ export default function PlansTogglePage() {
         const plan = VIP_PLANS[selectedPlan as keyof typeof VIP_PLANS];
 
         if (calculation.type === 'upgrade') {
-            message = `Olá! Gostaria de fazer upgrade do meu plano atual (${calculation.currentPlan.name} - R$ ${session?.user?.valor}) para ${calculation.newPlan.name}${includeDeemix ? ' + Deemix' : ''} ${periodConfig.name}.\n\n`;
+            message = `Olá! Gostaria de fazer upgrade do meu plano atual (${calculation.currentPlan.name} - R$ ${sessionUser?.valor}) para ${calculation.newPlan.name}${includeDeemix ? ' + Deemix' : ''} ${periodConfig.name}.\n\n`;
             message += `📊 Cálculo Pro-Rata:\n`;
             message += `• Dias usados: ${calculation.daysUsed}\n`;
             message += `• Dias restantes: ${calculation.remainingDays}\n`;
@@ -418,7 +437,7 @@ export default function PlansTogglePage() {
             message += `• Total ${periodConfig.name}: R$ ${getPlanPrice(selectedPlan, selectedPeriod, includeDeemix).toFixed(2).replace('.', ',')}\n\n`;
             message += `Por favor, me envie a chave PIX para este valor.`;
         } else if (calculation.type === 'downgrade') {
-            message = `Olá! Gostaria de fazer downgrade do meu plano atual (${calculation.currentPlan.name} - R$ ${session?.user?.valor}) para ${calculation.newPlan.name}${includeDeemix ? ' + Deemix' : ''} ${periodConfig.name}.\n\n`;
+            message = `Olá! Gostaria de fazer downgrade do meu plano atual (${calculation.currentPlan.name} - R$ ${sessionUser?.valor}) para ${calculation.newPlan.name}${includeDeemix ? ' + Deemix' : ''} ${periodConfig.name}.\n\n`;
             message += `📊 Cálculo Pro-Rata:\n`;
             message += `• Dias usados: ${calculation.daysUsed}\n`;
             message += `• Dias restantes: ${calculation.remainingDays}\n`;
@@ -489,7 +508,7 @@ export default function PlansTogglePage() {
                                 <div className="text-4xl">{userPlan.icon}</div>
                                 <div>
                                     <h3 className="text-2xl font-bold text-white">{userPlan.name}</h3>
-                                    <p className="text-gray-400">R$ {session?.user?.valor}/mês</p>
+                                    <p className="text-gray-400">R$ {sessionUser?.valor}/mês</p>
                                 </div>
                             </div>
                         </div>
@@ -505,7 +524,7 @@ export default function PlansTogglePage() {
                             </div>
                             <div className="bg-purple-500/10 rounded-lg p-4">
                                 <div className="text-2xl font-bold text-purple-400">
-                                    R$ {(((session?.user?.valor ?? 0) / 30) * (30 - daysUsed)).toFixed(2).replace('.', ',')}
+                                    R$ {((Number(sessionUser?.valor ?? 0) / 30) * (30 - daysUsed)).toFixed(2).replace('.', ',')}
                                 </div>
                                 <div className="text-sm text-gray-400">Valor Restante</div>
                             </div>
@@ -634,7 +653,7 @@ export default function PlansTogglePage() {
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-300">Valor:</span>
-                                                <span className="text-white font-semibold">R$ {session?.user?.valor}/mês</span>
+                                                <span className="text-white font-semibold">R$ {sessionUser?.valor}/mês</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-300">Dias restantes:</span>

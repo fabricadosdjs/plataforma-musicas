@@ -118,24 +118,24 @@ const VIP_PLANS = {
 
 // Deemix pricing for different plans
 const DEEMIX_PRICING = {
-    STANDALONE: 35, // Preço avulso para não-VIP (R$ 35,00)
+    STANDALONE: 38, // Preço avulso para não-VIP (R$ 38,00)
     BASICO: {
-        basePrice: 35,
-        deemixPrice: 35,
-        discount: 0.35, // 35% de desconto
-        finalPrice: 35 - (35 * 0.35) // R$ 22,75
+        basePrice: 38,
+        deemixPrice: 38,
+        discount: 0.38, // 38% de desconto
+        finalPrice: 38 - (38 * 0.38) // R$ 23,56
     },
     PADRAO: {
         basePrice: 42,
-        deemixPrice: 35,
+        deemixPrice: 38,
         discount: 0.42, // 42% de desconto (proporcional ao valor)
-        finalPrice: 35 - (35 * 0.42) // R$ 20,30
+        finalPrice: 38 - (38 * 0.42) // R$ 22,04
     },
     COMPLETO: {
-        basePrice: 50,
-        deemixPrice: 35,
+        basePrice: 60,
+        deemixPrice: 38,
         discount: 0.60, // 60% de desconto (proporcional ao valor)
-        finalPrice: 35 - (35 * 0.60) // R$ 14,00
+        finalPrice: 38 - (38 * 0.60) // R$ 15,20
     }
 } as const;
 
@@ -186,26 +186,41 @@ const calculateUserRealPrice = (basePrice: number, hasDeemix: boolean, hasDeezer
 
 // Function to get base price from total price (reverse calculation)
 const getBasePriceFromTotal = (totalPrice: number, hasDeemix: boolean, hasDeezerPremium: boolean) => {
-    // Se é valor baixo, provavelmente é só o plano base
+    // Como Deemix e Deezer Premium não alteram mais o preço,
+    // o único add-on que afeta preço é o Uploader (R$ 10)
     if (totalPrice < 35) {
         return totalPrice;
     }
 
-    // Tentar diferentes planos base para ver qual bate
-    const basePrices = [35, 42, 50]; // BASICO, PADRAO, COMPLETO
+    // Incluir todos os valores possíveis dos planos (com e sem Deemix)
+    const basePrices = [
+        // Planos básicos mensais
+        35, 38, 42, 60,
+        // Planos com Deemix mensais  
+        61.56, 64.04, 75.20,
+        // Outros valores comuns
+        50, 70, 80, 90, 100
+    ];
 
     for (const basePrice of basePrices) {
-        const calculatedTotal = calculateUserRealPrice(basePrice, hasDeemix, hasDeezerPremium);
-        if (Math.abs(calculatedTotal - totalPrice) < 0.01) {
+        // Verificar se é exatamente o valor base
+        if (Math.abs(totalPrice - basePrice) < 0.01) {
             return basePrice;
+        }
+        // Verificar se é valor base + uploader (R$ 10)
+        if (Math.abs(totalPrice - basePrice - 10) < 0.01) {
+            return basePrice; // Retorna o valor base sem o uploader
         }
     }
 
-    // Se não encontrou correspondência exata, retornar o valor total mesmo
-    return totalPrice;
-};
+    // Se não encontrou correspondência exata, assumir que é valor base
+    // Se for maior que R$ 45, provavelmente tem uploader
+    if (totalPrice > 45) {
+        return totalPrice - 10; // Remover uploader
+    }
 
-// Labels dos benefícios para interface
+    return totalPrice;
+};// Labels dos benefícios para interface
 const BENEFIT_LABELS = {
     driveAccess: '📁 Acesso ao Drive Mensal (desde 2023)',
     packRequests: '🎚️ Solicitação de Packs',
@@ -257,6 +272,7 @@ const getUserPlan = (valor: number | null, hasDeemix?: boolean, hasDeezerPremium
     return null;
 };
 
+
 // Função para obter benefícios do usuário (padrão + personalizações)
 const getUserBenefits = (user: User | null | undefined, customBenefits: { [userId: string]: any }) => {
     if (!user) return VIP_BENEFITS.BASICO;
@@ -272,6 +288,36 @@ const getUserBenefits = (user: User | null | undefined, customBenefits: { [userI
 
     return finalBenefits;
 };
+
+// Função para calcular valor do plano considerando uploader e período
+// period: 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUAL' | 'ANNUAL'
+function calculateUserPlanWithUploader(
+    basePrice: number,
+    hasDeemix: boolean,
+    hasDeezerPremium: boolean,
+    isUploader: boolean,
+    period: string
+): number {
+    // IMPORTANTE: Deemix e Deezer Premium NÃO alteram o preço
+    // O preço já está definido pelo plano escolhido no dropdown
+    let total = basePrice;
+
+    // Apenas UPLOADER adiciona custo extra
+    if (basePrice >= 35 && isUploader) {
+        const UPLOADER_MONTHLY = 10.00;
+
+        if (period === 'MONTHLY') {
+            total += UPLOADER_MONTHLY; // R$ 10,00
+        } else if (period === 'QUARTERLY') {
+            total += UPLOADER_MONTHLY * (1 - 0.05); // R$ 9,50 (5% desconto)
+        } else if (period === 'SEMIANNUAL' || period === 'ANNUAL') {
+            // Uploader grátis para semestral e anual
+            total += 0;
+        }
+    }
+
+    return Math.round(total * 100) / 100;
+}
 
 
 export default function AdminUsersPage() {
@@ -298,17 +344,154 @@ export default function AdminUsersPage() {
         email: '',
         password: '',
         valor: 0,
+        isUploader: false,
         vencimento: '',
         dataPagamento: '',
         status: 'ativo',
-        deemix: true,
+        deemix: false,
         deezerPremium: false,
         deezerEmail: '',
         deezerPassword: '',
         is_vip: true,
-        isUploader: false,
         dailyDownloadCount: 0
     });
+
+    // Opções de planos com valores corretos calculados
+    const PLAN_OPTIONS = [
+        // PLANO BASE MENSAL
+        { key: 'M_BASICO', title: '🥉 VIP BÁSICO', value: 38.00, deemix: false },
+        { key: 'M_PADRAO', title: '🥈 VIP PADRÃO', value: 42.00, deemix: false },
+        { key: 'M_COMPLETO', title: '🥇 VIP COMPLETO', value: 60.00, deemix: false },
+        // TRIMESTRAL (5% desconto no plano)
+        { key: 'T_BASICO', title: '🥉 VIP BÁSICO TRIMESTRAL', value: 108.30, deemix: false },
+        { key: 'T_PADRAO', title: '🥈 VIP PADRÃO TRIMESTRAL', value: 119.70, deemix: false },
+        { key: 'T_COMPLETO', title: '🥇 VIP COMPLETO TRIMESTRAL', value: 171.00, deemix: false },
+        // SEMESTRAL (15% desconto no plano)
+        { key: 'S_BASICO', title: '🥉 VIP BÁSICO SEMESTRAL', value: 193.80, deemix: false },
+        { key: 'S_PADRAO', title: '🥈 VIP PADRÃO SEMESTRAL', value: 214.20, deemix: false },
+        { key: 'S_COMPLETO', title: '🥇 VIP COMPLETO SEMESTRAL', value: 306.00, deemix: false },
+        // ANUAL (15% desconto no plano)
+        { key: 'A_BASICO', title: '🥉 VIP BÁSICO ANUAL', value: 387.60, deemix: false },
+        { key: 'A_PADRAO', title: '🥈 VIP PADRÃO ANUAL', value: 428.40, deemix: false },
+        { key: 'A_COMPLETO', title: '🥇 VIP COMPLETO ANUAL', value: 612.00, deemix: false },
+        // COM DEEMIX MENSAL
+        { key: 'MD_BASICO', title: '🥉 VIP BÁSICO + 🎧 DEEMIX', value: 61.56, deemix: true },
+        { key: 'MD_PADRAO', title: '🥈 VIP PADRÃO + 🎧 DEEMIX', value: 64.04, deemix: true },
+        { key: 'MD_COMPLETO', title: '🥇 VIP COMPLETO + 🎧 DEEMIX', value: 75.20, deemix: true },
+        // COM DEEMIX TRIMESTRAL (8% desconto no Deemix)
+        { key: 'TD_BASICO', title: '🥉 VIP BÁSICO + 🎧 DEEMIX TRIMESTRAL', value: 173.33, deemix: true },
+        { key: 'TD_PADRAO', title: '🥈 VIP PADRÃO + 🎧 DEEMIX TRIMESTRAL', value: 180.53, deemix: true },
+        { key: 'TD_COMPLETO', title: '🥇 VIP COMPLETO + 🎧 DEEMIX TRIMESTRAL', value: 212.95, deemix: true },
+        // COM DEEMIX SEMESTRAL (50% desconto no Deemix)
+        { key: 'SD_BASICO', title: '🥉 VIP BÁSICO + 🎧 DEEMIX SEMESTRAL', value: 264.48, deemix: true },
+        { key: 'SD_PADRAO', title: '🥈 VIP PADRÃO + 🎧 DEEMIX SEMESTRAL', value: 280.32, deemix: true },
+        { key: 'SD_COMPLETO', title: '🥇 VIP COMPLETO + 🎧 DEEMIX SEMESTRAL', value: 351.60, deemix: true },
+        // COM DEEMIX ANUAL (Deemix grátis)
+        { key: 'AD_BASICO', title: '🥉 VIP BÁSICO + 🎧 DEEMIX ANUAL', value: 387.60, deemix: true },
+        { key: 'AD_PADRAO', title: '🥈 VIP PADRÃO + 🎧 DEEMIX ANUAL', value: 428.40, deemix: true },
+        { key: 'AD_COMPLETO', title: '🥇 VIP COMPLETO + 🎧 DEEMIX ANUAL', value: 612.00, deemix: true },
+        // Avulsos (referência)
+        { key: 'AV_DEEMIX', title: '🎧 DEEMIX AVULSO', value: 38.00, deemix: true },
+        { key: 'AV_DEEZER', title: '🎁 DEEZER PREMIUM AVULSO', value: 9.75, deemix: false },
+    ] as const;
+
+    const UPLOADER_OPTIONS = [
+        { key: 'NONE', title: 'UPLOADER: R$ 0,00', value: 0 },
+        { key: 'MONTHLY', title: 'UPLOADER MENSAL: R$ 10,00', value: 10.00 },
+        { key: 'QUARTERLY', title: 'UPLOADER TRIMESTRAL: R$ 28,50', value: 28.50 },
+        { key: 'SEMIANNUAL', title: 'UPLOADER SEMESTRAL: R$ 0,00', value: 0 },
+        { key: 'ANNUAL', title: 'UPLOADER ANUAL: R$ 0,00', value: 0 },
+    ] as const;
+
+    const [selectedPlanKey, setSelectedPlanKey] = useState<string>('');
+    const [uploaderOptionKey, setUploaderOptionKey] = useState<string>('NONE');
+
+    const recomputeValorFromSelections = (planKey: string, uploaderKey: string) => {
+        const plan = PLAN_OPTIONS.find(p => p.key === planKey);
+        if (!plan) return;
+
+        const planValue = plan.value; // Valor base do plano (já inclui Deemix se aplicável)
+
+        // Calcular valor do uploader baseado no período mensal
+        let uploaderValue = 0;
+        if (uploaderKey === 'MONTHLY') {
+            uploaderValue = 10.00; // R$ 10,00 mensal
+        } else if (uploaderKey === 'QUARTERLY') {
+            uploaderValue = 9.50; // R$ 9,50 (5% desconto)  
+        } else if (uploaderKey === 'SEMIANNUAL' || uploaderKey === 'ANNUAL') {
+            uploaderValue = 0; // Grátis
+        }
+
+        const total = Math.round((planValue + uploaderValue) * 100) / 100;
+
+        setEditForm(prev => ({
+            ...prev,
+            valor: total,
+            is_vip: planValue >= 35,
+            isUploader: uploaderKey !== 'NONE',
+            deemix: !!plan?.deemix
+        }));
+    };
+
+    // Função para calcular valor do plano considerando uploader e período
+    // period: 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUAL' | 'ANNUAL'
+    function calculateUserPlanWithUploader(
+        basePrice: number,
+        hasDeemix: boolean,
+        hasDeezerPremium: boolean,
+        isUploader: boolean,
+        period: string
+    ): number {
+        // IMPORTANTE: Deemix e Deezer Premium NÃO alteram o preço
+        // O preço já está definido pelo plano escolhido no dropdown
+        let total = basePrice;
+
+        // Apenas UPLOADER adiciona custo extra
+        if (basePrice >= 35 && isUploader) {
+            const UPLOADER_MONTHLY = 10.00;
+
+            if (period === 'MONTHLY') {
+                total += UPLOADER_MONTHLY; // R$ 10,00
+            } else if (period === 'QUARTERLY') {
+                total += UPLOADER_MONTHLY * (1 - 0.05); // R$ 9,50 (5% desconto)
+            } else if (period === 'SEMIANNUAL' || period === 'ANNUAL') {
+                // Uploader grátis para semestral e anual
+                total += 0;
+            }
+        }
+
+        return Math.round(total * 100) / 100;
+    }
+    {/* Uploader */ }
+    <div className="group">
+        <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+            <Upload className="w-4 h-4 text-orange-400" />
+            Uploader
+        </label>
+        <div className="flex items-center gap-3">
+            <input
+                type="checkbox"
+                checked={!!editForm.isUploader}
+                onChange={e => {
+                    const isUploader = e.target.checked;
+                    // Recalcular valor do plano
+                    const basePrice = editingUser ? getBasePriceFromTotal(editForm.valor || 0, editForm.deemix, editForm.deezerPremium) : (editForm.valor || 0);
+                    // Período: por padrão mensal, pode ser customizado se houver campo
+                    const period: 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUAL' | 'ANNUAL' = 'MONTHLY';
+                    const total = calculateUserPlanWithUploader(basePrice, editForm.deemix, editForm.deezerPremium, isUploader, period);
+                    setEditForm(prev => ({ ...prev, isUploader, valor: total }));
+                }}
+                className="w-5 h-5 accent-orange-500 rounded focus:ring-2 focus:ring-orange-500"
+            />
+            <span className="text-gray-300">Permitir uploads de músicas</span>
+        </div>
+        <div className="mt-2 p-2 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-lg">
+            <p className="text-xs text-gray-300">
+                {editForm.isUploader ? 'Usuário poderá enviar músicas para a plataforma.' : 'Usuário não terá permissão de upload.'}
+            </p>
+        </div>
+    </div>
+
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -670,7 +853,7 @@ export default function AdminUsersPage() {
             name: user.name || '',
             whatsapp: user.whatsapp || '',
             email: user.email || '',
-            password: user.password || '', // Mostrar senha atual se existir
+            password: '', // Não mostrar senha existente por segurança
             valor: user.valor || 0,
             vencimento: formatDateForInput(user.vencimento),
             dataPagamento: formatDateForInput(user.dataPagamento),
@@ -678,7 +861,7 @@ export default function AdminUsersPage() {
             deemix: user.deemix,
             deezerPremium: user.deezerPremium || false,
             deezerEmail: user.deezerEmail || '',
-            deezerPassword: user.deezerPassword || '', // Mostrar senha atual se existir
+            deezerPassword: '', // Não mostrar senha existente por segurança
             is_vip: user.is_vip,
             isUploader: user.isUploader || false,
             dailyDownloadCount: user.dailyDownloadCount || 0
@@ -741,12 +924,17 @@ export default function AdminUsersPage() {
     const addNewUser = async () => {
         try {
             setUpdating('new-user');
+            // Recalcular valor do plano com uploader
+            const basePrice = getBasePriceFromTotal(editForm.valor || 0, editForm.deemix, editForm.deezerPremium);
+            const period = 'MONTHLY'; // Ajuste se houver campo de período
+            const valorCorrigido = calculateUserPlanWithUploader(basePrice, editForm.deemix, editForm.deezerPremium, editForm.isUploader, period);
+            const payload = { ...editForm, valor: valorCorrigido, isUploader: !!editForm.isUploader };
             const response = await fetch('/api/admin/users', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(editForm),
+                body: JSON.stringify(payload),
             });
 
             if (response.ok) {
@@ -770,20 +958,16 @@ export default function AdminUsersPage() {
 
         setUpdating(editingUser.id);
         try {
-            // Preparar dados para envio
+            // Recalcular valor do plano com uploader
+            const basePrice = getBasePriceFromTotal(editForm.valor || 0, editForm.deemix, editForm.deezerPremium);
+            const period = 'MONTHLY'; // Ajuste se houver campo de período
+            const valorCorrigido = calculateUserPlanWithUploader(basePrice, editForm.deemix, editForm.deezerPremium, editForm.isUploader, period);
             const requestBody = {
                 userId: editingUser.id,
-                ...editForm
+                ...editForm,
+                valor: valorCorrigido,
+                isUploader: !!editForm.isUploader
             };
-
-            // Log detalhado para debug
-            console.log('🔧 Dados sendo enviados para atualização:', {
-                userId: editingUser.id,
-                email: editForm.email,
-                hasPassword: !!editForm.password,
-                passwordLength: editForm.password?.length || 0,
-                isPasswordEmpty: !editForm.password?.trim()
-            });
 
             const response = await fetch('/api/admin/users', {
                 method: 'PATCH',
@@ -793,21 +977,18 @@ export default function AdminUsersPage() {
                 body: JSON.stringify(requestBody),
             });
 
-            console.log('📊 Status da resposta:', response.status);
-
             if (response.ok) {
                 const data = await response.json();
-                console.log('✅ Usuário atualizado com sucesso:', data.message);
                 showMessage(data.message, 'success');
                 fetchUsers();
                 closeEditModal();
             } else {
                 const errorText = await response.text();
-                console.error('❌ Resposta de erro do servidor:', errorText);
+                console.error('Resposta de erro do servidor:', errorText);
                 throw new Error(`Falha ao atualizar usuário: ${response.status} - ${errorText}`);
             }
         } catch (error) {
-            console.error('❌ Erro ao atualizar usuário:', error);
+            console.error('Erro ao atualizar usuário:', error);
             showMessage(`Erro ao atualizar usuário: ${error instanceof Error ? error.message : 'Erro desconhecido'}`, 'error');
         } finally {
             setUpdating(null);
@@ -1001,6 +1182,9 @@ export default function AdminUsersPage() {
                                             Deezer
                                         </th>
                                         <th className="w-[7%] px-3 py-4 text-center text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
+                                            Uploader
+                                        </th>
+                                        <th className="w-[7%] px-3 py-4 text-center text-xs font-bold whitespace-nowrap text-gray-300 bg-gray-950">
                                             Ações
                                         </th>
                                     </tr>
@@ -1165,6 +1349,17 @@ export default function AdminUsersPage() {
                                                     )}
                                                 </button>
                                             </td>
+                                            <td className="px-3 py-4 text-center">
+                                                {user.isUploader ? (
+                                                    <span className="inline-flex items-center gap-1 text-xs font-bold text-yellow-300 bg-yellow-500/10 px-2 py-1 rounded-lg border border-yellow-400/30">
+                                                        <Upload className="w-3 h-3 inline-block mr-1" /> Sim
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 text-xs font-light text-gray-400 bg-gray-700/30 px-2 py-1 rounded-lg border border-gray-500/30">
+                                                        <Upload className="w-3 h-3 inline-block mr-1 opacity-60" /> Não
+                                                    </span>
+                                                )}
+                                            </td>
                                             <td className="px-2 py-4">
                                                 <div className="flex items-center gap-2">
                                                     <button
@@ -1228,31 +1423,6 @@ export default function AdminUsersPage() {
                                 >
                                     <Plus className="w-4 h-4" />
                                     Adicionar Primeiro Usuário
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Botão para copiar emails dos VIPs */}
-                        {users.filter(u => u.is_vip).length > 0 && (
-                            <div className="px-6 py-4 border-t border-gray-700 bg-gray-950 flex justify-end">
-                                <button
-                                    onClick={() => {
-                                        const vipEmails = users
-                                            .filter(user => user.is_vip && user.email)
-                                            .map(user => user.email)
-                                            .join(', ');
-
-                                        if (vipEmails) {
-                                            copyToClipboard(vipEmails, 'Emails dos VIPs');
-                                        } else {
-                                            showMessage('Nenhum email de VIP encontrado', 'error');
-                                        }
-                                    }}
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all duration-300 font-medium shadow-lg hover:shadow-blue-500/25"
-                                    title="Copiar todos os emails dos usuários VIP separados por vírgula"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                    Copiar Emails VIP ({users.filter(u => u.is_vip).length})
                                 </button>
                             </div>
                         )}
@@ -1537,34 +1707,22 @@ export default function AdminUsersPage() {
                                                             value={editForm.password}
                                                             onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
                                                             className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                            placeholder="Senha simples para novo usuário"
+                                                            placeholder="Senha forte para novo usuário"
                                                             autoComplete="new-password"
                                                         />
                                                         <button
                                                             type="button"
                                                             className="px-4 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl"
                                                             onClick={() => {
-                                                                // Gerar senha mais simples e confiável
-                                                                const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                                                                const numbers = "0123456789";
+                                                                const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
                                                                 let password = "";
-
-                                                                // Garantir pelo menos 2 letras e 2 números
-                                                                password += letters.charAt(Math.floor(Math.random() * letters.length));
-                                                                password += letters.charAt(Math.floor(Math.random() * letters.length));
-                                                                password += numbers.charAt(Math.floor(Math.random() * numbers.length));
-                                                                password += numbers.charAt(Math.floor(Math.random() * numbers.length));
-
-                                                                // Adicionar mais caracteres aleatórios
-                                                                const allChars = letters + numbers;
-                                                                for (let i = 4; i < 8; ++i) {
-                                                                    password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+                                                                for (let i = 0, n = charset.length; i < 14; ++i) {
+                                                                    password += charset.charAt(Math.floor(Math.random() * n));
                                                                 }
-
                                                                 setEditForm(prev => ({ ...prev, password }));
                                                             }}
                                                         >
-                                                            Gerar senha simples
+                                                            Gerar senha forte
                                                         </button>
                                                     </div>
                                                 </div>
@@ -1572,7 +1730,7 @@ export default function AdminUsersPage() {
                                             {editingUser && (
                                                 <div className="md:col-span-2">
                                                     <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                        Senha {editingUser.password ? '(usuário tem senha definida)' : '(usuário sem senha)'}
+                                                        Senha (deixe em branco para não alterar)
                                                     </label>
                                                     <div className="flex gap-2">
                                                         <input
@@ -1580,140 +1738,55 @@ export default function AdminUsersPage() {
                                                             value={editForm.password}
                                                             onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
                                                             className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                            placeholder={editingUser.password ? "Nova senha (deixe em branco para manter atual)" : "Defina uma nova senha"}
+                                                            placeholder="Nova senha (opcional)"
                                                             autoComplete="new-password"
                                                         />
                                                         <button
                                                             type="button"
                                                             className="px-4 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl"
                                                             onClick={() => {
-                                                                // Gerar senha mais simples e confiável
-                                                                const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                                                                const numbers = "0123456789";
+                                                                const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
                                                                 let password = "";
-
-                                                                // Garantir pelo menos 2 letras e 2 números
-                                                                password += letters.charAt(Math.floor(Math.random() * letters.length));
-                                                                password += letters.charAt(Math.floor(Math.random() * letters.length));
-                                                                password += numbers.charAt(Math.floor(Math.random() * numbers.length));
-                                                                password += numbers.charAt(Math.floor(Math.random() * numbers.length));
-
-                                                                // Adicionar mais caracteres aleatórios
-                                                                const allChars = letters + numbers;
-                                                                for (let i = 4; i < 8; ++i) {
-                                                                    password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+                                                                for (let i = 0, n = charset.length; i < 14; ++i) {
+                                                                    password += charset.charAt(Math.floor(Math.random() * n));
                                                                 }
-
                                                                 setEditForm(prev => ({ ...prev, password }));
                                                             }}
                                                         >
-                                                            Gerar senha simples
+                                                            Gerar senha forte
                                                         </button>
-                                                        {editingUser.password && (
-                                                            <button
-                                                                type="button"
-                                                                className="px-4 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl"
-                                                                onClick={() => {
-                                                                    navigator.clipboard.writeText(editingUser.password);
-                                                                    showMessage('Senha copiada para a área de transferência!', 'success');
-                                                                }}
-                                                                title="Copiar senha atual"
-                                                            >
-                                                                📋 Copiar
-                                                            </button>
-                                                        )}
                                                     </div>
-                                                    {editingUser.password && (
-                                                        <div className="mt-2 p-3 bg-gray-800/50 rounded-lg border border-gray-600">
-                                                            <p className="text-xs text-gray-300 mb-2">
-                                                                💡 <strong>Senha atual do usuário:</strong>
-                                                            </p>
-                                                            <div className="flex items-center gap-2">
-                                                                <code className="text-sm bg-gray-900 px-2 py-1 rounded text-green-400 font-mono">
-                                                                    {editingUser.password}
-                                                                </code>
-                                                                <button
-                                                                    type="button"
-                                                                    className="text-xs text-blue-400 hover:text-blue-300"
-                                                                    onClick={() => {
-                                                                        navigator.clipboard.writeText(editingUser.password);
-                                                                        showMessage('Senha copiada!', 'success');
-                                                                    }}
-                                                                >
-                                                                    📋 Copiar
-                                                                </button>
-                                                            </div>
-                                                            <p className="text-xs text-gray-400 mt-2">
-                                                                ⚠️ <strong>Importante:</strong> Esta senha está visível apenas para administradores.
-                                                                Use o botão "Copiar" para compartilhar com o cliente de forma segura.
-                                                            </p>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             )}
 
                                             <div className="group">
                                                 <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
                                                     <Crown className="w-4 h-4 text-yellow-400" />
-                                                    Plano Base do Usuário
+                                                    Plano Base do Usuário (somente títulos)
                                                 </label>
                                                 <div className="relative">
                                                     <select
-                                                        value={(() => {
-                                                            // Se estamos editando um usuário, calcular o preço base atual
-                                                            if (editingUser && editForm.valor) {
-                                                                return getBasePriceFromTotal(editForm.valor, editForm.deemix, editForm.deezerPremium);
-                                                            }
-                                                            return editForm.valor || 0;
-                                                        })()}
+                                                        value={selectedPlanKey}
                                                         onChange={(e) => {
-                                                            const basePrice = parseFloat(e.target.value);
-                                                            // Calcular o valor total com add-ons
-                                                            const totalPrice = calculateUserRealPrice(basePrice, editForm.deemix, editForm.deezerPremium);
-                                                            setEditForm(prev => ({
-                                                                ...prev,
-                                                                valor: totalPrice,
-                                                                is_vip: basePrice >= 35 // Automático baseado no valor base
-                                                            }));
+                                                            const key = e.target.value;
+                                                            setSelectedPlanKey(key);
+                                                            recomputeValorFromSelections(key, uploaderOptionKey);
                                                         }}
                                                         className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
                                                     >
-                                                        <option value={0} className="bg-gray-900 text-gray-100">🎵 Gratuito (R$ 0,00)</option>
-                                                        <option value={35} className="bg-gray-900 text-gray-100">👑 VIP Básico (R$ 35,00)</option>
-                                                        <option value={42} className="bg-gray-900 text-gray-100">⭐ VIP Padrão (R$ 42,00)</option>
-                                                        <option value={50} className="bg-gray-900 text-gray-100">💎 VIP Completo (R$ 50,00)</option>
-                                                        <option value={999} className="bg-gray-900 text-gray-100">👨‍💼 Admin (R$ 999,00)</option>
+                                                        <option value="" className="bg-gray-900 text-gray-100">Selecione um plano</option>
+                                                        {PLAN_OPTIONS.map(opt => (
+                                                            <option key={opt.key} value={opt.key} className="bg-gray-900 text-gray-100">
+                                                                {opt.title}
+                                                            </option>
+                                                        ))}
                                                     </select>
                                                     <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-20">
                                                         <ChevronDown className="w-5 h-5 text-gray-400" />
                                                     </div>
                                                 </div>
-                                                <div className="mt-3 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-xl">
-                                                    {(() => {
-                                                        const basePrice = editingUser ? getBasePriceFromTotal(editForm.valor || 0, editForm.deemix, editForm.deezerPremium) : (editForm.valor || 0);
-                                                        const totalPrice = calculateUserRealPrice(basePrice, editForm.deemix, editForm.deezerPremium);
-                                                        const hasAddOns = editForm.deemix || editForm.deezerPremium;
-
-                                                        return (
-                                                            <div>
-                                                                <p className="text-sm text-gray-300 mb-2">
-                                                                    {basePrice === 0 ? '🎵 Usuário sem acesso VIP' :
-                                                                        basePrice === 35 ? '👑 Acesso básico às músicas' :
-                                                                            basePrice === 42 ? '⭐ Acesso padrão + recursos avançados' :
-                                                                                basePrice === 50 ? '💎 Acesso completo + todos os benefícios' :
-                                                                                    basePrice === 999 ? '👨‍💼 Acesso total de administrador' :
-                                                                                        '🔧 Plano personalizado'}
-                                                                </p>
-                                                                {hasAddOns && totalPrice !== basePrice && (
-                                                                    <div className="text-xs text-emerald-300 bg-emerald-500/10 px-2 py-1 rounded">
-                                                                        💰 Valor total com add-ons: <strong>R$ {totalPrice.toFixed(2)}</strong>
-                                                                        {editForm.deemix && <span className="block">+ Deemix</span>}
-                                                                        {editForm.deezerPremium && <span className="block">+ Deezer Premium</span>}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })()}
+                                                <div className="mt-3 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-xl text-sm text-gray-300">
+                                                    Valor total configurado: <strong>R$ {editForm.valor.toFixed(2)}</strong>
                                                 </div>
                                             </div>
 
@@ -1768,15 +1841,8 @@ export default function AdminUsersPage() {
                                                                 value={editForm.deemix ? 'sim' : 'nao'}
                                                                 onChange={(e) => {
                                                                     const hasDeemix = e.target.value === 'sim';
-                                                                    // Recalcular valor total com base no plano base + add-ons
-                                                                    const basePrice = editingUser ? getBasePriceFromTotal(editForm.valor || 0, editForm.deemix, editForm.deezerPremium) : (editForm.valor || 0);
-                                                                    const totalPrice = calculateUserRealPrice(basePrice, hasDeemix, editForm.deezerPremium);
-
-                                                                    setEditForm(prev => ({
-                                                                        ...prev,
-                                                                        deemix: hasDeemix,
-                                                                        valor: totalPrice
-                                                                    }));
+                                                                    // Não altera valor: apenas flag de acesso
+                                                                    setEditForm(prev => ({ ...prev, deemix: hasDeemix }));
                                                                 }}
                                                                 className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
                                                             >
@@ -1864,14 +1930,10 @@ export default function AdminUsersPage() {
                                                             value={editForm.deezerPremium ? 'sim' : 'nao'}
                                                             onChange={(e) => {
                                                                 const hasDeezerPremium = e.target.value === 'sim';
-                                                                // Recalcular valor total com base no plano base + add-ons
-                                                                const basePrice = editingUser ? getBasePriceFromTotal(editForm.valor || 0, editForm.deemix, editForm.deezerPremium) : (editForm.valor || 0);
-                                                                const totalPrice = calculateUserRealPrice(basePrice, editForm.deemix, hasDeezerPremium);
-
+                                                                // Não altera valor: apenas flag de acesso
                                                                 setEditForm(prev => ({
                                                                     ...prev,
-                                                                    deezerPremium: hasDeezerPremium,
-                                                                    valor: totalPrice
+                                                                    deezerPremium: hasDeezerPremium
                                                                 }));
                                                             }}
                                                             className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
@@ -1905,55 +1967,18 @@ export default function AdminUsersPage() {
                                             <div className="md:col-span-2">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                        Senha Deezer Premium {editingUser?.deezerPassword ? '(definida)' : '(não definida)'}
+                                                        Senha Deezer Premium
                                                     </label>
-                                                    <div className="flex gap-2">
-                                                        <input
-                                                            type="text"
-                                                            value={editForm.deezerPassword || ''}
-                                                            onChange={(e) => setEditForm(prev => ({ ...prev, deezerPassword: e.target.value }))}
-                                                            placeholder="Senha do Deezer Premium"
-                                                            className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                        />
-                                                        {editingUser?.deezerPassword && (
-                                                            <button
-                                                                type="button"
-                                                                className="px-4 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl"
-                                                                onClick={() => {
-                                                                    navigator.clipboard.writeText(editingUser.deezerPassword);
-                                                                    showMessage('Senha do Deezer copiada!', 'success');
-                                                                }}
-                                                                title="Copiar senha atual do Deezer"
-                                                            >
-                                                                📋 Copiar
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                                    <input
+                                                        type="password"
+                                                        value={editForm.deezerPassword || ''}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, deezerPassword: e.target.value }))}
+                                                        placeholder="••••••••"
+                                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                    />
                                                     <p className="text-xs text-gray-400 mt-2">
                                                         Senha para acesso ao Deezer Premium
                                                     </p>
-                                                    {editingUser?.deezerPassword && (
-                                                        <div className="mt-2 p-3 bg-gray-800/50 rounded-lg border border-gray-600">
-                                                            <p className="text-xs text-gray-300 mb-2">
-                                                                💡 <strong>Senha atual do Deezer:</strong>
-                                                            </p>
-                                                            <div className="flex items-center gap-2">
-                                                                <code className="text-sm bg-gray-900 px-2 py-1 rounded text-green-400 font-mono">
-                                                                    {editingUser.deezerPassword}
-                                                                </code>
-                                                                <button
-                                                                    type="button"
-                                                                    className="text-xs text-blue-400 hover:text-blue-300"
-                                                                    onClick={() => {
-                                                                        navigator.clipboard.writeText(editingUser.deezerPassword);
-                                                                        showMessage('Senha do Deezer copiada!', 'success');
-                                                                    }}
-                                                                >
-                                                                    📋 Copiar
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             </div>
                                         </div>

@@ -93,8 +93,8 @@ const TrackRow = React.memo(({
                     </div>
                 </div>
             </td>
-            <td className="px-4 py-3 align-middle w-[20%] text-center"><span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-white tracking-wide shadow-sm whitespace-nowrap">{track.style}</span></td>
-            <td className="px-4 py-3 align-middle w-[10%] text-center"><span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-emerald-600 to-green-600 text-white tracking-wide shadow-sm whitespace-nowrap">{track.pool || 'Nexor Records'}</span></td>
+            <td className="px-4 py-3 align-middle w-[20%] text-center"><span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold text-white tracking-wide shadow-sm whitespace-nowrap uppercase" style={{ backgroundColor: '#FF4500' }}>{track.style}</span></td>
+            <td className="px-4 py-3 align-middle w-[25%] text-center"><span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-600 text-white tracking-wide shadow-sm whitespace-nowrap uppercase">{track.pool || 'Nexor Records'}</span></td>
             <td className="px-4 py-3 align-middle w-[30%]">
                 <div className="flex items-center justify-end gap-1">
                     <button onClick={() => onDownload(track)} disabled={!canDownloadResult.can} title={canDownloadResult.reason} className={clsx("flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-lg text-xs min-w-[120px] justify-center", hasDownloaded ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-green-500/25 cursor-default" : canDownloadResult.can ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-blue-500/25" : "bg-gradient-to-r from-zinc-700 to-zinc-600 text-gray-400 cursor-not-allowed shadow-zinc-500/25 opacity-60")}>
@@ -707,7 +707,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                         <tr className="border-b border-zinc-800">
                             <th className="px-4 py-3 font-bold text-gray-400 tracking-wider w-[40%]"><div className="flex items-center gap-2"><Music2 strokeWidth={1.5} className="h-5 w-5 text-purple-400" />MÚSICA</div></th>
                             <th className="px-4 py-3 font-bold text-blue-400 tracking-wider w-[20%] text-center"><div className="flex items-center justify-center gap-2"><Sparkles strokeWidth={1.5} className="h-5 w-5 text-blue-400" />GÊNERO</div></th>
-                            <th className="px-4 py-3 font-bold text-yellow-400 tracking-wider w-[10%] text-center"><div className="flex items-center justify-center gap-2"><Star strokeWidth={1.5} className="h-5 w-5 text-yellow-400" />POOL/LABEL</div></th>
+                            <th className="px-4 py-3 font-bold text-yellow-400 tracking-wider w-[25%] text-center"><div className="flex items-center justify-center gap-2"><Star strokeWidth={1.5} className="h-5 w-5 text-yellow-400" />POOL/LABEL</div></th>
                             <th className="px-4 py-3 font-bold text-gray-400 tracking-wider w-[30%] text-right"><div className="flex items-center justify-end gap-2"><Zap strokeWidth={1.5} className="h-5 w-5 text-green-400" />AÇÕES</div></th>
                         </tr>
                     </thead>

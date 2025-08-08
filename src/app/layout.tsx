@@ -13,6 +13,7 @@ import './globals.css';
 import '../styles/beatport-effects.css';
 import '../styles/mobile-optimizations.css';
 import '../styles/profile-modern.css';
+import '../styles/whmcs-custom.css';
 import { ExtensionDetector } from '@/components/layout/ExtensionDetector';
 import { GlobalToastManager } from '@/components/layout/GlobalToastManager';
 import { ToastProvider } from '@/context/ToastContext';

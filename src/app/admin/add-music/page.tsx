@@ -33,15 +33,8 @@ export default function AddMusicPage() {
 
     try {
       // Validar JSON antes de enviar
-      let tracks;
       try {
-        tracks = JSON.parse(formData.jsonData);
-        if (!Array.isArray(tracks)) {
-          setIsSuccess(false);
-          setMessage('JSON deve ser um array de músicas');
-          setIsLoading(false);
-          return;
-        }
+        JSON.parse(formData.jsonData);
       } catch (jsonError) {
         setIsSuccess(false);
         setMessage('JSON inválido! Verifique a sintaxe do seu JSON.');
@@ -49,25 +42,12 @@ export default function AddMusicPage() {
         return;
       }
 
-      // Processar datas para timezone do Brasil
-      const processedTracks = tracks.map((track: any) => {
-        if (track.releaseDate) {
-          // Converter para timezone do Brasil
-          const brazilDate = new Date(new Date(track.releaseDate).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-          return {
-            ...track,
-            releaseDate: brazilDate.toISOString().split('T')[0] // Formato YYYY-MM-DD
-          };
-        }
-        return track;
-      });
-
       const response = await fetch('/api/tracks/batch', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(processedTracks)
+        body: formData.jsonData
       });
 
       if (response.ok) {
@@ -114,25 +94,12 @@ export default function AddMusicPage() {
       setCheckingDuplicates(true);
       setMessage('');
 
-      // Processar datas para timezone do Brasil
-      const processedTracks = tracks.map((track: any) => {
-        if (track.releaseDate) {
-          // Converter para timezone do Brasil
-          const brazilDate = new Date(new Date(track.releaseDate).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-          return {
-            ...track,
-            releaseDate: brazilDate.toISOString().split('T')[0] // Formato YYYY-MM-DD
-          };
-        }
-        return track;
-      });
-
       const response = await fetch('/api/tracks/check-duplicates', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(processedTracks)
+        body: JSON.stringify(tracks)
       });
 
       if (response.ok) {

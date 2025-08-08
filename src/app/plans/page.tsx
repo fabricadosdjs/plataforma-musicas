@@ -16,7 +16,7 @@ const VIP_BENEFITS = {
         extraPacks: { enabled: false, description: 'Não disponível' },
         playlistDownloads: { enabled: true, limit: 2, description: '2 por dia' },
         deezerPremium: { enabled: false, description: 'R$ 9,75/mês' },
-        deemixAccess: { enabled: false, description: 'Avulso R$ 35,00/mês' },
+        deemixAccess: { enabled: false, description: 'Avulso R$ 38,00/mês' },
         arlPremium: { enabled: false, description: 'Não disponível' },
         musicProduction: { enabled: false, description: 'Não disponível' }
     },
@@ -28,7 +28,7 @@ const VIP_BENEFITS = {
         extraPacks: { enabled: true, description: 'Sim' },
         playlistDownloads: { enabled: true, limit: 5, description: '5 por dia' },
         deezerPremium: { enabled: false, description: 'R$ 9,75/mês' },
-        deemixAccess: { enabled: false, description: 'Avulso R$ 35,00/mês' },
+        deemixAccess: { enabled: false, description: 'Avulso R$ 38,00/mês' },
         arlPremium: { enabled: false, description: 'Não disponível' },
         musicProduction: { enabled: false, description: 'Não disponível' }
     },
@@ -40,7 +40,7 @@ const VIP_BENEFITS = {
         extraPacks: { enabled: true, description: 'Sim' },
         playlistDownloads: { enabled: true, limit: -1, description: 'Ilimitado (máx. 4 por dia)' },
         deezerPremium: { enabled: true, description: 'Incluído' },
-        deemixAccess: { enabled: false, description: 'Avulso R$ 35,00/mês' },
+        deemixAccess: { enabled: false, description: 'Avulso R$ 38,00/mês' },
         arlPremium: { enabled: true, description: 'Sim (automático se Deemix)' },
         musicProduction: { enabled: true, description: 'Sim' }
     }
@@ -92,24 +92,24 @@ const SUBSCRIPTION_PERIODS = {
 
 // Deemix pricing for different plans
 const DEEMIX_PRICING = {
-    STANDALONE: 35, // Preço avulso para não-VIP (R$ 35,00)
+    STANDALONE: 38, // Preço avulso para não-VIP (R$ 38,00)
     BASICO: {
-        basePrice: 35,
-        deemixPrice: 35,
-        discount: 0.35, // 35% de desconto
-        finalPrice: 35 - (35 * 0.35) // R$ 22,75
+        basePrice: 38,
+        deemixPrice: 38,
+        discount: 0.38, // 38% de desconto
+        finalPrice: 38 - (38 * 0.38) // R$ 23,56
     },
     PADRAO: {
         basePrice: 42,
-        deemixPrice: 35,
+        deemixPrice: 38,
         discount: 0.42, // 42% de desconto (proporcional ao valor)
-        finalPrice: 35 - (35 * 0.42) // R$ 20,30
+        finalPrice: 38 - (38 * 0.42) // R$ 22,04
     },
     COMPLETO: {
-        basePrice: 50,
-        deemixPrice: 35,
+        basePrice: 60, // Restaurado para 60
+        deemixPrice: 38,
         discount: 0.60, // 60% de desconto (proporcional ao valor)
-        finalPrice: 35 - (35 * 0.60) // R$ 14,00
+        finalPrice: 38 - (38 * 0.60) // R$ 15,20
     }
 } as const;
 
@@ -122,7 +122,7 @@ const DEEZER_PREMIUM_PRICING = {
 const VIP_PLANS = {
     BASICO: {
         name: 'VIP BÁSICO',
-        basePrice: 35,
+        basePrice: 38,
         color: 'bg-blue-600',
         gradient: 'from-blue-600 to-blue-700',
         icon: '🥉',
@@ -174,7 +174,7 @@ const VIP_PLANS = {
     },
     COMPLETO: {
         name: 'VIP COMPLETO',
-        basePrice: 50,
+        basePrice: 60, // Restaurado para 60 para manter consistência
         color: 'bg-purple-600',
         gradient: 'from-purple-600 to-purple-700',
         icon: '🥇',
@@ -218,13 +218,13 @@ const calculateUserRealPrice = (basePrice: number, hasDeemix: boolean, hasDeezer
     let totalPrice = basePrice;
 
     // Se não é VIP, não pode ter add-ons
-    if (basePrice < 35) {
+    if (basePrice < 38) {
         return basePrice;
     }
 
     // Determinar plano VIP baseado no preço base
     let planKey: keyof typeof DEEMIX_PRICING = 'BASICO';
-    if (basePrice >= 50) {
+    if (basePrice >= 60 || basePrice === 50) { // Exceção para R$ 50
         planKey = 'COMPLETO';
     } else if (basePrice >= 42) {
         planKey = 'PADRAO';
@@ -260,7 +260,7 @@ const getBasePriceFromTotal = (totalPrice: number, hasDeemix: boolean, hasDeezer
     }
 
     // Tentar diferentes planos base para ver qual bate
-    const basePrices = [35, 42, 50]; // BASICO, PADRAO, COMPLETO
+    const basePrices = [38, 42, 60, 50]; // BASICO, PADRAO, COMPLETO, COMPLETO-especial
 
     for (const basePrice of basePrices) {
         const calculatedTotal = calculateUserRealPrice(basePrice, hasDeemix, hasDeezerPremium);
@@ -284,17 +284,18 @@ const getUserPlan = (valor: number | null, hasDeemix?: boolean, hasDeezerPremium
         ? getBasePriceFromTotal(valor, hasDeemix, hasDeezerPremium)
         : valor;
 
-    // VIP Plans baseados no preço BASE
-    if (basePrice >= 35 && basePrice < 42) {
-        return { ...VIP_PLANS.BASICO, type: 'VIP' };
+    // VIP Plans baseados nos thresholds corretos (>=60, >=42, >=38)
+    // EXCEÇÃO: Se valor é exatamente R$ 50, considerar VIP COMPLETO (caso específico)
+    if (basePrice >= 60 || basePrice === 50) {
+        return { ...VIP_PLANS.COMPLETO, type: 'VIP' };
     }
 
-    if (basePrice >= 42 && basePrice < 50) {
+    if (basePrice >= 42) {
         return { ...VIP_PLANS.PADRAO, type: 'VIP' };
     }
 
-    if (basePrice >= 50) {
-        return { ...VIP_PLANS.COMPLETO, type: 'VIP' };
+    if (basePrice >= 38) {
+        return { ...VIP_PLANS.BASICO, type: 'VIP' };
     }
 
     return null;
@@ -548,7 +549,7 @@ export default function PlansPage() {
                                 <div className="text-3xl sm:text-4xl">{userPlan.icon}</div>
                                 <div className="text-center sm:text-left">
                                     <h3 className="text-xl sm:text-2xl font-bold text-white">{userPlan.name}</h3>
-                                    <p className="text-gray-400">R$ {session?.user?.valor}/mês</p>
+                                    <p className="text-gray-400">R$ {userPlan.basePrice}/mês</p>
 
                                     {/* Mostrar add-ons ativos */}
                                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
@@ -562,7 +563,19 @@ export default function PlansPage() {
                                                 🎁 Deezer Premium
                                             </span>
                                         )}
+                                        {(session?.user as any)?.isUploader && (
+                                            <span className="bg-green-600/20 border border-green-500/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-green-300">
+                                                📤 Uploader
+                                            </span>
+                                        )}
                                     </div>
+
+                                    {/* Mostrar valor total se diferente do base */}
+                                    {session?.user?.valor && Number(session.user.valor) !== userPlan.basePrice && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Total com add-ons: R$ {session.user.valor}/mês
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -799,7 +812,7 @@ export default function PlansPage() {
                                 Para Não-VIP
                             </h4>
                             <div className="text-2xl sm:text-3xl font-bold text-purple-400 mb-3 sm:mb-4">
-                                R$ 35,00<span className="text-sm sm:text-lg text-gray-400 font-normal">/mês</span>
+                                R$ 38,00<span className="text-sm sm:text-lg text-gray-400 font-normal">/mês</span>
                             </div>
 
                             <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-300 mb-4 sm:mb-6">
@@ -823,7 +836,7 @@ export default function PlansPage() {
 
                             <button
                                 onClick={() => {
-                                    const message = "Olá! Tenho interesse no Deemix Avulso por R$ 35,00/mês. Podem me ajudar?";
+                                    const message = "Olá! Tenho interesse no Deemix Avulso por R$ 38,00/mês. Podem me ajudar?";
                                     const whatsappUrl = `https://wa.me/5551935052274?text=${encodeURIComponent(message)}`;
                                     window.open(whatsappUrl, '_blank');
                                 }}
@@ -843,7 +856,7 @@ export default function PlansPage() {
                             <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-300 mb-3 sm:mb-4">
                                 <div className="flex items-start gap-2">
                                     <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span><strong className="text-blue-400">VIP Básico:</strong> 35% OFF</span>
+                                    <span><strong className="text-blue-400">VIP Básico:</strong> 38% OFF</span>
                                 </div>
                                 <div className="flex items-start gap-2">
                                     <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
@@ -858,8 +871,9 @@ export default function PlansPage() {
                             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
                                 <h5 className="text-xs sm:text-sm font-bold text-yellow-400 mb-1 sm:mb-2">💰 Descontos Especiais</h5>
                                 <div className="text-xs text-gray-300 space-y-1">
-                                    <div>• <strong>Semestral:</strong> 50% OFF</div>
-                                    <div>• <strong>Anual:</strong> GRÁTIS</div>
+                                    <div>• <strong>Trimestral:</strong> Deemix 8% OFF</div>
+                                    <div>• <strong>Semestral:</strong> Deemix 50% OFF</div>
+                                    <div>• <strong>Anual:</strong> Deemix GRÁTIS</div>
                                 </div>
                             </div>
 

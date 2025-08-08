@@ -11,7 +11,6 @@ import { useAppContext } from '@/context/AppContext';
 import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
 import { useToast } from '@/hooks/useToast';
 import { Track } from '@/types/track';
-import { getCurrentDateBrazil } from '@/utils/dateUtils';
 
 interface TrendingTrack {
     id: number;
@@ -96,9 +95,9 @@ function TrendingPageContent() {
             imageUrl: track.imageUrl,
             version: 'original', // Default value
             previewUrl: track.downloadUrl, // Use downloadUrl as preview
-            releaseDate: getCurrentDateBrazil().toISOString(), // Default value
-            createdAt: getCurrentDateBrazil().toISOString(), // Added
-            updatedAt: getCurrentDateBrazil().toISOString(), // Added
+            releaseDate: new Date().toISOString(), // Default value
+            createdAt: new Date().toISOString(), // Added
+            updatedAt: new Date().toISOString(), // Added
             pool: 'Nexor Records' // Added
         };
 
@@ -116,9 +115,9 @@ function TrendingPageContent() {
                 imageUrl: t.imageUrl,
                 version: 'original',
                 previewUrl: t.downloadUrl,
-                releaseDate: getCurrentDateBrazil().toISOString(),
-                createdAt: getCurrentDateBrazil().toISOString(),
-                updatedAt: getCurrentDateBrazil().toISOString(),
+                releaseDate: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
                 pool: 'Nexor Records'
             })));
         }

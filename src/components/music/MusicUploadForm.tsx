@@ -18,7 +18,6 @@ import {
     Image,
     ExternalLink
 } from 'lucide-react';
-import { getCurrentDateBrazil } from '@/utils/dateUtils';
 
 interface UploadFormData {
     songName: string;
@@ -63,7 +62,7 @@ export default function MusicUploadForm() {
         style: '',
         version: 'Original',
         pool: 'Nexor Records',
-        releaseDate: getCurrentDateBrazil().toISOString().split('T')[0],
+        releaseDate: new Date().toISOString().split('T')[0],
         coverUrl: ''
     });
 
@@ -244,7 +243,7 @@ export default function MusicUploadForm() {
                     style: '',
                     version: 'Original',
                     pool: 'Nexor Records',
-                    releaseDate: getCurrentDateBrazil().toISOString().split('T')[0],
+                    releaseDate: new Date().toISOString().split('T')[0],
                     coverUrl: ''
                 });
                 if (fileInputRef.current) {
@@ -298,10 +297,10 @@ export default function MusicUploadForm() {
                             </label>
                             <div
                                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-300 cursor-pointer ${isDragOver
-                                    ? 'border-purple-500 bg-purple-500/10'
-                                    : selectedFile
-                                        ? 'border-green-500 bg-green-500/10'
-                                        : 'border-gray-600 hover:border-purple-500'
+                                        ? 'border-purple-500 bg-purple-500/10'
+                                        : selectedFile
+                                            ? 'border-green-500 bg-green-500/10'
+                                            : 'border-gray-600 hover:border-purple-500'
                                     }`}
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}

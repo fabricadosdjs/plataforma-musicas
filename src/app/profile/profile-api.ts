@@ -1,6 +1,7 @@
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
+import { getVipPlan, getPlanInfo } from '@/lib/plans-config';
 
 export async function getProfileData() {
     const session = await getServerSession(authOptions);
@@ -17,6 +18,9 @@ export async function getProfileData() {
     });
     if (!user) return null;
 
+    // ========== 🏆 DETECÇÃO DO PLANO DO USUÁRIO ==========
+    const planInfo = getPlanInfo(user.valor);
+
     // Contagem de downloads, likes, plays
     const downloadsCount = user.downloads?.length || 0;
     const likesCount = user.likes?.length || 0;
@@ -32,6 +36,8 @@ export async function getProfileData() {
         status: user.status,
         is_vip: user.is_vip,
         deemix: user.deemix,
+        deezerPremium: user.deezerPremium,
+        isUploader: user.isUploader,
         dailyDownloadCount: user.dailyDownloadCount || 0,
         weeklyPackRequests: user.weeklyPackRequests || 0,
         weeklyPlaylistDownloads: user.weeklyPlaylistDownloads || 0,
@@ -40,6 +46,12 @@ export async function getProfileData() {
         playsCount,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
+
+        // ========== 🎯 DADOS DO PLANO ==========
+        plan: planInfo.id as 'BASICO' | 'PADRAO' | 'COMPLETO' | null,
+        planIcon: planInfo.icon,
+        planName: planInfo.name,
+
         benefits: (session.user as any).benefits || {},
     };
 }

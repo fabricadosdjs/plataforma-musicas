@@ -39,8 +39,8 @@ export async function GET(request: Request) {
     const tracksWithPreview = tracks.map((track: any) => ({
       ...track,
       previewUrl: track.downloadUrl || '',
-      isCommunity: track.isCommunity || false,
-      uploadedBy: track.uploadedBy || null,
+      isCommunity: false,
+      uploadedBy: null,
       downloadCount: 0,
       likeCount: 0,
       playCount: 0,

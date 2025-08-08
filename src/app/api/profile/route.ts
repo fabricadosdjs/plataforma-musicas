@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
+import { getPlanInfo, getVipPlan } from '@/lib/plans-config';
 
 export async function GET(request: NextRequest) {
     try {
@@ -90,15 +91,15 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        // Calcular limite diário baseado no valor
-        const getDailyDownloadLimit = (valor: number | null, isVip: boolean) => {
-            if (!isVip) return 10;
-            // Para usuários VIP, downloads são ilimitados
-            return 'Ilimitado';
-        };
+        // ========== 🏆 DETECÇÃO DO PLANO DO USUÁRIO ==========
+        const planInfo = getPlanInfo(user.valor);
+        const vipPlan = getVipPlan(user.valor);
+
+        // Calcular limite diário baseado no plano
+        const dailyDownloadLimit = vipPlan ? 'Ilimitado' : 10;
 
         // Calcular informações de vencimento
-        const calculateVencimentoInfo = (vencimento: string | null) => {
+        const calculateVencimentoInfo = (vencimento: Date | null) => {
             if (!vencimento) {
                 return {
                     status: 'no_expiry' as const,
@@ -137,55 +138,7 @@ export async function GET(request: NextRequest) {
             }
         };
 
-        // Determinar plano VIP baseado no valor
-        const getVipPlan = (valor: number | null, isVip: boolean) => {
-            if (!isVip) return null;
-            const valorNumerico = typeof valor === 'string' ? parseFloat(valor) : Number(valor);
-            if (valorNumerico >= 43) return 'COMPLETO';
-            if (valorNumerico >= 36) return 'PADRAO';
-            if (valorNumerico >= 30) return 'BASICO';
-            return null;
-        };
-
-        // Benefícios do plano
-        const getPlanBenefits = (valor: number | null, isVip: boolean) => {
-            if (!isVip) return null;
-
-            const valorNumerico = typeof valor === 'string' ? parseFloat(valor) : Number(valor);
-            const dailyLimit = getDailyDownloadLimit(valor, isVip);
-
-            return {
-                name: getVipPlan(valor, isVip) || 'VIP',
-                driveAccess: {
-                    enabled: valorNumerico >= 30,
-                    description: 'Acesso ao Google Drive'
-                },
-                packRequests: {
-                    enabled: valorNumerico >= 36,
-                    description: 'Solicitações de packs',
-                    limit: valorNumerico >= 43 ? 10 : 5
-                },
-                playlistDownloads: {
-                    enabled: valorNumerico >= 36,
-                    description: 'Downloads de playlists',
-                    limit: valorNumerico >= 43 ? 20 : 10
-                },
-                dailyDownloadLimit: dailyLimit,
-                deezerPremium: {
-                    enabled: valorNumerico >= 43,
-                    description: 'Acesso Deezer Premium'
-                },
-                deemixDiscount: {
-                    enabled: valorNumerico >= 43,
-                    description: 'Desconto Deemix',
-                    percentage: 50
-                }
-            };
-        };
-
         const vencimentoInfo = calculateVencimentoInfo(user.vencimento);
-        const vipPlan = getVipPlan(user.valor, user.is_vip || false);
-        const planBenefits = getPlanBenefits(user.valor, user.is_vip || false);
 
         return NextResponse.json({
             id: user.id,
@@ -198,7 +151,7 @@ export async function GET(request: NextRequest) {
             valor: user.valor,
             vencimento: user.vencimento,
             dailyDownloadCount,
-            dailyDownloadLimit: getDailyDownloadLimit(user.valor, user.is_vip || false),
+            dailyDownloadLimit: vipPlan ? 'Ilimitado' : 10,
             weeklyPackRequests: null,
             weeklyPlaylistDownloads: null,
             weeklyPackRequestsUsed: null,
@@ -212,8 +165,14 @@ export async function GET(request: NextRequest) {
             likesCount,
             playsCount,
             vipPlan,
-            planBenefits,
+            planBenefits: planInfo.features || [],
             vencimentoInfo,
+
+            // ========== 🎯 DADOS DO PLANO ==========
+            plan: planInfo.id as 'BASICO' | 'PADRAO' | 'COMPLETO' | null,
+            planIcon: planInfo.icon,
+            planName: planInfo.name,
+
             recentDownloads: user.downloads.map(d => ({
                 id: d.id,
                 downloadedAt: d.downloadedAt,

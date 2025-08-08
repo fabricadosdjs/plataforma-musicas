@@ -6,15 +6,9 @@ import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
     try {
-        console.log('🔍 Iniciando busca de dados do usuário...');
-        
         const session = await getServerSession(authOptions);
-        console.log('📋 Sessão encontrada:', !!session);
-        console.log('📋 Email do usuário:', session?.user?.email);
-        console.log('📋 ID do usuário:', session?.user?.id);
 
         if (!session?.user?.email) {
-            console.log('❌ Usuário não autenticado - retornando 401');
             return NextResponse.json({ error: 'Usuário não autenticado' }, { status: 401 });
         }
 
@@ -36,14 +30,8 @@ export async function GET(request: NextRequest) {
         });
 
         if (!user) {
-            console.log('❌ Usuário não encontrado no banco de dados');
-            console.log('📋 Email buscado:', session.user.email);
             return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
         }
-        
-        console.log('✅ Usuário encontrado no banco de dados');
-        console.log('📋 Status VIP:', user.is_vip);
-        console.log('📋 Valor:', user.valor);
 
         // Buscar limite diário de downloads
         const today = new Date();

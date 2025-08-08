@@ -3,6 +3,20 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
+import { VIP_PLANS_CONFIG, getVipPlan, PlanType } from '@/lib/plans-config';
+
+// Extend the Session type to include 'id' on user
+declare module "next-auth" {
+    interface Session {
+        user: {
+            valor: any;
+            id: string;
+            name?: string | null;
+            email?: string | null;
+            image?: string | null;
+        }
+    }
+}
 
 // Helper function to parse dates, considering potential custom object format and problematic year prefixes
 function parseDateInput(dateInput: any): Date | null {
@@ -61,50 +75,83 @@ export async function GET(req: Request) {
             },
         });
 
-        // Definição dos benefícios dos planos
+        // ========== DEFINIÇÃO DOS BENEFÍCIOS DOS PLANOS ==========
         const VIP_BENEFITS = {
-            BASICO: { driveAccess: true, packRequestsLimit: 8, playlistDownloadsLimit: 7, deezerPremium: false },
-            PADRAO: { driveAccess: true, packRequestsLimit: 15, playlistDownloadsLimit: 12, deezerPremium: true },
-            COMPLETO: { driveAccess: true, packRequestsLimit: 999, playlistDownloadsLimit: 999, deezerPremium: true }
+            // ========== 🥉 PLANO VIP BÁSICO ==========
+            BASICO: {
+                icon: VIP_PLANS_CONFIG.BASICO.icon,
+                name: VIP_PLANS_CONFIG.BASICO.name,
+                driveAccess: VIP_PLANS_CONFIG.BASICO.benefits.driveAccess,
+                packRequestsLimit: VIP_PLANS_CONFIG.BASICO.limits.weeklyPackRequests,
+                playlistDownloadsLimit: VIP_PLANS_CONFIG.BASICO.limits.weeklyPlaylistDownloads,
+                deezerPremium: VIP_PLANS_CONFIG.BASICO.benefits.deezerPremium
+            },
+
+            // ========== 🥈 PLANO VIP PADRÃO ==========
+            PADRAO: {
+                icon: VIP_PLANS_CONFIG.PADRAO.icon,
+                name: VIP_PLANS_CONFIG.PADRAO.name,
+                driveAccess: VIP_PLANS_CONFIG.PADRAO.benefits.driveAccess,
+                packRequestsLimit: VIP_PLANS_CONFIG.PADRAO.limits.weeklyPackRequests,
+                playlistDownloadsLimit: VIP_PLANS_CONFIG.PADRAO.limits.weeklyPlaylistDownloads,
+                deezerPremium: VIP_PLANS_CONFIG.PADRAO.benefits.deezerPremium
+            },
+
+            // ========== 🥇 PLANO VIP COMPLETO ==========
+            COMPLETO: {
+                icon: VIP_PLANS_CONFIG.COMPLETO.icon,
+                name: VIP_PLANS_CONFIG.COMPLETO.name,
+                driveAccess: VIP_PLANS_CONFIG.COMPLETO.benefits.driveAccess,
+                packRequestsLimit: VIP_PLANS_CONFIG.COMPLETO.limits.weeklyPackRequests,
+                playlistDownloadsLimit: VIP_PLANS_CONFIG.COMPLETO.limits.weeklyPlaylistDownloads,
+                deezerPremium: VIP_PLANS_CONFIG.COMPLETO.benefits.deezerPremium
+            }
         };
 
-        function getVipPlan(valor: number | null) {
-            if (!valor) return null;
-            if (valor >= 50) return 'COMPLETO';
-            if (valor >= 42) return 'PADRAO';
-            if (valor >= 35) return 'BASICO';
-            return null;
-        }
+        // ========== FUNÇÃO PARA DETECTAR PLANO VIP DO USUÁRIO ==========
+        // Usar função centralizada da configuração de planos
 
-        // Mapeia os resultados que já vieram otimizados do banco de dados
+        // ========== MAPEAMENTO DOS USUÁRIOS COM BENEFÍCIOS ==========
         const usersWithBenefits = users.map(user => {
             const planKey = getVipPlan(user.valor);
             const benefits = planKey ? VIP_BENEFITS[planKey] : null;
 
             return {
+                // ========== 📋 DADOS BÁSICOS DO USUÁRIO ==========
                 id: user.id,
                 name: user.name,
                 email: user.email,
                 whatsapp: user.whatsapp,
+
+                // ========== 💰 INFORMAÇÕES FINANCEIRAS ==========
                 valor: user.valor,
                 vencimento: user.vencimento,
                 dataPagamento: user.dataPagamento,
                 status: user.status,
+
+                // ========== 🏆 STATUS E PLANOS ==========
                 is_vip: user.is_vip,
+                plan: planKey,
+                planIcon: benefits?.icon || '📦',
+                planName: benefits?.name || 'Sem Plano',
+
+                // ========== 🎵 ADD-ONS E SERVIÇOS ==========
                 deemix: user.deemix,
                 deezerPremium: user.deezerPremium,
                 deezerEmail: user.deezerEmail,
                 deezerPassword: user.deezerPassword,
-                password: user.password, // Adicionar campo password para verificar se existe
+                isUploader: user.isUploader,
+
+                // ========== 📊 ESTATÍSTICAS DE USO ==========
                 dailyDownloadCount: user.dailyDownloadCount,
                 weeklyPackRequests: user.weeklyPackRequests,
                 weeklyPlaylistDownloads: user.weeklyPlaylistDownloads,
                 lastDownloadReset: user.lastDownloadReset,
                 lastWeekReset: user.lastWeekReset,
-                // Acessa a contagem que já veio na consulta principal
                 downloadsCount: user._count.downloads,
                 likesCount: user._count.likes,
-                plan: planKey,
+
+                // ========== 🎁 BENEFÍCIOS DO PLANO ==========
                 benefits: benefits ? {
                     driveAccess: benefits.driveAccess,
                     packRequestsLimit: benefits.packRequestsLimit,
@@ -176,39 +223,53 @@ export async function DELETE_BY_EMAIL(req: Request) {
 }
 */
 
-// POST: Adicionar novo usuário
+// ========== 👤 POST: ADICIONAR NOVO USUÁRIO ==========
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, email, password, isAdmin, whatsapp, valor, vencimento, dataPagamento, status, deemix, deezerPremium, deezerEmail, deezerPassword, is_vip, isPro, dailyDownloadCount, lastDownloadReset, weeklyPackRequests, weeklyPlaylistDownloads, lastWeekReset, customBenefits } = body;
+        const { name, email, password, isAdmin, whatsapp, valor, vencimento, dataPagamento, status, deemix, deezerPremium, deezerEmail, deezerPassword, is_vip, isPro, dailyDownloadCount, lastDownloadReset, weeklyPackRequests, weeklyPlaylistDownloads, lastWeekReset, customBenefits, isUploader } = body;
 
+        // ========== ✅ VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS ==========
         if (!name || !email || !password) {
             return new NextResponse("Nome, email e senha são obrigatórios", { status: 400 });
         }
 
+        // ========== 🔍 VERIFICAÇÃO DE EMAIL EXISTENTE ==========
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
             return new NextResponse("Email já cadastrado", { status: 409 });
         }
 
+        // ========== 🔐 CRIPTOGRAFIA DA SENHA ==========
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // ========== 💾 CRIAÇÃO DO NOVO USUÁRIO ==========
         const newUser = await prisma.user.create({
             data: {
+                // ========== 📋 DADOS BÁSICOS ==========
                 name,
                 email,
                 password: hashedPassword,
-                isPro: isPro ?? !!isAdmin, // Assuming isPro is a boolean on User model
-                is_vip: !!is_vip,
                 whatsapp,
+
+                // ========== 🏆 STATUS E PERMISSÕES ==========
+                isPro: isPro ?? !!isAdmin,
+                is_vip: !!is_vip,
+                status,
+
+                // ========== 💰 INFORMAÇÕES FINANCEIRAS ==========
                 valor: valor !== undefined ? valor : null,
                 vencimento: parseDateInput(vencimento),
                 dataPagamento: parseDateInput(dataPagamento),
-                status,
+
+                // ========== 🎵 ADD-ONS E SERVIÇOS ==========
                 deemix: !!deemix,
                 deezerPremium: !!deezerPremium,
                 deezerEmail: deezerEmail || null,
                 deezerPassword: deezerPassword || null,
+                isUploader: !!isUploader,
+
+                // ========== 📊 CONFIGURAÇÕES DE USO ==========
                 dailyDownloadCount: dailyDownloadCount ?? 0,
                 lastDownloadReset: parseDateInput(lastDownloadReset),
                 weeklyPackRequests: weeklyPackRequests ?? 0,
@@ -229,33 +290,32 @@ export async function POST(req: Request) {
     }
 }
 
-// PATCH: Atualizar usuário (VIP, nome, email, etc.)
+// ========== ✏️ PATCH: ATUALIZAR USUÁRIO ==========
 export async function PATCH(req: Request) {
     try {
+        // ========== 🔐 VERIFICAÇÃO DE AUTENTICAÇÃO ==========
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
+        // ========== 📥 OBTENÇÃO DOS DADOS DE ATUALIZAÇÃO ==========
         const body = await req.json();
         const { userId, ...updateData } = body;
 
+        // ========== ✅ VALIDAÇÃO DO USER ID ==========
         if (!userId) {
             return new NextResponse("UserId é obrigatório", { status: 400 });
         }
 
-        // Processar senha
+        // ========== 🔐 PROCESSAMENTO DA SENHA ==========
         if (updateData.password && updateData.password.trim()) {
-            console.log('🔐 Processando nova senha para usuário:', userId);
-            console.log('📋 Senha original (não hash):', updateData.password.substring(0, 3) + '***');
             updateData.password = await bcrypt.hash(updateData.password, 10);
-            console.log('✅ Senha hash gerada com sucesso');
         } else {
-            console.log('⚠️ Senha vazia ou não fornecida - mantendo senha atual');
             delete updateData.password; // Não atualiza a senha se estiver vazia
         }
 
-        // Use the helper function for all date fields
+        // ========== 📅 PROCESSAMENTO DE DATAS ==========
         if (updateData.vencimento !== undefined) {
             updateData.vencimento = parseDateInput(updateData.vencimento);
         }
@@ -269,30 +329,38 @@ export async function PATCH(req: Request) {
             updateData.lastWeekReset = parseDateInput(updateData.lastWeekReset);
         }
 
-        // Se o valor está sendo atualizado diretamente, não precisa recalcular
-        // Se Deemix ou Deezer Premium estão sendo alterados, precisa recalcular o valor
-        if ((updateData.deemix !== undefined || updateData.deezerPremium !== undefined) && updateData.valor === undefined) {
+        // ========== 💰 RECÁLCULO AUTOMÁTICO DE VALORES ==========
+        // Se Deemix, Deezer Premium ou Uploader estão sendo alterados, precisa recalcular o valor
+        if ((updateData.deemix !== undefined || updateData.deezerPremium !== undefined || updateData.isUploader !== undefined) && updateData.valor === undefined) {
             // Busca o usuário atual para pegar o valor existente
             const currentUser = await prisma.user.findUnique({
                 where: { id: userId },
-                select: { valor: true, deemix: true, deezerPremium: true }
+                select: { valor: true, deemix: true, deezerPremium: true, isUploader: true }
             });
 
             if (currentUser && currentUser.valor) {
                 // Recalcula o valor baseado nos novos add-ons
                 const newDeemix = updateData.deemix !== undefined ? updateData.deemix : (currentUser.deemix || false);
                 const newDeezerPremium = updateData.deezerPremium !== undefined ? updateData.deezerPremium : (currentUser.deezerPremium || false);
+                const newUploader = updateData.isUploader !== undefined ? updateData.isUploader : (currentUser.isUploader || false);
 
                 updateData.valor = calculateNewValue(
                     currentUser.valor,
                     currentUser.deemix || false,
                     currentUser.deezerPremium || false,
                     newDeemix,
-                    newDeezerPremium
+                    newDeezerPremium,
+                    newUploader
                 );
             }
         }
 
+        // ========== 📤 PERSISTÊNCIA DO STATUS UPLOADER ==========
+        if (updateData.isUploader !== undefined) {
+            updateData.isUploader = !!updateData.isUploader;
+        }
+
+        // ========== 💾 ATUALIZAÇÃO NO BANCO DE DADOS ==========
         await prisma.user.update({
             where: { id: userId },
             data: updateData
@@ -305,71 +373,49 @@ export async function PATCH(req: Request) {
     }
 }
 
-// Tipos para os planos
-type PlanType = 'BASICO' | 'PADRAO' | 'COMPLETO';
-
-// Função auxiliar para recalcular o valor quando add-ons são alterados
-function calculateNewValue(currentTotal: number, oldDeemix: boolean, oldDeezerPremium: boolean, newDeemix: boolean, newDeezerPremium: boolean): number {
-    // Definições de preços dos planos e add-ons
+// ========== 🔧 FUNÇÃO AUXILIAR PARA RECALCULAR VALORES ==========
+function calculateNewValue(currentTotal: number, oldDeemix: boolean, oldDeezerPremium: boolean, newDeemix: boolean, newDeezerPremium: boolean, newUploader?: boolean): number {
+    // ========== DEFINIÇÕES DE PREÇOS DOS PLANOS E ADD-ONS ==========
     const VIP_PLANS: Record<PlanType, number> = {
-        BASICO: 35,
-        PADRAO: 42,
-        COMPLETO: 50
+        BASICO: VIP_PLANS_CONFIG.BASICO.value,     // 🥉 VIP BÁSICO
+        PADRAO: VIP_PLANS_CONFIG.PADRAO.value,     // 🥈 VIP PADRÃO
+        COMPLETO: VIP_PLANS_CONFIG.COMPLETO.value  // 🥇 VIP COMPLETO
     };
 
-    const DEEMIX_PRICING: Record<PlanType, { value: number; discount: number }> = {
-        BASICO: { value: 14.99, discount: 0.35 },
-        PADRAO: { value: 14.99, discount: 0.42 },
-        COMPLETO: { value: 14.99, discount: 0.60 }
-    };
+    // ========== IMPORTANTE: DEEMIX E DEEZER PREMIUM NÃO ALTERAM PREÇO ==========
+    // Eles apenas definem se o usuário tem acesso às credenciais/funcionalidades
+    // O preço é definido pelo plano escolhido no dropdown
 
-    const DEEZER_PREMIUM_PRICING = 9.75;
+    // ========== UPLOADER PRICING ==========
+    const UPLOADER_MONTHLY = 10; // 📤 Uploader R$ 10,00/mês
 
-    // Primeiro, calcula o preço base removendo os add-ons antigos
+    // Começar com o valor atual sem modificações de add-ons antigos
     let basePrice = currentTotal;
 
-    if (oldDeemix) {
-        // Remove o preço do Deemix antigo
-        const plan = getBasePlan(currentTotal);
-        if (plan && DEEMIX_PRICING[plan]) {
-            const deemixPrice = DEEMIX_PRICING[plan].value * (1 - DEEMIX_PRICING[plan].discount);
-            basePrice -= deemixPrice;
+    // Remover valor do uploader antigo se existia
+    // (assumindo que se valor > plano base, tinha uploader)
+    const possibleBasePrices = [35, 38, 42, 60]; // Valores base possíveis
+    for (const possible of possibleBasePrices) {
+        if (Math.abs(currentTotal - possible - UPLOADER_MONTHLY) < 0.01) {
+            basePrice = possible; // Era esse plano + uploader
+            break;
+        } else if (Math.abs(currentTotal - possible) < 0.01) {
+            basePrice = possible; // Era só esse plano
+            break;
         }
     }
 
-    if (oldDeezerPremium) {
-        // Remove o preço do Deezer Premium antigo (se não era gratuito)
-        const plan = getBasePlan(currentTotal);
-        if (plan === 'BASICO') {
-            basePrice -= DEEZER_PREMIUM_PRICING;
-        }
-    }
-
-    // Agora adiciona os novos add-ons
+    // Calcular novo valor
     let newTotal = basePrice;
 
-    if (newDeemix) {
-        const plan = getBasePlan(basePrice);
-        if (plan && DEEMIX_PRICING[plan]) {
-            const deemixPrice = DEEMIX_PRICING[plan].value * (1 - DEEMIX_PRICING[plan].discount);
-            newTotal += deemixPrice;
-        }
-    }
-
-    if (newDeezerPremium) {
-        const plan = getBasePlan(basePrice);
-        if (plan === 'BASICO') {
-            newTotal += DEEZER_PREMIUM_PRICING;
-        }
+    // Adicionar uploader se ativo
+    if (newUploader && basePrice >= 35) {
+        newTotal += UPLOADER_MONTHLY;
     }
 
     return Math.round(newTotal * 100) / 100; // Arredonda para 2 casas decimais
 }
 
-// Função auxiliar para determinar o plano base pelo valor
-function getBasePlan(valor: number): PlanType | null {
-    if (valor >= 50) return 'COMPLETO';
-    if (valor >= 42) return 'PADRAO';
-    if (valor >= 35) return 'BASICO';
-    return null;
-}
+// ========== FUNÇÃO AUXILIAR PARA DETECTAR PLANO BASE DO USUÁRIO ==========
+// Usar função centralizada da configuração de planos
+const getBasePlan = getVipPlan;

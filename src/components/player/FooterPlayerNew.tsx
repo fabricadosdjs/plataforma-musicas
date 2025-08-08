@@ -144,16 +144,6 @@ const FooterPlayer = () => {
 
     if (!currentTrack) return null;
 
-    // Garantir que imageUrl seja uma string válida
-    const getImageUrl = () => {
-        if (typeof currentTrack.imageUrl === 'string' && currentTrack.imageUrl.startsWith('http')) {
-            return currentTrack.imageUrl;
-        }
-        return "/images/BeatportHype.png";
-    };
-    
-    const imageUrl = getImageUrl();
-
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
     return (
@@ -174,14 +164,15 @@ const FooterPlayer = () => {
                         {/* Imagem só aparece em desktop */}
                         <div className="hidden sm:block">
                             <Image
-                                src={imageUrl}
+                                // @ts-expect-error: Garantir compatibilidade temporária
+                                src={currentTrack.imageUrl || "/placeholder.png"}
                                 alt={currentTrack.songName || "Capa da música"}
                                 width={48} height={48}
                                 className={clsx("rounded-md object-cover shadow-md transition-all duration-300", isMinimized ? "h-10 w-10" : "h-12 w-12")}
                                 onError={(e) => {
                                     const target = e.target as HTMLImageElement;
-                                    if (!target.src.endsWith('/images/BeatportHype.png')) {
-                                        target.src = '/images/BeatportHype.png';
+                                    if (!target.src.endsWith('/placeholder.png')) {
+                                        target.src = '/placeholder.png';
                                     }
                                 }}
                             />
