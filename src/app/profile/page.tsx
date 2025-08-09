@@ -1530,44 +1530,6 @@ export default function ProfilePage() {
     // Seção do Deezer Premium
     // Seção do YouTube Downloader
     function renderYoutubeSection() {
-        if (!userData?.is_vip) {
-            return (
-                <div className="space-y-6">
-                    {/* Título da Seção */}
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
-                            <Music className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-3xl font-bold text-white">YouTube Downloader</h2>
-                            <p className="text-gray-400">Download de músicas do YouTube</p>
-                        </div>
-                    </div>
-
-                    <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                        <CardContent className="p-6">
-                            <div className="text-center">
-                                <div className="w-16 h-16 bg-red-500 rounded-xl flex items-center justify-center mx-auto mb-4">
-                                    <XCircle className="w-8 h-8 text-white" />
-                                </div>
-                                <h3 className="text-2xl font-bold text-white mb-2">Acesso VIP Necessário</h3>
-                                <p className="text-gray-400 mb-6">
-                                    O YouTube Downloader é exclusivo para usuários VIP. Faça upgrade para acessar esta ferramenta.
-                                </p>
-                                <Button
-                                    onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de informações sobre como acessar o YouTube Downloader.')}
-                                    className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 mx-auto"
-                                >
-                                    <MessageCircle className="w-5 h-5" />
-                                    SOLICITAR ACESSO VIP
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            );
-        }
-
         return (
             <div className="space-y-6">
                 {/* Título da Seção */}
@@ -1577,289 +1539,111 @@ export default function ProfilePage() {
                     </div>
                     <div>
                         <h2 className="text-3xl font-bold text-white">YouTube Downloader</h2>
-                        <p className="text-gray-400">Download de músicas do YouTube em alta qualidade</p>
+                        <p className="text-gray-400">Ferramenta temporariamente desabilitada</p>
                     </div>
                 </div>
 
-                {/* Aviso de Limitações */}
-                <Card className="bg-amber-900/20 border-amber-600/30 backdrop-blur-sm">
+                {/* Aviso de Desabilitação */}
+                <Card className="bg-red-900/20 border-red-600/30 backdrop-blur-sm">
                     <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                            <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                                <AlertTriangle className="w-5 h-5 text-white" />
+                        <div className="text-center">
+                            <div className="w-16 h-16 bg-red-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                                <XCircle className="w-8 h-8 text-white" />
                             </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-amber-400 mb-2">Limitações e Recomendações</h3>
-                                <div className="space-y-2 text-gray-300">
-                                    <p>• <strong>Não suporta playlists:</strong> Esta ferramenta baixa apenas vídeos individuais</p>
-                                    <p>• <strong>Limite de 10 minutos:</strong> Apenas para músicas normais, não sets ou compilações</p>
-                                    <p>• <strong>Apenas áudio:</strong> Ferramenta destinada exclusivamente a músicas</p>
-                                    <div className="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-600/30">
-                                        <p className="text-blue-300">
-                                            <strong>Para playlists, sets longos e outras necessidades:</strong>
-                                            <Link href="/allavsoft" className="text-blue-400 hover:text-blue-300 underline ml-1">
-                                                Use o Allavsoft (recomendado)
-                                            </Link>
-                                        </p>
-                                    </div>
+                            <h3 className="text-2xl font-bold text-white mb-4">Ferramenta Temporariamente Desabilitada</h3>
+                            <div className="space-y-3 text-gray-300 max-w-2xl mx-auto">
+                                <p className="text-lg">
+                                    Devido às <strong className="text-red-400">diretrizes atualizadas do YouTube</strong>, 
+                                    a ferramenta de download não está funcional no momento.
+                                </p>
+                                <p>
+                                    O YouTube implementou novas medidas de proteção que impedem o funcionamento 
+                                    de ferramentas de download automatizado.
+                                </p>
+                                <div className="mt-6 p-4 bg-blue-900/30 rounded-lg border border-blue-600/30">
+                                    <h4 className="text-blue-300 font-semibold mb-2">Alternativa Recomendada:</h4>
+                                    <p className="text-blue-200">
+                                        Para downloads de YouTube, recomendamos usar o <strong>Allavsoft</strong>, 
+                                        uma ferramenta profissional que funciona de forma independente.
+                                    </p>
+                                    <Link 
+                                        href="/allavsoft" 
+                                        className="inline-flex items-center gap-2 mt-3 text-blue-400 hover:text-blue-300 underline"
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                        Acessar Allavsoft
+                                    </Link>
                                 </div>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                    <CardContent className="p-6">
-                        {/* Input URL */}
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-lg font-semibold text-white mb-2">URL do YouTube</label>
-                                <div className="flex gap-3">
-                                    <input
-                                        type="text"
-                                        value={youtubeUrl}
-                                        onChange={(e) => setYoutubeUrl(e.target.value)}
-                                        placeholder="Cole a URL do vídeo do YouTube aqui..."
-                                        className="flex-1 bg-gray-800/50 border border-gray-700/50 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
-                                    />
-                                    <Button
-                                        onClick={validateAndGetYoutubeInfo}
-                                        disabled={youtubeIsLoading || !youtubeUrl.trim()}
-                                        className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 flex items-center gap-2"
-                                    >
-                                        {youtubeIsLoading ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            <Search className="w-4 h-4" />
-                                        )}
-                                        {youtubeIsLoading ? 'Verificando...' : 'Verificar'}
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {/* Seleção de Qualidade */}
-                            <div>
-                                <label className="block text-lg font-semibold text-white mb-2">Qualidade do Áudio</label>
-                                <div className="flex gap-3">
-                                    <Button
-                                        onClick={() => setYoutubeQuality('128')}
-                                        className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${youtubeQuality === '128'
-                                            ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
-                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                            }`}
-                                    >
-                                        128 KBPS
-                                    </Button>
-                                    <Button
-                                        onClick={() => setYoutubeQuality('320')}
-                                        className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${youtubeQuality === '320'
-                                            ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white'
-                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                            }`}
-                                    >
-                                        320 KBPS (Recomendado)
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Mensagens de Error/Success */}
-                        {youtubeError && (
-                            <div className="mt-4 bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center gap-3">
-                                <AlertCircle className="w-5 h-5 text-red-400" />
-                                <span className="text-red-400">{youtubeError}</span>
-                            </div>
-                        )}
-
-                        {youtubeSuccess && (
-                            <div className="mt-4 bg-green-500/10 border border-green-500/20 rounded-lg p-4 flex items-center gap-3">
-                                <CheckCircle className="w-5 h-5 text-green-400" />
-                                <span className="text-green-400">{youtubeSuccess}</span>
-                            </div>
-                        )}
-
-                        {/* Informações do Vídeo */}
-                        {youtubeVideoInfo && (
-                            <div className="mt-6 bg-gray-700/30 rounded-lg p-4">
-                                <div className="flex gap-4">
-                                    <img
-                                        src={youtubeVideoInfo.thumbnail}
-                                        alt={youtubeVideoInfo.title}
-                                        className="w-32 h-24 object-cover rounded-lg"
-                                    />
-                                    <div className="flex-1">
-                                        <h4 className="text-lg font-semibold text-white mb-2">
-                                            {youtubeVideoInfo.title}
-                                        </h4>
-                                        <div className="text-sm text-gray-400 space-y-1">
-                                            <p>Canal: {youtubeVideoInfo.author}</p>
-                                            <p>Duração: {formatDuration(youtubeVideoInfo.duration)}</p>
-                                            <p>Visualizações: {formatViewCount(youtubeVideoInfo.viewCount)}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <Button
-                                    onClick={downloadYoutubeMP3}
-                                    disabled={youtubeIsDownloading}
-                                    className="w-full mt-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
-                                >
-                                    {youtubeIsDownloading ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <Download className="w-5 h-5" />
-                                    )}
-                                    {youtubeIsDownloading ? 'Baixando MP3...' : `Baixar MP3 (${youtubeQuality} KBPS)`}
-                                </Button>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* Status Cards após o Downloader */}
-                <div className="space-y-4 mt-8">
-                    {/* Status de Acesso */}
+                {/* Status Cards */}
+                <div className="grid md:grid-cols-2 gap-4">
+                    {/* Status da Ferramenta */}
                     <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
-                                        <CheckCircle className="w-6 h-6 text-white" />
+                                    <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
+                                        <XCircle className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-white">Status de Acesso</h3>
-                                        <p className="text-gray-400">Permissão para usar a ferramenta</p>
+                                        <h3 className="text-xl font-bold text-white">Status</h3>
+                                        <p className="text-gray-400">Estado atual da ferramenta</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-4xl font-bold text-green-400">LIBERADO</div>
-                                    <p className="text-sm text-gray-300 mt-1">usuário VIP</p>
+                                    <div className="text-2xl font-bold text-red-400">DESABILITADA</div>
+                                    <p className="text-sm text-gray-300 mt-1">Diretrizes YouTube</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Qualidades Disponíveis */}
-                    <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
-                                        <Star className="w-6 h-6 text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-white">Qualidades Disponíveis</h3>
-                                        <p className="text-gray-400">Opções de qualidade de áudio</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-4xl font-bold text-purple-400">128/320</div>
-                                    <p className="text-sm text-gray-300 mt-1">KBPS MP3</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Downloads Realizados */}
+                    {/* Alternativa */}
                     <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-                                        <Clock className="w-6 h-6 text-white" />
+                                        <CheckCircle className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-white">Downloads Realizados</h3>
-                                        <p className="text-gray-400">Histórico de downloads</p>
+                                        <h3 className="text-xl font-bold text-white">Allavsoft</h3>
+                                        <p className="text-gray-400">Alternativa funcional</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-4xl font-bold text-blue-400">{youtubeDownloadHistory.length}</div>
-                                    <p className="text-sm text-gray-300 mt-1">arquivos baixados</p>
+                                    <div className="text-2xl font-bold text-blue-400">DISPONÍVEL</div>
+                                    <p className="text-sm text-gray-300 mt-1">100% funcional</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Histórico de Downloads */}
-                {youtubeDownloadHistory.length > 0 && (
-                    <>
-                        <div className="flex items-center gap-4 mb-6 mt-8">
-                            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
-                                <Clock className="w-6 h-6 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-2xl font-bold text-white">Histórico de Downloads</h3>
-                                <p className="text-gray-400">Seus últimos downloads do YouTube</p>
-                            </div>
-                        </div>
-
-                        <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                            <CardContent className="p-6">
-                                <div className="space-y-3">
-                                    {youtubeDownloadHistory.slice(0, 5).map((download, index) => (
-                                        <div key={download.id} className="bg-gray-700/30 rounded-lg p-4 flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center">
-                                                    <Music className="w-5 h-5 text-white" />
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-semibold text-white truncate max-w-md">
-                                                        {download.title}
-                                                    </h4>
-                                                    <p className="text-sm text-gray-400">
-                                                        {formatRelativeTime(download.createdAt)} • {download.quality || '320'} KBPS
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {download.filePath && (
-                                                <Button
-                                                    onClick={() => {
-                                                        const link = document.createElement('a');
-                                                        link.href = `/api/youtube-downloads/file/${download.id}`;
-                                                        link.download = download.fileName;
-                                                        link.click();
-                                                    }}
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
-                                                >
-                                                    <Download className="w-4 h-4" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </>
-                )}
-
-                {/* Instruções */}
-                <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                    <CardContent className="p-6">
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                                <AlertCircle className="w-5 h-5 text-white" />
-                            </div>
-                            <h3 className="text-xl font-bold text-white">Como Usar</h3>
-                        </div>
-
-                        <div className="space-y-3 text-sm text-gray-300">
-                            <p>1. Cole a URL do vídeo do YouTube no campo acima</p>
-                            <p>2. Selecione a qualidade desejada (128 KBPS ou 320 KBPS)</p>
-                            <p>3. Clique em "Verificar" para obter informações do vídeo</p>
-                            <p>4. Clique em "Baixar MP3" para iniciar o download</p>
-                            <p>5. O arquivo será baixado automaticamente</p>
-                        </div>
-
-                        <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                            <p className="text-xs text-yellow-400">
-                                ⚠️ <strong>Atenção:</strong> Esta ferramenta é apenas para uso pessoal.
-                                Respeite os direitos autorais e termos de uso do YouTube.
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Botões de Ação */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <Link 
+                        href="/allavsoft"
+                        className="flex-1"
+                    >
+                        <Button className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2">
+                            <ExternalLink className="w-5 h-5" />
+                            USAR ALLAVSOFT
+                        </Button>
+                    </Link>
+                    
+                    <Button
+                        onClick={() => openWhatsApp('5551935052274', 'Olá! Tenho dúvidas sobre o YouTube Downloader e as alternativas disponíveis.')}
+                        className="flex-1 border border-gray-600 bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
+                    >
+                        <MessageCircle className="w-5 h-5" />
+                        FALAR COM SUPORTE
+                    </Button>
+                </div>
             </div>
         );
     }
