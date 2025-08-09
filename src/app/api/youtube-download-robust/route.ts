@@ -3,9 +3,74 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { prisma } from '@/lib/prisma';
 import ytdl from '@distube/ytdl-core';
+import https from 'https';
+import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
+import { spawn, exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
+
+// Função para verificar se yt-dlp ou youtube-dl estão disponíveis
+async function checkYtDlpAvailability(): Promise<{ tool: string; available: boolean }> {
+    try {
+        await execAsync('yt-dlp --version');
+        return { tool: 'yt-dlp', available: true };
+    } catch (error) {
+        try {
+            await execAsync('youtube-dl --version');
+            return { tool: 'youtube-dl', available: true };
+        } catch (error2) {
+            return { tool: 'none', available: false };
+        }
+    }
+}
+
+// Função para obter informações do vídeo usando yt-dlp/youtube-dl
+async function getVideoInfoWithYtDlp(url: string, tool: string): Promise<any> {
+    try {
+        const { stdout } = await execAsync(`${tool} --dump-json "${url}"`);
+        const videoInfo = JSON.parse(stdout);
+        return {
+            title: videoInfo.title,
+            duration: videoInfo.duration,
+            thumbnail: videoInfo.thumbnail,
+            author: videoInfo.uploader || videoInfo.channel,
+            viewCount: videoInfo.view_count
+        };
+    } catch (error) {
+        console.error(`❌ Erro ao obter info com ${tool}:`, error);
+        return null;
+    }
+}
+
+// Função para download direto usando yt-dlp/youtube-dl
+async function downloadWithYtDlp(url: string, outputPath: string, quality: string, tool: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        try {
+            const bitrateArg = quality === '128' ? '--audio-quality 5' : '--audio-quality 0'; // 0=best, 5=medium
+            const command = `${tool} --extract-audio --audio-format mp3 ${bitrateArg} --output "${outputPath}" "${url}"`;
+
+            console.log(`🎵 Executando ${tool}:`, command);
+
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    console.error(`❌ Erro no ${tool}:`, error.message);
+                    console.error(`❌ stderr:`, stderr);
+                    resolve(false);
+                } else {
+                    console.log(`✅ Download concluído com ${tool}`);
+                    console.log(`📁 stdout:`, stdout);
+                    resolve(true);
+                }
+            });
+        } catch (error) {
+            console.error(`❌ Erro ao executar ${tool}:`, error);
+            resolve(false);
+        }
+    });
+}
 
 // Função para encontrar o FFmpeg
 function getFFmpegPath(): string | null {
@@ -25,13 +90,28 @@ function getFFmpegPath(): string | null {
     return 'ffmpeg'; // Assume que está no PATH
 }
 
+// Suporte a proxy HTTP/S via variável de ambiente YTDL_PROXY_URL
+const proxyUrl = process.env.YTDL_PROXY_URL;
+let proxyDispatcher: any = undefined;
+if (proxyUrl) {
+    if (proxyUrl.startsWith('https://')) {
+        const { HttpsProxyAgent } = require('undici');
+        proxyDispatcher = new HttpsProxyAgent(proxyUrl);
+    } else if (proxyUrl.startsWith('http://')) {
+        const { ProxyAgent } = require('undici');
+        proxyDispatcher = new ProxyAgent(proxyUrl);
+    }
+    console.log('🔌 Usando proxy (dispatcher) para ytdl-core:', proxyUrl);
+}
+
 // Configurações para diferentes cenários
 const ytdlConfigs = [
     {
         name: 'Configuração padrão',
         options: {
             filter: 'audioonly',
-            quality: 'highestaudio'
+            quality: 'highestaudio',
+            ...(proxyDispatcher ? { requestOptions: { dispatcher: proxyDispatcher } } : {})
         }
     },
     {
@@ -42,7 +122,8 @@ const ytdlConfigs = [
             requestOptions: {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
+                },
+                ...(proxyDispatcher ? { dispatcher: proxyDispatcher } : {})
             }
         }
     },
@@ -54,7 +135,8 @@ const ytdlConfigs = [
             requestOptions: {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-                }
+                },
+                ...(proxyDispatcher ? { dispatcher: proxyDispatcher } : {})
             }
         }
     }
@@ -120,9 +202,74 @@ export async function POST(req: NextRequest) {
         }
 
         if (!videoInfo) {
-            console.error('❌ Todas as tentativas falharam');
+            console.error('❌ Todas as tentativas com ytdl-core falharam');
+
+            // Fallback: Tentar com yt-dlp ou youtube-dl
+            console.log('🔄 Tentando fallback com yt-dlp/youtube-dl...');
+            const ytDlpCheck = await checkYtDlpAvailability();
+
+            if (ytDlpCheck.available) {
+                console.log(`✅ ${ytDlpCheck.tool} disponível, tentando obter informações...`);
+                const ytDlpInfo = await getVideoInfoWithYtDlp(url, ytDlpCheck.tool);
+
+                if (ytDlpInfo) {
+                    console.log(`✅ Informações obtidas com ${ytDlpCheck.tool}`);
+
+                    // Verificar duração (limite de 10 minutos = 600 segundos)
+                    if (ytDlpInfo.duration && ytDlpInfo.duration > 600) {
+                        return NextResponse.json({
+                            error: 'Este vídeo tem mais de 10 minutos. Esta ferramenta é destinada apenas para músicas normais. Para arquivos longos (sets, compilações), recomendamos o uso do Allavsoft.'
+                        }, { status: 400 });
+                    }
+
+                    const videoTitle = title || ytDlpInfo.title;
+
+                    // Sanitizar nome do arquivo
+                    const sanitizedTitle = videoTitle
+                        .replace(/[^\w\s-]/g, '')
+                        .replace(/\s+/g, '_')
+                        .substring(0, 50);
+
+                    // Criar pasta de downloads se não existir
+                    const downloadsDir = path.join(process.cwd(), 'downloads');
+                    if (!fs.existsSync(downloadsDir)) {
+                        fs.mkdirSync(downloadsDir, { recursive: true });
+                    }
+
+                    // Arquivo final
+                    const finalFileName = `${sanitizedTitle}_${quality}kbps.mp3`;
+                    const finalFilePath = path.join(downloadsDir, finalFileName);
+
+                    // Tentar download direto com yt-dlp/youtube-dl
+                    console.log(`🎵 Tentando download com ${ytDlpCheck.tool}...`);
+                    const ytDlpSuccess = await downloadWithYtDlp(url, finalFilePath, quality, ytDlpCheck.tool);
+
+                    if (ytDlpSuccess && fs.existsSync(finalFilePath)) {
+                        const fileSize = fs.statSync(finalFilePath).size;
+                        const downloadUrl = `/downloads/${finalFileName}`;
+
+                        // Salvar no banco de dados
+                        const expiresAt = new Date();
+                        expiresAt.setDate(expiresAt.getDate() + 5); // 5 dias
+
+                        return NextResponse.json({
+                            success: true,
+                            message: `Download concluído com sucesso usando ${ytDlpCheck.tool}! Arquivo convertido para ${quality} KBPS.`,
+                            fileName: finalFileName,
+                            title: videoTitle,
+                            downloadUrl: downloadUrl,
+                            fileSize: fileSize,
+                            quality: `${quality} KBPS`,
+                            id: null,
+                            expiresAt: expiresAt,
+                            method: ytDlpCheck.tool
+                        });
+                    }
+                }
+            }
+
             return NextResponse.json({
-                error: 'Não foi possível obter informações do vídeo. Tente novamente mais tarde.'
+                error: 'Não foi possível obter informações do vídeo. O YouTube pode estar bloqueando downloads. Tente usar o Allavsoft para este vídeo.'
             }, { status: 400 });
         }
 
@@ -525,9 +672,39 @@ export async function GET(req: NextRequest) {
 
 
         if (!videoInfo) {
-            console.error('[YTB-ROBUST][GET] Falha: Não foi possível obter informações do vídeo', { url });
+            console.error('[YTB-ROBUST][GET] Falha: Não foi possível obter informações do vídeo com ytdl-core', { url });
+
+            // Fallback: Tentar com yt-dlp ou youtube-dl
+            console.log('🔄 Tentando fallback GET com yt-dlp/youtube-dl...');
+            const ytDlpCheck = await checkYtDlpAvailability();
+
+            if (ytDlpCheck.available) {
+                console.log(`✅ ${ytDlpCheck.tool} disponível, tentando obter informações...`);
+                const ytDlpInfo = await getVideoInfoWithYtDlp(url, ytDlpCheck.tool);
+
+                if (ytDlpInfo) {
+                    // Verificar duração (limite de 10 minutos = 600 segundos)
+                    if (ytDlpInfo.duration && ytDlpInfo.duration > 600) {
+                        console.error('[YTB-ROBUST][GET] Falha: Duração maior que 10 minutos', { url, duration: ytDlpInfo.duration });
+                        return NextResponse.json({
+                            error: 'Este vídeo tem mais de 10 minutos. Esta ferramenta é destinada apenas para músicas normais. Para arquivos longos (sets, compilações), recomendamos o uso do Allavsoft.'
+                        }, { status: 400 });
+                    }
+
+                    return NextResponse.json({
+                        title: ytDlpInfo.title,
+                        duration: ytDlpInfo.duration,
+                        thumbnail: ytDlpInfo.thumbnail,
+                        author: ytDlpInfo.author,
+                        viewCount: ytDlpInfo.viewCount,
+                        isValid: true,
+                        method: ytDlpCheck.tool
+                    });
+                }
+            }
+
             return NextResponse.json({
-                error: 'Não foi possível obter informações do vídeo. Tente novamente.'
+                error: 'Não foi possível obter informações do vídeo. O YouTube pode estar bloqueando este acesso. Tente usar o Allavsoft para este vídeo.'
             }, { status: 400 });
         }
 
