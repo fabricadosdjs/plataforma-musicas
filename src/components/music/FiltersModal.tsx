@@ -101,17 +101,17 @@ export default function FiltersModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 pb-8">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
             {/* Modal */}
             <div
                 ref={modalRef}
-                className="relative w-full max-w-3xl mx-4 rounded-3xl border border-[#2D2E2F] shadow-2xl max-h-[90vh] overflow-y-auto bg-[#1B1C1D]"
+                className="relative w-full max-w-4xl mx-4 rounded-3xl border border-[#26222D] shadow-2xl max-h-[calc(100vh-160px)] overflow-y-auto bg-[#202A3C] mb-24"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-8 border-b border-[#2D2E2F]">
+                <div className="flex items-center justify-between p-8 border-b border-[#26222D]">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-lg">
                             <Filter className="h-6 w-6 text-white" />
@@ -123,15 +123,46 @@ export default function FiltersModal({
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-3 hover:bg-[#2D2E2F] rounded-xl transition-all duration-300 group"
+                        className="p-3 hover:bg-[#26222D] rounded-xl transition-all duration-300 group"
                     >
                         <X className="h-6 w-6 text-gray-400 group-hover:text-white" />
                     </button>
                 </div>
 
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between px-8 py-4 border-b border-[#2D2E2F]">
+                    <div className="flex items-center gap-3">
+                        {hasActiveFilters && (
+                            <button
+                                onClick={onClearFilters}
+                                disabled={isLoading}
+                                className="px-6 py-3 text-red-400 border border-red-600/30 hover:bg-red-600/20 rounded-xl transition-all duration-300 disabled:opacity-50 font-medium"
+                            >
+                                Limpar Filtros
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={onClose}
+                            className="px-6 py-3 text-gray-400 hover:text-white hover:bg-[#26222D] rounded-xl transition-all duration-300 font-medium"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleApply}
+                            disabled={isLoading}
+                            className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-purple-400 disabled:to-blue-400 text-white rounded-xl transition-all duration-300 font-medium shadow-lg hover:shadow-purple-500/20 transform hover:scale-105 disabled:transform-none"
+                        >
+                            {isLoading ? 'Aplicando...' : 'Aplicar Filtros'}
+                        </button>
+                    </div>
+                </div>
+
                 {/* Content */}
                 <div className="p-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {/* Filtro por Gênero */}
                         <div className="space-y-3">
                             <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
@@ -141,7 +172,7 @@ export default function FiltersModal({
                             <select
                                 value={selectedGenre}
                                 onChange={(e) => onGenreChange(e.target.value)}
-                                className="w-full px-4 py-3 bg-[#2D2E2F] border border-[#3D3E3F] rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300"
+                                className="w-full px-4 py-3 bg-[#26222D] border border-[#121212] rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300"
                             >
                                 <option value="all">Todos os gêneros</option>
                                 {genres.map(genre => (
@@ -159,7 +190,7 @@ export default function FiltersModal({
                             <select
                                 value={selectedArtist}
                                 onChange={(e) => onArtistChange(e.target.value)}
-                                className="w-full px-4 py-3 bg-[#2D2E2F] border border-[#3D3E3F] rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300"
+                                className="w-full px-4 py-3 bg-[#26222D] border border-[#121212] rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300"
                             >
                                 <option value="all">Todos os artistas</option>
                                 {artists.map(artist => (
@@ -169,26 +200,28 @@ export default function FiltersModal({
                         </div>
 
                         {/* Filtro por Versão */}
-                        <div className="space-y-3">
-                            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
-                                <span className="text-purple-400">🎧</span>
-                                Versão
-                            </label>
-                            <select
-                                value={selectedVersion}
-                                onChange={(e) => onVersionChange(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                style={{
-                                    backgroundColor: '#1a1a1a',
-                                    borderColor: '#3a3a3a'
-                                }}
-                            >
-                                <option value="all">Todas as versões</option>
-                                {versions.map(version => (
-                                    <option key={version} value={version}>{version}</option>
-                                ))}
-                            </select>
-                        </div>
+                        {versions.length > 0 && (
+                            <div className="space-y-3">
+                                <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+                                    <span className="text-purple-400">🎧</span>
+                                    Versão
+                                </label>
+                                <select
+                                    value={selectedVersion}
+                                    onChange={(e) => onVersionChange(e.target.value)}
+                                    className="w-full px-3 py-2 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    style={{
+                                        backgroundColor: '#26222D',
+                                        borderColor: '#121212'
+                                    }}
+                                >
+                                    <option value="all">Todas as versões</option>
+                                    {versions.map(version => (
+                                        <option key={version} value={version}>{version}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         {/* Filtro por Pool */}
                         <div>
@@ -200,8 +233,8 @@ export default function FiltersModal({
                                 onChange={(e) => onPoolChange(e.target.value)}
                                 className="w-full px-3 py-2 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 style={{
-                                    backgroundColor: '#1a1a1a',
-                                    borderColor: '#3a3a3a'
+                                    backgroundColor: '#26222D',
+                                    borderColor: '#121212'
                                 }}
                             >
                                 <option value="all">Todos os pools</option>
@@ -222,8 +255,8 @@ export default function FiltersModal({
                                 onChange={(e) => onMonthChange(e.target.value)}
                                 className="w-full px-3 py-2 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 style={{
-                                    backgroundColor: '#1a1a1a',
-                                    borderColor: '#3a3a3a'
+                                    backgroundColor: '#26222D',
+                                    borderColor: '#121212'
                                 }}
                             >
                                 <option value="all">Todos os meses</option>
@@ -236,7 +269,7 @@ export default function FiltersModal({
                         </div>
 
                         {/* Filtro por Data Range */}
-                        <div className="md:col-span-2">
+                        <div>
                             <label className="block text-sm font-medium text-gray-300 mb-3">
                                 📅 Período
                             </label>
@@ -245,8 +278,8 @@ export default function FiltersModal({
                                 onChange={(e) => onDateRangeChange(e.target.value)}
                                 className="w-full px-3 py-2 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 style={{
-                                    backgroundColor: '#1a1a1a',
-                                    borderColor: '#3a3a3a'
+                                    backgroundColor: '#26222D',
+                                    borderColor: '#121212'
                                 }}
                             >
                                 <option value="all">Todos os períodos</option>
@@ -257,37 +290,6 @@ export default function FiltersModal({
                                 <option value="year">Último ano</option>
                             </select>
                         </div>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between p-8 border-t border-[#2D2E2F]">
-                    <div className="flex items-center gap-3">
-                        {hasActiveFilters && (
-                            <button
-                                onClick={onClearFilters}
-                                disabled={isLoading}
-                                className="px-6 py-3 text-red-400 border border-red-600/30 hover:bg-red-600/20 rounded-xl transition-all duration-300 disabled:opacity-50 font-medium"
-                            >
-                                Limpar Filtros
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={onClose}
-                            className="px-6 py-3 text-gray-400 hover:text-white hover:bg-[#2D2E2F] rounded-xl transition-all duration-300 font-medium"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={handleApply}
-                            disabled={isLoading}
-                            className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-purple-400 disabled:to-blue-400 text-white rounded-xl transition-all duration-300 font-medium shadow-lg hover:shadow-purple-500/20 transform hover:scale-105 disabled:transform-none"
-                        >
-                            {isLoading ? 'Aplicando...' : 'Aplicar Filtros'}
-                        </button>
                     </div>
                 </div>
             </div>

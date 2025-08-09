@@ -56,7 +56,8 @@ import {
     Ban,
     Lock,
     Search,
-    AlertCircle
+    AlertCircle,
+    Edit
 } from "lucide-react";
 import Link from "next/link";
 
@@ -138,6 +139,13 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+    // Cálculo de valor pro-rata para o PIX
+    function calcularProRata(valorMensal: number | null, diasRestantes: number | null) {
+        if (!valorMensal || !diasRestantes || diasRestantes <= 0) return null;
+        const valorDiario = valorMensal / 30;
+        const valorProRata = Math.ceil(valorDiario * diasRestantes * 100) / 100; // arredonda para 2 casas
+        return valorProRata;
+    }
     const { data: session, status: sessionStatus } = useSession();
     const [userData, setUserData] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
@@ -296,6 +304,12 @@ export default function ProfilePage() {
     const openWhatsApp = (number: string, message?: string) => {
         const url = `https://wa.me/${number}${message ? `?text=${encodeURIComponent(message)}` : ''}`;
         window.open(url, '_blank');
+    };
+
+    // Função para verificar se o botão de pagamento deve estar ativo
+    const isPaymentButtonActive = (vencimentoInfo: VencimentoInfo | undefined) => {
+        if (!vencimentoInfo || !vencimentoInfo.daysRemaining) return false;
+        return vencimentoInfo.daysRemaining <= 5;
     };
 
     const getPaymentLink = (valor: number | null) => {
@@ -561,46 +575,106 @@ export default function ProfilePage() {
 
     function renderModals() {
         if (!userData) return null;
+
         return (
             <>
                 {/* Modal PIX */}
                 {pixModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3">
-                        <div className="w-full max-w-sm bg-gray-900 border border-gray-700 rounded-lg">
-                            <div className="p-4">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-white text-lg font-bold">💳 PIX</h2>
+                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center p-2 sm:p-4" style={{ alignItems: 'flex-start' }}>
+                        <div className="w-full max-w-2xl bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-h-[calc(100vh-40px)] overflow-y-auto mt-16">
+                            <div className="p-4 sm:p-6">
+                                <div className="flex justify-between items-center mb-3">
+                                    <h2 className="text-white text-lg font-bold flex items-center gap-2">
+                                        <CreditCard className="w-5 h-5 text-green-400" />
+                                        Pagamento PIX
+                                    </h2>
                                     <button onClick={() => setPixModalOpen(false)} className="text-gray-400 hover:text-white">
                                         <X className="w-5 h-5" />
                                     </button>
                                 </div>
-                                <div className="text-center">
-                                    <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20 mb-4">
-                                        <h4 className="font-bold text-white mb-2 text-sm">Chave PIX</h4>
-                                        <div className="bg-gray-800/50 rounded p-2 mb-3">
-                                            <p className="font-mono text-xs text-white break-all">pix@nexorrecords.com.br</p>
+
+                                <div className="space-y-3">
+                                    {/* Valor Pro-Rata */}
+                                    <div className="text-center bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg p-3 border border-green-500/20">
+                                        <p className="text-gray-400 text-sm">Valor proporcional até o próximo vencimento</p>
+                                        <p className="text-2xl font-bold text-green-400">
+                                            {(() => {
+                                                const proRata = calcularProRata(userData.valor, userData.vencimentoInfo?.daysRemaining);
+                                                return proRata ? formatCurrency(proRata) : formatCurrency(userData.valor);
+                                            })()}
+                                        </p>
+                                        {userData.vencimentoInfo?.daysRemaining && (
+                                            <>
+                                                <p className="text-xs text-gray-400 mt-1">({userData.vencimentoInfo.daysRemaining} dias restantes)</p>
+                                                <p className="text-xs text-gray-400 mt-1">
+                                                    Próximo vencimento: {(() => {
+                                                        const hoje = new Date();
+                                                        hoje.setHours(0, 0, 0, 0);
+                                                        const prox = new Date(hoje);
+                                                        prox.setDate(hoje.getDate() + userData.vencimentoInfo.daysRemaining);
+                                                        return prox.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+                                                    })()}
+                                                </p>
+                                            </>
+                                        )}
+                                        <div className="flex flex-col items-center justify-center mt-2">
+                                            <img src="https://i.ibb.co/RGcFygQQ/qrcode.png" alt="QR Code PIX" className="w-full max-w-[120px] h-auto rounded border-2 border-green-500 object-contain" />
+                                            <p className="text-xs text-gray-300 mt-2 font-semibold">Escaneie o QR Code para pagar via PIX</p>
                                         </div>
-                                        <Button
-                                            onClick={() => copyToClipboard('pix@nexorrecords.com.br')}
-                                            className="w-full bg-green-600 hover:bg-green-700 text-sm h-8"
-                                        >
-                                            <Copy className="w-3 h-3 mr-2" />
-                                            Copiar Chave
-                                        </Button>
                                     </div>
-                                    <div className="text-xs text-gray-400 mb-4">
-                                        <p>Valor: <span className="font-bold text-green-400">{formatCurrency(userData.valor)}</span></p>
-                                        <p className="mt-1">Envie o comprovante via WhatsApp.</p>
+
+                                    {/* Dados do PIX */}
+                                    <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                                        <h4 className="font-bold text-white mb-2 text-center text-xs">Dados para Transferência</h4>
+                                        <div className="space-y-2">
+                                            {/* Chave PIX */}
+                                            <div>
+                                                <p className="text-gray-400 text-xs mb-1">Chave PIX (E-mail):</p>
+                                                <div className="bg-gray-900 rounded p-2 mb-2">
+                                                    <p className="font-mono text-xs text-white break-all">djpoolrecordsbrazil@gmail.com</p>
+                                                </div>
+                                                <Button
+                                                    onClick={() => copyToClipboard('djpoolrecordsbrazil@gmail.com')}
+                                                    className="w-full bg-blue-600 hover:bg-blue-700 text-xs h-8"
+                                                >
+                                                    <Copy className="w-4 h-4 mr-1" />
+                                                    Copiar Chave PIX
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
+
+                                    {/* Instruções */}
+
+
+                                    {/* Botão WhatsApp */}
                                     <Button
                                         onClick={() => {
                                             setPixModalOpen(false);
-                                            openWhatsApp('5551935052274', `Pagamento PIX ${formatCurrency(userData.valor)} - comprovante em anexo`);
+                                            const proRata = calcularProRata(userData.valor, userData.vencimentoInfo?.daysRemaining);
+                                            const proxVenc = (() => {
+                                                const hoje = new Date();
+                                                hoje.setHours(0, 0, 0, 0);
+                                                const prox = new Date(hoje);
+                                                prox.setDate(hoje.getDate() + (userData.vencimentoInfo?.daysRemaining || 0));
+                                                return prox.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+                                            })();
+                                            openWhatsApp(
+                                                '5551935052274',
+                                                [
+                                                    '✅ Pagamento PIX Realizado!',
+                                                    '',
+                                                    `💸 Valor: ${proRata ? formatCurrency(proRata) : formatCurrency(userData.valor)}`,
+                                                    `📆 Próximo vencimento: ${proxVenc}`,
+                                                    `👑 Plano: ${userData?.planName || 'N/A'}`,
+                                                    '',
+                                                    '📎 Comprovante em anexo'
+                                                ].join('\n')
+                                            );
                                         }}
-                                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-sm h-8"
+                                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 rounded-lg transition-all duration-300 shadow-lg text-base flex items-center justify-center gap-2 mt-4"
                                     >
-                                        <MessageSquare className="w-3 h-3 mr-2" />
-                                        Enviar Comprovante
+                                        <span role="img" aria-label="zap">💬</span> <MessageSquare className="w-5 h-5" /> <span>Enviar no WhatsApp</span> <span role="img" aria-label="zap">📲</span>
                                     </Button>
                                 </div>
                             </div>
@@ -1060,6 +1134,16 @@ export default function ProfilePage() {
                                     <p className="text-lg font-semibold text-amber-300 mt-1">{formatCurrency(userData?.valor ?? null)}/mês</p>
                                 </div>
                             </div>
+
+                            {/* Botão Modificar Plano anexado na parte inferior */}
+                            <div className="mt-6 -mx-6 -mb-6">
+                                <Link href="/plans">
+                                    <Button className="w-full bg-gradient-to-r from-blue-500/90 to-purple-500/90 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-blue-400/20">
+                                        <Edit className="w-5 h-5" />
+                                        <span className="text-base">MODIFICAR PLANO</span>
+                                    </Button>
+                                </Link>
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -1082,6 +1166,20 @@ export default function ProfilePage() {
                                         {userData?.vencimentoInfo?.daysRemaining ? `${userData.vencimentoInfo.daysRemaining} dias restantes` : 'N/A'}
                                     </p>
                                 </div>
+                            </div>
+
+                            {/* Botão Pagar Plano anexado na parte inferior */}
+                            <div className="mt-6 -mx-6 -mb-6">
+                                <div className="mb-4 mx-6 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-3 text-justify text-sm text-green-200 font-medium shadow-sm w-auto">
+                                    <span className="font-bold text-green-300">Atenção:</span> O pagamento será calculado de forma proporcional (pro-rata), ou seja, você paga apenas pelos dias até o próximo vencimento. Assim, você nunca perde dias e só paga pelo que realmente vai usar!
+                                </div>
+                                <Button
+                                    onClick={() => setPixModalOpen(true)}
+                                    className="w-full bg-gradient-to-r from-green-500/90 to-emerald-500/90 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-green-400/20"
+                                >
+                                    <CreditCard className="w-5 h-5" />
+                                    <span className="text-base">PAGAR PLANO</span>
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -1106,19 +1204,19 @@ export default function ProfilePage() {
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Botão Falar Conosco anexado na parte inferior */}
+                            <div className="mt-6 -mx-6 -mb-6">
+                                <Button
+                                    onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de informações sobre meu plano atual.')}
+                                    className="w-full bg-gradient-to-r from-amber-500/90 to-orange-500/90 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-amber-400/20"
+                                >
+                                    <MessageCircle className="w-5 h-5" />
+                                    <span className="text-base">FALAR CONOSCO</span>
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
-                </div>
-
-                {/* Botão de Contato */}
-                <div className="mt-6 text-center">
-                    <Button
-                        onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de informações sobre meu plano atual.')}
-                        className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 mx-auto"
-                    >
-                        <MessageCircle className="w-5 h-5" />
-                        FALAR CONOSCO
-                    </Button>
                 </div>
             </div>
         );
@@ -2141,28 +2239,33 @@ export default function ProfilePage() {
                 </Card>
 
                 {/* Botões de Ação */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button
-                        onClick={() => setPixModalOpen(true)}
-                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
-                    >
-                        <CreditCard className="w-5 h-5" />
-                        PAGAR PLANO
-                    </Button>
-                    <Button
-                        onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de informações sobre gerenciar meu plano.')}
-                        className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
-                    >
-                        <Settings className="w-5 h-5" />
-                        GERENCIAR PLANO
-                    </Button>
-                    <Button
-                        onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de solicitar o cancelamento do meu plano.')}
-                        className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
-                    >
-                        <XCircle className="w-5 h-5" />
-                        CANCELAR PLANO
-                    </Button>
+                <div className="flex flex-col gap-4 justify-center w-full">
+                    <div className="mb-2 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-3 text-justify text-sm text-green-200 font-medium shadow-sm w-full">
+                        <span className="font-bold text-green-300">Atenção:</span> O pagamento será calculado de forma proporcional (pro-rata), ou seja, você paga apenas pelos dias até o próximo vencimento. Assim, você nunca perde dias e só paga pelo que realmente vai usar!
+                    </div>
+                    <div className="flex flex-col md:flex-row gap-4 w-full">
+                        <Button
+                            onClick={() => setPixModalOpen(true)}
+                            className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold px-8 py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-green-500/30 transform hover:scale-105"
+                        >
+                            <CreditCard className="w-6 h-6" />
+                            <span className="text-lg">PAGAR PLANO</span>
+                        </Button>
+                        <Button
+                            onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de informações sobre gerenciar meu plano.')}
+                            className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold px-8 py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-amber-500/30 transform hover:scale-105"
+                        >
+                            <Settings className="w-6 h-6" />
+                            <span className="text-lg">GERENCIAR PLANO</span>
+                        </Button>
+                        <Button
+                            onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de solicitar o cancelamento do meu plano.')}
+                            className="flex-1 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white font-bold px-8 py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-red-500/30 transform hover:scale-105"
+                        >
+                            <XCircle className="w-6 h-6" />
+                            <span className="text-lg">CANCELAR PLANO</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
         );
@@ -2486,6 +2589,26 @@ export default function ProfilePage() {
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Botão anexado na parte inferior */}
+                            <div className="mt-6 -mx-6 -mb-6">
+                                {userData?.deemix ? (
+                                    <Button
+                                        onClick={() => setActiveSection('deemix')}
+                                        className="w-full bg-gradient-to-r from-green-500/90 to-emerald-500/90 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-green-400/20"
+                                    >
+                                        <Settings className="w-5 h-5" />
+                                        <span className="text-base">GERENCIAR DEEMIX</span>
+                                    </Button>
+                                ) : (
+                                    <Link href="/deemix">
+                                        <Button className="w-full bg-gradient-to-r from-red-500/90 to-red-600/90 hover:from-red-500 hover:to-red-600 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-red-400/20">
+                                            <CreditCard className="w-5 h-5" />
+                                            <span className="text-base">ASSINAR</span>
+                                        </Button>
+                                    </Link>
+                                )}
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -2506,6 +2629,16 @@ export default function ProfilePage() {
                                     <div className="text-4xl font-bold text-blue-400">{userData?.dailyDownloadLimit ?? 50}</div>
                                     <p className="text-sm text-gray-300 mt-1">por dia</p>
                                 </div>
+                            </div>
+
+                            {/* Botão anexado na parte inferior */}
+                            <div className="mt-6 -mx-6 -mb-6">
+                                <Link href="/new">
+                                    <Button className="w-full bg-gradient-to-r from-blue-500/90 to-blue-600/90 hover:from-blue-500 hover:to-blue-600 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-blue-400/20">
+                                        <Music className="w-5 h-5" />
+                                        <span className="text-base">VER MÚSICAS</span>
+                                    </Button>
+                                </Link>
                             </div>
                         </CardContent>
                     </Card>
@@ -2549,6 +2682,16 @@ export default function ProfilePage() {
                                     <p className="text-sm text-gray-300 mt-1">acesso total</p>
                                 </div>
                             </div>
+
+                            {/* Botão anexado na parte inferior */}
+                            <div className="mt-6 -mx-6 -mb-6">
+                                <Link href="https://plataformavip.nexorrecords.com.br/" target="_blank" rel="noopener noreferrer">
+                                    <Button className="w-full bg-gradient-to-r from-indigo-500/90 to-indigo-600/90 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-indigo-400/20">
+                                        <ExternalLink className="w-5 h-5" />
+                                        <span className="text-base">ACESSAR PACKS</span>
+                                    </Button>
+                                </Link>
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -2579,6 +2722,16 @@ export default function ProfilePage() {
                                     <p className="text-sm text-gray-300 mt-1">por semana</p>
                                 </div>
                             </div>
+
+                            {/* Botão anexado na parte inferior */}
+                            <div className="mt-6 -mx-6 -mb-6">
+                                <Link href="https://wa.me/5551935052274" target="_blank" rel="noopener noreferrer">
+                                    <Button className="w-full bg-gradient-to-r from-green-500/90 to-green-600/90 hover:from-green-500 hover:to-green-600 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-green-400/20">
+                                        <MessageCircle className="w-5 h-5" />
+                                        <span className="text-base">SOLICITAR PACKS</span>
+                                    </Button>
+                                </Link>
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -2608,6 +2761,16 @@ export default function ProfilePage() {
                                     </div>
                                     <p className="text-sm text-gray-300 mt-1">por semana</p>
                                 </div>
+                            </div>
+
+                            {/* Botão anexado na parte inferior */}
+                            <div className="mt-6 -mx-6 -mb-6">
+                                <Link href="https://wa.me/5551935052274" target="_blank" rel="noopener noreferrer">
+                                    <Button className="w-full bg-gradient-to-r from-pink-500/90 to-pink-600/90 hover:from-pink-500 hover:to-pink-600 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-pink-400/20">
+                                        <MessageCircle className="w-5 h-5" />
+                                        <span className="text-base">SOLICITAR PLAYLISTS</span>
+                                    </Button>
+                                </Link>
                             </div>
                         </CardContent>
                     </Card>
@@ -2653,31 +2816,6 @@ export default function ProfilePage() {
                             </div>
                         </CardContent>
                     </Card>
-                </div>
-
-                {/* Botões de Ação */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-                    <Button
-                        onClick={() => window.open('http://plataformavip.nexorrecords.com.br/atualizacoes/', '_blank')}
-                        className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
-                    >
-                        <Database className="w-5 h-5" />
-                        ACESSAR DRIVE
-                    </Button>
-                    <Button
-                        onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de solicitar packs/playlists.')}
-                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
-                    >
-                        <MessageCircle className="w-5 h-5" />
-                        SOLICITAR PACKS
-                    </Button>
-                    <Button
-                        onClick={() => openWhatsApp('5551935052274', 'Olá! Sou usuário VIP e preciso de suporte.')}
-                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
-                    >
-                        <MessageSquare className="w-5 h-5" />
-                        SUPORTE VIP
-                    </Button>
                 </div>
             </div>
         );
