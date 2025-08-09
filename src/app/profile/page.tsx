@@ -398,6 +398,12 @@ export default function ProfilePage() {
             return;
         }
 
+        // Verificar se é uma playlist
+        if (youtubeUrl.includes('playlist') || youtubeUrl.includes('&list=')) {
+            setYoutubeError('Esta ferramenta não suporta playlists. Para download de playlists, acesse o Allavsoft clicando no link acima.');
+            return;
+        }
+
         setYoutubeIsLoading(true);
         setYoutubeError('');
         setYoutubeVideoInfo(null);
@@ -407,6 +413,12 @@ export default function ProfilePage() {
             const data = await response.json();
 
             if (response.ok) {
+                // Verificar duração (limite de 10 minutos = 600 segundos)
+                if (data.duration > 600) {
+                    setYoutubeError('Este vídeo tem mais de 10 minutos. Esta ferramenta é destinada apenas para músicas normais. Para arquivos longos (sets, compilações), acesse o Allavsoft clicando no link acima.');
+                    return;
+                }
+
                 setYoutubeVideoInfo(data);
                 setYoutubeSuccess('Vídeo encontrado! Selecione a qualidade e clique em "Baixar MP3".');
             } else {
@@ -1568,6 +1580,33 @@ export default function ProfilePage() {
                         <p className="text-gray-400">Download de músicas do YouTube em alta qualidade</p>
                     </div>
                 </div>
+
+                {/* Aviso de Limitações */}
+                <Card className="bg-amber-900/20 border-amber-600/30 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                                <AlertTriangle className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-amber-400 mb-2">Limitações e Recomendações</h3>
+                                <div className="space-y-2 text-gray-300">
+                                    <p>• <strong>Não suporta playlists:</strong> Esta ferramenta baixa apenas vídeos individuais</p>
+                                    <p>• <strong>Limite de 10 minutos:</strong> Apenas para músicas normais, não sets ou compilações</p>
+                                    <p>• <strong>Apenas áudio:</strong> Ferramenta destinada exclusivamente a músicas</p>
+                                    <div className="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-600/30">
+                                        <p className="text-blue-300">
+                                            <strong>Para playlists, sets longos e outras necessidades:</strong>
+                                            <Link href="/allavsoft" className="text-blue-400 hover:text-blue-300 underline ml-1">
+                                                Use o Allavsoft (recomendado)
+                                            </Link>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
                     <CardContent className="p-6">

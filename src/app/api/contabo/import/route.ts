@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
                 downloadUrl: true,
                 previewUrl: true,
                 songName: true,
-                artist: true
+                artist: true,
+                version: true
             }
         });
 
@@ -51,10 +52,25 @@ export async function GET(request: NextRequest) {
             ...existingTracks.map((t: any) => t.previewUrl)
         ]);
 
-        // Filtra arquivos que ainda não estão no banco
-        const importableFiles = audioFiles.filter(file =>
-            !existingUrls.has(file.url)
-        );
+        // Cria índice para busca por nome normalizado
+        const tracksByNormalizedName = new Set();
+        existingTracks.forEach(track => {
+            const normalizedKey = normalizeTrackName(track.artist || '', track.songName || '', track.version || undefined);
+            tracksByNormalizedName.add(normalizedKey);
+        });
+
+        // Filtra arquivos que ainda não estão no banco (comparação por URL e nome)
+        const importableFiles = audioFiles.filter(file => {
+            // Primeiro verifica por URL exata
+            if (existingUrls.has(file.url)) {
+                return false;
+            }
+
+            // Depois verifica por nome normalizado
+            const parsed = parseAudioFileName(file.filename);
+            const normalizedKey = normalizeTrackName(parsed.artist, parsed.songName, parsed.version || undefined);
+            return !tracksByNormalizedName.has(normalizedKey);
+        });
 
         // Processa informações dos arquivos para importação
         const processedFiles = importableFiles.map(file => {
@@ -229,12 +245,12 @@ function parseAudioFileName(filename: string) {
                 // Tem artista
                 let songName = match[2].trim();
                 const version = match[3]?.trim() || null;
-                
+
                 // Adiciona parênteses ao nome da música se houver versão
                 if (version) {
                     songName = `${songName} (${version})`;
                 }
-                
+
                 return {
                     artist: match[1].trim(),
                     songName: songName,
@@ -246,12 +262,12 @@ function parseAudioFileName(filename: string) {
                 // Só tem nome da música
                 let songName = match[1].trim();
                 const version = match[2]?.trim() || null;
-                
+
                 // Adiciona parênteses ao nome da música se houver versão
                 if (version) {
                     songName = `${songName} (${version})`;
                 }
-                
+
                 return {
                     artist: 'Artista Desconhecido',
                     songName: songName,
@@ -283,4 +299,26 @@ function generatePlaceholderImage(artist: string, songName: string): string {
     const color = colors[colorIndex];
 
     return `https://placehold.co/300x300/${color}/ffffff?text=${encodeURIComponent(initials)}`;
+}
+
+/**
+ * Normaliza nome de track para comparação de duplicatas
+ */
+function normalizeTrackName(artist: string, songName: string, version?: string): string {
+    // Normaliza strings para comparação (remove acentos, converte para minúsculo, remove caracteres especiais)
+    const normalize = (str: string) => {
+        return str
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+            .replace(/[^a-z0-9\s]/g, '') // Remove caracteres especiais
+            .replace(/\s+/g, ' ') // Normaliza espaços
+            .trim();
+    };
+
+    const normalizedArtist = normalize(artist);
+    const normalizedSong = normalize(songName);
+    const normalizedVersion = version ? normalize(version) : '';
+
+    return `${normalizedArtist}|${normalizedSong}|${normalizedVersion}`;
 }

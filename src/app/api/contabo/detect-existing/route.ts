@@ -42,17 +42,45 @@ export async function GET(request: NextRequest) {
             ...existingTracks.map((t: any) => t.previewUrl)
         ]);
 
-        // Filtra arquivos que já estão no banco
-        const existingFiles = audioFiles.filter(file =>
-            existingUrls.has(file.url)
-        );
+        // Cria índice para busca por nome normalizado
+        const tracksByNormalizedName = new Map();
+        existingTracks.forEach(track => {
+            const normalizedKey = normalizeTrackName(track.artist || '', track.songName || '', track.version || undefined);
+            if (!tracksByNormalizedName.has(normalizedKey)) {
+                tracksByNormalizedName.set(normalizedKey, []);
+            }
+            tracksByNormalizedName.get(normalizedKey).push(track);
+        });
+
+        // Filtra arquivos que já estão no banco (comparação por URL ou nome)
+        const existingFiles = audioFiles.filter(file => {
+            // Primeiro verifica por URL exata
+            if (existingUrls.has(file.url)) {
+                return true;
+            }
+
+            // Depois verifica por nome normalizado
+            const parsed = parseAudioFileName(file.filename);
+            const normalizedKey = normalizeTrackName(parsed.artist, parsed.songName, parsed.version);
+            return tracksByNormalizedName.has(normalizedKey);
+        });
 
         // Processa informações dos arquivos existentes
         const processedExistingFiles = existingFiles.map(file => {
-            // Encontra o track correspondente no banco
-            const existingTrack = existingTracks.find(track => 
+            // Encontra o track correspondente no banco (primeiro por URL, depois por nome)
+            let existingTrack = existingTracks.find(track =>
                 track.downloadUrl === file.url || track.previewUrl === file.url
             );
+
+            // Se não encontrou por URL, busca por nome normalizado
+            if (!existingTrack) {
+                const parsed = parseAudioFileName(file.filename);
+                const normalizedKey = normalizeTrackName(parsed.artist, parsed.songName, parsed.version);
+                const matchingTracks = tracksByNormalizedName.get(normalizedKey);
+                if (matchingTracks && matchingTracks.length > 0) {
+                    existingTrack = matchingTracks[0]; // Pega o primeiro match
+                }
+            }
 
             return {
                 file,
@@ -92,10 +120,10 @@ export async function GET(request: NextRequest) {
 function parseAudioFileName(filename: string) {
     // Remove extensão
     const nameWithoutExt = filename.replace(/\.(mp3|wav|flac|aac|ogg)$/i, '');
-    
+
     // Padrão: "Artist - Song Name (Version)" ou "Artist - Song Name"
     const match = nameWithoutExt.match(/^(.+?)\s*-\s*(.+?)(?:\s*\(([^)]+)\))?$/);
-    
+
     if (match) {
         const [, artist, songName, version] = match;
         return {
@@ -104,11 +132,30 @@ function parseAudioFileName(filename: string) {
             version: version ? version.trim() : undefined
         };
     }
-    
+
     // Se não conseguir fazer o parse, retorna o nome original
     return {
         artist: 'Unknown Artist',
         songName: nameWithoutExt,
         version: undefined
     };
+}
+
+function normalizeTrackName(artist: string, songName: string, version?: string): string {
+    // Normaliza strings para comparação (remove acentos, converte para minúsculo, remove caracteres especiais)
+    const normalize = (str: string) => {
+        return str
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+            .replace(/[^a-z0-9\s]/g, '') // Remove caracteres especiais
+            .replace(/\s+/g, ' ') // Normaliza espaços
+            .trim();
+    };
+
+    const normalizedArtist = normalize(artist);
+    const normalizedSong = normalize(songName);
+    const normalizedVersion = version ? normalize(version) : '';
+
+    return `${normalizedArtist}|${normalizedSong}|${normalizedVersion}`;
 } 

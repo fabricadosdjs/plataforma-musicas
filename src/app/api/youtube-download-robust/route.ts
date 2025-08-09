@@ -250,22 +250,23 @@ export async function POST(req: NextRequest) {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 5); // 5 dias
 
-        let downloadRecord = null;
-        try {
-            downloadRecord = await prisma.youTubeDownload.create({
-                data: {
-                    userId: user.id,
-                    url,
-                    title: videoTitle,
-                    fileName: finalFileName,
-                    fileSize,
-                    downloadUrl,
-                    expiresAt
-                }
-            });
-        } catch (error) {
-            console.log('Erro ao salvar no banco de dados:', error);
-        }
+        // TODO: Criar tabela youTubeDownload no schema se necessário
+        // let downloadRecord = null;
+        // try {
+        //     downloadRecord = await prisma.youTubeDownload.create({
+        //         data: {
+        //             userId: user.id,
+        //             url,
+        //             title: videoTitle,
+        //             fileName: finalFileName,
+        //             fileSize,
+        //             downloadUrl,
+        //             expiresAt
+        //         }
+        //     });
+        // } catch (error) {
+        //     console.log('Erro ao salvar no banco de dados:', error);
+        // }
 
         return NextResponse.json({
             success: true,
@@ -275,8 +276,8 @@ export async function POST(req: NextRequest) {
             downloadUrl: downloadUrl,
             fileSize: fileSize,
             quality: `${quality} KBPS`,
-            id: downloadRecord?.id || null,
-            expiresAt: downloadRecord?.expiresAt || null
+            id: null, // downloadRecord?.id || null,
+            expiresAt: expiresAt // downloadRecord?.expiresAt || null
         });
 
     } catch (error) {
@@ -486,6 +487,13 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'URL do YouTube inválida' }, { status: 400 });
         }
 
+        // Verificar se é uma playlist
+        if (url.includes('playlist') || url.includes('&list=')) {
+            return NextResponse.json({
+                error: 'Esta ferramenta não suporta playlists. Para download de playlists, recomendamos o uso do Allavsoft.'
+            }, { status: 400 });
+        }
+
         // Tentar obter informações com diferentes configurações
         let videoInfo;
         let lastError;
@@ -507,6 +515,14 @@ export async function GET(req: NextRequest) {
             console.error('❌ Todas as tentativas de obter info falharam');
             return NextResponse.json({
                 error: 'Não foi possível obter informações do vídeo. Tente novamente.'
+            }, { status: 400 });
+        }
+
+        // Verificar duração (limite de 10 minutos = 600 segundos)
+        const duration = parseInt(videoInfo.videoDetails.lengthSeconds);
+        if (duration > 600) {
+            return NextResponse.json({
+                error: 'Este vídeo tem mais de 10 minutos. Esta ferramenta é destinada apenas para músicas normais. Para arquivos longos (sets, compilações), recomendamos o uso do Allavsoft.'
             }, { status: 400 });
         }
 
