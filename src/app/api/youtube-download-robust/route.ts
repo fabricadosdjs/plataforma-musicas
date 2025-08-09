@@ -82,17 +82,23 @@ export async function POST(req: NextRequest) {
 
         const { url, title, quality = '320' } = await req.json();
 
+
         if (!url) {
+            console.error('[YTB-ROBUST][POST] Falha: URL do YouTube não fornecida', { url });
             return NextResponse.json({ error: 'URL do YouTube é obrigatória' }, { status: 400 });
         }
 
         // Validar qualidade
+
         if (!['128', '320'].includes(quality)) {
+            console.error('[YTB-ROBUST][POST] Falha: Qualidade inválida', { quality });
             return NextResponse.json({ error: 'Qualidade inválida. Use 128 ou 320' }, { status: 400 });
         }
 
         // Validar URL do YouTube
+
         if (!ytdl.validateURL(url)) {
+            console.error('[YTB-ROBUST][POST] Falha: URL do YouTube inválida', { url });
             return NextResponse.json({ error: 'URL do YouTube inválida' }, { status: 400 });
         }
 
@@ -479,16 +485,22 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const url = searchParams.get('url');
 
+
         if (!url) {
+            console.error('[YTB-ROBUST][GET] Falha: URL do YouTube não fornecida', { url });
             return NextResponse.json({ error: 'URL do YouTube é obrigatória' }, { status: 400 });
         }
 
+
         if (!ytdl.validateURL(url)) {
+            console.error('[YTB-ROBUST][GET] Falha: URL do YouTube inválida', { url });
             return NextResponse.json({ error: 'URL do YouTube inválida' }, { status: 400 });
         }
 
         // Verificar se é uma playlist
+
         if (url.includes('playlist') || url.includes('&list=')) {
+            console.error('[YTB-ROBUST][GET] Falha: Playlist detectada', { url });
             return NextResponse.json({
                 error: 'Esta ferramenta não suporta playlists. Para download de playlists, recomendamos o uso do Allavsoft.'
             }, { status: 400 });
@@ -511,8 +523,9 @@ export async function GET(req: NextRequest) {
             }
         }
 
+
         if (!videoInfo) {
-            console.error('❌ Todas as tentativas de obter info falharam');
+            console.error('[YTB-ROBUST][GET] Falha: Não foi possível obter informações do vídeo', { url });
             return NextResponse.json({
                 error: 'Não foi possível obter informações do vídeo. Tente novamente.'
             }, { status: 400 });
@@ -520,7 +533,9 @@ export async function GET(req: NextRequest) {
 
         // Verificar duração (limite de 10 minutos = 600 segundos)
         const duration = parseInt(videoInfo.videoDetails.lengthSeconds);
+
         if (duration > 600) {
+            console.error('[YTB-ROBUST][GET] Falha: Duração maior que 10 minutos', { url, duration });
             return NextResponse.json({
                 error: 'Este vídeo tem mais de 10 minutos. Esta ferramenta é destinada apenas para músicas normais. Para arquivos longos (sets, compilações), recomendamos o uso do Allavsoft.'
             }, { status: 400 });
