@@ -174,7 +174,7 @@ function HomePageContent() {
           <AdminMessagesDisplay showAdminControls={false} />
         </div>
 
-        {/* SEÇÃO - SISTEMA DE CRÉDITOS REMOVIDA */}
+
 
         {/* SEÇÃO - PLANOS PARA USUÁRIOS NÃO LOGADOS */}
         {!session?.user && (
@@ -457,7 +457,7 @@ function HomePageContent() {
           </div>
         </div>
 
-        {/* Card VIP removido */}
+
 
         {/* SEÇÃO - AVISO IMPORTANTE SOBRE O ACERVO */}
         {session?.user?.is_vip && (
