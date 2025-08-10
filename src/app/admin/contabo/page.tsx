@@ -1546,6 +1546,131 @@ export default function ContaboStoragePage() {
                                             </div>
                                         </div>
 
+                                        {/* Campo para sobrescrever estilo em lote */}
+                                        <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-600/30">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <label className="text-sm font-medium text-gray-300 min-w-fit">
+                                                    Sobrescrever estilo para selecionados:
+                                                </label>
+                                                <select
+                                                    className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                    onChange={(e) => {
+                                                        const newStyle = e.target.value;
+                                                        if (newStyle && selectedFiles.length > 0) {
+                                                            // Aplica o estilo selecionado para todos os arquivos marcados
+                                                            setImportableFiles(prev => {
+                                                                const updated = [...prev];
+                                                                selectedFiles.forEach(fileKey => {
+                                                                    const fileIndex = updated.findIndex(item => item.file.key === fileKey);
+                                                                    if (fileIndex !== -1) {
+                                                                        updated[fileIndex] = {
+                                                                            ...updated[fileIndex],
+                                                                            importData: {
+                                                                                ...updated[fileIndex].importData,
+                                                                                style: newStyle
+                                                                            }
+                                                                        };
+                                                                    }
+                                                                });
+                                                                return updated;
+                                                            });
+                                                            showMessage(`🎯 Estilo "${newStyle}" aplicado a ${selectedFiles.length} arquivo(s) selecionado(s)`, 'success');
+                                                            e.target.value = ''; // Reset select
+                                                        }
+                                                    }}
+                                                    defaultValue=""
+                                                >
+                                                    <option value="">Selecione um estilo...</option>
+                                                    {styleOptions.map(style => (
+                                                        <option key={style} value={style}>{style}</option>
+                                                    ))}
+                                                </select>
+                                                <span className="text-xs text-gray-400 min-w-fit">
+                                                    ({selectedFiles.length} selecionados)
+                                                </span>
+                                            </div>
+
+                                            {/* Campo para definir label manualmente */}
+                                            <div className="flex items-center gap-3">
+                                                <label className="text-sm font-medium text-gray-300 min-w-fit">
+                                                    Definir label para selecionados:
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Ex: 8th Wonder, Spinnin' Records, etc..."
+                                                    className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            const newLabel = e.currentTarget.value.trim();
+                                                            if (newLabel && selectedFiles.length > 0) {
+                                                                // Aplica o label para todos os arquivos marcados
+                                                                setImportableFiles(prev => {
+                                                                    const updated = [...prev];
+                                                                    selectedFiles.forEach(fileKey => {
+                                                                        const fileIndex = updated.findIndex(item => item.file.key === fileKey);
+                                                                        if (fileIndex !== -1) {
+                                                                            updated[fileIndex] = {
+                                                                                ...updated[fileIndex],
+                                                                                label: newLabel
+                                                                            };
+                                                                        }
+                                                                    });
+                                                                    return updated;
+                                                                });
+                                                                showMessage(`🏷️ Label "${newLabel}" aplicado a ${selectedFiles.length} arquivo(s) selecionado(s)`, 'success');
+                                                                e.currentTarget.value = ''; // Reset input
+                                                            }
+                                                        }
+                                                    }}
+                                                />
+                                                <span className="text-xs text-gray-400 min-w-fit">
+                                                    (Enter para aplicar)
+                                                </span>
+                                            </div>
+
+                                            {/* Campo para definir URL da capa manualmente */}
+                                            <div className="flex items-center gap-3 mt-3">
+                                                <label className="text-sm font-medium text-gray-300 min-w-fit">
+                                                    Definir capa (URL) para selecionados:
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    placeholder="Ex: https://exemplo.com/capa.jpg (deixe vazio para usar padrão)"
+                                                    className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            const newImageUrl = e.currentTarget.value.trim() || 'https://i.ibb.co/yB0w9yFx/20250526-1940-Capa-Eletr-nica-Sound-Cloud-remix-01jw7c19d3eee9dqwv0m1x642z.png';
+                                                            if (selectedFiles.length > 0) {
+                                                                // Aplica a URL da capa para todos os arquivos marcados
+                                                                setImportableFiles(prev => {
+                                                                    const updated = [...prev];
+                                                                    selectedFiles.forEach(fileKey => {
+                                                                        const fileIndex = updated.findIndex(item => item.file.key === fileKey);
+                                                                        if (fileIndex !== -1) {
+                                                                            updated[fileIndex] = {
+                                                                                ...updated[fileIndex],
+                                                                                importData: {
+                                                                                    ...updated[fileIndex].importData,
+                                                                                    imageUrl: newImageUrl
+                                                                                }
+                                                                            };
+                                                                        }
+                                                                    });
+                                                                    return updated;
+                                                                });
+                                                                const isDefault = !e.currentTarget.value.trim();
+                                                                showMessage(`🖼️ ${isDefault ? 'Capa padrão' : 'Capa personalizada'} aplicada a ${selectedFiles.length} arquivo(s) selecionado(s)`, 'success');
+                                                                e.currentTarget.value = ''; // Reset input
+                                                            }
+                                                        }
+                                                    }}
+                                                />
+                                                <span className="text-xs text-gray-400 min-w-fit">
+                                                    (Enter para aplicar)
+                                                </span>
+                                            </div>
+                                        </div>
+
                                         {/* Preview dos dados detectados */}
                                         <div className="mt-3 flex flex-wrap gap-2">
                                             {Object.entries(detectedStyles).slice(0, 3).map(([fileKey, detection]) => (
@@ -1669,17 +1794,34 @@ export default function ContaboStoragePage() {
                                                                                 alt="Capa da música"
                                                                                 className="w-full h-full object-cover rounded"
                                                                                 onError={(e) => {
-                                                                                    // Fallback para o ícone se a imagem falhar
+                                                                                    // Fallback para a capa padrão se a imagem falhar
+                                                                                    e.currentTarget.src = 'https://i.ibb.co/yB0w9yFx/20250526-1940-Capa-Eletr-nica-Sound-Cloud-remix-01jw7c19d3eee9dqwv0m1x642z.png';
+                                                                                }}
+                                                                            />
+                                                                        ) : item.importData.imageUrl ? (
+                                                                            <img
+                                                                                src={item.importData.imageUrl}
+                                                                                alt="Capa padrão da música"
+                                                                                className="w-full h-full object-cover rounded"
+                                                                                onError={(e) => {
+                                                                                    // Fallback final para o ícone se tudo falhar
                                                                                     e.currentTarget.style.display = 'none';
                                                                                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
                                                                                 }}
                                                                             />
                                                                         ) : (
-                                                                            <Music className="w-8 h-8 text-purple-400" />
+                                                                            <img
+                                                                                src="https://i.ibb.co/yB0w9yFx/20250526-1940-Capa-Eletr-nica-Sound-Cloud-remix-01jw7c19d3eee9dqwv0m1x642z.png"
+                                                                                alt="Capa padrão Nexor Records"
+                                                                                className="w-full h-full object-cover rounded"
+                                                                                onError={(e) => {
+                                                                                    // Fallback final para o ícone se tudo falhar
+                                                                                    e.currentTarget.style.display = 'none';
+                                                                                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                                                                }}
+                                                                            />
                                                                         )}
-                                                                        {detectedStyles[item.file.key]?.coverImage && (
-                                                                            <Music className="w-8 h-8 text-purple-400 hidden" />
-                                                                        )}
+                                                                        <Music className="w-8 h-8 text-purple-400 hidden" />
                                                                     </div>
                                                                     <div className="flex-1">
                                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1856,8 +1998,38 @@ export default function ContaboStoragePage() {
                                                                                         )}
                                                                                     </div>
 
-                                                                                    {/* Campo para Label (Gravadora) detectada pela IA */}
-                                                                                    {detectedStyles[item.file.key]?.label && (
+                                                                                    {/* Campo para Label - Manual tem prioridade sobre IA */}
+                                                                                    {item.label ? (
+                                                                                        // Label definido manualmente
+                                                                                        <div className="flex items-center gap-2 mt-2">
+                                                                                            <span className="text-gray-500 w-16">Label:</span>
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <input
+                                                                                                    type="text"
+                                                                                                    value={item.label}
+                                                                                                    className="bg-gray-700 border border-blue-500 bg-blue-900/20 rounded px-2 py-1 text-white"
+                                                                                                    onChange={e => {
+                                                                                                        const newLabel = e.target.value;
+                                                                                                        setImportableFiles((prev) => {
+                                                                                                            const updated = [...prev];
+                                                                                                            const fileIndex = prev.findIndex(p => p.file.key === item.file.key);
+                                                                                                            if (fileIndex > -1) {
+                                                                                                                updated[fileIndex] = {
+                                                                                                                    ...updated[fileIndex],
+                                                                                                                    label: newLabel
+                                                                                                                };
+                                                                                                            }
+                                                                                                            return updated;
+                                                                                                        });
+                                                                                                    }}
+                                                                                                />
+                                                                                                <div className="flex items-center gap-1">
+                                                                                                    <span className="text-xs text-blue-400 font-semibold">Manual</span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ) : detectedStyles[item.file.key]?.label ? (
+                                                                                        // Label detectado pela IA (só aparece se não há manual)
                                                                                         <div className="flex items-center gap-2 mt-2">
                                                                                             <span className="text-gray-500 w-16">Label:</span>
                                                                                             <div className="flex items-center gap-2">
@@ -1876,7 +2048,7 @@ export default function ContaboStoragePage() {
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
-                                                                                    )}
+                                                                                    ) : null}
                                                                                 </div>
                                                                             </div>
                                                                         </div>

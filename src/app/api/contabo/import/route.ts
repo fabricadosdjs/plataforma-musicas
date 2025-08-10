@@ -293,12 +293,8 @@ function parseAudioFileName(filename: string) {
  * Gera uma imagem placeholder para a música
  */
 function generatePlaceholderImage(artist: string, songName: string): string {
-    const initials = artist.substring(0, 2).toUpperCase();
-    const colors = ['4f46e5', '7c3aed', 'db2777', 'dc2626', 'ea580c', '059669', '0891b2'];
-    const colorIndex = (artist.length + songName.length) % colors.length;
-    const color = colors[colorIndex];
-
-    return `https://placehold.co/300x300/${color}/ffffff?text=${encodeURIComponent(initials)}`;
+    // Retorna a capa padrão da Nexor Records
+    return 'https://i.ibb.co/yB0w9yFx/20250526-1940-Capa-Eletr-nica-Sound-Cloud-remix-01jw7c19d3eee9dqwv0m1x642z.png';
 }
 
 /**
