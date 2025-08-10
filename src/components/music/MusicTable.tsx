@@ -272,6 +272,10 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
 
     // Handlers (abreviados para manter o foco na UI)
     const handlePlayPauseClick = (track: Track) => {
+        if (!session?.user) {
+            showToast('Faça login para reproduzir músicas', 'warning');
+            return;
+        }
         if (currentTrack?.id === track.id) togglePlayPause();
         else playTrack(track, tracks || []);
     };

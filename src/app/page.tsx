@@ -38,9 +38,10 @@ type SessionUser = {
 };
 
 import { useEffect, useState } from 'react';
-import { Heart, Music, TrendingUp, Database, Upload, AlertTriangle, CheckCircle, Clock, Star, Zap, Play, Download, Users, Award, Globe, Headphones, Crown, Sparkles, Target, ArrowRight, ChevronRight, Shuffle, Volume2, Disc3, Mic2, Radio, Disc, Disc2 } from 'lucide-react';
+import { Heart, Music, TrendingUp, Database, Upload, AlertTriangle, CheckCircle, Clock, Star, Zap, Play, Download, Users, Award, Globe, Headphones, Crown, Sparkles, Target, ArrowRight, ChevronRight, Shuffle, Volume2, Disc3, Mic2, Radio, Disc, Disc2, Archive } from 'lucide-react';
 import Link from 'next/link';
 import AdminMessagesDisplay from '@/components/ui/AdminMessagesDisplay';
+import CreditDashboard from '@/components/credit/CreditDashboard';
 
 function HomePageContent() {
   const { data: session } = useSession();
@@ -84,31 +85,47 @@ function HomePageContent() {
 
         {/* Hero Section */}
         <div className={`text-center mb-16 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <div className="mb-12">
+          <div className="mb-12 relative">
+            {/* Fundo animado topo do hero */}
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[90vw] max-w-5xl h-40 md:h-56 lg:h-64 xl:h-72 bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-blue-500/30 rounded-full blur-2xl animate-pulse z-0" style={{ pointerEvents: 'none' }} />
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600/20 to-pink-600/20 px-6 py-3 rounded-full border border-purple-500/30 mb-8">
               <Sparkles className="h-5 w-5 text-purple-400" />
               <span className="text-purple-300 font-medium">A Plataforma Definitiva para DJs</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight mb-6 leading-tight">
-              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-                O pool de discos
+              {/* Mobile: 4 linhas, Desktop: 2 linhas próximas, largura igual ao parágrafo */}
+              <span className="block md:hidden">
+                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center">
+                  O POOL DE DISCOS
+                </span>
+                <br />
+                <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center">
+                  INDEPENDENTES
+                </span>
+                <br />
+                <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center">
+                  ONDE OS DJS
+                </span>
+                <br />
+                <span className="bg-gradient-to-r from-green-400 via-blue-400 to-purple-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center">
+                  DESCOBREM O FUTURO
+                </span>
               </span>
-              <br />
-              <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                independentes
-              </span>
-              <br />
-              <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
-                onde os DJs
-              </span>
-              <br />
-              <span className="bg-gradient-to-r from-green-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-                descobrem o futuro
+              <span className="hidden md:block max-w-5xl mx-auto">
+                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center">
+                  O POOL DE DISCOS INDEPENDENTES
+                </span>
+                <span
+                  className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center mt-[5px] md:mt-[13px] lg:mt-[25px] xl:mt-[37px]"
+                  style={{ display: 'block', marginTop: '-3px' }}
+                >
+                  ONDE OS DJS DESCOBREM O FUTURO
+                </span>
               </span>
             </h1>
 
-            <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-5xl mx-auto leading-relaxed mb-8">
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-5xl mx-auto leading-relaxed mb-8 text-justify text-center md:text-justify font-inter">
               A plataforma definitiva para DJs que buscam as melhores músicas eletrônicas,
               remixes exclusivos e sets que dominam as pistas. Descubra o futuro da música eletrônica.
             </p>
@@ -117,9 +134,9 @@ function HomePageContent() {
             <div className="relative mb-12 group">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
               <img
-                src="https://i.ibb.co/9HdP7R4p/tela-pc.png"
+                src="https://i.ibb.co/fYTVXwdR/tela-home.png"
                 alt="Tela do computador mostrando a plataforma"
-                className="relative w-full max-w-4xl mx-auto rounded-2xl shadow-2xl transform group-hover:scale-105 transition-all duration-500 border border-purple-500/30"
+                className="relative w-full max-w-5xl mx-auto rounded-2xl shadow-2xl border border-purple-500/30"
               />
             </div>
           </div>
@@ -146,7 +163,7 @@ function HomePageContent() {
           <Link href="/plans">
             <div className="group inline-flex items-center gap-3 bg-gradient-to-r from-green-600/20 to-emerald-600/20 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:from-green-700/30 hover:to-emerald-700/30 transition-all duration-300 cursor-pointer border border-green-500/30 hover:border-green-400/50 transform hover:scale-105">
               <Star className="h-5 w-5 text-green-400 group-hover:animate-spin" />
-              <span>A partir de R$ 35,00/mês</span>
+              <span>A partir de R$ 38,00/mês</span>
               <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
@@ -156,6 +173,8 @@ function HomePageContent() {
         <div className="mb-20">
           <AdminMessagesDisplay showAdminControls={false} />
         </div>
+
+        {/* SEÇÃO - SISTEMA DE CRÉDITOS REMOVIDA */}
 
         {/* SEÇÃO - PLANOS PARA USUÁRIOS NÃO LOGADOS */}
         {!session?.user && (
@@ -186,7 +205,7 @@ function HomePageContent() {
                       <span className="text-3xl">🥉</span>
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-3">VIP BÁSICO</h3>
-                    <p className="text-gray-300 text-lg mb-6">R$ 30-35/mês</p>
+                    <p className="text-gray-300 text-lg mb-6">R$ 38,00/mês</p>
                     <ul className="text-gray-400 text-base space-y-3 text-left">
                       <li className="flex items-center gap-2">
                         <CheckCircle className="h-5 w-5 text-green-400" />
@@ -211,7 +230,7 @@ function HomePageContent() {
                       <span className="text-3xl">🥈</span>
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-3">VIP PADRÃO</h3>
-                    <p className="text-gray-300 text-lg mb-6">R$ 36-42/mês</p>
+                    <p className="text-gray-300 text-lg mb-6">R$ 42,00/mês</p>
                     <ul className="text-gray-400 text-base space-y-3 text-left">
                       <li className="flex items-center gap-2">
                         <CheckCircle className="h-5 w-5 text-green-400" />
@@ -237,7 +256,7 @@ function HomePageContent() {
                       <span className="text-3xl">🥇</span>
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-3">VIP COMPLETO</h3>
-                    <p className="text-gray-300 text-lg mb-6">R$ 43-60/mês</p>
+                    <p className="text-gray-300 text-lg mb-6">R$ 60,00/mês</p>
                     <ul className="text-gray-400 text-base space-y-3 text-left">
                       <li className="flex items-center gap-2">
                         <CheckCircle className="h-5 w-5 text-green-400" />
@@ -276,7 +295,7 @@ function HomePageContent() {
         {/* Features Grid */}
         <div className="mb-20">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">Por que escolher nossa plataforma?</h2>
+            <h2 className="text-4xl font-bebas-neue font-bold text-white mb-4 uppercase">POR QUE ESCOLHER NOSSA PLATAFORMA?</h2>
             <p className="text-gray-300 text-xl max-w-3xl mx-auto">
               Somos a escolha número um dos DJs brasileiros que buscam qualidade,
               variedade e uma experiência premium incomparável.
@@ -285,7 +304,7 @@ function HomePageContent() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="group bg-gradient-to-br from-blue-900/30 to-blue-800/20 backdrop-blur-sm rounded-2xl p-8 border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 transform hover:scale-105">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6 group-hover:animate-pulse">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 group-hover:animate-pulse">
                 <Music className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-4">Milhares de Músicas</h3>
@@ -293,7 +312,7 @@ function HomePageContent() {
             </div>
 
             <div className="group bg-gradient-to-br from-purple-900/30 to-purple-800/20 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 transform hover:scale-105">
-              <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6 group-hover:animate-pulse">
+              <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 group-hover:animate-pulse">
                 <TrendingUp className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-4">Trending Semanal</h3>
@@ -301,7 +320,7 @@ function HomePageContent() {
             </div>
 
             <div className="group bg-gradient-to-br from-green-900/30 to-green-800/20 backdrop-blur-sm rounded-2xl p-8 border border-green-500/30 hover:border-green-400/50 transition-all duration-300 transform hover:scale-105">
-              <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6 group-hover:animate-pulse">
+              <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 group-hover:animate-pulse">
                 <Download className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-4">Downloads Ilimitados</h3>
@@ -309,12 +328,28 @@ function HomePageContent() {
             </div>
 
             <div className="group bg-gradient-to-br from-pink-900/30 to-pink-800/20 backdrop-blur-sm rounded-2xl p-8 border border-pink-500/30 hover:border-pink-400/50 transition-all duration-300 transform hover:scale-105">
-              <div className="bg-gradient-to-r from-pink-600 to-pink-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6 group-hover:animate-pulse">
+              <div className="bg-gradient-to-r from-pink-600 to-pink-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 group-hover:animate-pulse">
                 <Users className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-4">Comunidade Ativa</h3>
               <p className="text-gray-300 text-base">Conecte-se com DJs de todo o Brasil</p>
             </div>
+
+          </div>
+        </div>
+
+        {/* BOX DESTAQUE - DOWNLOAD EM ZIP */}
+        <div className="bg-gradient-to-br from-cyan-900/30 via-blue-900/30 to-cyan-900/30 rounded-3xl p-10 mb-20 border border-cyan-500/30 backdrop-blur-sm">
+          <div className="text-center mb-10">
+            <div className="flex items-center justify-center mb-6">
+              <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 rounded-full mr-4 shadow-lg">
+                <Archive className="h-10 w-10 text-white" />
+              </div>
+              <h2 className="text-4xl font-bold text-white">Download em ZIP Personalizado</h2>
+            </div>
+            <p className="text-gray-300 max-w-4xl mx-auto text-xl">
+              Escolha suas músicas favoritas, filtre por artista, estilo e muito mais, e baixe tudo de uma vez só em um arquivo ZIP. Praticidade máxima para DJs profissionais!
+            </p>
           </div>
         </div>
 
@@ -422,17 +457,7 @@ function HomePageContent() {
           </div>
         </div>
 
-        {session?.user?.is_vip && (
-          <div className="bg-gradient-to-r from-pink-600/20 to-fuchsia-600/20 backdrop-blur-sm text-white p-8 rounded-3xl mb-12 border border-pink-500/30 text-center transform hover:scale-105 transition-all duration-300">
-            <div className="flex justify-center mb-6">
-              <Heart className="h-12 w-12 text-pink-400 animate-pulse" />
-            </div>
-            <h2 className="text-4xl font-bold mb-4">Bem-vindo(a) de volta!</h2>
-            <p className="text-xl opacity-90">
-              Agradecemos por fazer parte do nosso plano. Aproveite todos os benefícios exclusivos!
-            </p>
-          </div>
-        )}
+        {/* Card VIP removido */}
 
         {/* SEÇÃO - AVISO IMPORTANTE SOBRE O ACERVO */}
         {session?.user?.is_vip && (

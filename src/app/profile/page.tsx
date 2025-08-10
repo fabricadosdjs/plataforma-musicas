@@ -1147,81 +1147,24 @@ export default function ProfilePage() {
                                 </div>
                             </div>
 
-                            {/* Botão Modificar Plano anexado na parte inferior */}
-                            <div className="mt-6 -mx-6 -mb-6">
-                                <Link href="/plans">
-                                    <Button className="w-full bg-gradient-to-r from-blue-500/90 to-purple-500/90 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-blue-400/20">
+                            {/* Botões Modificar Plano, Pagar Plano e Falar Conosco lado a lado */}
+                            <div className="mt-6 flex flex-col sm:flex-row gap-4">
+                                <Link href="/plans" className="flex-1">
+                                    <Button className="w-full bg-gradient-to-r from-blue-500/90 to-purple-500/90 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-3 border-blue-400/20">
                                         <Edit className="w-5 h-5" />
                                         <span className="text-base">MODIFICAR PLANO</span>
                                     </Button>
                                 </Link>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Vencimento */}
-                    <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-                                        <Calendar className="w-6 h-6 text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-white">Vencimento</h3>
-                                        <p className="text-gray-400">Próximo pagamento</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-2xl font-bold text-blue-400">{formatDate(userData?.vencimento ?? null)}</div>
-                                    <p className="text-sm text-gray-300 mt-1">
-                                        {userData?.vencimentoInfo?.daysRemaining ? `${userData.vencimentoInfo.daysRemaining} dias restantes` : 'N/A'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Botão Pagar Plano anexado na parte inferior */}
-                            <div className="mt-6 -mx-6 -mb-6">
-                                <div className="mb-4 mx-6 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-3 text-justify text-sm text-green-200 font-medium shadow-sm w-auto">
-                                    <span className="font-bold text-green-300">Atenção:</span> O pagamento será calculado de forma proporcional (pro-rata), ou seja, você paga apenas pelos dias até o próximo vencimento. Assim, você nunca perde dias e só paga pelo que realmente vai usar!
-                                </div>
                                 <Button
                                     onClick={() => setPixModalOpen(true)}
-                                    className="w-full bg-gradient-to-r from-green-500/90 to-emerald-500/90 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-green-400/20"
+                                    className="flex-1 w-full bg-gradient-to-r from-green-500/90 to-emerald-500/90 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-3 border-green-400/20"
                                 >
                                     <CreditCard className="w-5 h-5" />
                                     <span className="text-base">PAGAR PLANO</span>
                                 </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Status */}
-                    <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${statusDisplay?.color === 'text-green-400' ? 'bg-green-500' : statusDisplay?.color === 'text-red-400' ? 'bg-red-500' : 'bg-gray-500'}`}>
-                                        {statusDisplay?.icon || <CheckCircle className="w-6 h-6 text-white" />}
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-white">Status da Conta</h3>
-                                        <p className="text-gray-400">Estado atual do plano</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className={`text-3xl font-bold ${statusDisplay?.color || 'text-gray-400'}`}>{statusDisplay?.text || 'N/A'}</div>
-                                    <p className="text-sm text-gray-300 mt-1">
-                                        {userData?.is_vip ? 'Usuário VIP' : 'Usuário Padrão'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Botão Falar Conosco anexado na parte inferior */}
-                            <div className="mt-6 -mx-6 -mb-6">
                                 <Button
                                     onClick={() => openWhatsApp('5551935052274', 'Olá! Gostaria de informações sobre meu plano atual.')}
-                                    className="w-full bg-gradient-to-r from-amber-500/90 to-orange-500/90 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-4 rounded-none rounded-b-lg transition-all duration-300 flex items-center justify-center gap-3 border-t border-amber-400/20"
+                                    className="flex-1 w-full bg-gradient-to-r from-amber-500/90 to-orange-500/90 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-3 border-amber-400/20"
                                 >
                                     <MessageCircle className="w-5 h-5" />
                                     <span className="text-base">FALAR CONOSCO</span>
@@ -1553,21 +1496,21 @@ export default function ProfilePage() {
                             <h3 className="text-2xl font-bold text-white mb-4">Ferramenta Temporariamente Desabilitada</h3>
                             <div className="space-y-3 text-gray-300 max-w-2xl mx-auto">
                                 <p className="text-lg">
-                                    Devido às <strong className="text-red-400">diretrizes atualizadas do YouTube</strong>, 
+                                    Devido às <strong className="text-red-400">diretrizes atualizadas do YouTube</strong>,
                                     a ferramenta de download não está funcional no momento.
                                 </p>
                                 <p>
-                                    O YouTube implementou novas medidas de proteção que impedem o funcionamento 
+                                    O YouTube implementou novas medidas de proteção que impedem o funcionamento
                                     de ferramentas de download automatizado.
                                 </p>
                                 <div className="mt-6 p-4 bg-blue-900/30 rounded-lg border border-blue-600/30">
                                     <h4 className="text-blue-300 font-semibold mb-2">Alternativa Recomendada:</h4>
                                     <p className="text-blue-200">
-                                        Para downloads de YouTube, recomendamos usar o <strong>Allavsoft</strong>, 
+                                        Para downloads de YouTube, recomendamos usar o <strong>Allavsoft</strong>,
                                         uma ferramenta profissional que funciona de forma independente.
                                     </p>
-                                    <Link 
-                                        href="/allavsoft" 
+                                    <Link
+                                        href="/allavsoft"
                                         className="inline-flex items-center gap-2 mt-3 text-blue-400 hover:text-blue-300 underline"
                                     >
                                         <ExternalLink className="w-4 h-4" />
@@ -1626,7 +1569,7 @@ export default function ProfilePage() {
 
                 {/* Botões de Ação */}
                 <div className="flex flex-col sm:flex-row gap-4">
-                    <Link 
+                    <Link
                         href="/allavsoft"
                         className="flex-1"
                     >
@@ -1635,7 +1578,7 @@ export default function ProfilePage() {
                             USAR ALLAVSOFT
                         </Button>
                     </Link>
-                    
+
                     <Button
                         onClick={() => openWhatsApp('5551935052274', 'Olá! Tenho dúvidas sobre o YouTube Downloader e as alternativas disponíveis.')}
                         className="flex-1 border border-gray-600 bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
