@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'reac
 import { useSession } from 'next-auth/react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Search, Filter, Music, Loader2, Sparkles, Clock, Star, CheckCircle, Waves, ShoppingCart, Package, X, Crown, Play, Download, Heart, Users } from 'lucide-react';
+import NewFooter from '@/components/layout/NewFooter';
 import { Track } from '@/types/track';
 
 // Tipo para o progresso do ZIP
@@ -1240,6 +1241,11 @@ function NewPageContent() {
                   </div>
                 </div>
               )}
+
+              {/* Footer próximo à tabela de músicas */}
+              <div className="mt-12">
+                <NewFooter />
+              </div>
             </>
           )}
         </div>

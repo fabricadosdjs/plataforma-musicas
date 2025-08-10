@@ -44,7 +44,7 @@ const WHMCSFooter = () => {
                         <ul className="whmcs-footer-links">
                             <li><Link href="/termos">Termos de Serviço</Link></li>
                             <li><Link href="/privacidade">Política de Privacidade</Link></li>
-                            <li><Link href="/politica-grupo">Política do Grupo</Link></li>
+
                             <li><a href="#" className="whmcs-chat-link">Chat Ao Vivo</a></li>
                         </ul>
                     </div>

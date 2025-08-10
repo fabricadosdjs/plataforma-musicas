@@ -2,6 +2,7 @@
 'use client';
 
 import { Lock, Mail, MessageCircle, User, Eye, EyeOff } from 'lucide-react';
+import NewFooter from '@/components/layout/NewFooter';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -184,6 +185,9 @@ export default function SignInPage() {
             © 2025 Nextor Records. Acesso exclusivo para membros VIP.
           </p>
         </div>
+
+        {/* Novo Footer */}
+        <NewFooter />
       </div>
     </div>
   );

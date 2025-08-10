@@ -3,7 +3,7 @@
 
 import React from "react";
 import WHMCSHeader from "./WHMCSHeader";
-import WHMCSFooter from "./WHMCSFooter";
+
 import WHMCSBreadcrumb from "./WHMCSBreadcrumb";
 import WHMCSSidebar from "./WHMCSSidebar";
 
@@ -68,8 +68,7 @@ const WHMCSLayout = ({
                 </div>
             </main>
 
-            {/* Footer */}
-            <WHMCSFooter />
+
         </div>
     );
 };

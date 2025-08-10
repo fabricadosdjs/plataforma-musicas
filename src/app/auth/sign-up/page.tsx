@@ -2,6 +2,7 @@
 'use client';
 
 import { ArrowLeft, Lock, MessageCircle, Music } from 'lucide-react';
+import NewFooter from '@/components/layout/NewFooter';
 import Link from 'next/link';
 
 // Note: Metadata não pode ser exportada de componentes "use client"
@@ -104,6 +105,9 @@ const SignUpPage = () => {
                         © 2025 Plataforma de Músicas. Acesso exclusivo para membros VIP.
                     </p>
                 </div>
+
+                {/* Novo Footer */}
+                <NewFooter />
             </div>
         </div>
     );

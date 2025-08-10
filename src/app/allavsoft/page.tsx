@@ -2,6 +2,7 @@
 
 import { memo } from 'react';
 import Header from '@/components/layout/Header';
+import NewFooter from '@/components/layout/NewFooter';
 import Image from "next/image";
 import {
     Zap, Shield, Globe, Film, Star, MonitorPlay, ShoppingCart, Info,
@@ -364,6 +365,9 @@ export default function AllavsoftPage() {
                     </div>
                 </section>
             </main>
+
+            {/* NewFooter Component */}
+            <NewFooter />
         </div>
     );
 }

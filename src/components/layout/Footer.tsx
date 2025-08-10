@@ -3,16 +3,35 @@ import Link from 'next/link';
 
 export default function Footer() {
     return (
-        <footer className="w-full bg-gradient-to-r from-[#1B1C1D] to-[#23232a] text-gray-300 py-8 px-4 mt-16 border-t border-gray-700/60 text-center text-sm flex flex-col items-center gap-3 shadow-inner">
-            <div className="font-bold tracking-wide text-lg mb-1 text-white/90 drop-shadow-sm">Nexor Records <span className="text-gray-400 font-normal">| All Rights Reserved 2025</span></div>
-            <div className="text-gray-300 text-base mb-2">Plataforma feita com <span className="text-pink-500">♥</span> em Venâncio Aires-RS</div>
-            <div className="w-32 border-t border-gray-700 my-2"></div>
-            <div className="flex flex-row flex-wrap gap-2 items-center justify-center">
-                <Link href="/termos" className="hover:text-blue-400 transition-colors font-medium">Termos de Serviço</Link>
-                <span className="text-gray-500">|</span>
-                <Link href="/privacidade" className="hover:text-blue-400 transition-colors font-medium">Política de Privacidade</Link>
-                <span className="text-gray-500">|</span>
-                <Link href="/politica-grupo" className="hover:text-blue-400 transition-colors font-medium">Política do Grupo</Link>
+        <footer className="w-full bg-gradient-to-r from-[#1B1C1D] to-[#23232a] text-gray-300 py-2 px-4 mt-8 border-t border-gray-700/60 text-center text-xs shadow-inner">
+            <div className="max-w-6xl mx-auto">
+                {/* Informações principais */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                    <div className="flex flex-col items-center gap-1">
+                        <div className="text-gray-300">Venâncio Aires - RS, Brasil</div>
+                        <div className="text-gray-300">contato@nexorrecords.com.br</div>
+                        <div className="text-gray-300">+55 (51) 99999-9999</div>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                        <div className="text-gray-300">Sistema Online</div>
+                        <div className="text-gray-300">99.9% Uptime</div>
+                        <div className="text-gray-300">SSL Seguro</div>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                        <div className="text-gray-300">© 2025 Nexor Records.</div>
+                        <div className="text-gray-300">Todos os direitos reservados.</div>
+                        <div className="text-gray-300">
+                            Feito com <span className="text-pink-500">♥</span> em Venâncio Aires
+                        </div>
+                    </div>
+                </div>
+
+                {/* Links */}
+                <div className="flex flex-row flex-wrap gap-2 items-center justify-center border-t border-gray-700/40 pt-2">
+                    <Link href="/termos" className="hover:text-blue-400 transition-colors">Termos de Serviço</Link>
+                    <span className="text-gray-500">|</span>
+                    <Link href="/privacidade" className="hover:text-blue-400 transition-colors">Política de Privacidade</Link>
+                </div>
             </div>
         </footer>
     );

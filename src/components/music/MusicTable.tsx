@@ -82,12 +82,6 @@ const TrackRow = React.memo(({
                     <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-2">
                             <span className="font-medium text-gray-100 truncate text-[12px]">{track.songName}</span>
-                            {track.isCommunity && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-sm">
-                                    <Users size={12} strokeWidth={2} />
-                                    COMUNIDADE
-                                </span>
-                            )}
                         </div>
                         <span className="text-[11px] text-gray-400 truncate">{track.artist}</span>
                     </div>
@@ -146,12 +140,6 @@ const TrackCard = React.memo(({
                 <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2">
                         <span className="font-bold text-white text-base truncate">{track.songName}</span>
-                        {track.isCommunity && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-sm">
-                                <Users size={12} strokeWidth={2} />
-                                COMUNIDADE
-                            </span>
-                        )}
                     </div>
                     <span className="text-sm text-gray-400 truncate">{track.artist}</span>
                     <div className="flex items-center gap-2 mt-2">

@@ -2,7 +2,7 @@
 "use client";
 
 import Header from '@/components/layout/Header';
-import SiteFooter from '@/components/layout/SiteFooter';
+
 import Alert from '@/components/ui/Alert';
 import { useAppContext } from '@/context/AppContext';
 import React from 'react';
@@ -27,7 +27,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 {children}
             </main>
 
-            <SiteFooter />
+
         </div>
     );
 }

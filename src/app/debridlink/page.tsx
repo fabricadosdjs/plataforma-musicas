@@ -1,6 +1,7 @@
 "use client";
 
 import Header from '@/components/layout/Header';
+import NewFooter from '@/components/layout/NewFooter';
 import Link from "next/link";
 import {
     LinkIcon, Zap, Sparkles, DownloadCloud, GaugeCircle, ShieldOff,
@@ -417,6 +418,9 @@ export default function DebridLinkPage() {
                         </div>
                     </div>
                 </section>
+
+                {/* NewFooter Component */}
+                <NewFooter />
             </div>
         </>
     );

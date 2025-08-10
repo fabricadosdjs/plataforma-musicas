@@ -3,6 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import Header from "@/components/layout/Header"
+import NewFooter from "@/components/layout/NewFooter"
 import {
     ArrowLeft, Music, Download, Check, ExternalLink, Settings, Zap, Shield, Globe, Headphones, Clock,
     Server, User, ArrowRight, HelpCircle, AudioLines, FolderKanban, WifiOff, ListMusic, Computer,
@@ -65,32 +66,47 @@ export default function Deemix() {
 
             {/* Hero Section */}
             <section className="relative overflow-hidden pt-24 py-20 lg:py-32">
+                {/* Animated Background Particles */}
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent"></div>
                 <div className="absolute inset-0">
-                    <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl"></div>
-                    <div className="absolute bottom-20 right-10 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+                    <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
+                    <div className="absolute bottom-20 right-10 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse"></div>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-500/10 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+                </div>
+
+                {/* Floating Music Notes */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-32 left-20 animate-bounce" style={{ animationDelay: '0.5s' }}>
+                        <Music className="w-6 h-6 text-purple-400/30" />
+                    </div>
+                    <div className="absolute top-40 right-32 animate-bounce" style={{ animationDelay: '1.5s' }}>
+                        <Music className="w-4 h-4 text-pink-400/30" />
+                    </div>
+                    <div className="absolute bottom-32 left-1/4 animate-bounce" style={{ animationDelay: '2.5s' }}>
+                        <Music className="w-5 h-5 text-blue-400/30" />
+                    </div>
                 </div>
 
                 <div className="container mx-auto px-6 relative">
                     <div className="max-w-4xl mx-auto text-center">
                         <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8 }}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full text-purple-400 text-sm font-bold mb-8"
+                            initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-purple-500/20 border border-purple-500/40 rounded-full text-purple-300 text-sm font-bold mb-8 backdrop-blur-sm shadow-lg shadow-purple-500/20"
                         >
-                            <Music className="w-4 h-4" />
+                            <Music className="w-4 h-4 animate-pulse" />
                             DEEMIX PREMIUM DEDICADO
                         </motion.div>
 
                         <motion.h1
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: 0.2 }}
+                            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ duration: 1, delay: 0.2, type: "spring", stiffness: 80 }}
                             className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-8"
                         >
                             DEEMIX
-                            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> PREMIUM</span>
+                            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent animate-pulse"> PREMIUM</span>
                         </motion.h1>
 
                         <motion.p
@@ -302,7 +318,7 @@ export default function Deemix() {
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <span className="relative flex items-center gap-3">
-                                        <Crown className="w-6 h-6" />
+                                        <Crown className="w-6 h-6 group-hover:animate-pulse" />
                                         VER PLANOS VIP
                                     </span>
                                 </Link>
@@ -311,10 +327,11 @@ export default function Deemix() {
                                     href="https://mpago.la/1CW9WQK"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group px-10 py-5 bg-transparent border-2 border-gray-600 text-gray-300 font-bold text-xl rounded-xl transition-all duration-300 hover:border-purple-400 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105"
+                                    className="group relative overflow-hidden px-10 py-5 bg-transparent border-2 border-gray-600 text-gray-300 font-bold text-xl rounded-xl transition-all duration-300 hover:border-purple-400 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105"
                                 >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
                                     <span className="relative flex items-center gap-3">
-                                        <Download className="w-6 h-6" />
+                                        <Download className="w-6 h-6 group-hover:animate-bounce" />
                                         COMPRAR AVULSO
                                     </span>
                                 </a>
@@ -322,23 +339,23 @@ export default function Deemix() {
 
                             {/* WhatsApp Support */}
                             <div className="mt-16 max-w-2xl mx-auto">
-                                <div className="relative overflow-hidden rounded-2xl border border-gray-700/50 bg-gray-900/50 backdrop-blur-sm p-8">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5"></div>
+                                <div className="group relative overflow-hidden rounded-2xl border border-gray-700/50 bg-gray-900/50 backdrop-blur-sm p-8 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/20">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                                     <div className="relative text-center">
-                                        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 rounded-full border border-green-500/30 mb-6">
-                                            <MessageCircle className="h-8 w-8 text-green-400" />
+                                        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 rounded-full border border-green-500/30 mb-6 group-hover:scale-110 transition-transform duration-300">
+                                            <MessageCircle className="h-8 w-8 text-green-400 group-hover:animate-pulse" />
                                         </div>
-                                        <h4 className="text-2xl font-bold text-white mb-4">Precisa de Ajuda?</h4>
-                                        <p className="text-gray-400 mb-6">
+                                        <h4 className="text-2xl font-bold text-white mb-4 group-hover:text-green-100 transition-colors duration-300">Precisa de Ajuda?</h4>
+                                        <p className="text-gray-400 mb-6 group-hover:text-gray-300 transition-colors duration-300">
                                             Nossa equipe está pronta para te ajudar com qualquer dúvida sobre o Deemix Premium.
                                         </p>
                                         <a
                                             href="https://wa.me/5551935052274?text=Olá,%20preciso%20de%20ajuda%20com%20o%20Deemix"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-3 px-8 py-4 bg-green-500/20 border border-green-500/50 text-green-400 font-bold rounded-xl transition-all duration-300 hover:bg-green-500/30 hover:scale-105"
+                                            className="group/btn inline-flex items-center gap-3 px-8 py-4 bg-green-500/20 border border-green-500/50 text-green-400 font-bold rounded-xl transition-all duration-300 hover:bg-green-500/30 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30"
                                         >
-                                            <MessageCircle className="w-5 h-5" />
+                                            <MessageCircle className="w-5 h-5 group-hover/btn:animate-bounce" />
                                             FALAR NO WHATSAPP
                                         </a>
                                     </div>
@@ -527,6 +544,9 @@ export default function Deemix() {
                     </div>
                 </div>
             </section>
+
+            {/* NewFooter Component */}
+            <NewFooter />
         </div>
     );
 }

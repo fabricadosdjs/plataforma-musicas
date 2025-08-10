@@ -17,7 +17,7 @@ import '../styles/whmcs-custom.css';
 import { ExtensionDetector } from '@/components/layout/ExtensionDetector';
 import { GlobalToastManager } from '@/components/layout/GlobalToastManager';
 import { ToastProvider } from '@/context/ToastContext';
-import Footer from '@/components/layout/Footer';
+
 import BrowserExtensionHandler from '@/components/layout/BrowserExtensionHandler';
 
 // Configura a fonte Lato como a fonte principal
@@ -144,7 +144,6 @@ export default function RootLayout({
                 {children}
                 {/* Player global sempre renderizado */}
                 <FooterPlayerNew />
-                <Footer />
               </GlobalPlayerProvider>
             </ToastProvider>
           </AppProvider>

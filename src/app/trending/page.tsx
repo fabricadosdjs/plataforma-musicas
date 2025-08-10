@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/layout/Header';
-import { TrendingUp, Calendar, Award, Play, Download, Heart, Clock, Star, Music, Pause, Upload, Edit3 } from 'lucide-react';
+import { TrendingUp, Calendar, Award, Play, Download, Heart, Clock, Star, Music, Pause, Upload, Edit3, Zap, Users, Target, BarChart3, Crown, Trophy, Headphones, Disc } from 'lucide-react';
+import NewFooter from '@/components/layout/NewFooter';
 import { useAppContext } from '@/context/AppContext';
 import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
 import { useToast } from '@/hooks/useToast';
@@ -33,6 +34,12 @@ function TrendingPageContent() {
     const [liking, setLiking] = useState<number | null>(null);
     const [editingImage, setEditingImage] = useState<number | null>(null);
     const [imageUrl, setImageUrl] = useState('');
+    const [stats, setStats] = useState({
+        totalDownloads: 0,
+        totalLikes: 0,
+        activeUsers: 16, // Valor padrão baseado no que o usuário mencionou
+        trendingScore: 0
+    });
 
     // Audio player context
     const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAppContext();
@@ -43,7 +50,7 @@ function TrendingPageContent() {
         session?.user?.name === 'Admin' ||
         session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
 
-    const fetchTrendingTracks = async () => {
+        const fetchTrendingTracks = async () => {
         try {
             setLoading(true);
             const response = await fetch('/api/tracks/trending');
@@ -52,11 +59,40 @@ function TrendingPageContent() {
                 // Get current week tracks (week 1)
                 const currentWeekTracks = data.tracks.filter((track: TrendingTrack) => track.weekNumber === 1);
                 setTrendingTracks(currentWeekTracks);
+                
+                // Calculate stats
+                const totalDownloads = currentWeekTracks.reduce((sum: number, track: TrendingTrack) => sum + track.downloadCount, 0);
+                const totalLikes = currentWeekTracks.reduce((sum: number, track: TrendingTrack) => sum + (track.likeCount || 0), 0);
+                const trendingScore = Math.round((totalDownloads * 0.7) + (totalLikes * 0.3));
+                
+                setStats(prevStats => ({
+                    ...prevStats,
+                    totalDownloads,
+                    totalLikes,
+                    trendingScore
+                }));
             }
         } catch (error) {
             console.error('Error fetching trending tracks:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Buscar usuários ativos do banco de dados
+    const fetchActiveUsers = async () => {
+        try {
+            const response = await fetch('/api/stats/active-users-today');
+            if (response.ok) {
+                const data = await response.json();
+                setStats(prevStats => ({
+                    ...prevStats,
+                    activeUsers: data.activeUsersToday
+                }));
+            }
+        } catch (error) {
+            console.error('Error fetching active users:', error);
+            // Manter o valor padrão de 16 em caso de erro
         }
     };
 
@@ -76,6 +112,7 @@ function TrendingPageContent() {
     useEffect(() => {
         fetchTrendingTracks();
         fetchLikes();
+        fetchActiveUsers(); // Buscar usuários ativos do banco
     }, [session?.user?.id]);
 
     // Play functionality
@@ -97,6 +134,7 @@ function TrendingPageContent() {
             previewUrl: track.downloadUrl, // Use downloadUrl as preview
             releaseDate: new Date().toISOString(), // Default value
             createdAt: new Date().toISOString(), // Added
+            __v: 0, // Add missing property
             updatedAt: new Date().toISOString(), // Added
             pool: 'Nexor Records' // Added
         };
@@ -118,7 +156,8 @@ function TrendingPageContent() {
                 releaseDate: new Date().toISOString(),
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                pool: 'Nexor Records'
+                pool: 'Nexor Records',
+                __v: 0
             })));
         }
     };
@@ -265,55 +304,144 @@ function TrendingPageContent() {
     };
 
     return (
-        <div className="min-h-screen z-0" style={{ backgroundColor: '#1B1C1D', zIndex: 0 }}>
+        <div className="min-h-screen bg-black">
             <Header />
-            <main className="container mx-auto px-4 py-8 pt-20">
 
-                {/* Hero Section */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full">
-                            <TrendingUp className="h-8 w-8 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-4xl font-bold text-white mb-2">Trending</h1>
-                            <p className="text-gray-300">As músicas mais baixadas da semana atual</p>
+            <main className="relative z-10 pt-20 pb-8">
+                {/* Hero Section - Trending Stats */}
+                <div className="container mx-auto px-4 mb-12">
+                    <div className="text-center mb-8">
+                        <div className="flex items-center justify-center gap-3 mb-4">
+                            <div className="relative">
+                                <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-2xl animate-pulse">
+                                    <TrendingUp className="h-8 w-8 text-white" />
+                                </div>
+                                <div className="absolute -inset-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl blur opacity-30 animate-ping"></div>
+                            </div>
+                            <div>
+                                <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent drop-shadow-lg">
+                                    TRENDING CHART
+                                </h1>
+                                <p className="text-gray-300 text-lg mt-2">As músicas mais quentes da semana</p>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Login Prompt for Non-logged Users */}
-                    {!session?.user?.id && (
-                        <div className="mt-6 p-4 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-xl border border-purple-500/20 max-w-2xl mx-auto">
-                            <div className="flex items-center justify-center gap-3 mb-2">
-                                <Heart className="h-5 w-5 text-pink-400" />
-                                <span className="text-pink-300 font-semibold">Funcionalidade de Likes</span>
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm rounded-2xl border border-yellow-500/30 p-6 text-center group hover:scale-105 transition-all duration-300">
+                            <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <Download className="h-6 w-6 text-white" />
                             </div>
-                            <p className="text-gray-300 text-sm">
-                                Faça login para curtir suas músicas favoritas e salvá-las em sua biblioteca pessoal.
+                            <h3 className="text-2xl font-bold text-white mb-2">{stats.totalDownloads.toLocaleString()}</h3>
+                            <p className="text-yellow-300 text-sm">Downloads da Semana</p>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-pink-500/20 to-red-500/20 backdrop-blur-sm rounded-2xl border border-pink-500/30 p-6 text-center group hover:scale-105 transition-all duration-300">
+                            <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-red-500 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <Heart className="h-6 w-6 text-white" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-2">{stats.totalLikes.toLocaleString()}</h3>
+                            <p className="text-pink-300 text-sm">Likes da Semana</p>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-6 text-center group hover:scale-105 transition-all duration-300">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <Users className="h-6 w-6 text-white" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-2">{stats.activeUsers.toLocaleString()}</h3>
+                            <p className="text-purple-300 text-sm">Usuários Ativos</p>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 backdrop-blur-sm rounded-2xl border border-emerald-500/30 p-6 text-center group hover:scale-105 transition-all duration-300">
+                            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <BarChart3 className="h-6 w-6 text-white" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-2">{stats.trendingScore.toLocaleString()}</h3>
+                            <p className="text-emerald-300 text-sm">Score Trending</p>
+                        </div>
+                    </div>
+
+                    {/* Cards de Recursos do Trending */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                        <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 backdrop-blur-sm rounded-2xl border border-yellow-500/20 p-6 group hover:border-yellow-500/40 transition-all duration-300">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+                                    <Target className="h-5 w-5 text-white" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Ranking Real</h3>
+                            </div>
+                            <p className="text-gray-300 text-sm leading-relaxed">
+                                Baseado em downloads reais e engajamento da comunidade.
+                                Sem manipulação, apenas dados autênticos.
                             </p>
-                            <div className="mt-3 flex gap-2 justify-center">
+                        </div>
+
+                        <div className="bg-gradient-to-r from-pink-500/10 to-red-500/10 backdrop-blur-sm rounded-2xl border border-pink-500/20 p-6 group hover:border-pink-500/40 transition-all duration-300">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-red-500 rounded-xl flex items-center justify-center">
+                                    <Clock className="h-5 w-5 text-white" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Atualização Semanal</h3>
+                            </div>
+                            <p className="text-gray-300 text-sm leading-relaxed">
+                                Novo ranking toda semana. Acompanhe as tendências
+                                e descubra as músicas que estão bombando.
+                            </p>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 backdrop-blur-sm rounded-2xl border border-purple-500/20 p-6 group hover:border-purple-500/40 transition-all duration-300">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+                                    <Crown className="h-5 w-5 text-white" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Top 40 Exclusivo</h3>
+                            </div>
+                            <p className="text-gray-300 text-sm leading-relaxed">
+                                As 40 músicas mais populares da semana.
+                                Qualidade garantida e curadoria premium.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Login/Register Section */}
+                {!session && (
+                    <div className="container mx-auto px-4 mb-12">
+                        <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 backdrop-blur-sm rounded-2xl border border-purple-500/20 p-8 text-center">
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                                    <Headphones className="h-6 w-6 text-white" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-white">Acesse o Trending</h2>
+                            </div>
+                            <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+                                Faça login para ouvir as prévias, curtir músicas e baixar as faixas mais populares da semana.
+                                Junte-se à comunidade de DJs e descubra o que está bombando!
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <Link href="/auth/sign-in">
-                                    <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300">
+                                    <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105">
                                         Fazer Login
                                     </button>
                                 </Link>
                                 <Link href="/auth/sign-up">
-                                    <button className="bg-gray-700/50 hover:bg-gray-600/50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300">
+                                    <button className="bg-gray-700/50 hover:bg-gray-600/50 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105">
                                         Criar Conta
                                     </button>
                                 </Link>
                             </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 {/* Loading State */}
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
                         <div className="text-center">
                             <div className="relative">
-                                <div className="w-20 h-20 border-4 border-purple-600/30 border-t-purple-600 rounded-full animate-spin mx-auto mb-6"></div>
-                                <TrendingUp className="h-8 w-8 text-purple-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                                <div className="w-20 h-20 border-4 border-yellow-600/30 border-t-yellow-600 rounded-full animate-spin mx-auto mb-6"></div>
+                                <TrendingUp className="h-8 w-8 text-yellow-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
                             </div>
                             <h3 className="text-xl font-semibold text-white mb-2">Carregando Trending</h3>
                             <p className="text-gray-400">Analisando as músicas mais populares...</p>
@@ -322,12 +450,20 @@ function TrendingPageContent() {
                 ) : (
                     <>
                         {/* Current Week Tracks */}
-                        <div className="mb-12">
+                        <div className="container mx-auto px-4 mb-12">
                             <div className="flex items-center justify-center mb-8">
-                                <Award className="h-8 w-8 text-yellow-400 mr-3" />
-                                <h2 className="text-3xl font-bold text-white">
-                                    Semana Atual - Top 40
-                                </h2>
+                                <div className="relative">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center mr-4">
+                                        <Award className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div className="absolute -inset-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl blur opacity-30 animate-pulse"></div>
+                                </div>
+                                <div className="text-center">
+                                    <h2 className="text-3xl font-bold text-white mb-2">
+                                        Semana Atual - Top 40
+                                    </h2>
+                                    <p className="text-gray-400">Ranking baseado em downloads reais</p>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -335,17 +471,17 @@ function TrendingPageContent() {
                                     <div key={track.id} className="group relative">
                                         {/* Position Badge */}
                                         <div className="absolute -top-3 -right-3 z-20">
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900' :
+                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shadow-lg ${index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 animate-bounce' :
                                                 index === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-500 text-gray-900' :
                                                     index === 2 ? 'bg-gradient-to-r from-amber-600 to-amber-800 text-white' :
                                                         'bg-gradient-to-r from-purple-600 to-purple-800 text-white'
                                                 }`}>
-                                                #{index + 1}
+                                                {index === 0 ? <Trophy className="h-5 w-5" /> : `#${index + 1}`}
                                             </div>
                                         </div>
 
                                         {/* Card */}
-                                        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6 hover:border-purple-500/50 transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:shadow-purple-500/20">
+                                        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6 hover:border-yellow-500/50 transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:shadow-yellow-500/20">
 
                                             {/* Thumbnail */}
                                             <div className="relative mb-4">
@@ -398,7 +534,7 @@ function TrendingPageContent() {
                                                     {track.artist}
                                                 </p>
                                                 {/* Nome da faixa maior */}
-                                                <h2 className="font-extrabold text-white text-lg md:text-xl truncate group-hover:text-purple-300 transition-colors text-center">
+                                                <h2 className="font-extrabold text-white text-lg md:text-xl truncate group-hover:text-yellow-300 transition-colors text-center">
                                                     {track.songName}
                                                 </h2>
 
@@ -426,7 +562,7 @@ function TrendingPageContent() {
                                                     <button
                                                         onClick={() => handleDownload(track)}
                                                         disabled={!session?.user?.is_vip}
-                                                        className={`flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-1 ${!session?.user?.is_vip ? 'opacity-50 cursor-not-allowed' : ''
+                                                        className={`flex-1 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-1 ${!session?.user?.is_vip ? 'opacity-50 cursor-not-allowed' : ''
                                                             }`}
                                                         title={!session?.user?.is_vip ? 'Apenas usuários VIP podem fazer downloads' : 'Baixar música'}
                                                     >
@@ -456,52 +592,62 @@ function TrendingPageContent() {
 
                         {/* Empty State */}
                         {trendingTracks.length === 0 && (
-                            <div className="text-center py-20">
-                                <div className="bg-gray-800/50 rounded-2xl inline-block p-8 mb-6">
-                                    <TrendingUp className="h-16 w-16 text-gray-400 mx-auto" />
+                            <div className="container mx-auto px-4">
+                                <div className="text-center py-20">
+                                    <div className="bg-gray-800/50 rounded-2xl inline-block p-8 mb-6">
+                                        <TrendingUp className="h-16 w-16 text-gray-400 mx-auto" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-white mb-4">Nenhuma música encontrada</h3>
+                                    <p className="text-gray-400 mb-8">Não há dados de trending para esta semana.</p>
+                                    <Link href="/new">
+                                        <button className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300">
+                                            Explorar Músicas
+                                        </button>
+                                    </Link>
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-4">Nenhuma música encontrada</h3>
-                                <p className="text-gray-400 mb-8">Não há dados de trending para esta semana.</p>
-                                <Link href="/new">
-                                    <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300">
-                                        Explorar Músicas
-                                    </button>
-                                </Link>
                             </div>
                         )}
 
                         {/* Info Section */}
-                        <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-2xl p-8 border border-purple-500/20">
-                            <div className="text-center">
-                                <h3 className="text-2xl font-bold text-white mb-4">Como Funciona o Trending</h3>
-                                <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-                                    Nossa análise de trending é baseada no número real de downloads das músicas.
-                                    As faixas que aparecem aqui são as que mais estão sendo baixadas pelos DJs da comunidade.
-                                </p>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                                    <div className="text-center">
-                                        <div className="bg-purple-600/20 p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                                            <Download className="h-6 w-6 text-purple-400" />
+                        <div className="container mx-auto px-4">
+                            <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 rounded-2xl p-8 border border-yellow-500/20">
+                                <div className="text-center">
+                                    <div className="flex items-center justify-center gap-3 mb-6">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+                                            <Zap className="h-6 w-6 text-white" />
                                         </div>
-                                        <h4 className="font-semibold text-white mb-2">Downloads Reais</h4>
-                                        <p className="text-sm text-gray-400">Baseado em downloads efetivos da plataforma</p>
+                                        <h3 className="text-2xl font-bold text-white">Como Funciona o Trending</h3>
                                     </div>
+                                    <p className="text-gray-300 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
+                                        Nossa análise de trending é baseada no número real de downloads das músicas.
+                                        As faixas que aparecem aqui são as que mais estão sendo baixadas pelos DJs da comunidade.
+                                        Um sistema transparente e justo para todos.
+                                    </p>
 
-                                    <div className="text-center">
-                                        <div className="bg-pink-600/20 p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                                            <Clock className="h-6 w-6 text-pink-400" />
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+                                        <div className="text-center group">
+                                            <div className="bg-yellow-600/20 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                                <Download className="h-8 w-8 text-yellow-400" />
+                                            </div>
+                                            <h4 className="font-semibold text-white mb-3 text-lg">Downloads Reais</h4>
+                                            <p className="text-sm text-gray-400 leading-relaxed">Baseado em downloads efetivos da plataforma. Sem manipulação, apenas dados autênticos da comunidade.</p>
                                         </div>
-                                        <h4 className="font-semibold text-white mb-2">Atualização Semanal</h4>
-                                        <p className="text-sm text-gray-400">Ranking atualizado todo domingo à meia-noite</p>
-                                    </div>
 
-                                    <div className="text-center">
-                                        <div className="bg-yellow-600/20 p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                                            <Star className="h-6 w-6 text-yellow-400" />
+                                        <div className="text-center group">
+                                            <div className="bg-pink-600/20 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                                <Clock className="h-8 w-8 text-pink-400" />
+                                            </div>
+                                            <h4 className="font-semibold text-white mb-3 text-lg">Atualização Semanal</h4>
+                                            <p className="text-sm text-gray-400 leading-relaxed">Ranking atualizado todo domingo à meia-noite. Acompanhe as tendências em tempo real.</p>
                                         </div>
-                                        <h4 className="font-semibold text-white mb-2">Top 40 Semanal</h4>
-                                        <p className="text-sm text-gray-400">As 40 músicas mais baixadas da semana</p>
+
+                                        <div className="text-center group">
+                                            <div className="bg-purple-600/20 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                                <Star className="h-8 w-8 text-purple-400" />
+                                            </div>
+                                            <h4 className="font-semibold text-white mb-3 text-lg">Top 40 Exclusivo</h4>
+                                            <p className="text-sm text-gray-400 leading-relaxed">As 40 músicas mais baixadas da semana. Qualidade garantida e curadoria premium.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -551,6 +697,9 @@ function TrendingPageContent() {
                     </div>
                 )}
             </main>
+
+            {/* Novo Footer */}
+            <NewFooter />
         </div>
     );
 }

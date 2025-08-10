@@ -1009,6 +1009,17 @@ export default function AdminUsersPage() {
         });
     };
 
+    // Mover o return condicional para depois de todos os hooks
+    // if (status === 'loading' || loading) {
+    //     return (
+    //         <div className="min-h-screen bg-[#1B1C1D] flex flex-col items-center justify-center text-white">
+    //             <Loader2 className="w-8 h-8 text-green-600 animate-spin mb-4" />
+    //             <div className="text-white text-lg">Carregando...</div>
+    //         </div>
+    //     );
+    // }
+
+    // Verificar loading antes de renderizar
     if (status === 'loading' || loading) {
         return (
             <div className="min-h-screen bg-[#1B1C1D] flex flex-col items-center justify-center text-white">

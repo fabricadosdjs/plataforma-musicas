@@ -3,8 +3,48 @@
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { Check, Crown, Star, Zap, Music, Download, Users, Headphones, Database, Gift, CreditCard, User, MessageSquare, Hand, Calendar, Clock, Calculator, ArrowUp, ArrowDown, DollarSign, Upload, Info } from 'lucide-react';
+import NewFooter from '@/components/layout/NewFooter';
 import Link from 'next/link';
 import Header from '@/components/layout/Header';
+
+// Estilos CSS personalizados para animações
+const customStyles = `
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+    50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.8); }
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+`;
 
 // VIP Benefits
 const VIP_BENEFITS = {
@@ -525,18 +565,38 @@ export default function PlansPage() {
 
     return (
         <div className="min-h-screen z-0" style={{ backgroundColor: '#1B1C1D', zIndex: 0 }}>
+            <style dangerouslySetInnerHTML={{ __html: customStyles }} />
             <Header />
             <main className="container mx-auto px-4 py-4 sm:py-8 pt-16 sm:pt-20">
 
                 {/* Hero Section */}
                 <div className="text-center mb-8 sm:mb-16">
                     <div className="mb-6 sm:mb-8">
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4 sm:mb-6 leading-tight">
-                            Planos VIP
-                        </h1>
-                        <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed px-4">
-                            Escolha o plano ideal para suas necessidades. Todos os planos incluem acesso completo à plataforma.
-                        </p>
+                        {/* Animated background particles */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[#202A3C]/20 rounded-full blur-3xl animate-pulse"></div>
+                            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-[#26222D]/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+                            <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-[#202A3C]/15 rounded-full blur-3xl animate-pulse delay-2000"></div>
+                        </div>
+
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-center gap-4 mb-6">
+                                <div className="relative animate-float">
+                                    <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-2xl animate-glow">
+                                        <Crown className="h-10 w-10 text-white" />
+                                    </div>
+                                    <div className="absolute -inset-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl blur opacity-30 animate-pulse"></div>
+                                </div>
+                                <div>
+                                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent drop-shadow-lg mb-4">
+                                        PLANOS VIP
+                                    </h1>
+                                    <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed px-4">
+                                        Escolha o plano ideal para suas necessidades. Todos os planos incluem acesso completo à plataforma.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -583,10 +643,17 @@ export default function PlansPage() {
                 )}
 
                 {/* Period Selection */}
-                <div className="bg-gradient-to-r from-gray-900/30 to-gray-800/20 rounded-2xl p-4 sm:p-6 md:p-8 border border-gray-700/50 mb-6 sm:mb-8">
+                <div className="bg-gradient-to-r from-gray-900/30 to-gray-800/20 rounded-2xl p-4 sm:p-6 md:p-8 border border-gray-700/50 mb-6 sm:mb-8 backdrop-blur-sm">
                     <div className="text-center mb-4 sm:mb-6">
-                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Período de Assinatura</h3>
-                        <p className="text-gray-400 text-sm sm:text-base">Escolha o período que melhor se adapta a você</p>
+                        <div className="flex items-center justify-center gap-3 mb-4">
+                            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full">
+                                <Calendar className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Período de Assinatura</h3>
+                                <p className="text-gray-400 text-sm sm:text-base">Escolha o período que melhor se adapta a você</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
@@ -594,31 +661,31 @@ export default function PlansPage() {
                             <button
                                 key={periodKey}
                                 onClick={() => setSelectedPeriod(periodKey as keyof typeof SUBSCRIPTION_PERIODS)}
-                                className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 text-xs sm:text-sm ${selectedPeriod === periodKey
-                                    ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                                    : 'border-gray-600 bg-gray-700/20 text-gray-300 hover:border-gray-500'
+                                className={`group p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 text-xs sm:text-sm hover:scale-105 ${selectedPeriod === periodKey
+                                    ? 'border-blue-500 bg-gradient-to-br from-blue-500/20 to-purple-500/20 text-blue-400 shadow-lg shadow-blue-500/25'
+                                    : 'border-gray-600 bg-gray-700/20 text-gray-300 hover:border-gray-500 hover:bg-gray-600/30'
                                     }`}
                             >
                                 <div className="flex items-center justify-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                                    <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    <Calendar className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform group-hover:scale-110 ${selectedPeriod === periodKey ? 'text-blue-400' : 'text-gray-400'}`} />
                                     <span className="font-semibold">{period.name}</span>
                                 </div>
                                 <div className="text-xs">
                                     {period.months} {period.months === 1 ? 'mês' : 'meses'}
                                 </div>
                                 {period.discount > 0 && (
-                                    <div className="text-xs text-green-400 mt-1">
-                                        {period.discount * 100}% OFF
+                                    <div className="text-xs text-green-400 mt-1 font-semibold">
+                                        🎉 {period.discount * 100}% OFF
                                     </div>
                                 )}
                                 {period.deemixFree && (
-                                    <div className="text-xs text-purple-400 mt-1">
-                                        Deemix Grátis
+                                    <div className="text-xs text-purple-400 mt-1 font-semibold">
+                                        🎁 Deemix Grátis
                                     </div>
                                 )}
                                 {period.deemixDiscount > 0 && !period.deemixFree && (
-                                    <div className="text-xs text-purple-400 mt-1">
-                                        Deemix {period.deemixDiscount * 100}% OFF
+                                    <div className="text-xs text-purple-400 mt-1 font-semibold">
+                                        💰 Deemix {period.deemixDiscount * 100}% OFF
                                     </div>
                                 )}
                             </button>
@@ -627,18 +694,28 @@ export default function PlansPage() {
 
                     {/* Deemix Toggle */}
                     <div className="flex items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-                        <span className="text-xs sm:text-sm text-gray-400">Sem Deemix</span>
+                        <div className="flex items-center gap-2">
+                            <Music className="w-4 h-4 text-gray-400" />
+                            <span className="text-xs sm:text-sm text-gray-400">Sem Deemix</span>
+                        </div>
                         <button
                             onClick={() => setIncludeDeemix(!includeDeemix)}
-                            className={`relative inline-flex h-6 w-12 sm:h-8 sm:w-14 items-center rounded-full transition-colors ${includeDeemix ? 'bg-purple-600' : 'bg-gray-600'
+                            className={`relative inline-flex h-8 w-16 sm:h-10 sm:w-20 items-center rounded-full transition-all duration-300 shadow-lg ${includeDeemix
+                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-purple-500/25'
+                                : 'bg-gradient-to-r from-gray-600 to-gray-700 shadow-gray-600/25'
                                 }`}
                         >
                             <span
-                                className={`inline-block h-4 w-4 sm:h-6 sm:w-6 transform rounded-full bg-white transition-transform ${includeDeemix ? 'translate-x-7 sm:translate-x-8' : 'translate-x-1'
+                                className={`inline-block h-6 w-6 sm:h-7 sm:w-7 transform rounded-full bg-white transition-all duration-300 shadow-md ${includeDeemix
+                                    ? 'translate-x-10 sm:translate-x-12'
+                                    : 'translate-x-1'
                                     }`}
                             />
                         </button>
-                        <span className="text-xs sm:text-sm text-gray-400">Com Deemix</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs sm:text-sm text-gray-400">Com Deemix</span>
+                            <div className="w-4 h-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full animate-pulse"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -673,9 +750,9 @@ export default function PlansPage() {
                         return (
                             <div
                                 key={planKey}
-                                className={`relative rounded-2xl p-4 sm:p-6 md:p-8 transition-all duration-300 ${isActuallyCurrentPlan
+                                className={`group relative rounded-2xl p-4 sm:p-6 md:p-8 transition-all duration-500 hover:scale-105 hover-lift ${isActuallyCurrentPlan
                                     ? 'bg-gradient-to-br from-yellow-900/30 to-orange-900/20 border-2 border-yellow-500/50 shadow-2xl shadow-yellow-500/20'
-                                    : 'bg-gradient-to-br from-gray-900/30 to-gray-800/20 border border-gray-700/50 hover:border-gray-600/50 hover:shadow-xl'
+                                    : 'bg-gradient-to-br from-gray-900/30 to-gray-800/20 border border-gray-700/50 hover:border-gray-600/50 hover:shadow-xl backdrop-blur-sm'
                                     }`}
                             >
                                 {/* Current Plan Badge */}
@@ -689,20 +766,28 @@ export default function PlansPage() {
 
                                 {/* Plan Header */}
                                 <div className="text-center mb-6 sm:mb-8">
-                                    <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">{plan.icon}</div>
-                                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                                    <div className="relative mb-4">
+                                        <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">{plan.icon}</div>
+                                        <div className="absolute inset-0 text-4xl sm:text-5xl opacity-20 blur-sm group-hover:blur-md transition-all duration-300">{plan.icon}</div>
+                                    </div>
+                                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r from-blue-400 to-purple-400 transition-all duration-300">{plan.name}</h3>
 
                                     {/* Period Badge */}
-                                    <div className="inline-flex items-center gap-1 sm:gap-2 bg-blue-500/20 text-blue-400 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-3 sm:mb-4">
-                                        <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    <div className="inline-flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold mb-3 sm:mb-4 border border-blue-500/30 shadow-lg shadow-blue-500/10 group-hover:shadow-blue-500/20 transition-all duration-300">
+                                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
                                         {periodConfig.name}
                                     </div>
 
                                     {/* Price Display */}
                                     <div className="mb-3 sm:mb-4">
-                                        <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
-                                            R$ {currentPrice.toFixed(2).replace('.', ',')}
-                                            <span className="text-sm sm:text-lg text-gray-400 font-normal">/{periodConfig.name.toLowerCase()}</span>
+                                        <div className="relative">
+                                            <div className="text-2xl sm:text-3xl font-bold text-white mb-1 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r from-green-400 to-blue-400 transition-all duration-300">
+                                                R$ {currentPrice.toFixed(2).replace('.', ',')}
+                                                <span className="text-sm sm:text-lg text-gray-400 font-normal">/{periodConfig.name.toLowerCase()}</span>
+                                            </div>
+                                            <div className="absolute inset-0 text-2xl sm:text-3xl font-bold opacity-20 blur-sm group-hover:blur-md transition-all duration-300">
+                                                R$ {currentPrice.toFixed(2).replace('.', ',')}
+                                            </div>
                                         </div>
 
                                         {/* Price Breakdown */}
@@ -736,7 +821,7 @@ export default function PlansPage() {
 
                                 {/* Benefits List */}
                                 <div className="space-y-2 sm:space-y-4 mb-6 sm:mb-8">
-                                    {Object.entries(plan.benefits).map(([benefitKey, benefit]) => {
+                                    {Object.entries(plan.benefits).map(([benefitKey, benefit], index) => {
                                         // Highlight Deemix benefit when selected
                                         const isDeemixBenefit = benefitKey === 'deemixAccess';
                                         const isHighlighted = includeDeemix && isDeemixBenefit;
@@ -745,14 +830,15 @@ export default function PlansPage() {
                                         return (
                                             <div
                                                 key={benefitKey}
-                                                className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-200 ${isHighlighted
-                                                    ? 'bg-purple-500/20 border border-purple-500/30'
-                                                    : 'bg-gray-800/50 border border-gray-700/30'
+                                                className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-300 hover:scale-105 group/benefit ${isHighlighted
+                                                    ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 shadow-lg shadow-purple-500/10'
+                                                    : 'bg-gray-800/50 border border-gray-700/30 hover:border-gray-600/50 hover:bg-gray-700/50'
                                                     }`}
+                                                style={{ animationDelay: `${index * 100}ms` }}
                                             >
-                                                <div className={`flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ${isHighlighted
-                                                    ? 'bg-purple-500 text-white'
-                                                    : 'bg-gray-600 text-gray-400'
+                                                <div className={`flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all duration-300 group-hover/benefit:scale-110 ${isHighlighted
+                                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
+                                                    : 'bg-gray-600 text-gray-400 group-hover/benefit:bg-gray-500'
                                                     }`}
                                                 >
                                                     {isFree ? (
@@ -762,10 +848,10 @@ export default function PlansPage() {
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="text-xs sm:text-sm font-medium text-white truncate">
+                                                    <div className="text-xs sm:text-sm font-medium text-white truncate group-hover/benefit:text-transparent group-hover/benefit:bg-clip-text group-hover/benefit:bg-gradient-to-r group-hover/benefit:from-blue-400 group-hover/benefit:to-purple-400 transition-all duration-300">
                                                         {BENEFIT_LABELS[benefitKey as keyof typeof BENEFIT_LABELS]}
                                                     </div>
-                                                    <div className="text-xs text-gray-400 truncate">
+                                                    <div className="text-xs text-gray-400 truncate group-hover/benefit:text-gray-300 transition-all duration-300">
                                                         {benefit.description}
                                                     </div>
                                                 </div>
@@ -778,19 +864,33 @@ export default function PlansPage() {
                                 <button
                                     onClick={() => handleSubscribe(planKey, selectedPeriod, includeDeemix)}
                                     disabled={isActuallyCurrentPlan || isHigherPlan}
-                                    className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-lg transition-all duration-300 ${isActuallyCurrentPlan
+                                    className={`group/btn w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-lg transition-all duration-500 relative overflow-hidden ${isActuallyCurrentPlan
                                         ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                                         : isHigherPlan
-                                            ? 'bg-red-600 hover:bg-red-700 text-white'
-                                            : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+                                            ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40'
+                                            : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105'
                                         }`}
                                 >
-                                    {isActuallyCurrentPlan
-                                        ? 'Plano Atual'
-                                        : isHigherPlan
-                                            ? 'Downgrade via WhatsApp'
-                                            : 'Assinar Agora'
-                                    }
+                                    {/* Animated background */}
+                                    {!isActuallyCurrentPlan && !isHigherPlan && (
+                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover/btn:opacity-20 transition-opacity duration-500"></div>
+                                    )}
+
+                                    <span className="relative z-10 flex items-center justify-center gap-2">
+                                        {isActuallyCurrentPlan ? (
+                                            <Check className="w-4 h-4" />
+                                        ) : isHigherPlan ? (
+                                            <MessageSquare className="w-4 h-4" />
+                                        ) : (
+                                            <Zap className="w-4 h-4 group-hover/btn:animate-pulse" />
+                                        )}
+                                        {isActuallyCurrentPlan
+                                            ? 'Plano Atual'
+                                            : isHigherPlan
+                                                ? 'Downgrade via WhatsApp'
+                                                : 'Assinar Agora'
+                                        }
+                                    </span>
                                 </button>
                             </div>
                         );
@@ -1040,65 +1140,72 @@ export default function PlansPage() {
                 </div>
 
                 {/* Por que escolher nossos planos? */}
-                <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-2xl p-4 sm:p-6 md:p-8 border border-blue-500/30 mb-6 sm:mb-8">
+                <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-2xl p-4 sm:p-6 md:p-8 border border-blue-500/30 mb-6 sm:mb-8 backdrop-blur-sm">
                     <div className="text-center mb-4 sm:mb-6">
-                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">❓ Por que escolher nossos planos?</h3>
-                        <p className="text-gray-300 text-sm sm:text-base">Os melhores benefícios para DJs e amantes da música eletrônica</p>
+                        <div className="flex items-center justify-center gap-3 mb-4">
+                            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full">
+                                <Star className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">❓ Por que escolher nossos planos?</h3>
+                                <p className="text-gray-300 text-sm sm:text-base">Os melhores benefícios para DJs e amantes da música eletrônica</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-                        <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-xl p-4 sm:p-6 border border-blue-500/20 text-center">
-                            <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">🎵</div>
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Acervo Completo</h4>
+                        <div className="group bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-xl p-4 sm:p-6 border border-blue-500/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 hover-lift">
+                            <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">🎵</div>
+                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-purple-400 transition-all duration-300">Acervo Completo</h4>
                             <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-300">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Milhares de músicas eletrônicas</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Qualidade profissional</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Atualizações semanais</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-xl p-4 sm:p-6 border border-green-500/20 text-center">
-                            <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">⬇️</div>
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Downloads Ilimitados</h4>
+                        <div className="group bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-xl p-4 sm:p-6 border border-green-500/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/20">
+                            <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">⬇️</div>
+                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-green-400 group-hover:to-blue-400 transition-all duration-300">Downloads Ilimitados</h4>
                             <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-300">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Sem limite de downloads</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Download instantâneo</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Múltiplos formatos</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-xl p-4 sm:p-6 border border-purple-500/20 text-center">
-                            <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">👥</div>
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Comunidade Ativa</h4>
+                        <div className="group bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-xl p-4 sm:p-6 border border-purple-500/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20">
+                            <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">👥</div>
+                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-pink-400 transition-all duration-300">Comunidade Ativa</h4>
                             <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-300">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>DJs de todo o Brasil</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Troca de experiências</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Suporte especializado</span>
                                 </div>
                             </div>
@@ -1181,12 +1288,20 @@ export default function PlansPage() {
 
                 {/* Back to Home */}
                 <div className="text-center">
-                    <Link href="/" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base">
-                        <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5" />
-                        Voltar para Home
+                    <Link href="/" className="group inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-500 text-sm sm:text-base shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105 relative overflow-hidden">
+                        {/* Animated background */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
+
+                        <span className="relative z-10 flex items-center gap-2">
+                            <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 group-hover:animate-bounce transition-all duration-300" />
+                            Voltar para Home
+                        </span>
                     </Link>
                 </div>
             </main>
+
+            {/* Novo Footer */}
+            <NewFooter />
         </div>
     );
 } 
