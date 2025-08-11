@@ -135,7 +135,7 @@ export default function MusicUploadForm() {
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        handleFileValidation(file);
+        handleFileValidation(file ?? null);
     };
 
     const handleFileValidation = (file: File | null) => {
@@ -198,6 +198,7 @@ export default function MusicUploadForm() {
         }));
     };
 
+    // Novo fluxo: upload direto para S3/Contabo usando presigned URL
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
 
@@ -215,25 +216,53 @@ export default function MusicUploadForm() {
         setError(null);
 
         try {
-            const uploadFormData = new FormData();
-            uploadFormData.append('file', selectedFile);
-            uploadFormData.append('songName', formData.songName);
-            uploadFormData.append('artist', formData.artist);
-            uploadFormData.append('style', formData.style);
-            uploadFormData.append('version', formData.version);
-            uploadFormData.append('pool', formData.pool);
-            uploadFormData.append('releaseDate', formData.releaseDate);
-            uploadFormData.append('coverUrl', formData.coverUrl);
-
-            const response = await fetch('/api/tracks/upload', {
+            // 1. Solicitar presigned URL
+            const presignRes = await fetch('/api/tracks/presign', {
                 method: 'POST',
-                body: uploadFormData,
-                // Adicionar timeout maior para uploads
-                signal: AbortSignal.timeout(300000) // 5 minutos
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fileName: selectedFile.name,
+                    fileType: selectedFile.type
+                })
             });
+            if (!presignRes.ok) {
+                setError('Erro ao obter URL de upload.');
+                setIsUploading(false);
+                return;
+            }
+            const { url: presignedUrl, key } = await presignRes.json();
 
-            const data = await response.json();
+            // 2. Upload direto para S3
+            const uploadRes = await fetch(presignedUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': selectedFile.type
+                },
+                body: selectedFile
+            });
+            if (!uploadRes.ok) {
+                setError('Falha ao enviar arquivo para o armazenamento.');
+                setIsUploading(false);
+                return;
+            }
 
+            // 3. Notificar backend para registrar a música
+            const registerRes = await fetch('/api/tracks/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    songName: formData.songName,
+                    artist: formData.artist,
+                    style: formData.style,
+                    version: formData.version,
+                    pool: formData.pool,
+                    releaseDate: formData.releaseDate,
+                    coverUrl: formData.coverUrl,
+                    fileKey: key,
+                    fileType: selectedFile.type
+                })
+            });
+            const data = await registerRes.json();
             if (data.success) {
                 setUploadSuccess(true);
                 setSelectedFile(null);
@@ -249,14 +278,10 @@ export default function MusicUploadForm() {
                 if (fileInputRef.current) {
                     fileInputRef.current.value = '';
                 }
-
-                // Recarregar lista de músicas
                 await loadUploadedTracks();
-
-                // Resetar sucesso após 3 segundos
                 setTimeout(() => setUploadSuccess(false), 3000);
             } else {
-                setError(data.error || 'Erro ao fazer upload');
+                setError(data.error || 'Erro ao registrar música');
             }
         } catch (error) {
             console.error('Erro no upload:', error);
@@ -297,10 +322,10 @@ export default function MusicUploadForm() {
                             </label>
                             <div
                                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-300 cursor-pointer ${isDragOver
-                                        ? 'border-purple-500 bg-purple-500/10'
-                                        : selectedFile
-                                            ? 'border-green-500 bg-green-500/10'
-                                            : 'border-gray-600 hover:border-purple-500'
+                                    ? 'border-purple-500 bg-purple-500/10'
+                                    : selectedFile
+                                        ? 'border-green-500 bg-green-500/10'
+                                        : 'border-gray-600 hover:border-purple-500'
                                     }`}
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}

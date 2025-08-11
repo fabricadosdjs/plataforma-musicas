@@ -300,7 +300,7 @@ export class ContaboStorage {
 export const contaboStorage = new ContaboStorage({
     endpoint: process.env.CONTABO_ENDPOINT || '',
     region: process.env.CONTABO_REGION || 'usc1',
-    accessKeyId: process.env.CONTABO_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.CONTABO_SECRET_ACCESS_KEY || '',
+    accessKeyId: process.env.CONTABO_ACCESS_KEY || '',
+    secretAccessKey: process.env.CONTABO_SECRET_KEY || '',
     bucketName: process.env.CONTABO_BUCKET_NAME || '',
 });
