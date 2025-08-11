@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         // Aceita apenas JSON
         if (request.headers.get('content-type')?.includes('application/json')) {
             const body = await request.json();
-            const { songName, artist, style, version = 'Original', pool = 'Nexor Records', releaseDate, coverUrl = '', fileKey, fileType } = body;
+            const { songName, artist, style, version = 'Original', pool = 'Nexor Records', releaseDate, coverUrl = '', fileKey, fileType, aiMeta } = body;
 
             // Validações
             if (!fileKey || !songName || !artist || !style || !releaseDate) {
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
                     downloadUrl,
                     releaseDate: new Date(new Date(releaseDate).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })),
                     isCommunity: true,
-                    uploadedBy: session.user.id,
+                    uploadedBy: session.user.id
                 }
             });
 

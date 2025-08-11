@@ -10,7 +10,14 @@ interface ImportTrackData {
     imageUrl: string;
     previewUrl: string;
     downloadUrl: string;
-    releaseDate: Date;
+    releaseDate: Date | string;
+    pool?: string; // Gravadora / pool
+    // Metadados de IA opcionais
+    aiStyle?: string;
+    aiLabel?: string;
+    aiConfidence?: number;
+    aiCoverImage?: string;
+    aiSource?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -75,11 +82,13 @@ export async function GET(request: NextRequest) {
         // Processa informações dos arquivos para importação
         const processedFiles = importableFiles.map(file => {
             const parsed = parseAudioFileName(file.filename);
+            // Nome completo do arquivo sem extensão
+            const fullName = file.filename.replace(/\.[^/.]+$/, '');
             return {
                 file,
                 parsed,
                 importData: {
-                    songName: parsed.songName,
+                    songName: fullName,
                     artist: parsed.artist,
                     style: parsed.style || 'Electronic',
                     version: parsed.version,
@@ -117,7 +126,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { files, autoParseNames = true } = body;
+        const { files, autoParseNames = true, aiConfidenceThreshold = 0.55 } = body;
 
         if (!Array.isArray(files) || files.length === 0) {
             return NextResponse.json(
@@ -136,7 +145,28 @@ export async function POST(request: NextRequest) {
 
         for (const fileData of files) {
             try {
-                const importData: ImportTrackData = fileData.importData || fileData;
+                const rawImportData: any = fileData.importData || fileData;
+
+                // Mescla dados detectados de IA (se enviados no payload) dentro da estrutura
+                // Frontend pode enviar detectedData: { style, label, confidence, coverImage, source }
+                const detected = fileData.detectedData || rawImportData.detectedData || {};
+
+                const importData: ImportTrackData = {
+                    songName: rawImportData.songName,
+                    artist: rawImportData.artist,
+                    style: rawImportData.style,
+                    version: rawImportData.version,
+                    imageUrl: rawImportData.imageUrl,
+                    previewUrl: rawImportData.previewUrl,
+                    downloadUrl: rawImportData.downloadUrl,
+                    releaseDate: rawImportData.releaseDate,
+                    pool: rawImportData.pool,
+                    aiStyle: detected.style || rawImportData.aiStyle,
+                    aiLabel: detected.label || rawImportData.aiLabel,
+                    aiConfidence: typeof detected.confidence === 'number' ? detected.confidence : rawImportData.aiConfidence,
+                    aiCoverImage: detected.coverImage || rawImportData.aiCoverImage,
+                    aiSource: detected.source || rawImportData.aiSource
+                };
 
                 // Validação básica
                 if (!importData.songName || !importData.artist) {
@@ -161,22 +191,49 @@ export async function POST(request: NextRequest) {
                     continue;
                 }
 
+                // Decide estilo e pool finais usando IA quando apropriado
+
+                // Prioriza sempre o estilo detectado pela IA se existir e confiança >= threshold
+                let finalStyle = importData.aiStyle && (importData.aiConfidence ?? 0) >= aiConfidenceThreshold
+                    ? importData.aiStyle.trim()
+                    : (importData.style ? importData.style.trim() : 'Electronic');
+
+                let finalPool = importData.pool || 'Nexor Records';
+                let finalImage = importData.imageUrl;
+
+                if ((importData.aiConfidence ?? 0) >= aiConfidenceThreshold) {
+                    if (importData.aiLabel) {
+                        finalPool = importData.aiLabel;
+                    }
+                    if (importData.aiCoverImage && !isPlaceholderCover(finalImage)) {
+                        finalImage = importData.aiCoverImage;
+                    } else if (importData.aiCoverImage && isPlaceholderCover(finalImage)) {
+                        finalImage = importData.aiCoverImage;
+                    }
+                } else if (!finalPool && importData.aiLabel) {
+                    finalPool = importData.aiLabel;
+                }
+
+                finalPool = finalPool.trim();
+
                 // Cria a música no banco
                 const newTrack = await prisma.track.create({
                     data: {
                         songName: importData.songName.trim(),
                         artist: importData.artist.trim(),
-                        style: importData.style || 'Electronic',
+                        style: finalStyle || 'Electronic',
                         version: importData.version || null,
-                        imageUrl: importData.imageUrl,
+                        pool: finalPool || 'Nexor Records',
+                        imageUrl: finalImage,
                         previewUrl: importData.previewUrl,
                         downloadUrl: importData.downloadUrl,
-                        releaseDate: new Date(importData.releaseDate)
+                        releaseDate: new Date(importData.releaseDate),
+                        // Campos extras poderiam ser salvos em futura migração (ex: aiConfidence)
                     }
                 });
 
                 results.success++;
-                console.log(`✅ Música importada: ${newTrack.songName} - ${newTrack.artist}`);
+                console.log(`✅ Música importada: ${newTrack.songName} - ${newTrack.artist} | Style: ${newTrack.style} | Pool: ${newTrack.pool}`);
 
             } catch (error) {
                 results.failed++;
@@ -243,14 +300,9 @@ function parseAudioFileName(filename: string) {
         if (match) {
             if (match[2]) {
                 // Tem artista
-                let songName = match[2].trim();
-                const version = match[3]?.trim() || null;
-
-                // Adiciona parênteses ao nome da música se houver versão
-                if (version) {
-                    songName = `${songName} (${version})`;
-                }
-
+                const songName = match[2].trim();
+                // Prioriza variação (CLEAN, DIRTY, etc) como version, senão pega version do padrão
+                const version = variation || match[3]?.trim() || null;
                 return {
                     artist: match[1].trim(),
                     songName: songName,
@@ -260,14 +312,8 @@ function parseAudioFileName(filename: string) {
                 };
             } else {
                 // Só tem nome da música
-                let songName = match[1].trim();
-                const version = match[2]?.trim() || null;
-
-                // Adiciona parênteses ao nome da música se houver versão
-                if (version) {
-                    songName = `${songName} (${version})`;
-                }
-
+                const songName = match[1].trim();
+                const version = variation || match[2]?.trim() || null;
                 return {
                     artist: 'Artista Desconhecido',
                     songName: songName,
@@ -295,6 +341,12 @@ function parseAudioFileName(filename: string) {
 function generatePlaceholderImage(artist: string, songName: string): string {
     // Retorna a capa padrão da Nexor Records
     return 'https://i.ibb.co/yB0w9yFx/20250526-1940-Capa-Eletr-nica-Sound-Cloud-remix-01jw7c19d3eee9dqwv0m1x642z.png';
+}
+
+// Detecta se a imagem é um placeholder padrão conhecido
+function isPlaceholderCover(url: string | undefined): boolean {
+    if (!url) return true;
+    return url.includes('via.placeholder.com') || url.includes('i.ibb.co/yB0w9yFx');
 }
 
 /**

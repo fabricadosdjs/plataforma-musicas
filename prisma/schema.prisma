@@ -61,6 +61,7 @@ model Track {
   updatedAt   DateTime   @updatedAt
   isCommunity Boolean    @default(false)  // Identifica se é música da comunidade
   uploadedBy  String?    // ID do usuário que enviou a música
+  aiMeta      Json?      // Metadados de IA (confiança, label, cover, fonte, etc)
   downloads   Download[]
   likes       Like[]
   plays       Play[]

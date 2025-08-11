@@ -1,4 +1,151 @@
 import { NextRequest, NextResponse } from 'next/server';
+// ⚠️ Melhorias de IA: busca real (quando possível) + fuzzy matching de pools/labels
+// Observação: Spotify / Apple Music exigem credenciais (não implementado aqui). Deezer é público.
+// Beatport scraping é melhor-esforço (pode falhar se mudar layout / bloquear).
+
+// Cache in-memory simples (reinicia a cada deploy)
+const queryCache = new Map<string, any>();
+const CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutos
+
+interface CachedItem { ts: number; data: any; }
+
+// Lista extensa de pools/labels fornecida pelo usuário para normalização
+const KNOWN_POOLS: string[] = [
+    '12 Inch', "80's", '80s', '8th Wonder', '90s', '914 Hit Squad', '9inch', 'Ace Remix Service', 'Collection', 'All In One',
+    'Partybreaks And Remixes', 'Alternative Mix', 'Essential Alternative Mix Series', 'Alternative Times', 'Anthem Kingz',
+    'Art Of Mix', 'Barbangerz', 'Beat Snatchers', 'Beatfreakz', 'Beatjunkies', 'Beezo', 'Beehive', 'Best', 'Boogie Funk',
+    'Biggest Disco World', 'Black', 'Black Jam', 'Blackline', 'Bootie Pimps', 'Bootleg', 'bpm', 'Bpm Supreme', 'Break R Us',
+    'Buko Ape', 'Blends', 'Carrymix', 'Chicken Scratch', 'Christmas', 'Cicana', 'Classic Party Rockers', 'Classixx Mixx',
+    'Club', 'Club Killers', 'Club Killers Package', 'Country', 'Country Rhythm', 'Crack 4 DJs', 'Crate Diggaz', 'Crate Gang',
+    'Crooklyn Clan', 'Da Throw Backs', 'Dance', 'Dance Classics', 'Denoizer Traxx', 'Discotech', 'DJ Allan', 'Dj City', 'Dj City Package',
+    'Dj City Uk', 'Dj Club Tools', 'Dj Cosmo', 'Dj Daff Remix', 'Dj Drojan Remix', 'Dj Hope Remix', 'DJ Jeff', 'Dj Meyker',
+    'Dj Mon', 'Old School Shortcutz', 'DJ Promotion', 'Dj Remix', 'Dj Rukus Remix', 'Dj Slick Extended Mixes', 'Dj Toto Remix',
+    'Dj Yan', 'DJC', 'Djdannyfull', 'Djdannyfull Remix', 'Djs Moombahton', 'Dmc', 'Dmc Commercial Collection', 'Dmp', 'Dms',
+    'Dms Package', "Don't Crush", 'Dvj Jarol Audio', 'Eduardo Diaz Remix', 'Europa Remix', 'Exclusive Grooves', 'Extended',
+    'Extreme Remixes', 'F-Mix Extended', 'Fat Wax', 'Fillin\' Tha Gap', 'Flip Mix The Return', 'Freestyle Greatest Beats', 'Frp',
+    'Full Tilt Remix', 'Future Heat', 'Future Mix', 'Grand', 'Grand 12-Inches', 'Heavy Hits', 'Hmc', 'Hot & Dirty', 'Hot Mixes 4 Yah!',
+    'Hot Tracks', 'Hype Jams', 'Mega Hyperz', 'I Love Disco Diamonds', 'La Esencia Del Remix', 'Late Night Record Pool', 'Latin',
+    'Latin Remix Kings', 'Lethal Weapon', 'Lmp', 'Marinx X', 'Mash Up', 'Mashup', 'Mastermix', 'Mega Kutz', 'Mega Vibe Basic Series',
+    'Mega Vibe Remixes Series', 'Megatraxx Remixes', 'Method Mix', 'Mix Factor', 'Mixaloop Acapella Loop', 'Mixshow Ingredients',
+    'Mixshow Tools', 'Mixx It', 'Mtv Mash', 'Mundy Forever', 'My Mp3 Pool', 'Neo', 'Oldies', 'Other', 'OzzMixx', 'Party Bangaz',
+    'Party Jointz', 'Partybreaks And Remixes', 'Platinum Series', 'Plr', 'Pop', 'Prolatinremix', 'Promix Dance', 'Promix Street',
+    'Promo Only', 'Radio Re-Edits', 'Redrums', 'Reeo Mix', 'Reggae', 'Remix Central', 'Remix Planet', 'Remixed Classix & Extended Versions',
+    'Remixes', 'Retrotracks', 'Snip Hitz', 'Soundz For The People', 'Street Club Hitz', 'Street Mixx Deejays', 'Street Tracks', 'Top Secret',
+    'Track', 'TrackPack For DJs', 'TrakkAddixx', 'Transitions', 'Turbo Rock N Beat', 'UltraTraxx', 'Urban Beats Series', 'Urban Ragga Videos',
+    'Wrexxshop Remixes', 'Wrexxshopremixes', 'X-Mix', 'X-Mix Dance', 'X-Mix Urban', 'Cuba Remix', 'Spin Back', 'Pro Latin Remix', 'Latin Fresh',
+    'Club Remix', 'Cultura Remix', 'BPM Supreme', 'DJcity', 'Club Killers', 'Franchise Pool', 'Heavy Hits', 'Party Favorz', 'MyMP3Pool',
+    'Promo Only', 'Music Worx', 'Powertools', 'Hot Tracks', 'Latin Mixx', 'Rhythm Culture'
+];
+
+function levenshtein(a: string, b: string): number {
+    if (a === b) return 0;
+    const al = a.length; const bl = b.length;
+    if (al === 0) return bl; if (bl === 0) return al;
+    const dp: number[] = Array(bl + 1).fill(0);
+    for (let j = 0; j <= bl; j++) dp[j] = j;
+    for (let i = 1; i <= al; i++) {
+        let prev = i - 1; dp[0] = i;
+        for (let j = 1; j <= bl; j++) {
+            const tmp = dp[j];
+            if (a[i - 1].toLowerCase() === b[j - 1].toLowerCase()) {
+                dp[j] = prev;
+            } else {
+                dp[j] = Math.min(prev + 1, dp[j] + 1, dp[j - 1] + 1);
+            }
+            prev = tmp;
+        }
+    }
+    return dp[bl];
+}
+
+function fuzzyMatchPool(name: string | undefined, maxDistanceRatio = 0.4): string | null {
+    if (!name) return null;
+    const cleaned = name.replace(/pool|records?|record\s?pool|collection/gi, '').trim();
+    let best: { p: string; score: number; dist: number } | null = null;
+    for (const p of KNOWN_POOLS) {
+        const dist = levenshtein(cleaned.toLowerCase(), p.toLowerCase());
+        const maxLen = Math.max(cleaned.length, p.length) || 1;
+        const ratio = dist / maxLen;
+        const score = 1 - ratio;
+        if (ratio <= maxDistanceRatio) {
+            if (!best || score > best.score) best = { p, score, dist };
+        }
+    }
+    return best ? best.p : null;
+}
+
+async function cachedFetchJson(url: string): Promise<any | null> {
+    const key = `json:${url}`;
+    const cached = queryCache.get(key) as CachedItem | undefined;
+    const now = Date.now();
+    if (cached && now - cached.ts < CACHE_TTL_MS) return cached.data;
+    try {
+        const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (IA Importer)' } });
+        if (!res.ok) return null;
+        const data = await res.json();
+        queryCache.set(key, { ts: now, data });
+        return data;
+    } catch {
+        return null;
+    }
+}
+
+async function cachedFetchText(url: string): Promise<string | null> {
+    const key = `text:${url}`;
+    const cached = queryCache.get(key) as CachedItem | undefined;
+    const now = Date.now();
+    if (cached && now - cached.ts < CACHE_TTL_MS) return cached.data;
+    try {
+        const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (IA Importer)' } });
+        if (!res.ok) return null;
+        const text = await res.text();
+        queryCache.set(key, { ts: now, data: text });
+        return text;
+    } catch {
+        return null;
+    }
+}
+
+// Busca real Deezer (API pública)
+async function realDeezerSearch(artist: string, song: string, version?: string) {
+    const qArtist = encodeURIComponent(artist.trim());
+    const qTrack = encodeURIComponent(song.trim());
+    const q = `https://api.deezer.com/search?q=artist:"${qArtist}" track:"${qTrack}"`;
+    const data = await cachedFetchJson(q);
+    if (!data?.data?.length) return null;
+    const track = data.data[0];
+    return {
+        platform: 'Deezer (Real)',
+        confidence: 0.9,
+        style: 'Electronic', // refinado posteriormente
+        label: fuzzyMatchPool(track?.artist?.name) || track?.artist?.name || 'Unknown',
+        url: track?.link,
+        coverImage: track?.album?.cover_big || track?.album?.cover_medium,
+        source: 'Deezer API'
+    };
+}
+
+// Beatport scraping (heurístico)
+async function realBeatportSearch(artist: string, song: string, version?: string) {
+    const query = encodeURIComponent(`${artist} ${song}`.trim());
+    const url = `https://www.beatport.com/search?q=${query}`;
+    const html = await cachedFetchText(url);
+    if (!html) return null;
+    // Procura JSON inline de release/track com label
+    const labelMatch = html.match(/"label":\{"id":\d+,"name":"(.*?)"/);
+    const coverMatch = html.match(/"cloudinaryBackground":"(https:[^"]+?image)"/);
+    const labelRaw = labelMatch ? labelMatch[1] : null;
+    const label = fuzzyMatchPool(labelRaw || '') || labelRaw || 'Unknown';
+    return {
+        platform: 'Beatport (Scrape)',
+        confidence: labelRaw ? 0.92 : 0.75,
+        style: 'Electronic',
+        label,
+        url,
+        coverImage: coverMatch ? coverMatch[1] : undefined,
+        source: 'Beatport Web'
+    };
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -31,8 +178,22 @@ export async function POST(request: NextRequest) {
             source: fileKey ? 'fileKey' : 'parameters'
         });
 
-        // Executa pesquisa em múltiplas plataformas
-        const searchResults = await searchMultiplePlatforms(extractedArtist, extractedSongName, extractedVersion);
+        // Executa pesquisa em múltiplas plataformas (incluindo reais + simulações)
+        const searchResults: any[] = [];
+
+        // 1. Fontes reais (melhor esforço)
+        try {
+            const realDeezer = await realDeezerSearch(extractedArtist, extractedSongName, extractedVersion);
+            if (realDeezer) searchResults.push(realDeezer);
+        } catch (e) { console.warn('Deezer real falhou', e); }
+        try {
+            const realBeatport = await realBeatportSearch(extractedArtist, extractedSongName, extractedVersion);
+            if (realBeatport) searchResults.push(realBeatport);
+        } catch (e) { console.warn('Beatport real falhou', e); }
+
+        // 2. Simulações / heurísticas internas
+        const simulated = await searchMultiplePlatforms(extractedArtist, extractedSongName, extractedVersion);
+        searchResults.push(...simulated);
 
         // Analisa os resultados e determina o melhor match
         const bestMatch = analyzeBestMatch(searchResults);
@@ -525,6 +686,14 @@ function analyzeBestMatch(results: any[]) {
  * Detecta estilo baseado nos resultados das plataformas
  */
 function detectStyleFromPlatforms(bestMatch: any, artist: string, songName: string, version?: string) {
+    // Se veio de fonte real com label forte, tenta inferir estilo a partir da label
+    if (bestMatch && bestMatch.platform && bestMatch.platform.includes('(Real)') && bestMatch.label) {
+        const labelLower = bestMatch.label.toLowerCase();
+        if (labelLower.includes('drumcode') || labelLower.includes('terminal m') || labelLower.includes('afterlife')) return 'Techno';
+        if (labelLower.includes('anjunabeats')) return 'Progressive Trance';
+        if (labelLower.includes('defected') || labelLower.includes('toolroom')) return 'House';
+        if (labelLower.includes('spin') || labelLower.includes('revealed') || labelLower.includes('protocol')) return 'House';
+    }
     // SEMPRE prioriza detecção por artista conhecido
     const artistBasedStyle = detectStyleFromArtist(artist);
     if (artistBasedStyle !== 'Unknown') {

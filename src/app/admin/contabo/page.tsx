@@ -102,6 +102,7 @@ export default function ContaboStoragePage() {
     const [versionOptions, setVersionOptions] = useState<string[]>(["Original", "Extended Mix", "Radio Edit", "Club Mix", "Vocal Mix", "Instrumental", "Dub Mix", "Remix", "VIP Mix", "Acoustic"]);
     const [loading, setLoading] = useState(false);
     const [importing, setImporting] = useState(false);
+    const [aiConfidenceThreshold, setAiConfidenceThreshold] = useState(0.55);
     const [uploading, setUploading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
@@ -335,7 +336,25 @@ export default function ContaboStoragePage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    files: filesToImport
+                    files: filesToImport.map(f => {
+                        // Garante que importData.pool receba o valor de label se existir
+                        const pool = f.importData?.pool || f.label || (f.detectedData?.label) || (detectedStyles[f.file.key]?.label) || 'Nexor Records';
+                        return {
+                            ...f,
+                            importData: {
+                                ...f.importData,
+                                pool
+                            },
+                            detectedData: f.detectedData || (detectedStyles[f.file.key] ? {
+                                style: detectedStyles[f.file.key].style,
+                                label: detectedStyles[f.file.key].label,
+                                confidence: detectedStyles[f.file.key].confidence,
+                                coverImage: detectedStyles[f.file.key].coverImage,
+                                source: 'session'
+                            } : undefined)
+                        };
+                    }),
+                    aiConfidenceThreshold
                 })
             });
 
@@ -1499,6 +1518,21 @@ export default function ContaboStoragePage() {
                                             )}
                                             {importing ? 'Importando...' : `Importar (${selectedFiles.length})`}
                                         </button>
+
+                                        {/* Threshold IA */}
+                                        <div className="flex items-center gap-2 bg-gray-800 px-3 py-2 rounded-lg border border-gray-700">
+                                            <label className="text-xs text-gray-300 whitespace-nowrap">Confiança IA ≥ {(aiConfidenceThreshold * 100).toFixed(0)}%</label>
+                                            <input
+                                                type="range"
+                                                min={0.3}
+                                                max={0.9}
+                                                step={0.01}
+                                                value={aiConfidenceThreshold}
+                                                onChange={e => setAiConfidenceThreshold(parseFloat(e.target.value))}
+                                                className="w-28 accent-purple-500"
+                                                title="Define o nível mínimo de confiança para aplicar estilo/gravadora da IA"
+                                            />
+                                        </div>
 
                                         <button
                                             onClick={() => {
