@@ -197,80 +197,7 @@ function HomePageContent() {
         </div>
 
         {/* SEÇÃO - ESTATÍSTICAS IMPRESSIONANTES */}
-        <div className="mb-20">
-          <div className="bg-gradient-to-br from-slate-900/40 via-gray-900/40 to-slate-900/40 rounded-3xl p-10 border border-slate-500/30 backdrop-blur-sm relative overflow-hidden">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-5">
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400"></div>
-            </div>
 
-            <div className="text-center mb-12 relative z-10">
-              <div className="flex items-center justify-center mb-6">
-                <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-4 rounded-full mr-4 shadow-lg">
-                  <TrendingUp className="h-10 w-10 text-white" />
-                </div>
-                <h2 className="text-4xl font-bold text-white">NÚMEROS QUE IMPRESSIONAM</h2>
-              </div>
-              <p className="text-gray-300 max-w-4xl mx-auto text-xl">
-                A plataforma que está revolucionando a cena DJ no Brasil
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
-              {/* Usuários Ativos */}
-              <div className="group bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-2xl p-8 text-center border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                  <Users className="h-10 w-10 text-white" />
-                </div>
-                <div className="text-4xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors duration-300">2.5K+</div>
-                <h3 className="text-lg font-semibold text-blue-200 mb-2">Usuários Ativos</h3>
-                <p className="text-gray-300 text-sm">DJs profissionais em todo o Brasil</p>
-              </div>
-
-              {/* Músicas Disponíveis */}
-              <div className="group bg-gradient-to-br from-purple-900/30 to-purple-800/20 rounded-2xl p-8 text-center border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                  <Music className="h-10 w-10 text-white" />
-                </div>
-                <div className="text-4xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors duration-300">50K+</div>
-                <h3 className="text-lg font-semibold text-purple-200 mb-2">Músicas Disponíveis</h3>
-                <p className="text-gray-300 text-sm">Faixas exclusivas e remixes únicos</p>
-              </div>
-
-              {/* Downloads Diários */}
-              <div className="group bg-gradient-to-br from-green-900/30 to-green-800/20 rounded-2xl p-8 text-center border border-green-500/30 hover:border-green-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                  <Download className="h-10 w-10 text-white" />
-                </div>
-                <div className="text-4xl font-bold text-white mb-2 group-hover:text-green-300 transition-colors duration-300">15K+</div>
-                <h3 className="text-lg font-semibold text-green-200 mb-2">Downloads Diários</h3>
-                <p className="text-gray-300 text-sm">Músicas baixadas pelos DJs</p>
-              </div>
-
-              {/* Satisfação */}
-              <div className="group bg-gradient-to-br from-pink-900/30 to-pink-800/20 rounded-2xl p-8 text-center border border-pink-500/30 hover:border-pink-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-pink-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                <div className="bg-gradient-to-r from-pink-600 to-pink-700 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                  <Star className="h-10 w-10 text-white" />
-                </div>
-                <div className="text-4xl font-bold text-white mb-2 group-hover:text-pink-300 transition-colors duration-300">98%</div>
-                <h3 className="text-lg font-semibold text-pink-200 mb-2">Taxa de Satisfação</h3>
-                <p className="text-gray-300 text-sm">DJs recomendam nossa plataforma</p>
-              </div>
-            </div>
-
-            {/* Barra de progresso animada */}
-            <div className="mt-12 text-center relative z-10">
-              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 h-1 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-transparent via-white/50 to-transparent animate-pulse" style={{ width: '100%' }}></div>
-              </div>
-              <p className="text-gray-400 text-sm mt-3">Crescimento contínuo da comunidade DJ</p>
-            </div>
-          </div>
-        </div>
 
         {/* SEÇÃO - RECADOS DA ADM */}
         <div className="mb-20">
@@ -419,50 +346,7 @@ function HomePageContent() {
         )}
 
         {/* Estatísticas Animadas */}
-        <div className="mb-20">
-          <div className="bg-gradient-to-br from-indigo-900/30 via-purple-900/30 to-pink-900/30 rounded-3xl p-10 border border-indigo-500/30 backdrop-blur-sm">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bebas-neue font-bold text-white mb-4 uppercase">NÚMEROS QUE IMPRESSIONAM</h2>
-              <p className="text-gray-300 text-xl max-w-3xl mx-auto">
-                Nossa plataforma em números - crescimento constante e sucesso comprovado
-              </p>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div className="text-center group">
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Music className="h-12 w-12 text-white mx-auto group-hover:animate-pulse" />
-                </div>
-                <div className="text-4xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors duration-300">50K+</div>
-                <div className="text-gray-300 text-lg">Músicas Disponíveis</div>
-              </div>
-
-              <div className="text-center group">
-                <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Users className="h-12 w-12 text-white mx-auto group-hover:animate-pulse" />
-                </div>
-                <div className="text-4xl font-bold text-white mb-2 group-hover:text-green-300 transition-colors duration-300">5K+</div>
-                <div className="text-gray-300 text-lg">DJs Ativos</div>
-              </div>
-
-              <div className="text-center group">
-                <div className="bg-gradient-to-r from-pink-600 to-red-600 p-6 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Download className="h-12 w-12 text-white mx-auto group-hover:animate-pulse" />
-                </div>
-                <div className="text-4xl font-bold text-white mb-2 group-hover:text-pink-300 transition-colors duration-300">100K+</div>
-                <div className="text-gray-300 text-lg">Downloads Realizados</div>
-              </div>
-
-              <div className="text-center group">
-                <div className="bg-gradient-to-r from-yellow-600 to-orange-600 p-6 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Star className="h-12 w-12 text-white mx-auto group-hover:animate-pulse" />
-                </div>
-                <div className="text-4xl font-bold text-white mb-2 group-hover:text-yellow-300 transition-colors duration-300">4.9★</div>
-                <div className="text-gray-300 text-lg">Avaliação Média</div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Features Grid */}
         <div className="mb-20">
