@@ -14,6 +14,7 @@
     ],
     "env": {
         "NEXTAUTH_URL": "https://plataforma-musicas.vercel.app",
-        "NEXTAUTH_SECRET": "your-secret-key-here"
+        "NEXTAUTH_SECRET": "your-secret-key-here",
+        "DATABASE_URL": "postgresql://dummy:dummy@localhost:5432/dummy"
     }
 }

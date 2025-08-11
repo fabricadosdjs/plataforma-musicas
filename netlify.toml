@@ -7,6 +7,7 @@
   NODE_VERSION = "20"
   NPM_VERSION = "10"
   NEXT_DISABLE_LIGHTNINGCSS = "1"
+  DATABASE_URL = "postgresql://dummy:dummy@localhost:5432/dummy"
   NEXTAUTH_URL = "https://your-site.netlify.app"
   NEXTAUTH_SECRET = "dummy-secret-for-build"
 
