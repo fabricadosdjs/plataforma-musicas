@@ -36,7 +36,7 @@
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.3",
     "embla-carousel-react": "^8.6.0",
-    "ffmpeg-static": "^5.2.0",
+    "ffmpeg-static": "4.4.0",
     "framer-motion": "^12.23.11",
     "jszip": "^3.10.1",
     "lucide-react": "^0.525.0",
