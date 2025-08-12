@@ -133,13 +133,7 @@ function NewPageContent() {
   // Estado para controlar o cancelamento
   const [cancelZipGeneration, setCancelZipGeneration] = useState(false);
 
-  // Estado para estatísticas reais
-  const [stats, setStats] = useState({
-    downloadsToday: 0,
-    totalLikes: 0,
-    vipUsersCount: 0,
-    totalTracks: 0
-  });
+
 
   // SEO para a página
   const { seoData } = useSEO({
@@ -176,11 +170,14 @@ function NewPageContent() {
       newUrl += `#${activeFilters.join('&')}`;
     }
 
-    router.replace(newUrl, { scroll: false });
+    // Corrigido: garantir que newUrl seja sempre uma string
+    router.replace(newUrl ?? '', { scroll: false });
   }, [pathname, router]);
 
   // Função para ler parâmetros da URL na inicialização
   const initializeFromURL = useCallback(() => {
+    // Verifica se searchParams existe antes de acessar
+    if (!searchParams) return;
     const q = searchParams.get('q');
     if (q) {
       setSearchQuery(q);
@@ -445,18 +442,7 @@ function NewPageContent() {
     }
   }, [selectedGenre, selectedArtist, selectedVersion, selectedPool, selectedDateRange, selectedMonth, appliedSearchQuery]);
 
-  // Fetch estatísticas reais
-  const fetchStats = useCallback(async () => {
-    try {
-      const response = await fetch('/api/stats');
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
-    }
-  }, []);
+
 
   // Fetch tracks com filtros
   const fetchTracks = useCallback(async () => {
@@ -570,8 +556,7 @@ function NewPageContent() {
   // Carregamento inicial
   useEffect(() => {
     fetchTracks();
-    fetchStats();
-  }, [fetchTracks, fetchStats]);
+  }, [fetchTracks]);
 
   // Funções para filtros
   const handleGenreChange = (genre: string) => {
@@ -929,12 +914,12 @@ function NewPageContent() {
       </div>
 
       <Header />
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 pt-16 sm:pt-20 relative z-10">
+      <main className="w-full px-2 sm:px-4 py-4 sm:py-8 pt-16 sm:pt-20 relative z-10">
         {/* Hero Section - Primeiro Slide */}
         <div className="mb-8 sm:mb-12">
           {/* Header da página */}
           <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">Novidades</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 mt-6 sm:mt-0">Novidades</h1>
 
             {/* Indicadores de filtros ativos */}
             <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -960,112 +945,135 @@ function NewPageContent() {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-[#202A3C]/80 backdrop-blur-sm rounded-xl border border-[#26222D]/50 p-6 hover:scale-105 transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                  <Music className="h-6 w-6 text-white" />
+          {/* Banner VIP - Packs Google Drive */}
+          <div className="mb-8">
+            {/* Versão Desktop - Cards Top */}
+            <div className="hidden lg:block">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                {/* Card 1 - Acesso Exclusivo */}
+                <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-2xl p-6 shadow-2xl border border-purple-400/30 hover:scale-105 transition-all duration-300 group">
+                  <div className="text-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300">
+                        <Crown className="h-8 w-8 text-white" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-3">
+                      👑 Acesso Exclusivo VIP
+                    </h3>
+                    <p className="text-white/90 text-sm leading-relaxed">
+                      Downloads ilimitados de todo o conteúdo premium da plataforma
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-400">Total de Músicas</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalTracks}</p>
+
+                {/* Card 2 - Packs Organizados */}
+                <div className="bg-gradient-to-br from-pink-600 to-pink-800 rounded-2xl p-6 shadow-2xl border border-pink-400/30 hover:scale-105 transition-all duration-300 group">
+                  <div className="text-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300">
+                        <Package className="h-8 w-8 text-white" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-3">
+                      📦 Packs Organizados
+                    </h3>
+                    <p className="text-white/90 text-sm leading-relaxed">
+                      Downloads em massa organizados por mês e estilo musical
+                    </p>
+                  </div>
                 </div>
+
+                {/* Card 3 - Google Drive */}
+                <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl p-6 shadow-2xl border border-orange-400/30 hover:scale-105 transition-all duration-300 group">
+                  <div className="text-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300">
+                        <Download className="h-8 w-8 text-white" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-3">
+                      ☁️ Google Drive
+                    </h3>
+                    <p className="text-white/90 text-sm leading-relaxed">
+                      Acesso alternativo via Google Drive para downloads rápidos
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botão de Ação Desktop */}
+              <div className="text-center mt-8">
+                <a
+                  href="https://plataformavip.nexorrecords.com.br/atualizacoes"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-white to-gray-100 text-purple-600 rounded-2xl font-bold text-xl hover:from-gray-100 hover:to-white transition-all duration-300 shadow-2xl hover:scale-105 transform border-2 border-purple-200"
+                  title="Abrir Plataforma VIP (nova aba)"
+                >
+                  <Crown className="h-7 w-7" />
+                  VER PLATAFORMA VIP
+                </a>
               </div>
             </div>
 
-            <div className="bg-[#202A3C]/80 backdrop-blur-sm rounded-xl border border-[#26222D]/50 p-6 hover:scale-105 transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
-                  <Download className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Downloads Hoje</p>
-                  <p className="text-2xl font-bold text-white">{stats.downloadsToday}</p>
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-[#202A3C]/80 backdrop-blur-sm rounded-xl border border-[#26222D]/50 p-6 hover:scale-105 transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center shadow-lg">
-                  <Heart className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Likes</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalLikes}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#202A3C]/80 backdrop-blur-sm rounded-xl border border-[#26222D]/50 p-6 hover:scale-105 transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
-                  <Users className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Usuários VIP</p>
-                  <p className="text-2xl font-bold text-white">{stats.vipUsersCount}</p>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Barra de Pesquisa e Filtros */}
           <div className="mb-8">
             <div className="flex flex-col lg:flex-row gap-4">
-              {/* Barra de Pesquisa */}
-              <div className="flex-1 relative flex">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Buscar músicas..."
-                    value={searchQuery}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearchSubmit()}
-                    className="w-full pl-12 pr-12 py-4 bg-[#26222D]/60 backdrop-blur-xl border border-[#202A3C]/50 rounded-l-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
-                  />
-
-                  {/* Botão X para limpar pesquisa */}
-                  {searchQuery && (
+              {/* Barra de Pesquisa com Filtro como ícone no mobile */}
+              <div className="flex-1 flex flex-nowrap items-center gap-2">
+                {/* Wrapper do input */}
+                <div className="flex-1 min-w-0">
+                  <div className="relative">
+                    <span className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <Search className="h-4 w-4 sm:h-5 sm:w-5 text-white/30" />
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Buscar músicas..."
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearchSubmit()}
+                      className="w-full min-w-[120px] sm:min-w-0 pl-10 sm:pl-12 pr-10 sm:pr-12 py-2 sm:py-4 text-sm sm:text-base bg-[#26222D]/60 backdrop-blur-xl border border-[#202A3C]/50 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
+                    />
+                    {/* Botão Buscar dentro do input, à direita */}
                     <button
-                      onClick={handleClearSearch}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-white transition-colors"
+                      onClick={handleSearchSubmit}
+                      disabled={!searchQuery.trim()}
+                      className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl p-2 flex items-center justify-center transition-all duration-300 shadow-lg disabled:bg-gray-600 disabled:cursor-not-allowed"
+                      style={{ height: '32px', width: '32px' }}
+                      title="Buscar"
                     >
-                      <X className="h-5 w-5" />
+                      <Search className="h-4 w-4 sm:h-5 sm:w-5" />
                     </button>
-                  )}
+                    {/* Botão X para limpar pesquisa */}
+                    {searchQuery && (
+                      <button
+                        onClick={handleClearSearch}
+                        className="absolute right-10 sm:right-14 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white transition-colors"
+                        style={{ zIndex: 2 }}
+                        title="Limpar busca"
+                      >
+                        <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-
-                {/* Botão de Pesquisa */}
+                {/* Botão de filtro ao lado do input */}
                 <button
-                  onClick={handleSearchSubmit}
-                  disabled={!searchQuery.trim()}
-                  className={`px-6 py-4 text-white rounded-r-2xl font-semibold transition-all duration-300 shadow-lg flex items-center gap-2 ${searchQuery.trim()
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-blue-500/25'
-                    : 'bg-gray-600 cursor-not-allowed shadow-gray-600/25'
-                    }`}
+                  onClick={() => setShowFiltersModal(true)}
+                  className="ml-1 sm:ml-2 h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center text-gray-400 hover:text-blue-400 transition-colors bg-[#232232] rounded-xl border border-[#202A3C]/50 relative flex-shrink-0"
+                  title="Filtros"
                 >
-                  <Search className="h-5 w-5" />
-                  <span className="hidden sm:inline">Buscar</span>
+                  <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
+                  {hasActiveFilters && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+                  )}
                 </button>
               </div>
-
-              {/* Botão de Filtros */}
-              <button
-                onClick={() => setShowFiltersModal(true)}
-                className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${hasActiveFilters
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/25'
-                  : 'bg-[#26222D]/60 backdrop-blur-xl border border-[#202A3C]/50 text-gray-300 hover:bg-[#26222D]/80 hover:border-[#202A3C]/70'
-                  }`}
-              >
-                <Filter className="h-5 w-5" />
-                <span>Filtros</span>
-                {hasActiveFilters && (
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                )}
-              </button>
 
               {/* Botão de Limpar Filtros */}
               {hasActiveFilters && (
@@ -1094,14 +1102,31 @@ function NewPageContent() {
                   <h3 className="text-amber-400 font-semibold text-sm mb-2">💡 Dica para Melhor Experiência</h3>
                   <p className="text-gray-300 text-sm leading-relaxed text-justify">
                     <span className="lg:hidden">
-                      Para uma experiência completa e melhor navegação, recomendamos que utilize este site em computadores ou dispositivos com tela maior.
-                      Algumas funcionalidades podem ter melhor desempenho em telas maiores.
+                      Está no celular? Para baixar os pacotes completos com mais rapidez, use nosso Google Drive pela página de Atualizações.
+                      Toque no botão abaixo para abrir em uma nova aba.
                     </span>
                     <span className="hidden lg:inline">
                       Você está utilizando a melhor experiência possível! Este site foi otimizado para oferecer a melhor navegação em telas maiores.
                       Aproveite todas as funcionalidades disponíveis.
                     </span>
                   </p>
+                  <div className="mt-4 lg:hidden flex justify-center">
+                    <a
+                      href="https://plataformavip.nexorrecords.com.br/atualizacoes"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-green-500 via-yellow-500 to-blue-600 text-white text-sm font-semibold transition-all duration-300 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:brightness-110 ring-1 ring-white/10"
+                      aria-label="Abrir Packs no Google Drive em nova aba"
+                      title="Abrir packs no Google Drive (nova aba)"
+                    >
+                      <svg className="h-5 w-5" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <polygon fill="#0F9D58" points="17,21 6,40 24,40 35,21" />
+                        <polygon fill="#F4B400" points="24,8 17,21 35,21" />
+                        <polygon fill="#4285F4" points="35,21 24,40 42,40" />
+                      </svg>
+                      Abrir Packs (Drive)
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1148,7 +1173,7 @@ function NewPageContent() {
                       {/* Header da Data */}
                       <div className="flex items-center space-x-3">
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <h2 className="text-2xl font-bold text-white capitalize">
+                        <h2 className="text-base sm:text-lg md:text-xl font-bold text-white capitalize">
                           {dateLabel}
                         </h2>
                         <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">
@@ -1279,11 +1304,18 @@ function NewPageContent() {
 
         {/* Ícone Flutuante da Fila de Downloads */}
         {downloadQueue.length > 0 && (
-          <div className="fixed bottom-6 right-6 z-50">
+          <div
+            className="fixed right-4 sm:right-6 z-50 flex justify-end"
+            style={{
+              bottom: 'calc(88px + 1.5rem)', // 88px = FooterPlayer height, 1.5rem = 24px gap
+              // On desktop, use a smaller offset
+              ...(window.innerWidth >= 640 ? { bottom: '2.5rem' } : {})
+            }}
+          >
             <button
               onClick={handleDownloadQueue}
               disabled={isDownloadingQueue || zipProgress.isActive}
-              className="relative group"
+              className="relative group pointer-events-auto"
               title={`Fila de Downloads (${downloadQueue.length}/20) - Máximo 20 músicas - Clique para gerar ZIP`}
             >
               {/* Ícone principal */}

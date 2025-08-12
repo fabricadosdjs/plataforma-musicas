@@ -9,6 +9,7 @@ import { VIP_PLANS_CONFIG, getVipPlan, PlanType } from '@/lib/plans-config';
 declare module "next-auth" {
     interface Session {
         user: {
+            vencimento: boolean | undefined;
             valor: any;
             id: string;
             name?: string | null;

@@ -18,28 +18,6 @@
             "src": "/favicon.ico",
             "sizes": "any",
             "type": "image/x-icon"
-        },
-        {
-            "src": "/favicon-16x16.png",
-            "sizes": "16x16",
-            "type": "image/png"
-        },
-        {
-            "src": "/favicon-32x32.png",
-            "sizes": "32x32",
-            "type": "image/png"
-        },
-        {
-            "src": "/android-chrome-192x192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/android-chrome-512x512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
         }
     ],
     "shortcuts": [
@@ -48,36 +26,21 @@
             "short_name": "New",
             "description": "Veja os últimos lançamentos",
             "url": "/new",
-            "icons": [
-                {
-                    "src": "/favicon-32x32.png",
-                    "sizes": "32x32"
-                }
-            ]
+            "icons": []
         },
         {
             "name": "Trending",
             "short_name": "Hot",
             "description": "Músicas em alta",
             "url": "/trending",
-            "icons": [
-                {
-                    "src": "/favicon-32x32.png",
-                    "sizes": "32x32"
-                }
-            ]
+            "icons": []
         },
         {
             "name": "Charts",
             "short_name": "Charts",
             "description": "Rankings musicais",
             "url": "/charts",
-            "icons": [
-                {
-                    "src": "/favicon-32x32.png",
-                    "sizes": "32x32"
-                }
-            ]
+            "icons": []
         }
     ]
 }

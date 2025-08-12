@@ -1,0 +1,144 @@
+.admin-users-bg {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #18181b 0%, #232526 100%);
+    color: #fff;
+}
+
+.admin-users-header {
+    background: #232526;
+    border-radius: 1.2rem;
+    border: 1.5px solid #3a3a3a;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+    padding: 2rem 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.admin-users-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #232526;
+    border-radius: 1.2rem;
+    overflow: hidden;
+    box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.18);
+}
+
+.admin-users-table th,
+.admin-users-table td {
+    padding: 1rem 0.75rem;
+    text-align: left;
+}
+
+.admin-users-table th {
+    background: #18181b;
+    color: #a3a3a3;
+    font-weight: 600;
+    border-bottom: 2px solid #333;
+}
+
+.admin-users-table tr {
+    transition: background 0.2s;
+}
+
+.admin-users-table tr:hover {
+    background: #23233a;
+}
+
+.admin-users-table td {
+    border-bottom: 1px solid #292929;
+}
+
+.admin-users-table .vip {
+    color: #fbbf24;
+    font-weight: bold;
+}
+
+.admin-users-table .not-vip {
+    color: #a3a3a3;
+}
+
+.admin-users-actions button {
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.7rem;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+    transition: background 0.2s, color 0.2s;
+    cursor: pointer;
+}
+
+.admin-users-actions button:last-child {
+    margin-right: 0;
+}
+
+.admin-users-actions button:hover {
+    background: linear-gradient(135deg, #a78bfa 0%, #60a5fa 100%);
+}
+
+.admin-users-table .status-ativo {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.admin-users-table .status-inativo {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.admin-users-table .user-name {
+    font-weight: 600;
+    color: #fff;
+}
+
+.admin-users-table .user-email {
+    color: #a3a3a3;
+    font-size: 0.95em;
+}
+
+.admin-users-table .user-vip {
+    background: linear-gradient(90deg, #fbbf24 0%, #f59e42 100%);
+    color: #232526;
+    border-radius: 0.5rem;
+    padding: 0.2rem 0.7rem;
+    font-weight: bold;
+    font-size: 0.95em;
+    margin-left: 0.5rem;
+}
+
+.admin-users-table .user-nonvip {
+    background: #292929;
+    color: #a3a3a3;
+    border-radius: 0.5rem;
+    padding: 0.2rem 0.7rem;
+    font-weight: bold;
+    font-size: 0.95em;
+    margin-left: 0.5rem;
+}
+
+.admin-users-table .user-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.admin-users-table .user-actions button {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.95em;
+}
+
+.admin-users-table .user-actions .edit {
+    background: linear-gradient(135deg, #22d3ee 0%, #6366f1 100%);
+}
+
+.admin-users-table .user-actions .edit:hover {
+    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+}
+
+.admin-users-table .user-actions .delete {
+    background: linear-gradient(135deg, #ef4444 0%, #f59e42 100%);
+}
+
+.admin-users-table .user-actions .delete:hover {
+    background: linear-gradient(135deg, #f87171 0%, #fbbf24 100%);
+}

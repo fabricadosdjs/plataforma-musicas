@@ -47,11 +47,15 @@ export async function POST(request: NextRequest) {
 
                     // Criar ZIP
                     const zip = new JSZip();
+                    const sanitize = (name: string) => (name || 'Desconhecido')
+                        .replace(/[\\/:*?"<>|]/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim();
                     const totalTracks = tracks.length;
                     let processedTracks = 0;
                     const startTime = Date.now();
 
-                    // Adicionar cada música ao ZIP
+                    // Adicionar cada música ao ZIP, separando por ESTILO (gênero)
                     for (let i = 0; i < tracks.length; i++) {
                         const track = tracks[i];
 
@@ -82,13 +86,17 @@ export async function POST(request: NextRequest) {
 
                             const audioBuffer = await audioResponse.arrayBuffer();
 
+                            // Criar pasta por estilo (gênero)
+                            const styleFolderName = sanitize(track.style || 'Sem Estilo').toUpperCase();
+                            const folder = zip.folder(styleFolderName);
+
                             // Criar nome do arquivo
-                            const sanitizedSongName = track.songName.replace(/[^a-zA-Z0-9\s-]/g, '').trim();
-                            const sanitizedArtist = track.artist.replace(/[^a-zA-Z0-9\s-]/g, '').trim();
+                            const sanitizedSongName = sanitize(track.songName);
+                            const sanitizedArtist = sanitize(track.artist);
                             const fileName = `${sanitizedArtist} - ${sanitizedSongName}.mp3`;
 
-                            // Adicionar ao ZIP
-                            zip.file(fileName, audioBuffer);
+                            // Adicionar ao ZIP dentro da pasta do estilo
+                            folder?.file(fileName, audioBuffer);
                             processedTracks++;
                         } catch (error) {
                             console.error(`Erro ao processar ${track.songName}:`, error);

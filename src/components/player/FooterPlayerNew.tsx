@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, X, SkipBack, SkipForward, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, X, SkipBack, SkipForward, Loader2, ChevronDown, ChevronUp, StopCircle } from 'lucide-react';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
+import { useAppContext } from '@/context/AppContext';
 import clsx from 'clsx';
 import Image from 'next/image';
 
@@ -91,6 +92,7 @@ const VolumeControl = ({ volume, onVolumeChange, isMuted, toggleMute }: VolumeCo
 // --- Componente Principal: FooterPlayer ---
 const FooterPlayer = () => {
     const { currentTrack, isPlaying, togglePlayPause, stopTrack, nextTrack, previousTrack, audioRef } = useGlobalPlayer();
+    const { setBulkCancel } = useAppContext();
 
     const [volume, setVolume] = useState(1.0);
     const [isMuted, setIsMuted] = useState(false);
@@ -202,6 +204,10 @@ const FooterPlayer = () => {
                     <div className="flex items-center justify-center sm:justify-end gap-2 w-full sm:w-auto order-2 sm:order-3">
                         <div className={clsx("flex items-center gap-2 transition-all duration-300", isMinimized && 'invisible w-0 opacity-0')}>
                             <VolumeControl volume={volume} onVolumeChange={handleVolumeChange} isMuted={isMuted} toggleMute={toggleMute} />
+                            {/* Atalho para cancelar downloads em lote */}
+                            <button onClick={() => setBulkCancel(true)} className="p-2 text-gray-400 transition active:scale-90 hover:text-red-400" title="Cancelar downloads em lote">
+                                <StopCircle size={20} />
+                            </button>
                             <button onClick={stopTrack} className="p-2 text-gray-400 transition active:scale-90 hover:text-red-500" title="Fechar player"><X size={20} /></button>
                         </div>
                         <button onClick={() => setIsMinimized(!isMinimized)} className="p-2 text-gray-400 transition active:scale-90 hover:text-white" title={isMinimized ? "Maximizar" : "Minimizar"}>

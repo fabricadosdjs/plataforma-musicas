@@ -59,6 +59,7 @@ interface ImportableFile {
         previewUrl: string;
         downloadUrl: string;
         releaseDate: string;
+        pool?: string;
     };
     detectedData?: {
         style?: string;
@@ -208,15 +209,25 @@ export default function ContaboStoragePage() {
                 ? `/api/contabo/import?prefix=${encodeURIComponent(folder)}`
                 : '/api/contabo/import';
 
+            showMessage(`🔍 Buscando arquivos${folder ? ` na pasta "${folder}"` : ''}...`, 'success');
+
             const response = await fetch(url);
             const data = await response.json();
 
             if (data.success) {
                 setImportableFiles(data.files || []);
-                showMessage(`${data.importableCount} arquivos prontos para importação`, 'success');
+
+                if (data.importableCount > 0) {
+                    showMessage(`✅ ${data.importableCount} arquivos prontos para importação`, 'success');
+                } else {
+                    showMessage(`ℹ️ Nenhum arquivo novo encontrado para importação`, 'success');
+                }
 
                 // Automaticamente detecta arquivos existentes após carregar importáveis
-                await detectExistingFiles();
+                if (data.files && data.files.length > 0) {
+                    showMessage(`🔍 Detectando arquivos existentes...`, 'success');
+                    await detectExistingFiles();
+                }
             } else {
                 showMessage(data.error || 'Erro ao analisar arquivos', 'error');
             }
@@ -1740,10 +1751,15 @@ export default function ContaboStoragePage() {
                                         </p>
                                         <button
                                             onClick={handleLoadImportableFiles}
-                                            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                                            disabled={loading}
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
                                         >
-                                            <RefreshCw className="w-4 h-4" />
-                                            Verificar Novamente
+                                            {loading ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <RefreshCw className="w-4 h-4" />
+                                            )}
+                                            {loading ? 'Buscando...' : 'Verificar Novamente'}
                                         </button>
                                     </div>
                                 ) : (

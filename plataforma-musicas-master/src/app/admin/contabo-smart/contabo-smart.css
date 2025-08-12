@@ -1,0 +1,39 @@
+/* contabo-smart custom dark theme */
+
+.contabo-dark-card {
+    background: #2a2a2a;
+    color: #fff;
+    border: 1px solid #3a3a3a;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.25);
+}
+
+.contabo-dark-card .card-title {
+    color: #fff;
+    font-weight: 600;
+}
+
+.contabo-dark-card .card-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.contabo-card-storage {
+    background: linear-gradient(135deg, #232526 0%, #414345 100%);
+    color: #60a5fa;
+}
+
+.contabo-card-db {
+    background: linear-gradient(135deg, #232526 0%, #16a34a 100%);
+    color: #4ade80;
+}
+
+.contabo-card-new {
+    background: linear-gradient(135deg, #232526 0%, #f59e42 100%);
+    color: #fbbf24;
+}
+
+.contabo-card-update {
+    background: linear-gradient(135deg, #232526 0%, #818cf8 100%);
+    color: #a5b4fc;
+}
