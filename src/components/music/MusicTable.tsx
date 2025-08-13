@@ -75,14 +75,14 @@ const TrackRow = React.memo(({
 }: TrackUIProps) => {
     return (
         <tr className={clsx(
-            "group transition-all duration-300 ease-in-out border-l-4 hover:shadow-lg",
-            isCurrent ? 'bg-zinc-900/50 border-blue-500 shadow-blue-500/20' : 'border-transparent hover:bg-zinc-800/60 hover:shadow-zinc-800/20'
+            "group border-l-4",
+            isCurrent ? 'bg-blue-900/20 border-blue-400' : 'border-transparent hover:bg-gray-800/20'
         )}>
             <td className="px-2 sm:px-3 lg:px-4 py-2 sm:py-3 align-middle w-[60%] sm:w-[45%] lg:w-[40%]">
                 <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
                     <div className="relative flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 overflow-hidden">
                         <img src={track.imageUrl || "/images/default-track.jpg"} alt={`Capa de ${track.songName}`} className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg object-cover border border-zinc-700/50 image-rendering-auto" />
-                        <button onClick={() => onPlayPause(track)} className={clsx("absolute inset-0 w-full h-full flex items-center justify-center rounded-lg transition-opacity duration-300 backdrop-blur-sm text-white bg-black/40 focus:outline-none focus:ring-0", isCurrent ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')} title={isPlaying ? "Pausar" : "Tocar"}>
+                        <button onClick={() => onPlayPause(track)} className={clsx("absolute inset-0 w-full h-full flex items-center justify-center rounded-lg text-white bg-black/40 focus:outline-none focus:ring-0", isCurrent ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')} title={isPlaying ? "Pausar" : "Tocar"}>
                             {isPlaying && isCurrent ? <Pause size={16} strokeWidth={1.75} className="text-blue-400 sm:w-[18px] sm:h-[18px] lg:w-[22px] lg:h-[22px]" /> : <Play size={16} strokeWidth={1.75} className="sm:w-[18px] sm:h-[18px] lg:w-[22px] lg:h-[22px]" />}
                         </button>
                     </div>
@@ -97,14 +97,14 @@ const TrackRow = React.memo(({
                 </div>
             </td>
             <td className="hidden sm:table-cell px-2 sm:px-3 lg:px-4 py-2 sm:py-3 align-middle w-[20%] text-center">
-                <span className="inline-flex items-center px-1.5 sm:px-2 lg:px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] lg:text-[10px] font-bold text-white tracking-wide shadow-sm whitespace-nowrap uppercase" style={{ backgroundColor: '#FF4500' }}>{track.style}</span>
+                <span className="inline-flex items-center px-1.5 sm:px-2 lg:px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] lg:text-[10px] font-bold text-white tracking-wide whitespace-nowrap uppercase bg-orange-600">{track.style}</span>
             </td>
             <td className="hidden lg:table-cell px-4 py-3 align-middle w-[25%] text-center">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-600 text-white tracking-wide shadow-sm whitespace-nowrap uppercase">{track.pool || 'Nexor Records'}</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-600 text-white tracking-wide whitespace-nowrap uppercase">{track.pool || 'Nexor Records'}</span>
             </td>
             <td className="px-2 sm:px-3 lg:px-4 py-2 sm:py-3 align-middle w-[40%] sm:w-[35%] lg:w-[30%]">
                 <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => onDownload(track)} disabled={!canDownloadResult.can} title={canDownloadResult.reason} className={clsx("flex items-center gap-1 sm:gap-2 px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 rounded-lg lg:rounded-xl font-bold transition-all duration-300 shadow-lg text-[9px] sm:text-[10px] lg:text-xs min-w-[50px] sm:min-w-[80px] lg:min-w-[120px] justify-center", hasDownloaded ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-green-500/25 cursor-default" : canDownloadResult.can ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-blue-500/25" : "bg-gradient-to-r from-zinc-700 to-zinc-600 text-gray-400 cursor-not-allowed shadow-zinc-500/25 opacity-60")}>
+                    <button onClick={() => onDownload(track)} disabled={!canDownloadResult.can} title={canDownloadResult.reason} className={clsx("flex items-center gap-1 sm:gap-2 px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 rounded-lg font-bold text-[9px] sm:text-[10px] lg:text-xs min-w-[50px] sm:min-w-[80px] lg:min-w-[120px] justify-center", hasDownloaded ? "bg-green-600 text-white cursor-default" : canDownloadResult.can ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-gray-600 text-gray-300 cursor-not-allowed opacity-60")}>
                         {hasDownloaded ? <CheckCircle size={10} strokeWidth={2} className="sm:w-[14px] sm:h-[14px] lg:w-[16px] lg:h-[16px]" /> : <Download size={10} strokeWidth={2} className="sm:w-[14px] sm:h-[14px] lg:w-[16px] lg:h-[16px]" />}
                         <span className="whitespace-nowrap hidden sm:inline">{hasDownloaded ? 'BAIXADO' : canDownloadResult.timeLeft || 'DOWNLOAD'}</span>
                         <span className="whitespace-nowrap sm:hidden">{hasDownloaded ? '✓' : '↓'}</span>
@@ -113,18 +113,18 @@ const TrackRow = React.memo(({
                         onClick={() => onToggleQueue(track)}
                         disabled={!isInQueue && externalDownloadQueue && externalDownloadQueue.length >= 20}
                         title={isInQueue ? "Remover da Fila" : externalDownloadQueue && externalDownloadQueue.length >= 20 ? "Limite de 20 músicas atingido" : "Adicionar à Fila"}
-                        className={clsx("h-8 w-8 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg lg:rounded-xl transition-all duration-300 active:scale-95 shadow-lg",
-                            isInQueue ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/25' :
-                                externalDownloadQueue && externalDownloadQueue.length >= 20 ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-red-500/25 cursor-not-allowed' :
-                                    'bg-gradient-to-r from-zinc-700 to-zinc-600 text-gray-300 hover:from-zinc-600 hover:to-zinc-500 hover:text-white shadow-zinc-500/25'
+                        className={clsx("h-8 w-8 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg",
+                            isInQueue ? 'bg-blue-600 text-white' :
+                                externalDownloadQueue && externalDownloadQueue.length >= 20 ? 'bg-red-600 text-white cursor-not-allowed' :
+                                    'bg-gray-600 text-gray-300 hover:bg-gray-500 hover:text-white'
                         )}
                     >
                         {isInQueue ? <Minus size={12} strokeWidth={2.5} className="sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" /> : <Plus size={12} strokeWidth={2.5} className="sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" />}
                     </button>
-                    <button onClick={() => onLike(track.id)} disabled={isLiking} title={isLiked ? "Descurtir" : "Curtir"} className={clsx("h-8 w-8 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg lg:rounded-xl transition-all duration-300 active:scale-95 shadow-lg", isLiked ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-pink-500/25 fill-white' : 'bg-gradient-to-r from-zinc-700 to-zinc-600 text-gray-300 hover:from-zinc-600 hover:to-zinc-500 hover:text-white shadow-zinc-500/25')}>
+                    <button onClick={() => onLike(track.id)} disabled={isLiking} title={isLiked ? "Descurtir" : "Curtir"} className={clsx("h-8 w-8 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg", isLiked ? 'bg-pink-600 text-white fill-white' : 'bg-gray-600 text-gray-300 hover:bg-gray-500 hover:text-white')}>
                         {isLiking ? <Loader2 size={12} strokeWidth={2} className="animate-spin sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" /> : <Heart size={12} strokeWidth={2} className="sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" />}
                     </button>
-                    {isAdmin && <button onClick={() => onDelete(track)} disabled={isDeleting} title="Excluir Música" className="h-8 w-8 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg lg:rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white transition-all duration-300 hover:from-red-700 hover:to-red-800 active:scale-95 shadow-lg shadow-red-500/25">{isDeleting ? <Loader2 size={12} strokeWidth={2} className="animate-spin sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" /> : <Trash2 size={12} strokeWidth={2} className="sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" />}</button>}
+                    {isAdmin && <button onClick={() => onDelete(track)} disabled={isDeleting} title="Excluir Música" className="h-8 w-8 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg bg-red-600 hover:bg-red-700 text-white">{isDeleting ? <Loader2 size={12} strokeWidth={2} className="animate-spin sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" /> : <Trash2 size={12} strokeWidth={2} className="sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" />}</button>}
                 </div>
             </td>
         </tr>
@@ -583,7 +583,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
     }
 
     return (
-        <div className={`relative w-full h-full text-sm text-gray-200 bg-[#1A1B1C] ${inter.className}`}>
+        <div className={`relative w-full h-full text-sm text-white bg-[#121212] ${inter.className}`}>
             <style jsx global>{`
                 .music-table-scrollbar::-webkit-scrollbar { 
                     width: 12px; 
@@ -629,7 +629,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                     position: sticky;
                     top: 0;
                     z-index: 50;
-                    background: #1A1B1C !important;
+                    background: #121212 !important;
                     backdrop-filter: blur(15px);
                     border-bottom: 2px solid #374151;
                     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -644,13 +644,13 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                     left: 0;
                     right: 0;
                     bottom: 0;
-                    background: #1A1B1C;
+                    background: #121212;
                     z-index: -1;
                 }
                 
                 /* Hover effect no cabeçalho */
                 .music-table thead th:hover {
-                    background: #1f2937 !important;
+                    background: #1a1a1a !important;
                 }
                 
                 .music-table tbody td {
@@ -726,27 +726,27 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                 <table className="music-table min-w-full text-left">
                     <thead>
                         <tr className="border-b border-zinc-800">
-                            <th className="px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2 font-bold text-gray-400 tracking-wider w-[60%] sm:w-[45%] lg:w-[40%]">
+                            <th className="px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2 font-bold text-white tracking-wider w-[60%] sm:w-[45%] lg:w-[40%]">
                                 <div className="flex items-center gap-0.5 sm:gap-1">
-                                    <Music2 strokeWidth={1.5} className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-purple-400" />
+                                    <Music2 strokeWidth={1.5} className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-purple-400 drop-shadow-lg" />
                                     <span className="text-[9px] sm:text-[10px] lg:text-xs">MÚSICA</span>
                                 </div>
                             </th>
-                            <th className="hidden sm:table-cell px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2 font-bold text-blue-400 tracking-wider w-[20%] text-center">
+                            <th className="hidden sm:table-cell px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2 font-bold text-white tracking-wider w-[20%] text-center">
                                 <div className="flex items-center justify-center gap-0.5 sm:gap-1">
-                                    <Sparkles strokeWidth={1.5} className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-blue-400" />
+                                    <Sparkles strokeWidth={1.5} className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-blue-400 drop-shadow-lg" />
                                     <span className="text-[9px] sm:text-[10px] lg:text-xs">GÊNERO</span>
                                 </div>
                             </th>
-                            <th className="hidden lg:table-cell px-2 py-2 font-bold text-yellow-400 tracking-wider w-[25%] text-center">
+                            <th className="hidden lg:table-cell px-2 py-2 font-bold text-white tracking-wider w-[25%] text-center">
                                 <div className="flex items-center justify-center gap-1">
-                                    <Star strokeWidth={1.5} className="h-3.5 w-3.5 lg:h-4 lg:w-4 text-yellow-400" />
+                                    <Star strokeWidth={1.5} className="h-3.5 w-3.5 lg:h-4 lg:w-4 text-yellow-400 drop-shadow-lg" />
                                     <span className="text-[9px] sm:text-[10px] lg:text-xs">POOL/LABEL</span>
                                 </div>
                             </th>
-                            <th className="px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2 font-bold text-gray-400 tracking-wider w-[40%] sm:w-[35%] lg:w-[30%] text-right">
+                            <th className="px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2 font-bold text-white tracking-wider w-[40%] sm:w-[35%] lg:w-[30%] text-right">
                                 <div className="flex items-center justify-end gap-0.5 sm:gap-1">
-                                    <Zap strokeWidth={1.5} className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-green-400" />
+                                    <Zap strokeWidth={1.5} className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-green-400 drop-shadow-lg" />
                                     <span className="text-[9px] sm:text-[10px] lg:text-xs">AÇÕES</span>
                                 </div>
                             </th>

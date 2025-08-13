@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { Search, Filter, Music, Loader2, Sparkles, Clock, Star, CheckCircle, Waves, ShoppingCart, Package, X, Crown, Play, Download, Heart, Users } from 'lucide-react';
+import { Search, Filter, Music, Loader2, Sparkles, Clock, Star, CheckCircle, Waves, ShoppingCart, Package, X, Crown, Play, Download, Heart, Users, Plus } from 'lucide-react';
 import NewFooter from '@/components/layout/NewFooter';
 import { Track } from '@/types/track';
 
@@ -558,6 +558,29 @@ function NewPageContent() {
     fetchTracks();
   }, [fetchTracks]);
 
+  // Carregar fila salva do localStorage
+  useEffect(() => {
+    try {
+      const savedQueue = localStorage.getItem('downloadQueue');
+      console.log('💾 Carregando fila do localStorage:', savedQueue ? 'encontrada' : 'não encontrada');
+
+      if (savedQueue) {
+        const parsedQueue = JSON.parse(savedQueue);
+        console.log('📦 Fila carregada:', parsedQueue.length, 'músicas');
+        setDownloadQueue(parsedQueue);
+      }
+    } catch (e) {
+      console.error('❌ Erro ao carregar fila do localStorage:', e);
+      localStorage.removeItem('downloadQueue');
+    }
+  }, []);
+
+  // Salvar fila no localStorage sempre que mudar
+  useEffect(() => {
+    console.log('💾 Salvando fila no localStorage:', downloadQueue.length, 'músicas');
+    localStorage.setItem('downloadQueue', JSON.stringify(downloadQueue));
+  }, [downloadQueue]);
+
   // Funções para filtros
   const handleGenreChange = (genre: string) => {
     setSelectedGenre(genre);
@@ -715,14 +738,39 @@ function NewPageContent() {
     }
   };
 
+  // Função para obter a data da música (formato: YYYY-MM-DD)
+  const getTrackDate = (track: Track): string => {
+    if (!track.releaseDate) return 'no-date';
+    const date = new Date(track.releaseDate);
+    return date.toISOString().split('T')[0];
+  };
+
+  // Função para verificar se pode adicionar música (mesmo dia ou fila vazia)
+  const canAddTrack = (track: Track): boolean => {
+    if (downloadQueue.length === 0) return true;
+
+    const trackDate = getTrackDate(track);
+    const firstTrackDate = getTrackDate(downloadQueue[0]);
+    return trackDate === firstTrackDate;
+  };
+
   // Função para adicionar/remover da fila
   const onToggleQueue = (track: Track) => {
+    console.log('🎵 onToggleQueue chamada para:', track.songName);
+    console.log('📊 Estado da fila antes:', downloadQueue.length);
+
     const isInQueue = downloadQueue.some((t: Track) => t.id === track.id);
+    console.log('🔍 Música já na fila?', isInQueue);
 
     if (!isInQueue) {
-      // Verificar limite de 20 músicas
-      if (downloadQueue.length >= 20) {
-        showToast('⚠️ Limite de 20 músicas atingido! Remova algumas músicas da fila antes de adicionar mais.', 'warning');
+      // Verificar restrição de dias
+      if (!canAddTrack(track)) {
+        const firstTrackDate = getTrackDate(downloadQueue[0]);
+        const trackDate = getTrackDate(track);
+        const firstDateFormatted = new Date(firstTrackDate).toLocaleDateString('pt-BR');
+        const trackDateFormatted = new Date(trackDate).toLocaleDateString('pt-BR');
+
+        showToast(`⚠️ Você só pode adicionar músicas do mesmo dia! Fila atual: ${firstDateFormatted}, Tentativa: ${trackDateFormatted}`, 'warning');
         return;
       }
 
@@ -731,7 +779,11 @@ function NewPageContent() {
         showToast('⚠️ ZIP em geração! A música será adicionada à fila atual.', 'info');
       }
 
-      setDownloadQueue((prev: Track[]) => [...prev, track]);
+      setDownloadQueue((prev: Track[]) => {
+        const newQueue = [...prev, track];
+        console.log('✅ Nova fila:', newQueue.length, 'músicas');
+        return newQueue;
+      });
       showToast(`📦 "${track.songName}" adicionada à fila`, 'success');
 
       // Adicionar classe de animação ao ícone
@@ -743,7 +795,11 @@ function NewPageContent() {
         }, 1000);
       }
     } else {
-      setDownloadQueue(prev => prev.filter((t: Track) => t.id !== track.id));
+      setDownloadQueue(prev => {
+        const newQueue = prev.filter((t: Track) => t.id !== track.id);
+        console.log('❌ Música removida da fila. Nova fila:', newQueue.length, 'músicas');
+        return newQueue;
+      });
       showToast(`📦 "${track.songName}" removida da fila`, 'success');
     }
   };
@@ -758,6 +814,14 @@ function NewPageContent() {
 
   // Função para download em lote (ZIP)
   const handleDownloadQueue = async () => {
+    console.log('🎯 handleDownloadQueue chamada');
+    console.log('📊 Estado atual:', {
+      session: !!session?.user,
+      downloadQueueLength: downloadQueue.length,
+      isDownloadingQueue,
+      zipProgressActive: zipProgress.isActive
+    });
+
     if (!session?.user) {
       showToast('👤 Faça login para fazer downloads', 'warning');
       return;
@@ -768,12 +832,19 @@ function NewPageContent() {
       return;
     }
 
+    if (isDownloadingQueue || zipProgress.isActive) {
+      console.log('⚠️ Download já em andamento');
+      return;
+    }
+
+    console.log('🚀 Iniciando download em lote...');
     setCancelZipGeneration(false);
     setIsDownloadingQueue(true);
     setZipProgress((prev: ZipProgressState) => ({ ...prev, isActive: true, isGenerating: true }));
 
     // Timeout de 5 minutos
     const timeout = setTimeout(() => {
+      console.log('⏰ Timeout atingido');
       setZipProgress((prev: ZipProgressState) => ({ ...prev, isActive: false, isGenerating: false }));
       setIsDownloadingQueue(false);
       showToast('⏰ Timeout - download em lote demorou muito', 'error');
@@ -782,6 +853,8 @@ function NewPageContent() {
     try {
       const trackIds = downloadQueue.map((track: Track) => track.id);
       const filename = `nexor-records-${new Date().toISOString().split('T')[0]}.zip`;
+
+      console.log('📤 Enviando requisição para API:', { trackIds, filename });
 
       const response = await fetch('/api/downloads/zip-progress', {
         method: 'POST',
@@ -792,6 +865,8 @@ function NewPageContent() {
       if (!response.ok) {
         throw new Error('Erro ao iniciar download em lote');
       }
+
+      console.log('✅ Resposta da API recebida, iniciando stream...');
 
       const reader = response.body?.getReader();
       if (!reader) {
@@ -804,6 +879,7 @@ function NewPageContent() {
       while (true) {
         // Verificar se foi cancelado
         if (cancelZipGeneration) {
+          console.log('❌ Download cancelado pelo usuário');
           break;
         }
 
@@ -828,6 +904,7 @@ function NewPageContent() {
               }
 
               const data = JSON.parse(jsonData);
+              console.log('📊 Dados recebidos:', data);
 
               if (data.type === 'progress') {
                 setZipProgress((prev: ZipProgressState) => ({
@@ -883,7 +960,7 @@ function NewPageContent() {
         }
       }
     } catch (error) {
-      console.error('Erro no download em lote:', error);
+      console.error('❌ Erro no download em lote:', error);
       setZipProgress((prev: ZipProgressState) => ({ ...prev, isActive: false, isGenerating: false }));
       setIsDownloadingQueue(false);
       clearTimeout(timeout);
@@ -913,7 +990,7 @@ function NewPageContent() {
         <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-[#202A3C]/15 rounded-full blur-3xl animate-pulse delay-2000"></div>
       </div>
 
-      <Header />
+      <Header downloadQueueCount={downloadQueue.length} />
       <main className="w-full px-2 sm:px-4 py-4 sm:py-8 pt-16 sm:pt-20 relative z-10">
         {/* Hero Section - Primeiro Slide */}
         <div className="mb-8 sm:mb-12">
@@ -1170,15 +1247,163 @@ function NewPageContent() {
 
                   return (
                     <div key={dateKey} className="space-y-4">
-                      {/* Header da Data */}
-                      <div className="flex items-center space-x-3">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <h2 className="text-base sm:text-lg md:text-xl font-bold text-white capitalize">
-                          {dateLabel}
-                        </h2>
-                        <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">
-                          {tracksForDate.length} {tracksForDate.length === 1 ? 'música' : 'músicas'}
-                        </span>
+
+                      {/* Header da Data com Botão Adicionar Todas */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                          <h2 className="text-base sm:text-lg md:text-xl font-bold text-white capitalize">
+                            {dateLabel}
+                          </h2>
+                          <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">
+                            {tracksForDate.length} {tracksForDate.length === 1 ? 'música' : 'músicas'}
+                          </span>
+                        </div>
+
+                        {/* Botões para adicionar músicas desta data */}
+                        <div className="flex items-center gap-3">
+                          {/* Botão para adicionar apenas músicas novas (não baixadas) */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log(`🎯 Adicionando apenas músicas novas de ${dateLabel} à fila`);
+
+                              if (!tracksForDate || tracksForDate.length === 0) {
+                                showToast('📋 Nenhuma música disponível nesta data', 'warning');
+                                return;
+                              }
+
+                              // Obter músicas já baixadas do localStorage
+                              const savedDownloadedTracks = localStorage.getItem('downloadedTracks');
+                              let downloadedIds: number[] = [];
+                              if (savedDownloadedTracks) {
+                                try {
+                                  downloadedIds = JSON.parse(savedDownloadedTracks);
+                                } catch (error) {
+                                  console.error('❌ Erro ao carregar músicas baixadas:', error);
+                                }
+                              }
+
+                              // Filtrar apenas músicas novas (não baixadas e não na fila)
+                              const newTracksToAdd = tracksForDate.filter(track =>
+                                !downloadedIds.includes(track.id) &&
+                                !downloadQueue.some(queueTrack => queueTrack.id === track.id)
+                              );
+
+                              if (newTracksToAdd.length === 0) {
+                                showToast('✅ Não há músicas novas para adicionar nesta data!', 'info');
+                                return;
+                              }
+
+                              // Verificar restrição de dias
+                              if (downloadQueue.length > 0) {
+                                const firstTrackDate = getTrackDate(downloadQueue[0]);
+                                const currentDate = getTrackDate(newTracksToAdd[0]);
+
+                                if (firstTrackDate !== currentDate) {
+                                  const firstDateFormatted = new Date(firstTrackDate).toLocaleDateString('pt-BR');
+                                  const currentDateFormatted = new Date(currentDate).toLocaleDateString('pt-BR');
+
+                                  showToast(`⚠️ Você só pode adicionar músicas do mesmo dia! Fila atual: ${firstDateFormatted}, Tentativa: ${currentDateFormatted}`, 'warning');
+                                  return;
+                                }
+                              }
+
+                              // Adicionar apenas músicas novas
+                              setDownloadQueue(prev => [...prev, ...newTracksToAdd]);
+                              showToast(`🆕 Adicionadas ${newTracksToAdd.length} músicas novas de ${dateLabel} à fila!`, 'success');
+
+                              // Animação de feedback
+                              const icon = document.querySelector('.download-queue-icon');
+                              if (icon) {
+                                icon.classList.add('animate-bounce');
+                                setTimeout(() => {
+                                  icon.classList.remove('animate-bounce');
+                                }, 1000);
+                              }
+                            }}
+                            disabled={!tracksForDate || tracksForDate.length === 0}
+                            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-2 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none text-sm font-semibold"
+                            title={`Adicionar apenas músicas novas (não baixadas) de ${dateLabel} à fila`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Plus className="h-4 w-4" />
+                              <span>Adicionar Novas ({tracksForDate.filter(track => {
+                                const savedDownloadedTracks = localStorage.getItem('downloadedTracks');
+                                let downloadedIds: number[] = [];
+                                if (savedDownloadedTracks) {
+                                  try {
+                                    downloadedIds = JSON.parse(savedDownloadedTracks);
+                                  } catch (error) {
+                                    console.error('❌ Erro ao carregar músicas baixadas:', error);
+                                  }
+                                }
+                                return !downloadedIds.includes(track.id) &&
+                                  !downloadQueue.some(queueTrack => queueTrack.id === track.id);
+                              }).length})</span>
+                            </div>
+                          </button>
+
+                          {/* Botão para adicionar todas as músicas desta data */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log(`🎯 Adicionando todas as músicas de ${dateLabel} à fila`);
+
+                              if (!tracksForDate || tracksForDate.length === 0) {
+                                showToast('📋 Nenhuma música disponível nesta data', 'warning');
+                                return;
+                              }
+
+                              // Filtrar músicas que não estão na fila
+                              const tracksToAdd = tracksForDate.filter(track =>
+                                !downloadQueue.some(queueTrack => queueTrack.id === track.id)
+                              );
+
+                              if (tracksToAdd.length === 0) {
+                                showToast('✅ Todas as músicas desta data já estão na fila!', 'info');
+                                return;
+                              }
+
+                              // Verificar restrição de dias
+                              if (downloadQueue.length > 0) {
+                                const firstTrackDate = getTrackDate(downloadQueue[0]);
+                                const currentDate = getTrackDate(tracksToAdd[0]);
+
+                                if (firstTrackDate !== currentDate) {
+                                  const firstDateFormatted = new Date(firstTrackDate).toLocaleDateString('pt-BR');
+                                  const currentDateFormatted = new Date(currentDate).toLocaleDateString('pt-BR');
+
+                                  showToast(`⚠️ Você só pode adicionar músicas do mesmo dia! Fila atual: ${firstDateFormatted}, Tentativa: ${currentDateFormatted}`, 'warning');
+                                  return;
+                                }
+                              }
+
+                              // Adicionar todas as músicas desta data
+                              setDownloadQueue(prev => [...prev, ...tracksToAdd]);
+                              showToast(`📦 Adicionadas ${tracksToAdd.length} músicas de ${dateLabel} à fila!`, 'success');
+
+                              // Animação de feedback
+                              const icon = document.querySelector('.download-queue-icon');
+                              if (icon) {
+                                icon.classList.add('animate-bounce');
+                                setTimeout(() => {
+                                  icon.classList.remove('animate-bounce');
+                                }, 1000);
+                              }
+                            }}
+                            disabled={!tracksForDate || tracksForDate.length === 0}
+                            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none text-sm font-semibold"
+                            title={`Adicionar todas as músicas de ${dateLabel} à fila`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Plus className="h-4 w-4" />
+                              <span>Adicionar Todas ({tracksForDate.length})</span>
+                            </div>
+                          </button>
+                        </div>
                       </div>
 
                       {/* Tabela para esta data */}
@@ -1302,68 +1527,7 @@ function NewPageContent() {
           hasActiveFilters={hasActiveFilters}
         />
 
-        {/* Ícone Flutuante da Fila de Downloads */}
-        {downloadQueue.length > 0 && (
-          <div
-            className="fixed right-4 sm:right-6 z-50 flex justify-end"
-            style={{
-              bottom: 'calc(88px + 1.5rem)', // 88px = FooterPlayer height, 1.5rem = 24px gap
-              // On desktop, use a smaller offset
-              ...(window.innerWidth >= 640 ? { bottom: '2.5rem' } : {})
-            }}
-          >
-            <button
-              onClick={handleDownloadQueue}
-              disabled={isDownloadingQueue || zipProgress.isActive}
-              className="relative group pointer-events-auto"
-              title={`Fila de Downloads (${downloadQueue.length}/20) - Máximo 20 músicas - Clique para gerar ZIP`}
-            >
-              {/* Ícone principal */}
-              <div className="relative">
-                <div className="download-queue-icon w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 group-hover:shadow-blue-500/50">
-                  {isDownloadingQueue || zipProgress.isActive ? (
-                    <Loader2 className="h-8 w-8 text-white animate-spin" />
-                  ) : (
-                    <ShoppingCart className="h-8 w-8 text-white" />
-                  )}
-                </div>
 
-                {/* Contador */}
-                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
-                  {downloadQueue.length}
-                </div>
-
-                {/* Animação de pulso quando adiciona música */}
-                <div className="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-20"></div>
-              </div>
-
-              {/* Tooltip */}
-              <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                {isDownloadingQueue || zipProgress.isActive ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {zipProgress.isGenerating ? 'Processando...' : 'Baixando...'}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    Gerar ZIP ({downloadQueue.length}/20 músicas)
-                  </div>
-                )}
-              </div>
-            </button>
-
-            {/* Botão para limpar fila ou cancelar ZIP */}
-            <button
-              onClick={zipProgress.isActive ? handleCancelZipGeneration : () => setDownloadQueue([])}
-              disabled={isDownloadingQueue && !zipProgress.isActive}
-              className="absolute -top-2 -left-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={zipProgress.isActive ? "Cancelar geração do ZIP" : "Limpar fila"}
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-        )}
 
         {/* Progress Bar Flutuante */}
         {zipProgress.isActive && (
