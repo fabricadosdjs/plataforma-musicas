@@ -85,14 +85,8 @@ const Header = ({ }: HeaderProps) => {
       const newNotifications: typeof notifications = [];
 
       // Verificar vencimento VIP - REMOVIDO O ALERTA AUTOMÁTICO
-      if (
-        session.user.is_vip &&
-        session.user.vencimento &&
-        (typeof session.user.vencimento === 'string' ||
-          typeof session.user.vencimento === 'number' ||
-          (session.user.vencimento !== null && Object.prototype.toString.call(session.user.vencimento) === '[object Date]'))
-      ) {
-        const vencimentoDate = new Date(session.user.vencimento as unknown as string | number | Date);
+      if (session.user.is_vip && session.user.vencimento) {
+        const vencimentoDate = new Date(session.user.vencimento);
         const now = new Date();
         const diffTime = vencimentoDate.getTime() - now.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -154,14 +148,14 @@ const Header = ({ }: HeaderProps) => {
             <Menu className="h-6 w-6" />
           </button>
           <Link href="/">
-            <div className="relative h-8 w-[110px] md:h-9 md:w-[130px] lg:h-10 lg:w-[150px] max-w-[150px]">
+            <div className="relative h-10 w-auto">
               <Image
                 src={NEW_LOGO_URL}
                 alt="NextorDJ Logo"
-                fill
+                width={150}
+                height={40}
                 priority
-                className="object-contain"
-                sizes="(max-width: 768px) 110px, (max-width: 1024px) 130px, 150px"
+                className="h-full w-auto object-contain"
               />
             </div>
           </Link>
@@ -170,7 +164,7 @@ const Header = ({ }: HeaderProps) => {
           <nav className="hidden md:flex space-x-2 text-gray-300 font-medium items-center">
             <Link
               href="/"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl font-bold tracking-wide text-xs transition-all duration-300 hover:text-blue-400 hover:bg-blue-500/10 hover:scale-105 border border-transparent hover:border-blue-500/30 shadow-lg hover:shadow-blue-500/20"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-blue-400 hover:bg-blue-500/10 hover:scale-105 border border-transparent hover:border-blue-500/30 shadow-lg hover:shadow-blue-500/20"
             >
               <Home className="h-4 w-4" />
               HOME
@@ -178,7 +172,7 @@ const Header = ({ }: HeaderProps) => {
 
             <Link
               href="/new"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl font-bold tracking-wide text-xs transition-all duration-300 hover:text-emerald-400 hover:bg-emerald-500/10 hover:scale-105 border border-transparent hover:border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-emerald-400 hover:bg-emerald-500/10 hover:scale-105 border border-transparent hover:border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20"
             >
               <CheckCircle className="h-4 w-4" />
               NOVIDADES
@@ -186,7 +180,7 @@ const Header = ({ }: HeaderProps) => {
 
             <Link
               href="/community"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl font-bold tracking-wide text-xs transition-all duration-300 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105 border border-transparent hover:border-purple-500/30 shadow-lg hover:shadow-purple-500/20"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105 border border-transparent hover:border-purple-500/30 shadow-lg hover:shadow-purple-500/20"
             >
               <Users className="h-4 w-4" />
               COMUNIDADE
@@ -194,7 +188,7 @@ const Header = ({ }: HeaderProps) => {
 
             <Link
               href="/trending"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl font-bold tracking-wide text-xs transition-all duration-300 hover:text-orange-400 hover:bg-orange-500/10 hover:scale-105 border border-transparent hover:border-orange-500/30 shadow-lg hover:shadow-orange-500/20"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-orange-400 hover:bg-orange-500/10 hover:scale-105 border border-transparent hover:border-orange-500/30 shadow-lg hover:shadow-orange-500/20"
             >
               <Star className="h-4 w-4" />
               TRENDING
@@ -202,16 +196,16 @@ const Header = ({ }: HeaderProps) => {
 
             <Link
               href="/plans"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl font-bold tracking-wide text-xs transition-all duration-300 hover:text-yellow-400 hover:bg-yellow-500/10 hover:scale-105 border border-transparent hover:border-yellow-500/30 shadow-lg hover:shadow-yellow-500/20"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-yellow-400 hover:bg-yellow-500/10 hover:scale-105 border border-transparent hover:border-yellow-500/30 shadow-lg hover:shadow-yellow-500/20"
             >
               <Crown className="h-4 w-4" />
               PLANOS VIP
             </Link>
 
-            {'isAdmin' in (session?.user ?? {}) && (session?.user as any).isAdmin && (
+            {session?.user?.isAdmin && (
               <Link
                 href="/admin/users"
-                className="flex items-center gap-2 px-3 py-2 rounded-xl font-bold tracking-wide text-xs transition-all duration-300 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
               >
                 <Crown className="h-4 w-4" />
                 ADMIN
@@ -220,7 +214,7 @@ const Header = ({ }: HeaderProps) => {
 
             {/* Professional Tools Dropdown */}
             <div className="relative group" tabIndex={0}>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-xl font-bold tracking-wide text-xs transition-all duration-300 hover:text-cyan-400 hover:bg-cyan-500/10 hover:scale-105 border border-transparent hover:border-cyan-500/30 shadow-lg hover:shadow-cyan-500/20 focus:outline-none group-hover:bg-cyan-500/20" tabIndex={-1}>
+              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-cyan-400 hover:bg-cyan-500/10 hover:scale-105 border border-transparent hover:border-cyan-500/30 shadow-lg hover:shadow-cyan-500/20 focus:outline-none group-hover:bg-cyan-500/20" tabIndex={-1}>
                 <Wrench className="h-4 w-4" />
                 FERRAMENTAS
                 <svg className="ml-1 h-3 w-3 transition-transform duration-300 group-hover:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -330,7 +324,7 @@ const Header = ({ }: HeaderProps) => {
                   PLANOS VIP
                 </Link>
 
-                {'isAdmin' in (session?.user ?? {}) && (session?.user as any).isAdmin && (
+                {session?.user?.isAdmin && (
                   <Link
                     href="/admin/users"
                     className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-red-300 hover:scale-[1.02] transform border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
@@ -502,7 +496,7 @@ const Header = ({ }: HeaderProps) => {
                         <div>
                           <div className="font-bold text-lg">{session.user.name || 'Usuário'}</div>
                           <div className="text-gray-400 text-sm">
-                            {'whatsapp' in session.user ? (session.user as any).whatsapp : 'WhatsApp não informado'}
+                            {session.user.whatsapp || 'WhatsApp não informado'}
                           </div>
                         </div>
                       </div>
@@ -518,10 +512,10 @@ const Header = ({ }: HeaderProps) => {
                         )}
                       </div>
 
-                      {'vencimento' in session.user && session.user.vencimento && typeof session.user.vencimento !== 'boolean' && (
+                      {session.user.vencimento && (
                         <div className="mt-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                           <div className="text-gray-400 text-xs mb-1">Vencimento:</div>
-                          <div className="text-white font-semibold">{formatDate(session.user.vencimento as string | Date)}</div>
+                          <div className="text-white font-semibold">{formatDate(session.user.vencimento)}</div>
                         </div>
                       )}
                     </div>

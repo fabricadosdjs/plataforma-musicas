@@ -35,10 +35,6 @@ interface AppContextType {
   alertMessage: string;
   alertType: 'default' | 'success' | 'info' | 'warning' | 'error' | 'vip' | 'access-check';
   closeAlert: () => void;
-
-  // Novo: controle global de downloads em lote
-  bulkCancel: boolean;
-  setBulkCancel: (value: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -60,8 +56,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   // Set para facilitar checagem de músicas baixadas
   const downloadedTracksSet = new Set(downloadedTracks);
   // Toast global para feedback
-  // Novo: estado global de cancelamento de downloads em lote
-  const [bulkCancel, setBulkCancel] = useState(false);
   const showToast = useCallback((message: string, type: 'default' | 'success' | 'info' | 'warning' | 'error' | 'vip' | 'access-check' = 'default', duration: number = 5000) => {
     setAlertMessage(message);
     setAlertType(type);
@@ -211,8 +205,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     closeAlert,
     alertMessage,
     alertType,
-    bulkCancel,
-    setBulkCancel,
   };
 
   return (

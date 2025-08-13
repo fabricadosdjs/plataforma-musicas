@@ -60,12 +60,7 @@ export default function FiltersModal({
     // Fechar modal ao clicar fora
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            // Não fechar se o clique for em um <select> (dropdown)
-            if (
-                modalRef.current &&
-                !modalRef.current.contains(event.target as Node) &&
-                !(event.target instanceof HTMLSelectElement)
-            ) {
+            if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
                 onClose();
             }
         };
