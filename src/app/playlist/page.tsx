@@ -404,7 +404,9 @@ export default function PlaylistPage() {
                 // Adicionar ao ZIP organizado por estilo
                 if (trackContent) {
                     try {
-                        const styleFolder = track.style || 'Sem Estilo';
+
+                        // Pasta sempre em maiúsculo
+                        const styleFolder = (track.style || 'Sem Estilo').toUpperCase();
                         const safeStyleFolder = styleFolder.replace(/[<>:"/\\|?*]/g, '_');
                         const organizedFileName = `${safeStyleFolder}/${trackFileName}`;
 
@@ -524,7 +526,7 @@ export default function PlaylistPage() {
                 try {
                     setZipProgress(prev => ({
                         ...prev,
-                        trackName: 'Gerando arquivo ZIP... (pode demorar alguns segundos)'
+                        trackName: 'Gerando arquivo ZIP... (pode demorar algum tempo)'
                     }));
 
                     const zipBlob = await window.localZip.generateAsync({
@@ -553,6 +555,7 @@ export default function PlaylistPage() {
                     console.log(`🎉 ZIP baixado automaticamente!`);
                     console.log(`📁 Arquivo salvo: ${downloadLink.download}`);
 
+
                     // Marcar todas as músicas como baixadas
                     const newDownloadedTracks = new Set(downloadedTracks);
                     pendingTracks.forEach(track => newDownloadedTracks.add(track.id));
@@ -563,6 +566,11 @@ export default function PlaylistPage() {
 
                     // Limpar ZIP da memória
                     delete window.localZip;
+
+                    // Zerar fila e data da fila automaticamente após download completo
+                    setDownloadQueue([]);
+                    setCurrentDateInQueue(null);
+                    localStorage.removeItem('downloadQueue');
 
                     if (processedTracks === pendingTracks.length) {
                         console.log('🎉 Download em massa completo concluído com processamento no navegador!');
@@ -863,15 +871,17 @@ export default function PlaylistPage() {
                     {/* Main Action Card */}
                     <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-3xl p-8 mb-8">
                         <div className="text-center mb-8">
-                            <h2 className="text-3xl font-bold text-white mb-3">DOWNLOADER EM MASSA</h2>
-                            <p className="text-center text-gray-300 mb-4 text-sm">
-                                Download em lotes organizados por estilo musical - ZIP otimizado com progresso em tempo real
+                            <h2 className="text-3xl font-extrabold text-white mb-3 tracking-tight drop-shadow-lg">DOWNLOAD EM LOTE INTELIGENTE</h2>
+                            <p className="text-center text-blue-200 mb-4 text-base font-medium max-w-2xl mx-auto">
+                                Baixe várias músicas de uma só vez, com organização automática por estilo musical.<br />
+                                ZIP otimizado, visual moderno e acompanhamento do progresso em tempo real.
                             </p>
-                            <p className="text-gray-300 text-lg max-w-3xl mx-auto mb-4">
-                                Processe suas músicas em lotes de 100 para downloads organizados e eficientes
+                            <p className="text-gray-100 text-lg max-w-3xl mx-auto mb-4 font-semibold">
+                                Processe suas músicas em lotes de <span className='text-blue-400 font-bold'>100</span> para downloads rápidos, organizados e sem complicação.
                             </p>
-                            <p className="text-orange-300 text-sm max-w-2xl mx-auto mb-4">
-                                ⚠️ O processo de download em lotes pode demorar algum tempo, ainda mais se muitas músicas forem baixadas
+                            <p className="text-orange-300 text-base max-w-2xl mx-auto mb-4 font-semibold flex items-center gap-1 justify-center">
+                                <span className="text-xl leading-none">⚠️</span>
+                                <span className="align-middle">O processo pode levar alguns minutos dependendo da quantidade de músicas selecionadas.</span>
                             </p>
 
                             {/* Aviso sobre restrição de dias */}
@@ -1089,6 +1099,37 @@ export default function PlaylistPage() {
                                     <X size={24} />
                                     Limpar Histórico
                                 </button>
+
+                                {/* Botão para resetar progresso travado */}
+                                {zipProgress.isActive && (
+                                    <button
+                                        onClick={() => {
+                                            // Limpa estados de progresso travado
+                                            setZipProgress({
+                                                isActive: false,
+                                                isGenerating: false,
+                                                progress: 0,
+                                                current: 0,
+                                                total: 0,
+                                                trackName: '',
+                                                elapsedTime: 0,
+                                                remainingTime: 0
+                                            });
+                                            setIsDownloadingAll(false);
+                                            setIsStreamingZip(false);
+                                            setZipSessionId('');
+                                            if (window.localZip) delete window.localZip;
+                                            // Limpa qualquer progresso persistente
+                                            Object.keys(localStorage).forEach(key => {
+                                                if (key.startsWith('zipProgress_')) localStorage.removeItem(key);
+                                            });
+                                        }}
+                                        className="bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-800 hover:to-black px-8 py-5 rounded-2xl font-semibold transition-all flex items-center gap-3 shadow-2xl hover:shadow-gray-500/25 text-lg"
+                                    >
+                                        <X size={24} />
+                                        Resetar Progresso
+                                    </button>
+                                )}
                             </div>
                         ) : downloadQueue.length > 0 ? (
                             <div className="text-center py-12">
@@ -1149,7 +1190,7 @@ export default function PlaylistPage() {
                                             <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-white">🚀 Download Estilo Google Drive</h3>
+                                            <h3 className="text-xl font-bold text-white">🚀 DOWNLOAD EM LOTE</h3>
                                             <p className="text-blue-200 text-sm">
                                                 {zipProgress.trackName || 'Processando...'}
                                             </p>
@@ -1181,17 +1222,34 @@ export default function PlaylistPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                     <div className="bg-white/10 rounded-xl p-3 text-center">
                                         <div className="text-2xl mb-1">📦</div>
-                                        <div className="text-white font-semibold">{Math.ceil((downloadQueue.length - downloadedTracks.size) / 100)}</div>
+                                        <div className="text-white font-semibold">{(() => {
+                                            const batchSize = 100;
+                                            const pendentes = downloadQueue.length - downloadedTracks.size;
+                                            if (pendentes <= 0) return 0;
+                                            return Math.ceil(pendentes / batchSize);
+                                        })()}</div>
                                         <div className="text-blue-200 text-xs">Lotes</div>
                                     </div>
                                     <div className="bg-white/10 rounded-xl p-3 text-center">
                                         <div className="text-2xl mb-1">🎵</div>
-                                        <div className="text-white font-semibold">100</div>
+                                        <div className="text-white font-semibold">{(() => {
+                                            // batchSize real
+                                            return 100;
+                                        })()}</div>
                                         <div className="text-blue-200 text-xs">Por Lote</div>
                                     </div>
                                     <div className="bg-white/10 rounded-xl p-3 text-center">
                                         <div className="text-2xl mb-1">💾</div>
-                                        <div className="text-white font-semibold">{(totalDownloadSize / 1024 / 1024).toFixed(2)} MB</div>
+                                        <div className="text-white font-semibold">{(() => {
+                                            // Soma o fileSize das músicas na fila (não baixadas)
+                                            const pendentes = downloadQueue.filter(t => !downloadedTracks.has(t.id));
+                                            const totalBytes = pendentes.reduce((acc, t) => acc + (t.fileSize || 0), 0);
+                                            if (totalBytes === 0) return '0.00 MB';
+                                            if (totalBytes >= 1024 * 1024 * 1024) {
+                                                return (totalBytes / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+                                            }
+                                            return (totalBytes / 1024 / 1024).toFixed(2) + ' MB';
+                                        })()}</div>
                                         <div className="text-blue-200 text-xs">Tamanho</div>
                                     </div>
                                 </div>

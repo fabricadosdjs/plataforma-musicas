@@ -87,7 +87,7 @@ const TrackRow = React.memo(({
                         </button>
                     </div>
                     <div className="flex flex-col min-w-0 flex-1">
-                        <span className="font-bold text-gray-100 truncate text-[10px] sm:text-[11px] lg:text-[12px]">{track.songName}</span>
+                        <span className="font-bold text-gray-100 truncate text-[9px] sm:text-[10px] lg:text-[11px]">{track.songName}</span>
                         <span className="text-[8px] sm:text-[9px] lg:text-[10px] text-gray-400 truncate">{track.artist}</span>
                         {/* Pool/Label visível apenas em tablet, não em mobile */}
                         <div className="hidden sm:flex lg:hidden items-center gap-1 mt-1">
@@ -191,7 +191,16 @@ TrackCard.displayName = 'TrackCard';
 
 
 // --- COMPONENTE PRINCIPAL ---
-const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownloadingProp, onToggleQueue: externalOnToggleQueue, externalDownloadQueue }: { tracks: Track[] | null, onDownload?: (tracks: Track[]) => void, isDownloading?: boolean, onToggleQueue?: (track: Track) => void, externalDownloadQueue?: Track[] }) => {
+interface MusicTableProps {
+    tracks: Track[] | null;
+    onDownload?: (tracks: Track[]) => void;
+    isDownloading?: boolean;
+    onToggleQueue?: (track: Track) => void;
+    externalDownloadQueue?: Track[];
+    downloadedTrackIds?: number[];
+}
+
+const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownloadingProp, onToggleQueue: externalOnToggleQueue, externalDownloadQueue, downloadedTrackIds }: MusicTableProps) => {
     // Hooks e Estados
     const { data: session } = useSession();
     const { showToast } = useToastContext();
@@ -235,7 +244,11 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
     const downloadsToday = userData?.dailyDownloadCount || 0;
     const dailyLimit = userData?.dailyDownloadLimit || 50;
     const downloadsLeft = (typeof dailyLimit === 'string' && dailyLimit === 'Ilimitado') ? 'Ilimitado' : Math.max(Number(dailyLimit) - downloadsToday, 0);
-    const hasDownloadedTrack = useCallback((trackId: number) => userData?.downloadedTrackIds?.includes(trackId) || false, [userData?.downloadedTrackIds]);
+    // Permitir sobrescrever lista de baixados via prop (para /new)
+    const hasDownloadedTrack = useCallback((trackId: number) => {
+        if (downloadedTrackIds) return downloadedTrackIds.includes(trackId);
+        return userData?.downloadedTrackIds?.includes(trackId) || false;
+    }, [userData?.downloadedTrackIds, downloadedTrackIds]);
 
     // Cooldown Timer
     useEffect(() => {

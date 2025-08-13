@@ -1,6 +1,6 @@
-// Função auxiliar para checar se é um objeto Date válido
-"use client";
 
+"use client";
+// Função auxiliar para checar se é um objeto Date válido
 function isValidDate(val: unknown): val is Date {
   return Object.prototype.toString.call(val) === '[object Date]' && !isNaN((val as Date).getTime());
 }

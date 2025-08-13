@@ -84,6 +84,25 @@ const getCorrectDateKey = (dateString: string): string => {
 
 // Componente principal da página
 function NewPageContent() {
+  // Estado para músicas já baixadas
+  const [downloadedTrackIds, setDownloadedTrackIds] = useState<number[]>([]);
+
+  // Estado para modal de todos os gêneros
+  const [showAllGenres, setShowAllGenres] = useState(false);
+  // Carregar músicas baixadas do localStorage ao montar
+  useEffect(() => {
+    const savedDownloadedTracks = localStorage.getItem('downloadedTracks');
+    if (savedDownloadedTracks) {
+      try {
+        setDownloadedTrackIds(JSON.parse(savedDownloadedTracks));
+      } catch (error) {
+        setDownloadedTrackIds([]);
+        console.error('❌ Erro ao carregar músicas baixadas:', error);
+      }
+    } else {
+      setDownloadedTrackIds([]);
+    }
+  }, []);
   const { data: session } = useSession();
   const { showToast } = useToast();
   const router = useRouter();
@@ -584,6 +603,9 @@ function NewPageContent() {
   // Funções para filtros
   const handleGenreChange = (genre: string) => {
     setSelectedGenre(genre);
+    // Atualiza a hash da URL para formato público
+    const genreParam = encodeURIComponent(genre.replace(/ /g, '+'));
+    window.location.hash = `/genre=${genreParam}`;
     updateURL(appliedSearchQuery, {
       genre,
       artist: selectedArtist,
@@ -1238,9 +1260,78 @@ function NewPageContent() {
             </div>
           ) : (
             <>
+
+              {/* Slider de Estilos - dinâmico por frequência */}
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-bold text-white tracking-wide">PRINCIPAIS ESTILOS</h2>
+                  <button
+                    className="text-blue-400 font-semibold hover:underline text-sm px-3 py-1 rounded transition-colors"
+                    onClick={() => setShowAllGenres(true)}
+                  >
+                    Ver todos
+                  </button>
+                </div>
+                {(() => {
+                  // Conta a frequência dos estilos nas músicas filtradas/recentes
+                  const genreCount: Record<string, number> = {};
+                  filteredTracks.forEach(track => {
+                    if (track.style) {
+                      genreCount[track.style] = (genreCount[track.style] || 0) + 1;
+                    }
+                  });
+                  // Ordena por frequência (maior para menor)
+                  const topGenres = Object.entries(genreCount)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([genre]) => genre)
+                    .slice(0, 10);
+                  return (
+                    <div className="overflow-x-auto hide-scrollbar">
+                      <div className="flex gap-3">
+                        {topGenres.map((genre) => (
+                          <button
+                            key={genre}
+                            onClick={() => handleGenreChange(genre)}
+                            className={`min-w-[120px] px-4 py-3 rounded-xl font-bold text-sm transition-all shadow-lg border-2 ${selectedGenre === genre ? 'bg-blue-600 text-white border-blue-400' : 'bg-gray-800 text-blue-200 border-transparent hover:bg-blue-900/40'}`}
+                          >
+                            {genre.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+                {/* Modal de todos os estilos */}
+                {showAllGenres && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                    <div className="bg-[#181828] rounded-2xl p-8 max-w-3xl w-full relative shadow-2xl overflow-y-auto max-h-[90vh] scrollbar-thin scrollbar-thumb-blue-700 scrollbar-track-[#232232] scrollbar-thumb-rounded-full scrollbar-track-rounded-full mt-16">
+                      <button
+                        className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl"
+                        onClick={() => setShowAllGenres(false)}
+                        title="Fechar"
+                      >
+                        <X />
+                      </button>
+                      <h3 className="text-xl font-bold text-white mb-6 text-center tracking-widest">TODOS OS ESTILOS</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                        {genres.map((genre) => (
+                          <button
+                            key={genre}
+                            onClick={() => { handleGenreChange(genre); setShowAllGenres(false); }}
+                            className={`w-full px-4 py-3 rounded-xl font-bold text-sm transition-all shadow-lg border-2 ${selectedGenre === genre ? 'bg-blue-600 text-white border-blue-400' : 'bg-gray-800 text-blue-200 border-transparent hover:bg-blue-900/40'}`}
+                          >
+                            {genre.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Título da seção */}
-              <div className="text-center mb-8">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">Novidades</h1>
+              <div className="mb-8 text-left">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-widest">NOVIDADES</h1>
               </div>
 
               {/* Tabelas de Músicas Agrupadas por Data */}
@@ -1278,20 +1369,10 @@ function NewPageContent() {
                                 return;
                               }
 
-                              // Obter músicas já baixadas do localStorage
-                              const savedDownloadedTracks = localStorage.getItem('downloadedTracks');
-                              let downloadedIds: number[] = [];
-                              if (savedDownloadedTracks) {
-                                try {
-                                  downloadedIds = JSON.parse(savedDownloadedTracks);
-                                } catch (error) {
-                                  console.error('❌ Erro ao carregar músicas baixadas:', error);
-                                }
-                              }
 
                               // Filtrar apenas músicas novas (não baixadas e não na fila)
                               const newTracksToAdd = tracksForDate.filter(track =>
-                                !downloadedIds.includes(track.id) &&
+                                !downloadedTrackIds.includes(track.id) &&
                                 !downloadQueue.some(queueTrack => queueTrack.id === track.id)
                               );
 
@@ -1333,19 +1414,10 @@ function NewPageContent() {
                           >
                             <div className="flex items-center gap-2">
                               <Plus className="h-4 w-4" />
-                              <span>Adicionar Novas ({tracksForDate.filter(track => {
-                                const savedDownloadedTracks = localStorage.getItem('downloadedTracks');
-                                let downloadedIds: number[] = [];
-                                if (savedDownloadedTracks) {
-                                  try {
-                                    downloadedIds = JSON.parse(savedDownloadedTracks);
-                                  } catch (error) {
-                                    console.error('❌ Erro ao carregar músicas baixadas:', error);
-                                  }
-                                }
-                                return !downloadedIds.includes(track.id) &&
-                                  !downloadQueue.some(queueTrack => queueTrack.id === track.id);
-                              }).length})</span>
+                              <span>Adicionar Novas ({tracksForDate.filter(track =>
+                                !downloadedTrackIds.includes(track.id) &&
+                                !downloadQueue.some(queueTrack => queueTrack.id === track.id)
+                              ).length})</span>
                             </div>
                           </button>
 
@@ -1412,7 +1484,7 @@ function NewPageContent() {
 
                       {/* Tabela para esta data */}
                       <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-                        <MusicTable tracks={tracksForDate} onToggleQueue={onToggleQueue} externalDownloadQueue={downloadQueue} />
+                        <MusicTable tracks={tracksForDate} onToggleQueue={onToggleQueue} externalDownloadQueue={downloadQueue} downloadedTrackIds={downloadedTrackIds} />
                       </div>
                     </div>
                   );
