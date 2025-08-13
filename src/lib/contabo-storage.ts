@@ -52,28 +52,45 @@ export class ContaboStorage {
      */
     async listFiles(prefix?: string): Promise<StorageFile[]> {
         try {
-            const command = new ListObjectsV2Command({
-                Bucket: this.bucketName,
-                Prefix: prefix,
-                MaxKeys: 1000, // Limite de arquivos por request
-            });
+            const allFiles: StorageFile[] = [];
+            let continuationToken: string | undefined;
 
-            const response = await this.s3Client.send(command);
+            do {
+                const command = new ListObjectsV2Command({
+                    Bucket: this.bucketName,
+                    Prefix: prefix,
+                    MaxKeys: 1000, // Máximo por request, mas vamos fazer múltiplos requests
+                    ContinuationToken: continuationToken,
+                });
 
-            if (!response.Contents) {
-                return [];
-            }
+                const response = await this.s3Client.send(command);
 
-            return response.Contents
-                .filter((obj: _Object) => obj.Key && obj.Size && obj.Size > 0) // Remove pastas vazias
-                .map((obj: _Object) => ({
-                    key: obj.Key!,
-                    url: this.getPublicUrl(obj.Key!),
-                    size: obj.Size!,
-                    lastModified: obj.LastModified || new Date(),
-                    isAudio: this.isAudioFile(obj.Key!),
-                    filename: obj.Key!.split('/').pop() || obj.Key!,
-                }));
+                if (response.Contents) {
+                    const files = response.Contents
+                        .filter((obj: _Object) => obj.Key && obj.Size && obj.Size > 0) // Remove pastas vazias
+                        .map((obj: _Object) => ({
+                            key: obj.Key!,
+                            url: this.getPublicUrl(obj.Key!),
+                            size: obj.Size!,
+                            lastModified: obj.LastModified || new Date(),
+                            isAudio: this.isAudioFile(obj.Key!),
+                            filename: obj.Key!.split('/').pop() || obj.Key!,
+                        }));
+
+                    allFiles.push(...files);
+                }
+
+                continuationToken = response.NextContinuationToken;
+
+                // Pequena pausa para não sobrecarregar a API
+                if (continuationToken) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+            } while (continuationToken);
+
+            console.log(`📁 Total de arquivos listados: ${allFiles.length}`);
+            return allFiles;
         } catch (error) {
             console.error('Erro ao listar arquivos:', error);
             throw new Error('Falha ao listar arquivos do bucket');

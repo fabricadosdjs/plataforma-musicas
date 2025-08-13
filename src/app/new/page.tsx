@@ -996,7 +996,6 @@ function NewPageContent() {
         <div className="mb-8 sm:mb-12">
           {/* Header da página */}
           <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 mt-6 sm:mt-0">Novidades</h1>
 
             {/* Indicadores de filtros ativos */}
             <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -1239,6 +1238,11 @@ function NewPageContent() {
             </div>
           ) : (
             <>
+              {/* Título da seção */}
+              <div className="text-center mb-8">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">Novidades</h1>
+              </div>
+
               {/* Tabelas de Músicas Agrupadas por Data */}
               <div className="space-y-8">
                 {groupTracksByReleaseDate.sortedKeys.map((dateKey) => {

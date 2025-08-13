@@ -9,7 +9,7 @@ declare global {
 }
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Download, Trash2, Music, Loader2, Play, Pause, Package, X, Plus, CheckCircle, Clock, Users, Search, Calendar, AlertTriangle } from "lucide-react";
+import { Download, Trash2, Music, Loader2, Play, Pause, Package, X, Plus, CheckCircle, Clock, Users, Search, Calendar, AlertTriangle, Zap } from "lucide-react";
 import Link from "next/link";
 import { Track } from "@/types/track";
 import Header from "@/components/layout/Header";
@@ -270,7 +270,7 @@ export default function PlaylistPage() {
         return null;
     };
 
-    // Função para download em massa com streaming
+    // Função para download em massa com streaming otimizada
     const downloadAllTracksStreaming = async () => {
         if (downloadQueue.length === 0) {
             console.log('📋 Nenhuma música na fila para download');
@@ -282,8 +282,24 @@ export default function PlaylistPage() {
         setZipSessionId(newSessionId);
         updateZipSessionUrl(newSessionId);
 
-        console.log('🚀 Iniciando download em massa com streaming para', downloadQueue.length, 'músicas');
+        console.log('🚀 Iniciando download em massa otimizado para', downloadQueue.length, 'músicas');
         console.log('🔗 Sessão ZIP:', newSessionId);
+
+        // Timeout global para evitar travamento
+        const globalTimeout = setTimeout(() => {
+            console.warn('⚠️ Timeout global detectado, forçando geração do ZIP...');
+            // Forçar geração do ZIP com timeout
+            if (window.localZip) {
+                console.log('🔄 Forçando geração do ZIP devido ao timeout...');
+                // Limpar timeout e forçar finalização
+                clearTimeout(globalTimeout);
+                setIsDownloadingAll(false);
+                setIsStreamingZip(false);
+                setZipProgress(prev => ({ ...prev, isActive: false, isGenerating: false }));
+            }
+        }, 120000); // 2 minutos
+
+
 
         try {
             setIsDownloadingAll(true);
@@ -301,87 +317,67 @@ export default function PlaylistPage() {
 
             console.log(`📦 Processando ${pendingTracks.length} músicas pendentes de ${downloadQueue.length} total`);
 
-            // Processar todas as músicas de uma vez no navegador
-            console.log(`📦 Processando ${pendingTracks.length} músicas no navegador`);
-
-            // Criar ZIP local
+            // Criar ZIP local organizado por estilo
             if (!window.localZip) {
                 window.localZip = new JSZip();
-                console.log('🔧 ZIP local criado no navegador');
+                console.log('🔧 ZIP local organizado por estilo criado no navegador');
             }
 
             // Variáveis para rastrear tamanho total
             let totalSize = 0;
-            let processedSize = 0;
+            let processedTracks = 0;
 
-            // Processar cada música individualmente
-            for (let i = 0; i < pendingTracks.length; i++) {
-                const track = pendingTracks[i];
-                const progress = Math.round(((i + 1) / pendingTracks.length) * 100);
-
-                console.log(`📥 Processando música ${i + 1}/${pendingTracks.length}: ${track.songName}`);
-
-                // Atualizar progresso
-                setZipProgress(prev => ({
-                    ...prev,
-                    isActive: true,
-                    isGenerating: true,
-                    progress,
-                    current: i + 1,
-                    total: pendingTracks.length,
-                    trackName: `🚀 Iniciando download estilo Google Drive: ${track.songName} (Total: ${(totalSize / 1024 / 1024).toFixed(2)} MB)`,
-                    elapsedTime: 0,
-                    remainingTime: 0
-                }));
-
-                // Download em streaming estilo Google Drive (ZIP em partes)
+            // Função para baixar uma música individual
+            const downloadTrack = async (track: any, index: number) => {
                 let trackFileName = `${track.artist} - ${track.songName}.mp3`;
                 let trackContent: Uint8Array | null = null;
                 let trackSize = 0;
 
-                if (track.downloadUrl && track.downloadUrl.trim() !== '') {
-                    try {
-                        console.log(`🌐 Iniciando download streaming estilo Google Drive: ${track.songName}`);
+                try {
+                    if (track.downloadUrl && track.downloadUrl.trim() !== '') {
+                        console.log(`🌐 Baixando: ${track.songName} (${index + 1}/${pendingTracks.length})`);
 
-                        // Download em streaming com progresso em tempo real (estilo Google Drive)
+                        // Download otimizado com timeout e retry
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
                         const musicResponse = await fetch(track.downloadUrl, {
                             method: 'GET',
                             headers: {
                                 'Accept': 'audio/*, */*',
-                                'Cache-Control': 'no-cache',
-                                'Range': 'bytes=0-' // Suporte a range requests
-                            }
+                                'Cache-Control': 'no-cache'
+                            },
+                            signal: controller.signal
                         });
+
+                        clearTimeout(timeoutId);
 
                         if (musicResponse.ok && musicResponse.body) {
                             const reader = musicResponse.body.getReader();
                             const chunks: Uint8Array[] = [];
                             let downloadedBytes = 0;
 
-                            // Ler dados em chunks para streaming (estilo Google Drive)
+                            // Ler dados em chunks otimizados
                             while (true) {
                                 const { done, value } = await reader.read();
-
                                 if (done) break;
 
                                 chunks.push(value);
                                 downloadedBytes += value.length;
                                 trackSize = downloadedBytes;
 
-                                // Atualizar progresso em tempo real (como Google Drive)
-                                setZipProgress(prev => ({
-                                    ...prev,
-                                    trackName: `📥 Baixando: ${track.songName} (${(downloadedBytes / 1024 / 1024).toFixed(2)} MB)`,
-                                    current: i + 1,
-                                    total: pendingTracks.length,
-                                    progress: Math.round(((i + 1) / pendingTracks.length) * 100)
-                                }));
-
-                                // Pausa mínima para não travar (Google Drive usa 50ms)
-                                await new Promise(resolve => setTimeout(resolve, 50));
+                                // Atualizar progresso a cada 1MB para não travar a UI
+                                if (downloadedBytes % (1024 * 1024) === 0) {
+                                    setZipProgress(prev => ({
+                                        ...prev,
+                                        trackName: `Baixando: ${track.songName} (${(downloadedBytes / 1024 / 1024).toFixed(1)} MB)`,
+                                        current: index + 1,
+                                        total: pendingTracks.length
+                                    }));
+                                }
                             }
 
-                            // Combinar chunks de forma otimizada (estilo Google Drive)
+                            // Combinar chunks de forma otimizada
                             const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
                             trackContent = new Uint8Array(totalLength);
                             let offset = 0;
@@ -392,119 +388,217 @@ export default function PlaylistPage() {
                             }
 
                             totalSize += trackContent.length;
-                            processedSize += trackContent.length;
-                            setTotalDownloadSize(totalSize);
-
-                            console.log(`✅ Download streaming estilo Google Drive concluído: ${trackFileName} (${(trackContent.length / 1024 / 1024).toFixed(2)} MB)`);
-                        } else {
-                            throw new Error(`HTTP ${musicResponse.status}: ${musicResponse.statusText}`);
+                            console.log(`✅ Download concluído: ${trackFileName} (${(trackContent.length / 1024 / 1024).toFixed(2)} MB)`);
                         }
-                    } catch (downloadError) {
-                        console.warn(`⚠️ Erro no download streaming, criando arquivo de placeholder: ${downloadError}`);
-                        // Criar arquivo placeholder se download falhar
-                        const placeholderContent = `Música não disponível: ${track.songName} - ${track.artist}\nURL: ${track.downloadUrl}\nErro: ${downloadError}\nTimestamp: ${new Date().toISOString()}`;
-                        trackContent = new TextEncoder().encode(placeholderContent);
-                        trackFileName = `${track.artist} - ${track.songName}.txt`;
-                        trackSize = trackContent.length;
-                        totalSize += trackSize;
-                        processedSize += trackSize;
-                        setTotalDownloadSize(totalSize);
                     }
-                } else {
-                    // Se não tiver URL, criar arquivo de informações
-                    const infoContent = `Informações da música: ${track.songName} - ${track.artist}\nID: ${track.id}\nEstilo: ${track.style}\nURL não disponível\nTimestamp: ${new Date().toISOString()}`;
-                    trackContent = new TextEncoder().encode(infoContent);
+                } catch (error) {
+                    console.warn(`⚠️ Erro no download de ${track.songName}:`, error);
+                    // Criar arquivo placeholder em caso de erro
+                    const placeholderContent = `Erro no download: ${track.songName} - ${track.artist}\nURL: ${track.downloadUrl}\nErro: ${error}`;
+                    trackContent = new TextEncoder().encode(placeholderContent);
                     trackFileName = `${track.artist} - ${track.songName}.txt`;
                     trackSize = trackContent.length;
                     totalSize += trackSize;
-                    processedSize += trackSize;
-                    setTotalDownloadSize(totalSize);
-                    console.log(`📋 Arquivo de informações criado: ${trackFileName} (${(trackSize / 1024).toFixed(2)} KB)`);
                 }
 
-                try {
-                    if (trackContent) {
-                        window.localZip.file(trackFileName, trackContent);
-                        console.log(`✅ Música adicionada ao ZIP: ${trackFileName}`);
-                    } else {
-                        console.warn(`⚠️ Conteúdo vazio para: ${trackFileName}`);
+                // Adicionar ao ZIP organizado por estilo
+                if (trackContent) {
+                    try {
+                        const styleFolder = track.style || 'Sem Estilo';
+                        const safeStyleFolder = styleFolder.replace(/[<>:"/\\|?*]/g, '_');
+                        const organizedFileName = `${safeStyleFolder}/${trackFileName}`;
+
+                        window.localZip.file(organizedFileName, trackContent);
+                        console.log(`✅ Música adicionada ao ZIP: ${organizedFileName}`);
+                    } catch (zipError) {
+                        console.error(`❌ Erro ao adicionar ao ZIP: ${trackFileName}`, zipError);
                     }
-                } catch (error) {
-                    console.error(`❌ Erro ao adicionar música ao ZIP: ${trackFileName}`, error);
                 }
 
-                // Pequena pausa para não travar a interface
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Limpar memória
+                trackContent = null;
+
+                // Retornar informações da música processada
+                return {
+                    trackSize,
+                    success: true,
+                    trackName: track.songName
+                };
+            };
+
+            // Processar músicas em lotes paralelos para otimizar velocidade
+            const batchSize = 3; // Processar 3 músicas simultaneamente
+
+            for (let i = 0; i < pendingTracks.length; i += batchSize) {
+                const batch = pendingTracks.slice(i, i + batchSize);
+                const batchPromises = batch.map((track, batchIndex) =>
+                    downloadTrack(track, i + batchIndex)
+                );
+
+                const batchResults = await Promise.all(batchPromises);
+
+                // Atualizar progresso após cada lote
+                processedTracks += batchResults.length;
+                const progress = Math.round((processedTracks / pendingTracks.length) * 100);
+
+                setZipProgress(prev => ({
+                    ...prev,
+                    isActive: true,
+                    isGenerating: true,
+                    progress,
+                    current: processedTracks,
+                    total: pendingTracks.length,
+                    trackName: `Processando lote: ${processedTracks}/${pendingTracks.length} músicas (${progress}%)`
+                }));
+
+                console.log(`📦 Lote processado: ${processedTracks}/${pendingTracks.length} músicas (${progress}%)`);
+
+                // Pequena pausa entre lotes para não sobrecarregar
+                if (i + batchSize < pendingTracks.length) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
             }
 
-            // Salvar progresso no localStorage para persistência
-            const progressData = {
-                sessionId: newSessionId,
-                totalTracks: pendingTracks.length,
-                processedTracks: pendingTracks.length,
-                totalSize: totalSize,
-                timestamp: new Date().toISOString(),
-                status: 'generating_zip'
-            };
-            localStorage.setItem(`zipProgress_${newSessionId}`, JSON.stringify(progressData));
+            // Aguardar um pouco para garantir que todas as músicas foram processadas
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Gerar ZIP final no navegador
-            console.log(`🎯 Todas as ${pendingTracks.length} músicas processadas, gerando ZIP no navegador...`);
-            console.log(`📊 Tamanho total processado: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
+            // Verificação final e forçar geração do ZIP se necessário
+            if (processedTracks < pendingTracks.length) {
+                console.warn(`⚠️ Processamento incompleto detectado: ${processedTracks}/${pendingTracks.length}`);
+                console.log('🔄 Tentando forçar conclusão do processamento...');
 
+                // Aguardar mais um pouco e verificar novamente
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                if (processedTracks < pendingTracks.length) {
+                    console.warn(`⚠️ Processamento ainda incompleto após timeout: ${processedTracks}/${pendingTracks.length}`);
+                    console.log('🔄 Forçando geração do ZIP com músicas disponíveis...');
+                    // Continuar com as músicas que foram processadas
+                }
+            }
+
+
+
+            // Verificar se todas as músicas foram processadas
+            console.log(`🎯 Verificando processamento: ${processedTracks}/${pendingTracks.length} músicas processadas`);
+
+            // Atualizar progresso final
             setZipProgress(prev => ({
                 ...prev,
-                trackName: 'Gerando ZIP no navegador...'
+                progress: 100,
+                current: processedTracks,
+                total: pendingTracks.length,
+                trackName: `Processamento concluído: ${processedTracks}/${pendingTracks.length} músicas (100%)`
             }));
 
-            try {
-                const zipBlob = await window.localZip.generateAsync({
-                    type: 'blob',
-                    compression: 'DEFLATE',
-                    compressionOptions: { level: 6 }
-                });
+            // Permitir geração do ZIP mesmo com processamento incompleto (após timeout)
+            if (processedTracks === pendingTracks.length || processedTracks > 0) {
+                // Salvar progresso no localStorage para persistência
+                const progressData = {
+                    sessionId: newSessionId,
+                    totalTracks: pendingTracks.length,
+                    processedTracks: processedTracks,
+                    totalSize: totalSize,
+                    timestamp: new Date().toISOString(),
+                    status: 'generating_zip'
+                };
+                localStorage.setItem(`zipProgress_${newSessionId}`, JSON.stringify(progressData));
 
-                console.log(`✅ ZIP gerado no navegador: ${(zipBlob.size / 1024 / 1024).toFixed(2)} MB`);
+                // Gerar ZIP final no navegador
+                if (processedTracks === pendingTracks.length) {
+                    console.log(`🎯 Todas as ${pendingTracks.length} músicas processadas, gerando ZIP no navegador...`);
+                } else {
+                    console.log(`🎯 Gerando ZIP com ${processedTracks}/${pendingTracks.length} músicas processadas...`);
+                }
+                console.log(`📊 Tamanho total processado: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
 
-                // Download automático do ZIP
-                const downloadUrl = URL.createObjectURL(zipBlob);
-                const downloadLink = document.createElement('a');
-                downloadLink.href = downloadUrl;
-                downloadLink.download = `nexor-records-${newSessionId}-${new Date().toISOString().split('T')[0]}.zip`;
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-                URL.revokeObjectURL(downloadUrl);
+                setZipProgress(prev => ({
+                    ...prev,
+                    trackName: processedTracks === pendingTracks.length
+                        ? 'Gerando ZIP completo no navegador...'
+                        : `Gerando ZIP parcial (${processedTracks}/${pendingTracks.length}) no navegador...`,
+                    progress: 100,
+                    isGenerating: true
+                }));
 
-                console.log(`🎉 ZIP baixado automaticamente!`);
-                console.log(`📁 Arquivo salvo: ${downloadLink.download}`);
+                try {
+                    setZipProgress(prev => ({
+                        ...prev,
+                        trackName: 'Gerando arquivo ZIP... (pode demorar alguns segundos)'
+                    }));
 
-                // Marcar todas as músicas como baixadas
-                const newDownloadedTracks = new Set(downloadedTracks);
-                pendingTracks.forEach(track => newDownloadedTracks.add(track.id));
-                setDownloadedTracks(newDownloadedTracks);
+                    const zipBlob = await window.localZip.generateAsync({
+                        type: 'blob',
+                        compression: 'DEFLATE',
+                        compressionOptions: { level: 6 }
+                    });
 
-                // Persistir no localStorage
-                localStorage.setItem('downloadedTracks', JSON.stringify([...newDownloadedTracks]));
+                    console.log(`✅ ZIP gerado no navegador: ${(zipBlob.size / 1024 / 1024).toFixed(2)} MB`);
 
-                // Limpar ZIP da memória
-                delete window.localZip;
+                    setZipProgress(prev => ({
+                        ...prev,
+                        trackName: 'Iniciando download automático do ZIP...'
+                    }));
 
-                console.log('🎉 Download em massa concluído com processamento no navegador!');
-            } catch (error) {
-                console.error('❌ Erro ao gerar ZIP no navegador:', error);
-            } finally {
-                // Finalizar estado
-                setZipProgress(prev => ({ ...prev, isActive: false, isGenerating: false }));
-                setIsDownloadingAll(false);
-                setIsStreamingZip(false);
+                    // Download automático do ZIP
+                    const downloadUrl = URL.createObjectURL(zipBlob);
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = downloadUrl;
+                    downloadLink.download = `nexor-records-${newSessionId}-${new Date().toISOString().split('T')[0]}.zip`;
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    URL.revokeObjectURL(downloadUrl);
 
-                // Limpar sessão da URL
-                updateZipSessionUrl('');
-                setZipSessionId('');
+                    console.log(`🎉 ZIP baixado automaticamente!`);
+                    console.log(`📁 Arquivo salvo: ${downloadLink.download}`);
+
+                    // Marcar todas as músicas como baixadas
+                    const newDownloadedTracks = new Set(downloadedTracks);
+                    pendingTracks.forEach(track => newDownloadedTracks.add(track.id));
+                    setDownloadedTracks(newDownloadedTracks);
+
+                    // Persistir no localStorage
+                    localStorage.setItem('downloadedTracks', JSON.stringify([...newDownloadedTracks]));
+
+                    // Limpar ZIP da memória
+                    delete window.localZip;
+
+                    if (processedTracks === pendingTracks.length) {
+                        console.log('🎉 Download em massa completo concluído com processamento no navegador!');
+                    } else {
+                        console.log(`🎉 Download em massa parcial concluído: ${processedTracks}/${pendingTracks.length} músicas processadas!`);
+                    }
+
+                    // Finalizar estado com sucesso
+                    clearTimeout(globalTimeout);
+                    setZipProgress(prev => ({ ...prev, isActive: false, isGenerating: false }));
+                    setIsDownloadingAll(false);
+                    setIsStreamingZip(false);
+                    updateZipSessionUrl('');
+                    setZipSessionId('');
+
+                } catch (error) {
+                    console.error('❌ Erro ao gerar ZIP no navegador:', error);
+                    clearTimeout(globalTimeout);
+                    setZipProgress(prev => ({ ...prev, isActive: false, isGenerating: false }));
+                    setIsDownloadingAll(false);
+                    setIsStreamingZip(false);
+                }
+            } else {
+                console.warn(`⚠️ Processamento incompleto: ${processedTracks}/${pendingTracks.length} músicas processadas`);
+                setZipProgress(prev => ({
+                    ...prev,
+                    trackName: `Processamento incompleto: ${processedTracks}/${pendingTracks.length} músicas`,
+                    isActive: true,
+                    isGenerating: false
+                }));
+                // Não desativar completamente para permitir geração manual
+                console.log('🔄 Processamento incompleto, aguardando geração manual ou timeout...');
             }
         } catch (error) {
             console.error('❌ Erro no download com streaming:', error);
+            clearTimeout(globalTimeout);
             setZipProgress(prev => ({ ...prev, isActive: false, isGenerating: false }));
             setIsDownloadingAll(false);
             setIsStreamingZip(false);
@@ -771,10 +865,13 @@ export default function PlaylistPage() {
                         <div className="text-center mb-8">
                             <h2 className="text-3xl font-bold text-white mb-3">DOWNLOADER EM MASSA</h2>
                             <p className="text-center text-gray-300 mb-4 text-sm">
-                                Download estilo Google Drive - ZIP em partes com progresso em tempo real
+                                Download em lotes organizados por estilo musical - ZIP otimizado com progresso em tempo real
                             </p>
                             <p className="text-gray-300 text-lg max-w-3xl mx-auto mb-4">
                                 Processe suas músicas em lotes de 100 para downloads organizados e eficientes
+                            </p>
+                            <p className="text-orange-300 text-sm max-w-2xl mx-auto mb-4">
+                                ⚠️ O processo de download em lotes pode demorar algum tempo, ainda mais se muitas músicas forem baixadas
                             </p>
 
                             {/* Aviso sobre restrição de dias */}
@@ -918,10 +1015,62 @@ export default function PlaylistPage() {
                                     ) : (
                                         <>
                                             <Package size={28} />
-                                            Download Estilo Google Drive ({Math.max(0, downloadQueue.length - downloadedTracks.size)} pendentes)
+                                            Download em Lotes ({Math.max(0, downloadQueue.length - downloadedTracks.size)} pendentes)
                                         </>
                                     )}
                                 </button>
+
+                                {/* Botão para forçar geração quando travado */}
+                                {zipProgress.isActive && !zipProgress.isGenerating && (
+                                    <button
+                                        onClick={async () => {
+                                            console.log('🔄 Forçando geração do ZIP...');
+                                            if (window.localZip) {
+                                                try {
+                                                    setZipProgress(prev => ({
+                                                        ...prev,
+                                                        trackName: 'Forçando geração do ZIP...',
+                                                        isGenerating: true
+                                                    }));
+
+                                                    const zipBlob = await window.localZip.generateAsync({
+                                                        type: 'blob',
+                                                        compression: 'DEFLATE',
+                                                        compressionOptions: { level: 6 }
+                                                    });
+
+                                                    console.log(`✅ ZIP forçado gerado: ${(zipBlob.size / 1024 / 1024).toFixed(2)} MB`);
+
+                                                    // Download automático
+                                                    const downloadUrl = URL.createObjectURL(zipBlob);
+                                                    const downloadLink = document.createElement('a');
+                                                    downloadLink.href = downloadUrl;
+                                                    downloadLink.download = `nexor-records-forcado-${new Date().toISOString().split('T')[0]}.zip`;
+                                                    document.body.appendChild(downloadLink);
+                                                    downloadLink.click();
+                                                    document.body.removeChild(downloadLink);
+                                                    URL.revokeObjectURL(downloadUrl);
+
+                                                    // Limpar estados
+                                                    delete window.localZip;
+                                                    setZipProgress(prev => ({ ...prev, isActive: false, isGenerating: false }));
+                                                    setIsDownloadingAll(false);
+                                                    setIsStreamingZip(false);
+                                                    updateZipSessionUrl('');
+                                                    setZipSessionId('');
+
+                                                } catch (error) {
+                                                    console.error('❌ Erro ao forçar geração:', error);
+                                                    setZipProgress(prev => ({ ...prev, isGenerating: false }));
+                                                }
+                                            }
+                                        }}
+                                        className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 px-8 py-5 rounded-2xl font-semibold transition-all flex items-center gap-3 shadow-2xl hover:shadow-orange-500/25 text-lg"
+                                    >
+                                        <Zap size={24} />
+                                        Forçar Geração
+                                    </button>
+                                )}
 
                                 <button
                                     onClick={clearQueue}
