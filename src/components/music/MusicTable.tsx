@@ -9,6 +9,15 @@ import { useUserData } from '@/hooks/useUserData';
 import { Track } from '@/types/track';
 import clsx from 'clsx';
 
+// Importação global da fonte Inter
+import { Inter } from 'next/font/google';
+
+const inter = Inter({
+    weight: ['300', '400', '500', '600', '700'],
+    subsets: ['latin'],
+    display: 'swap',
+});
+
 // --- Skeletons de Loading ---
 const CardSkeleton = () => (
     <div className="animate-pulse flex flex-col gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
@@ -72,14 +81,14 @@ const TrackRow = React.memo(({
             <td className="px-2 sm:px-3 lg:px-4 py-2 sm:py-3 align-middle w-[60%] sm:w-[45%] lg:w-[40%]">
                 <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
                     <div className="relative flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 overflow-hidden">
-                        <img src={track.imageUrl || "/images/default-track.jpg"} alt={`Capa de ${track.songName}`} className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg object-cover border border-zinc-700/50" />
+                        <img src={track.imageUrl || "/images/default-track.jpg"} alt={`Capa de ${track.songName}`} className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg object-cover border border-zinc-700/50 image-rendering-auto" />
                         <button onClick={() => onPlayPause(track)} className={clsx("absolute inset-0 w-full h-full flex items-center justify-center rounded-lg transition-opacity duration-300 backdrop-blur-sm text-white bg-black/40 focus:outline-none focus:ring-0", isCurrent ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')} title={isPlaying ? "Pausar" : "Tocar"}>
                             {isPlaying && isCurrent ? <Pause size={16} strokeWidth={1.75} className="text-blue-400 sm:w-[18px] sm:h-[18px] lg:w-[22px] lg:h-[22px]" /> : <Play size={16} strokeWidth={1.75} className="sm:w-[18px] sm:h-[18px] lg:w-[22px] lg:h-[22px]" />}
                         </button>
                     </div>
                     <div className="flex flex-col min-w-0 flex-1">
-                        <span className="font-bold text-gray-100 truncate text-[12px] sm:text-[13px] lg:text-[14px]">{track.songName}</span>
-                        <span className="text-[9px] sm:text-[10px] lg:text-[11px] text-gray-400 truncate">{track.artist}</span>
+                        <span className="font-bold text-gray-100 truncate text-[10px] sm:text-[11px] lg:text-[12px]">{track.songName}</span>
+                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] text-gray-400 truncate">{track.artist}</span>
                         {/* Pool/Label visível apenas em tablet, não em mobile */}
                         <div className="hidden sm:flex lg:hidden items-center gap-1 mt-1">
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[7px] sm:text-[8px] font-bold bg-green-600 text-white tracking-wide uppercase">{track.pool || 'Nexor Records'}</span>
@@ -574,7 +583,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
     }
 
     return (
-        <div className="relative w-full h-full text-sm text-gray-200 font-sans bg-[#1A1B1C]">
+        <div className={`relative w-full h-full text-sm text-gray-200 bg-[#1A1B1C] ${inter.className}`}>
             <style jsx global>{`
                 .music-table-scrollbar::-webkit-scrollbar { 
                     width: 12px; 
@@ -654,6 +663,29 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                     border-top: 1px solid #374151;
                 }
                 
+                /* Melhorar qualidade de renderização das imagens */
+                .music-table img {
+                    image-rendering: -webkit-optimize-contrast;
+                    image-rendering: crisp-edges;
+                    image-rendering: pixelated;
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                }
+                
+                /* Melhorar qualidade dos botões e elementos */
+                .music-table button {
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                    text-rendering: optimizeLegibility;
+                }
+                
+                /* Melhorar qualidade do texto */
+                .music-table {
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                    text-rendering: optimizeLegibility;
+                }
+                
                 /* Responsividade para mobile */
                 @media (max-width: 768px) {
                     .music-table-container {
@@ -694,28 +726,28 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                 <table className="music-table min-w-full text-left">
                     <thead>
                         <tr className="border-b border-zinc-800">
-                            <th className="px-2 sm:px-3 lg:px-4 py-2 sm:py-3 font-bold text-gray-400 tracking-wider w-[60%] sm:w-[45%] lg:w-[40%]">
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                    <Music2 strokeWidth={1.5} className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
-                                    <span className="text-xs sm:text-sm lg:text-base">MÚSICA</span>
+                            <th className="px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2 font-bold text-gray-400 tracking-wider w-[60%] sm:w-[45%] lg:w-[40%]">
+                                <div className="flex items-center gap-0.5 sm:gap-1">
+                                    <Music2 strokeWidth={1.5} className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-purple-400" />
+                                    <span className="text-[9px] sm:text-[10px] lg:text-xs">MÚSICA</span>
                                 </div>
                             </th>
-                            <th className="hidden sm:table-cell px-2 sm:px-3 lg:px-4 py-2 sm:py-3 font-bold text-blue-400 tracking-wider w-[20%] text-center">
-                                <div className="flex items-center justify-center gap-1 sm:gap-2">
-                                    <Sparkles strokeWidth={1.5} className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
-                                    <span className="text-xs sm:text-sm lg:text-base">GÊNERO</span>
+                            <th className="hidden sm:table-cell px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2 font-bold text-blue-400 tracking-wider w-[20%] text-center">
+                                <div className="flex items-center justify-center gap-0.5 sm:gap-1">
+                                    <Sparkles strokeWidth={1.5} className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-blue-400" />
+                                    <span className="text-[9px] sm:text-[10px] lg:text-xs">GÊNERO</span>
                                 </div>
                             </th>
-                            <th className="hidden lg:table-cell px-4 py-3 font-bold text-yellow-400 tracking-wider w-[25%] text-center">
-                                <div className="flex items-center justify-center gap-2">
-                                    <Star strokeWidth={1.5} className="h-5 w-5 text-yellow-400" />
-                                    <span>POOL/LABEL</span>
+                            <th className="hidden lg:table-cell px-2 py-2 font-bold text-yellow-400 tracking-wider w-[25%] text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                    <Star strokeWidth={1.5} className="h-3.5 w-3.5 lg:h-4 lg:w-4 text-yellow-400" />
+                                    <span className="text-[9px] sm:text-[10px] lg:text-xs">POOL/LABEL</span>
                                 </div>
                             </th>
-                            <th className="px-2 sm:px-3 lg:px-4 py-2 sm:py-3 font-bold text-gray-400 tracking-wider w-[40%] sm:w-[35%] lg:w-[30%] text-right">
-                                <div className="flex items-center justify-end gap-1 sm:gap-2">
-                                    <Zap strokeWidth={1.5} className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
-                                    <span className="text-xs sm:text-sm lg:text-base">AÇÕES</span>
+                            <th className="px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2 font-bold text-gray-400 tracking-wider w-[40%] sm:w-[35%] lg:w-[30%] text-right">
+                                <div className="flex items-center justify-end gap-0.5 sm:gap-1">
+                                    <Zap strokeWidth={1.5} className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-green-400" />
+                                    <span className="text-[9px] sm:text-[10px] lg:text-xs">AÇÕES</span>
                                 </div>
                             </th>
                         </tr>
