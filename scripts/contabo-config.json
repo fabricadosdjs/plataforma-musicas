@@ -1,0 +1,24 @@
+{
+    "downloadDirectory": "C:\\Users\\%USERNAME%\\Downloads\\Contabo Music",
+    "apiBaseUrl": "http://localhost:3000/api/admin",
+    "batchSize": 10,
+    "batchDelay": 2000,
+    "downloadTimeout": 30000,
+    "createStyleFolders": true,
+    "skipExistingFiles": true,
+    "logLevel": "info",
+    "retryAttempts": 3,
+    "retryDelay": 1000,
+    "fileNaming": {
+        "format": "{artist} - {songName}.mp3",
+        "replaceSpaces": true,
+        "maxLength": 200
+    },
+    "folders": {
+        "stylePrefix": "🎵",
+        "createDateFolders": false,
+        "createArtistFolders": false
+    }
+}
+
+

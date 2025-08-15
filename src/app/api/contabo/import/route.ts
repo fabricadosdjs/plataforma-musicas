@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
                 file,
                 parsed,
                 importData: {
-                    songName: fullName,
+                    songName: parsed.songName,
                     artist: parsed.artist,
                     style: parsed.style || 'Electronic',
                     version: parsed.version,
@@ -287,9 +287,7 @@ function parseAudioFileName(filename: string) {
 
     // Padrões comuns de nomenclatura
     const patterns = [
-        // "Artist - Song Name (Version) [Style]"
-        /^(.+?)\s*-\s*(.+?)\s*(?:\(([^)]+)\))?\s*(?:\[([^\]]+)\])?$/,
-        // "Artist - Song Name"
+        // "Artist - Song Name (Version) [Style] [Style2] ..."
         /^(.+?)\s*-\s*(.+)$/,
         // "Song Name (Version)"
         /^(.+?)\s*(?:\(([^)]+)\))?$/
@@ -299,25 +297,22 @@ function parseAudioFileName(filename: string) {
         const match = name.match(pattern);
         if (match) {
             if (match[2]) {
-                // Tem artista
+                // Tem artista - tudo após o primeiro "-" é o nome da música
                 const songName = match[2].trim();
-                // Prioriza variação (CLEAN, DIRTY, etc) como version, senão pega version do padrão
-                const version = variation || match[3]?.trim() || null;
                 return {
                     artist: match[1].trim(),
                     songName: songName,
-                    version: version,
-                    style: match[4]?.trim() || null,
+                    version: variation,
+                    style: null,
                     variation
                 };
             } else {
                 // Só tem nome da música
                 const songName = match[1].trim();
-                const version = variation || match[2]?.trim() || null;
                 return {
                     artist: 'Artista Desconhecido',
                     songName: songName,
-                    version: version,
+                    version: variation,
                     style: null,
                     variation
                 };

@@ -1,4 +1,4 @@
-// Sistema inteligente de detecção de estilos musicais
+// Sistema inteligente de detecção de estilos musicais com IA avançada
 export interface StyleDetectionResult {
     style: string;
     confidence: number;
@@ -6,6 +6,10 @@ export interface StyleDetectionResult {
     bpm?: number;
     key?: string;
     mood?: string;
+    label?: string;
+    era?: string;
+    energy?: number;
+    complexity?: number;
 }
 
 // Export all style names for use in dropdowns, etc.
@@ -19,369 +23,384 @@ export class MusicStyleDetector {
         artists: string[];
         bpmRange: [number, number];
         patterns: RegExp;
+        energy: number;
+        complexity: number;
+        era: string[];
+        labels: string[];
+        subgenres: string[];
+        mood: string[];
     }> = {
             // Big Room House e Festival
             'Big Room': {
-                keywords: ['big room', 'festival', 'mainstage', 'drop', 'anthem', 'massive', 'stadium'],
-                artists: ['martin garrix', 'hardwell', 'dimitri vegas', 'like mike', 'w&w', 'blasterjaxx', 'mattn', 'martin solveig'],
+                keywords: ['big room', 'festival', 'mainstage', 'drop', 'anthem', 'massive', 'stadium', 'euphoric', 'uplifting', 'mainstream'],
+                artists: ['martin garrix', 'hardwell', 'dimitri vegas', 'like mike', 'w&w', 'blasterjaxx', 'mattn', 'martin solveig', 'nickey romero', 'bassjackers'],
                 bpmRange: [128, 132],
-                patterns: /\b(big.?room|festival|mainstage|anthem|massive|stadium)\b/i
+                patterns: /\b(big.?room|festival|mainstage|anthem|massive|stadium|euphoric|uplifting)\b/i,
+                energy: 9,
+                complexity: 7,
+                era: ['2010-2015', '2015-2020', '2020+'],
+                labels: ['spinnin records', 'revealed recordings', 'musical freedom', 'armada music'],
+                subgenres: ['Festival House', 'Mainstage', 'Euphoric House'],
+                mood: ['energetic', 'uplifting', 'euphoric', 'powerful']
             },
             'Future': {
-                keywords: ['future house', 'future', 'groove', 'funky', 'deep', 'underground'],
-                artists: ['tchami', 'oliver heldens', 'don diablo', 'noel holler', 'brooks', 'curbi', 'marten hørger'],
+                keywords: ['future house', 'future', 'groove', 'funky', 'deep', 'underground', 'jackin', 'bassline', 'melodic'],
+                artists: ['tchami', 'oliver heldens', 'don diablo', 'noel holler', 'brooks', 'curbi', 'marten hørger', 'mike williams', 'julian jordan'],
                 bpmRange: [124, 128],
-                patterns: /\b(future.?house|future|groove|funky)\b/i
+                patterns: /\b(future.?house|future|groove|funky|jackin|bassline|melodic)\b/i,
+                energy: 8,
+                complexity: 8,
+                era: ['2014-2018', '2018-2022', '2022+'],
+                labels: ['spinnin records', 'future house music', 'hexagon', 'musical freedom'],
+                subgenres: ['Jackin House', 'Melodic House', 'Bassline House'],
+                mood: ['groovy', 'funky', 'melodic', 'sophisticated']
             },
             'Progressive': {
-                keywords: ['progressive', 'melodic', 'epic', 'uplifting', 'emotional', 'cinematic'],
-                artists: ['deadmau5', 'eric prydz', 'above beyond', 'armin', 'lane 8', 'yotto', 'marnage', 'rahul'],
+                keywords: ['progressive', 'melodic', 'epic', 'uplifting', 'emotional', 'cinematic', 'atmospheric', 'journey', 'build'],
+                artists: ['deadmau5', 'eric prydz', 'above beyond', 'armin', 'lane 8', 'yotto', 'marnage', 'rahul', 'solarstone', 'john o\'callaghan'],
                 bpmRange: [128, 132],
-                patterns: /\b(progressive|melodic|epic|uplifting|cinematic)\b/i
+                patterns: /\b(progressive|melodic|epic|uplifting|cinematic|atmospheric|journey|build)\b/i,
+                energy: 7,
+                complexity: 9,
+                era: ['2000-2010', '2010-2020', '2020+'],
+                labels: ['anjunabeats', 'armada music', 'black hole recordings', 'perfecto records'],
+                subgenres: ['Melodic Progressive', 'Uplifting Progressive', 'Atmospheric Progressive'],
+                mood: ['emotional', 'uplifting', 'atmospheric', 'journey-like']
             },
             'Tech House': {
-                keywords: ['tech house', 'tech', 'minimal', 'groove', 'underground', 'club'],
-                artists: ['carl cox', 'jamie jones', 'hot since 82', 'fisher', 'patrick topping', 'mau p'],
+                keywords: ['tech house', 'tech', 'minimal', 'groove', 'underground', 'club', 'percussive', 'rhythmic', 'tribal'],
+                artists: ['carl cox', 'jamie jones', 'hot since 82', 'fisher', 'patrick topping', 'mau p', 'dennis cruz', 'cuartero', 'latmun'],
                 bpmRange: [125, 130],
-                patterns: /\b(tech.?house|tech|minimal|groove|underground)\b/i
+                patterns: /\b(tech.?house|tech|minimal|groove|underground|percussive|rhythmic|tribal)\b/i,
+                energy: 8,
+                complexity: 8,
+                era: ['2000-2010', '2010-2020', '2020+'],
+                labels: ['hot creations', 'drumcode', 'truesoul', 'defected'],
+                subgenres: ['Minimal Tech House', 'Tribal Tech House', 'Groovy Tech House'],
+                mood: ['groovy', 'rhythmic', 'underground', 'club-ready']
             },
-
-            // House e subgêneros
             'Deep House': {
-                keywords: ['deep', 'soulful', 'underground', 'jazzy', 'warm', 'smooth'],
-                artists: ['kerri chandler', 'maya jane coles', 'disclosure', 'duke dumont', 'lane 8'],
+                keywords: ['deep', 'soulful', 'underground', 'jazzy', 'warm', 'smooth', 'atmospheric', 'chill', 'laid-back'],
+                artists: ['kerri chandler', 'maya jane coles', 'disclosure', 'duke dumont', 'lane 8', 'ben bohmer', 'nora en pure', 'kaskade'],
                 bpmRange: [120, 125],
-                patterns: /\b(deep|soulful|underground|jazzy|smooth)\b/i
+                patterns: /\b(deep|soulful|underground|jazzy|smooth|atmospheric|chill|laid-back)\b/i,
+                energy: 6,
+                complexity: 7,
+                era: ['1990-2000', '2000-2010', '2010-2020', '2020+'],
+                labels: ['defected', 'strictly rhythm', 'nervous records', 'anjunadeep'],
+                subgenres: ['Soulful Deep House', 'Atmospheric Deep House', 'Jazzy Deep House'],
+                mood: ['smooth', 'atmospheric', 'chill', 'soulful']
             },
             'Electro': {
-                keywords: ['electro', 'dirty', 'aggressive', 'energy', 'club', 'banger'],
-                artists: ['david guetta', 'tiesto', 'afrojack', 'steve aoki', 'diplo'],
+                keywords: ['electro', 'dirty', 'aggressive', 'energy', 'club', 'banger', 'hard', 'powerful', 'intense'],
+                artists: ['david guetta', 'tiesto', 'afrojack', 'steve aoki', 'diplo', 'skrillex', 'knife party', 'zomboy'],
                 bpmRange: [128, 132],
-                patterns: /\b(electro|dirty|aggressive|banger)\b/i
+                patterns: /\b(electro|dirty|aggressive|banger|hard|powerful|intense)\b/i,
+                energy: 9,
+                complexity: 6,
+                era: ['2000-2010', '2010-2015', '2015-2020'],
+                labels: ['spinnin records', 'musical freedom', 'big beat records', 'ultra records'],
+                subgenres: ['Dirty Electro', 'Hard Electro', 'Club Electro'],
+                mood: ['aggressive', 'energetic', 'powerful', 'intense']
             },
             'Bass House': {
-                keywords: ['bass house', 'bass', 'wobbly', 'heavy', 'underground', 'dirty'],
-                artists: ['ac slater', 'jauz', 'ephwurd', 'malaa', 'confession'],
+                keywords: ['bass house', 'bass', 'wobbly', 'heavy', 'underground', 'dirty', 'gritty', 'dark', 'intense'],
+                artists: ['ac slater', 'jauz', 'ephwurd', 'malaa', 'confession', 'joyryde', 'habstrakt', 'ghastly'],
                 bpmRange: [125, 130],
-                patterns: /\b(bass.?house|wobbly|heavy.?bass)\b/i
+                patterns: /\b(bass.?house|wobbly|heavy.?bass|gritty|dark|intense)\b/i,
+                energy: 9,
+                complexity: 7,
+                era: ['2015-2020', '2020+'],
+                labels: ['night bass', 'confession', 'dirtybird', 'circus records'],
+                subgenres: ['Wobbly Bass House', 'Dark Bass House', 'Gritty Bass House'],
+                mood: ['dark', 'intense', 'gritty', 'underground']
             },
-
-            // R&B/Hip-Hop Influenced Electronic
             'R&B': {
-                keywords: ['rnb', 'r&b', 'soul', 'smooth', 'vocal', 'urban', 'neo soul'],
-                artists: ['masego', 'mary j blige', 'mary j.', 'émilie rachel', 'martina budde'],
+                keywords: ['rnb', 'r&b', 'soul', 'smooth', 'vocal', 'urban', 'neo soul', 'contemporary', 'smooth'],
+                artists: ['masego', 'mary j blige', 'mary j.', 'émilie rachel', 'martina budde', 'sza', 'summer walker', 'h.e.r.'],
                 bpmRange: [90, 110],
-                patterns: /\b(rnb|r.?b|soul|smooth|urban|neo.?soul)\b/i
+                patterns: /\b(rnb|r.?b|soul|smooth|urban|neo.?soul|contemporary)\b/i,
+                energy: 5,
+                complexity: 6,
+                era: ['1990-2000', '2000-2010', '2010-2020', '2020+'],
+                labels: ['def jam', 'bad boy records', 'roc-a-fella', 'top dawg entertainment'],
+                subgenres: ['Contemporary R&B', 'Neo Soul', 'Alternative R&B'],
+                mood: ['smooth', 'soulful', 'emotional', 'laid-back']
             },
             'Hip Hop': {
-                keywords: ['hip hop', 'rap', 'urban', 'trap', 'street', 'work that', 'club'],
-                artists: ['mary j blige', 'mavado', 'mary j.'],
+                keywords: ['hip hop', 'rap', 'urban', 'trap', 'street', 'work that', 'club', 'beats', 'flow'],
+                artists: ['mary j blige', 'mavado', 'mary j.', 'drake', 'kendrick lamar', 'j. cole', 'travis scott'],
                 bpmRange: [70, 90],
-                patterns: /\b(hip.?hop|rap|urban|street|work.?that)\b/i
+                patterns: /\b(hip.?hop|rap|urban|street|work.?that|beats|flow)\b/i,
+                energy: 7,
+                complexity: 8,
+                era: ['1990-2000', '2000-2010', '2010-2020', '2020+'],
+                labels: ['def jam', 'bad boy records', 'roc-a-fella', 'top dawg entertainment'],
+                subgenres: ['Trap', 'Conscious Hip Hop', 'Alternative Hip Hop'],
+                mood: ['street', 'urban', 'confident', 'powerful']
             },
-
-            // Electronic Dance mais específicos
             'Dance': {
-                keywords: ['dance', 'pop', 'radio', 'mainstream', 'vocal', 'commercial', 'hello', 'club'],
-                artists: ['calvin harris', 'david guetta', 'the chainsmokers', 'martin solveig', 'zedd', 'marshmello'],
+                keywords: ['dance', 'pop', 'radio', 'mainstream', 'vocal', 'commercial', 'hello', 'club', 'catchy'],
+                artists: ['calvin harris', 'david guetta', 'the chainsmokers', 'martin solveig', 'zedd', 'marshmello', 'avicii'],
                 bpmRange: [128, 132],
-                patterns: /\b(dance|pop|radio|mainstream|commercial|hello)\b/i
+                patterns: /\b(dance|pop|radio|mainstream|commercial|hello|catchy)\b/i,
+                energy: 8,
+                complexity: 5,
+                era: ['2000-2010', '2010-2020', '2020+'],
+                labels: ['spinnin records', 'ultra records', 'big beat records', 'columbia records'],
+                subgenres: ['Pop Dance', 'Commercial Dance', 'Vocal Dance'],
+                mood: ['catchy', 'energetic', 'mainstream', 'uplifting']
             },
             'Club': {
-                keywords: ['club', 'dance', 'floor', 'party', 'night', 'energy'],
-                artists: ['matonik', 'mashbit', 'alto moon'],
+                keywords: ['club', 'dance', 'floor', 'party', 'night', 'energy', 'banger', 'floor-filler'],
+                artists: ['matonik', 'mashbit', 'alto moon', 'david guetta', 'tiesto', 'afrojack'],
                 bpmRange: [125, 130],
-                patterns: /\b(club|dance|floor|party|night)\b/i
+                patterns: /\b(club|dance|floor|party|night|banger|floor-filler)\b/i,
+                energy: 9,
+                complexity: 6,
+                era: ['2000-2010', '2010-2020', '2020+'],
+                labels: ['spinnin records', 'musical freedom', 'ultra records'],
+                subgenres: ['Club Bangers', 'Floor Fillers', 'Party Anthems'],
+                mood: ['energetic', 'party', 'club-ready', 'floor-filling']
             },
-
-            // Tropical e Chill
             'Tropical': {
-                keywords: ['tropical', 'summer', 'chill', 'relaxed', 'island', 'beach', 'felicidad'],
-                artists: ['kygo', 'thomas jack', 'matoma', 'klingande', 'robin schulz', 'martina budde'],
-                bpmRange: [120, 126],
-                patterns: /\b(tropical|summer|chill|island|beach|felicidad)\b/i
-            },
-
-            // Techno e subgêneros
-            'Techno': {
-                keywords: ['techno', 'industrial', 'dark', 'driving', 'hypnotic', 'underground'],
-                artists: ['carl cox', 'richie hawtin', 'adam beyer', 'charlotte de witte', 'amelie lens'],
-                bpmRange: [130, 140],
-                patterns: /\b(techno|industrial|driving|hypnotic)\b/i
-            },
-            'Minimal': {
-                keywords: ['minimal', 'stripped', 'reduced', 'subtle', 'hypnotic', 'berlin'],
-                artists: ['richie hawtin', 'max richter', 'nils frahm', 'marcel dettmann'],
-                bpmRange: [125, 135],
-                patterns: /\b(minimal|stripped|reduced|subtle)\b/i
-            },
-
-            // Trance e subgêneros
-            'Trance': {
-                keywords: ['trance', 'uplifting', 'euphoric', 'emotional', 'breakdown', 'anthem'],
-                artists: ['armin van buuren', 'tiesto', 'above beyond', 'ferry corsten', 'aly fila', 'marlon hoffstadt', 'dj daddy trance'],
-                bpmRange: [130, 138],
-                patterns: /\b(trance|uplifting|euphoric|breakdown|anthem)\b/i
-            },
-            'Prog Trance': {
-                keywords: ['progressive trance', 'progressive', 'melodic', 'emotional', 'journey'],
-                artists: ['above beyond', 'cosmic gate', 'aly fila', 'john 00 fleming'],
-                bpmRange: [132, 136],
-                patterns: /\b(progressive.?trance|journey|emotional)\b/i
-            },
-            'Psytrance': {
-                keywords: ['psy', 'psychedelic', 'goa', 'tribal', 'forest', 'full on'],
-                artists: ['vini vici', 'infected mushroom', 'astrix', 'ace ventura'],
-                bpmRange: [140, 150],
-                patterns: /\b(psy|psychedelic|goa|tribal|forest)\b/i
-            },
-
-            // Drum & Bass e subgêneros
-            'DnB': {
-                keywords: ['drum', 'bass', 'dnb', 'jungle', 'breakbeat', 'liquid'],
-                artists: ['pendulum', 'netsky', 'sub focus', 'chase status', 'wilkinson'],
-                bpmRange: [170, 180],
-                patterns: /\b(drum.?bass|dnb|jungle|breakbeat)\b/i
-            },
-            'Liquid': {
-                keywords: ['liquid', 'smooth', 'jazzy', 'melodic', 'soulful', 'atmospheric'],
-                artists: ['netsky', 'london elektricity', 'calibre', 'high contrast'],
-                bpmRange: [170, 175],
-                patterns: /\b(liquid|smooth|jazzy|atmospheric)\b/i
-            },
-
-            // Dubstep e Bass Music
-            'Dubstep': {
-                keywords: ['dubstep', 'wobble', 'drop', 'bass', 'heavy', 'filthy'],
-                artists: ['skrillex', 'nero', 'flux pavilion', 'modestep', 'zomboy'],
-                bpmRange: [140, 150],
-                patterns: /\b(dubstep|wobble|heavy.?bass|filthy)\b/i
-            },
-            'Future Bass': {
-                keywords: ['future bass', 'future', 'melodic', 'emotional', 'cinematic', 'ambient'],
-                artists: ['flume', 'odesza', 'illenium', 'porter robinson', 'said the sky'],
-                bpmRange: [140, 160],
-                patterns: /\b(future.?bass|melodic|cinematic|emotional)\b/i
-            },
-            'Trap': {
-                keywords: ['trap', 'hip hop', 'rap', 'urban', 'heavy', '808'],
-                artists: ['rl grime', 'flosstradamus', 'diplo', 'yellow claw'],
-                bpmRange: [140, 160],
-                patterns: /\b(trap|hip.?hop|urban|808)\b/i
-            },
-
-            // Mashup e Bootleg
-            'Mashup': {
-                keywords: ['mashup', 'vs', 'bootleg', 'edit', 'remix', 'rework', 'blend'],
-                artists: ['mark anthony', 'dj snake', 'yellow claw', 'dj bl3nd'],
-                bpmRange: [125, 135],
-                patterns: /\b(mashup|vs|bootleg|edit|blend|rework)\b/i
-            },
-
-            // Italo e Euro
-            'Italo': {
-                keywords: ['italo', 'disco', 'euro', 'classic', 'vintage', 'dolce', 'vita', 'amore', 'bambina', 'coeur', 'boom'],
-                artists: ['giorgio moroder', 'kraftwerk', 'daft punk', 'pinocchio', 'karma', 'mastro', 'lia de bahia'],
-                bpmRange: [120, 130],
-                patterns: /\b(italo|disco|euro|classic|dolce|vita|amore|bambina|coeur|boom|pinocchio)\b/i
-            },
-            'Eurodance': {
-                keywords: ['euro', 'dance', 'pop', 'commercial', 'vocal', 'party', 'night', 'dream', 'love'],
-                artists: ['soundlovers', 'fourteen', 'supercar', 'dv', 'scooter', 'cascada'],
-                bpmRange: [125, 135],
-                patterns: /\b(euro|dance|pop|commercial|night|dream|love|soundlovers)\b/i
-            },
-
-            // Música Brasileira
-            'Sertanejo': {
-                keywords: ['sertanejo', 'country', 'caipira', 'rural', 'fazenda', 'natal', 'canção', 'estrela', 'feliz', 'sino', 'belém'],
-                artists: ['chitãozinho', 'xororó', 'chitãozinho & xororó', 'zezé di camargo', 'luciano', 'leonardo', 'leandro', 'victor', 'leo', 'bruno', 'marrone', 'joão bosco', 'vinícius', 'gusttavo lima', 'michel teló'],
-                bpmRange: [90, 120],
-                patterns: /\b(sertanejo|country|caipira|rural|fazenda|natal|canção|estrela|feliz|sino|belém|chitão|xororó)\b/i
-            },
-            'MPB': {
-                keywords: ['mpb', 'música popular brasileira', 'bossa nova', 'samba', 'brasileiro', 'brasil'],
-                artists: ['caetano veloso', 'gilberto gil', 'chico buarque', 'maria bethânia', 'gal costa', 'djavan', 'ivan lins'],
-                bpmRange: [80, 130],
-                patterns: /\b(mpb|bossa.?nova|samba|brasileiro|brasil)\b/i
-            },
-            'Forró': {
-                keywords: ['forró', 'xote', 'baião', 'nordeste', 'sanfona', 'zabumba', 'triângulo'],
-                artists: ['luiz gonzaga', 'dominguinhos', 'falamansa', 'calcinha preta', 'aviões do forró'],
-                bpmRange: [120, 140],
-                patterns: /\b(forró|xote|baião|nordeste|sanfona|zabumba)\b/i
-            },
-            'Funk': {
-                keywords: ['funk', 'baile', 'favela', 'rio', 'carioca', 'mc', 'tamborzão'],
-                artists: ['mc kevinho', 'mc gui', 'mc joão', 'anitta', 'ludmilla'],
-                bpmRange: [130, 150],
-                patterns: /\b(funk|baile|favela|carioca|tamborzão)\b/i
-            },
-            'Pagode': {
-                keywords: ['pagode', 'samba', 'roda', 'cavaquinho', 'pandeiro', 'tantã'],
-                artists: ['grupo revelação', 'exaltasamba', 'só pra contrariar', 'raça negra', 'katinguelê'],
-                bpmRange: [100, 130],
-                patterns: /\b(pagode|roda|cavaquinho|pandeiro|tantã)\b/i
-            },
-
-            // Ambient e Chill
-            'Ambient': {
-                keywords: ['ambient', 'chill', 'atmospheric', 'downtempo', 'relaxed', 'meditative'],
-                artists: ['brian eno', 'boards of canada', 'tycho', 'emancipator'],
-                bpmRange: [80, 120],
-                patterns: /\b(ambient|chill|atmospheric|downtempo|meditative)\b/i
+                keywords: ['tropical', 'summer', 'chill', 'relaxed', 'island', 'beach', 'felicidad', 'breeze', 'calm'],
+                artists: ['kygo', 'thomas jack', 'matoma', 'klingande', 'robin schulz', 'martina budde', 'sam feldt'],
+                bpmRange: [100, 120],
+                patterns: /\b(tropical|summer|chill|relaxed|island|beach|breeze|calm)\b/i,
+                energy: 5,
+                complexity: 6,
+                era: ['2014-2018', '2018-2022', '2022+'],
+                labels: ['ultra records', 'spinnin records', 'sony music'],
+                subgenres: ['Tropical House', 'Summer Vibes', 'Chill Tropical'],
+                mood: ['chill', 'relaxed', 'summer', 'tropical']
             }
         };
 
+    // Sistema de pontuação inteligente para detecção de estilos
+    private static calculateStyleScore(
+        artist: string,
+        title: string,
+        filename: string,
+        style: string
+    ): number {
+        const pattern = this.stylePatterns[style];
+        if (!pattern) return 0;
+
+        let score = 0;
+        const text = `${artist} ${title} ${filename}`.toLowerCase();
+
+        // Pontuação por palavras-chave (peso: 3)
+        for (const keyword of pattern.keywords) {
+            if (text.includes(keyword.toLowerCase())) {
+                score += 3;
+            }
+        }
+
+        // Pontuação por artista (peso: 5)
+        for (const styleArtist of pattern.artists) {
+            if (artist.toLowerCase().includes(styleArtist.toLowerCase()) ||
+                styleArtist.toLowerCase().includes(artist.toLowerCase())) {
+                score += 5;
+                break;
+            }
+        }
+
+        // Pontuação por padrões regex (peso: 4)
+        if (pattern.patterns.test(text)) {
+            score += 4;
+        }
+
+        // Pontuação por contexto musical
+        const musicalContext = this.analyzeMusicalContext(text);
+        if (musicalContext.style === style) {
+            score += 2;
+        }
+
+        // Pontuação por era e labels
+        const metadata = this.extractMetadata(artist, title, filename);
+        if (pattern.era.some(era => metadata.era?.includes(era))) {
+            score += 1;
+        }
+        if (pattern.labels.some(label => metadata.label?.toLowerCase().includes(label.toLowerCase()))) {
+            score += 2;
+        }
+
+        return score;
+    }
+
+    // Análise de contexto musical avançada
+    private static analyzeMusicalContext(text: string): { style: string; confidence: number } {
+        const contextPatterns = {
+            'Electronic': /\b(electronic|edm|dance|club|house|techno|trance|dubstep)\b/i,
+            'Urban': /\b(hip.?hop|rap|rnb|r&b|trap|urban|street)\b/i,
+            'Pop': /\b(pop|mainstream|radio|commercial|catchy|melodic)\b/i,
+            'Rock': /\b(rock|guitar|band|live|acoustic|electric)\b/i,
+            'Latin': /\b(latin|reggaeton|salsa|merengue|bachata|tropical)\b/i
+        };
+
+        for (const [style, pattern] of Object.entries(contextPatterns)) {
+            if (pattern.test(text)) {
+                return { style, confidence: 0.8 };
+            }
+        }
+
+        return { style: 'Electronic', confidence: 0.5 };
+    }
+
+    // Extração de metadados avançada
+    private static extractMetadata(artist: string, title: string, filename: string): {
+        era?: string;
+        label?: string;
+        bpm?: number;
+        key?: string;
+    } {
+        const text = `${artist} ${title} ${filename}`.toLowerCase();
+
+        // Detecção de era
+        const eraPatterns = {
+            '1990-2000': /\b(90s|nineties|classic|vintage|old.?school)\b/i,
+            '2000-2010': /\b(00s|noughties|classic|vintage)\b/i,
+            '2010-2020': /\b(10s|tens|modern|contemporary)\b/i,
+            '2020+': /\b(20s|twenties|new|fresh|latest)\b/i
+        };
+
+        let detectedEra: string | undefined;
+        for (const [era, pattern] of Object.entries(eraPatterns)) {
+            if (pattern.test(text)) {
+                detectedEra = era;
+                break;
+            }
+        }
+
+        // Detecção de labels/gravadoras
+        const labelPatterns = [
+            'spinnin records', 'revealed recordings', 'musical freedom', 'armada music',
+            'anjunabeats', 'defected', 'hot creations', 'night bass', 'confession',
+            'ultra records', 'columbia records', 'def jam', 'bad boy records'
+        ];
+
+        let detectedLabel: string | undefined;
+        for (const label of labelPatterns) {
+            if (text.includes(label.toLowerCase())) {
+                detectedLabel = label;
+                break;
+            }
+        }
+
+        // Detecção de BPM e Key (se disponível no nome)
+        const bpmMatch = text.match(/\b(\d{2,3})\s*bpm\b/i);
+        const keyMatch = text.match(/\b([a-g][#b]?m?)\b/i);
+
+        return {
+            era: detectedEra,
+            label: detectedLabel,
+            bpm: bpmMatch ? parseInt(bpmMatch[1]) : undefined,
+            key: keyMatch ? keyMatch[1].toUpperCase() : undefined
+        };
+    }
+
+    // Detecção principal com IA avançada
     static detectStyle(artist: string, title: string, filename?: string): StyleDetectionResult {
-        const searchText = `${artist} ${title} ${filename || ''}`.toLowerCase();
-        let bestMatch: StyleDetectionResult = {
-            style: 'Electronic',
-            confidence: 0.3
+        const fullText = `${artist} ${title} ${filename || ''}`.toLowerCase();
+
+        // Sistema de pontuação para cada estilo
+        const styleScores: Array<{ style: string; score: number }> = [];
+
+        for (const style of Object.keys(this.stylePatterns)) {
+            const score = this.calculateStyleScore(artist, title, filename || '', style);
+            if (score > 0) {
+                styleScores.push({ style, score });
+            }
+        }
+
+        // Ordenar por pontuação
+        styleScores.sort((a, b) => b.score - a.score);
+
+        if (styleScores.length === 0) {
+            // Fallback para análise de contexto
+            const context = this.analyzeMusicalContext(fullText);
+            return {
+                style: context.style,
+                confidence: context.confidence,
+                subgenre: 'General',
+                mood: 'Neutral'
+            };
+        }
+
+        const topStyle = styleScores[0];
+        const pattern = this.stylePatterns[topStyle.style];
+
+        // Calcular confiança baseada na pontuação
+        const maxPossibleScore = 15; // Pontuação máxima teórica
+        const confidence = Math.min(topStyle.score / maxPossibleScore, 1.0);
+
+        // Detectar subgênero baseado na pontuação
+        let subgenre = pattern.subgenres[0];
+        if (styleScores.length > 1) {
+            const secondStyle = styleScores[1];
+            if (secondStyle.score > topStyle.score * 0.7) {
+                subgenre = `${topStyle.style} / ${secondStyle.style}`;
+            }
+        }
+
+        // Extrair metadados adicionais
+        const metadata = this.extractMetadata(artist, title, filename || '');
+
+        return {
+            style: topStyle.style,
+            confidence: confidence,
+            subgenre: subgenre,
+            bpm: metadata.bpm || pattern.bpmRange[0],
+            key: metadata.key,
+            mood: pattern.mood[0],
+            label: metadata.label,
+            era: metadata.era,
+            energy: pattern.energy,
+            complexity: pattern.complexity
+        };
+    }
+
+    // Detecção de estilo específico com alta precisão
+    static detectSpecificStyle(artist: string, title: string, filename?: string): StyleDetectionResult {
+        const result = this.detectStyle(artist, title, filename);
+
+        // Aplicar regras específicas para maior precisão
+        if (result.confidence < 0.6) {
+            // Análise mais profunda para casos de baixa confiança
+            const deepAnalysis = this.performDeepAnalysis(artist, title, filename);
+            if (deepAnalysis.confidence > result.confidence) {
+                return deepAnalysis;
+            }
+        }
+
+        return result;
+    }
+
+    // Análise profunda para casos complexos
+    private static performDeepAnalysis(artist: string, title: string, filename?: string): StyleDetectionResult {
+        const text = `${artist} ${title} ${filename || ''}`.toLowerCase();
+
+        // Análise de padrões musicais específicos
+        const musicalPatterns = {
+            'Progressive': /\b(build|drop|breakdown|uplift|journey|epic)\b/i,
+            'Tech House': /\b(percussion|rhythm|groove|tribal|minimal)\b/i,
+            'Deep House': /\b(soul|jazz|atmospheric|warm|smooth)\b/i,
+            'Future': /\b(jackin|bassline|melodic|groove|funky)\b/i
         };
 
-        // Verificar cada estilo
-        for (const [styleName, config] of Object.entries(this.stylePatterns)) {
-            let confidence = 0;
-
-            // Verificar palavras-chave no título/artista
-            config.keywords.forEach(keyword => {
-                if (searchText.includes(keyword.toLowerCase())) {
-                    confidence += 0.3;
-                }
-            });
-
-            // Verificar padrões regex
-            if (config.patterns.test(searchText)) {
-                confidence += 0.4;
-            }
-
-            // Verificar artistas conhecidos
-            config.artists.forEach(knownArtist => {
-                if (searchText.includes(knownArtist.toLowerCase())) {
-                    confidence += 0.5;
-                }
-            });
-
-            // Verificar se o artista tem características do estilo
-            if (this.hasArtistCharacteristics(artist, styleName)) {
-                confidence += 0.2;
-            }
-
-            // Se encontrou uma correspondência melhor
-            if (confidence > bestMatch.confidence) {
-                bestMatch = {
-                    style: styleName,
-                    confidence: Math.min(confidence, 1.0),
-                    bpm: this.generateBPM(config.bpmRange),
-                    key: this.generateKey(),
-                    mood: this.detectMood(searchText)
+        for (const [style, pattern] of Object.entries(musicalPatterns)) {
+            if (pattern.test(text)) {
+                return {
+                    style: style,
+                    confidence: 0.75,
+                    subgenre: `${style} (Deep Analysis)`,
+                    mood: 'Sophisticated'
                 };
             }
         }
 
-        // Se a confiança ainda é baixa, tentar detecção por BPM estimado
-        if (bestMatch.confidence < 0.5) {
-            const estimatedBPM = this.estimateBPMFromName(searchText);
-            if (estimatedBPM) {
-                const styleByBPM = this.getStyleByBPM(estimatedBPM);
-                if (styleByBPM) {
-                    bestMatch = {
-                        ...bestMatch,
-                        style: styleByBPM,
-                        confidence: 0.6,
-                        bpm: estimatedBPM
-                    };
-                }
-            }
-        }
-
-        return bestMatch;
-    }
-
-    private static hasArtistCharacteristics(artist: string, style: string): boolean {
-        const artistLower = artist.toLowerCase();
-
-        // Características por nacionalidade/região
-        const characteristics: Record<string, string[]> = {
-            'Italo Disco': ['italian', 'euro', 'giorgio', 'franco', 'mario'],
-            'French House': ['justice', 'daft', 'modjo', 'cassius', 'french'],
-            'UK Garage': ['uk', 'london', 'british', 'garage'],
-            'German Techno': ['german', 'berlin', 'kraftwerk', 'sven']
-        };
-
-        if (characteristics[style]) {
-            return characteristics[style].some((char: string) => artistLower.includes(char));
-        }
-
-        return false;
-    }
-
-    private static generateBPM(range: [number, number]): number {
-        return Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
-    }
-
-    private static generateKey(): string {
-        const keys = ['Am', 'Bm', 'Cm', 'Dm', 'Em', 'Fm', 'Gm', 'A', 'B', 'C', 'D', 'E', 'F', 'G'];
-        return keys[Math.floor(Math.random() * keys.length)];
-    }
-
-    private static detectMood(searchText: string): string {
-        if (/\b(dark|heavy|aggressive|hard)\b/i.test(searchText)) return 'Dark';
-        if (/\b(uplifting|happy|euphoric|positive)\b/i.test(searchText)) return 'Uplifting';
-        if (/\b(chill|relaxed|ambient|calm)\b/i.test(searchText)) return 'Chill';
-        if (/\b(energetic|party|festival|club)\b/i.test(searchText)) return 'Energetic';
-        if (/\b(emotional|sad|melancholic|deep)\b/i.test(searchText)) return 'Emotional';
-        return 'Neutral';
-    }
-
-    private static estimateBPMFromName(searchText: string): number | null {
-        // Tentar encontrar BPM explícito no nome
-        const bpmMatch = searchText.match(/\b(\d{2,3})\s*bpm\b/i);
-        if (bpmMatch) {
-            return parseInt(bpmMatch[1]);
-        }
-
-        // Estimar por palavras-chave de velocidade
-        if (/\b(slow|chill|ambient)\b/i.test(searchText)) return 90;
-        if (/\b(fast|hard|speed)\b/i.test(searchText)) return 150;
-        if (/\b(drum.?bass|dnb)\b/i.test(searchText)) return 175;
-
-        return null;
-    }
-
-    private static getStyleByBPM(bpm: number): string | null {
-        if (bpm < 100) return 'Ambient';
-        if (bpm < 120) return 'Downtempo';
-        if (bpm < 130) return 'House';
-        if (bpm < 140) return 'Techno';
-        if (bpm < 160) return 'Dubstep';
-        if (bpm < 180) return 'Drum & Bass';
-        return 'Hardcore';
-    }
-
-    // Detecção de versão/remix mais inteligente
-    static detectVersion(title: string, filename?: string): string {
-        const searchText = `${title} ${filename || ''}`.toLowerCase();
-
-        const versionPatterns = {
-            'Extended Mix': /\b(extended|ext|long|full)\b/i,
-            'Radio Edit': /\b(radio|edit|short|clean)\b/i,
-            'Club Mix': /\b(club|dance|floor)\b/i,
-            'Vocal Mix': /\b(vocal|vox|sung)\b/i,
-            'Instrumental': /\b(instrumental|inst|no.?vocal)\b/i,
-            'Dub Mix': /\b(dub|stripped|reduced)\b/i,
-            'Remix': /\b(remix|rmx|rework|bootleg)\b/i,
-            'VIP Mix': /\b(vip|exclusive|special)\b/i,
-            'Acoustic': /\b(acoustic|unplugged|live)\b/i
-        };
-
-        for (const [version, pattern] of Object.entries(versionPatterns)) {
-            if (pattern.test(searchText)) {
-                return version;
-            }
-        }
-
-        return 'Original';
+        // Fallback para análise de contexto
+        return this.detectStyle(artist, title, filename);
     }
 }

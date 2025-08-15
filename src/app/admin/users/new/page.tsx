@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, User, Settings, Shield, Mail, Smartphone, Lock, Calendar, DollarSign, Check, AlertCircle, Loader2 } from 'lucide-react';
-import AdminAuth from '@/components/AdminAuth';
+import { AdminAuth } from '@/components/admin/AdminAuth';
 
 interface NewUserData {
     // Dados básicos
@@ -177,8 +177,8 @@ export default function NewUserPage() {
                             <React.Fragment key={step.id}>
                                 <div className="flex flex-col items-center">
                                     <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${currentStep >= step.id
-                                            ? 'bg-blue-600 border-blue-600 text-white'
-                                            : 'border-gray-600 text-gray-400'
+                                        ? 'bg-blue-600 border-blue-600 text-white'
+                                        : 'border-gray-600 text-gray-400'
                                         }`}>
                                         {currentStep > step.id ? (
                                             <Check className="w-6 h-6" />

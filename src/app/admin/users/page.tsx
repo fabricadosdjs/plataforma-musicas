@@ -31,7 +31,7 @@ interface User {
 }
 
 // Imports
-import AdminAuth from '@/components/AdminAuth';
+import { AdminAuth } from '@/components/admin/AdminAuth';
 import { Users, Crown, CheckCircle, DollarSign, Plus, Search, Filter, Copy, AlertCircle, Settings, Loader2, User, Edit, Trash, X, Mail, MessageSquare, Music, Upload, ChevronDown, UserPlus, Save } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';

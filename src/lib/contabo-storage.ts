@@ -1,5 +1,6 @@
 // Biblioteca para integração com Contabo Object Storage
-import { DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client, _Object } from '@aws-sdk/client-s3';
+import { S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export interface ContaboConfig {
@@ -67,8 +68,8 @@ export class ContaboStorage {
 
                 if (response.Contents) {
                     const files = response.Contents
-                        .filter((obj: _Object) => obj.Key && obj.Size && obj.Size > 0) // Remove pastas vazias
-                        .map((obj: _Object) => ({
+                        .filter((obj: any) => obj.Key && obj.Size && obj.Size > 0) // Remove pastas vazias
+                        .map((obj: any) => ({
                             key: obj.Key!,
                             url: this.getPublicUrl(obj.Key!),
                             size: obj.Size!,

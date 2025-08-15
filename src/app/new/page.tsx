@@ -1,12 +1,34 @@
-// src/app/new/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { Search, Filter, Music, Loader2, Sparkles, Clock, Star, CheckCircle, Waves, ShoppingCart, Package, X, Crown, Play, Download, Heart, Users, Plus } from 'lucide-react';
+import { Search, Filter, Music, Loader2, Sparkles, Clock, Star, CheckCircle, Waves, ShoppingCart, Package, X, Crown, Play, Heart, Users, Pause, Download, Plus, ChevronLeft, Calendar } from 'lucide-react';
 import NewFooter from '@/components/layout/NewFooter';
 import { Track } from '@/types/track';
+import { useSEO } from '@/hooks/useSEO';
+import SEOHead from '@/components/seo/SEOHead';
+import MusicStructuredData from '@/components/seo/MusicStructuredData';
+import Header from '@/components/layout/Header';
+import FiltersModal from '@/components/music/FiltersModal';
+import { useAppContext } from '@/context/AppContext';
+import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
+import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
+import { useToast } from '@/hooks/useToast';
+import { YouTubeSkeleton } from '@/components/ui/LoadingSkeleton';
+import { MusicList } from '@/components/music/MusicList';
+import { StylesSlider } from '@/components/music/StylesSlider';
+import Link from 'next/link';
+import {
+  getCurrentDateBrazil,
+  convertToBrazilTimezone,
+  getDateOnlyBrazil,
+  compareDatesOnly,
+  isTodayBrazil,
+  isYesterdayBrazil,
+  formatDateBrazil,
+  getDateKeyBrazil
+} from '@/utils/dateUtils';
 
 // Tipo para o progresso do ZIP
 type ZipProgressState = {
@@ -19,28 +41,6 @@ type ZipProgressState = {
   remainingTime: number;
   isGenerating: boolean;
 };
-
-import MusicTable from '@/components/music/MusicTable';
-import { useSEO } from '@/hooks/useSEO';
-import SEOHead from '@/components/seo/SEOHead';
-import MusicStructuredData from '@/components/seo/MusicStructuredData';
-import Header from '@/components/layout/Header';
-import FiltersModal from '@/components/music/FiltersModal';
-import { useAppContext } from '@/context/AppContext';
-import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
-import { useToast } from '@/hooks/useToast';
-import { YouTubeSkeleton } from '@/components/ui/LoadingSkeleton';
-import Link from 'next/link';
-import {
-  getCurrentDateBrazil,
-  convertToBrazilTimezone,
-  getDateOnlyBrazil,
-  compareDatesOnly,
-  isTodayBrazil,
-  isYesterdayBrazil,
-  formatDateBrazil,
-  getDateKeyBrazil
-} from '@/utils/dateUtils';
 
 // Componente de Loading para a página
 const PageSkeleton = () => <YouTubeSkeleton />;
@@ -84,11 +84,69 @@ const getCorrectDateKey = (dateString: string): string => {
 
 // Componente principal da página
 function NewPageContent() {
-  // Estado para músicas já baixadas
   const [downloadedTrackIds, setDownloadedTrackIds] = useState<number[]>([]);
-
-  // Estado para modal de todos os gêneros
   const [showAllGenres, setShowAllGenres] = useState(false);
+  const { data: session } = useSession();
+  const { showToast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
+  const [hasActiveFilters, setHasActiveFilters] = useState(false);
+
+  // Estados para filtros
+  const [selectedGenre, setSelectedGenre] = useState('all');
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [selectedArtist, setSelectedArtist] = useState('all');
+  const [selectedDateRange, setSelectedDateRange] = useState('all');
+  const [selectedVersion, setSelectedVersion] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [selectedPool, setSelectedPool] = useState('all');
+
+  // Estado para paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const daysPerPage = 7;
+
+  // Estados para dados dos filtros
+  const [genres, setGenres] = useState<string[]>([]);
+  const [artists, setArtists] = useState<string[]>([]);
+  const [versions, setVersions] = useState<string[]>([]);
+  const [pools, setPools] = useState<string[]>([]);
+  const [monthOptions, setMonthOptions] = useState<Array<{ value: string; label: string }>>([]);
+
+  // Estado para estilos principais com contadores reais
+  const [mainStyles, setMainStyles] = useState<Array<{ id: number; name: string; color: string; count: number }>>([
+    // Estado inicial vazio - será preenchido com dados reais do banco
+  ]);
+
+  // Estados para fila de downloads
+  const [downloadQueue, setDownloadQueue] = useState<Track[]>([]);
+  const [isDownloadingQueue, setIsDownloadingQueue] = useState(false);
+  const [zipProgress, setZipProgress] = useState<ZipProgressState>({
+    isActive: false,
+    progress: 0,
+    current: 0,
+    total: 0,
+    trackName: '',
+    elapsedTime: 0,
+    remainingTime: 0,
+    isGenerating: false
+  });
+
+  const [cancelZipGeneration, setCancelZipGeneration] = useState(false);
+
+  // SEO para a página
+  const { seoData } = useSEO({
+    customTitle: 'Novos Lançamentos - Músicas Eletrônicas',
+    customDescription: 'Descubra os mais recentes lançamentos de música eletrônica. House, Techno, Trance e muito mais em alta qualidade.',
+    customKeywords: 'novos lançamentos, música eletrônica, house, techno, trance, DJ, downloads'
+  });
+
   // Carregar músicas baixadas do localStorage ao montar
   useEffect(() => {
     const savedDownloadedTracks = localStorage.getItem('downloadedTracks');
@@ -103,207 +161,65 @@ function NewPageContent() {
       setDownloadedTrackIds([]);
     }
   }, []);
-  const { data: session } = useSession();
-  const { showToast } = useToast();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState(''); // Termo que o usuário está digitando
-  const [appliedSearchQuery, setAppliedSearchQuery] = useState(''); // Termo aplicado aos filtros
-  const [showFiltersModal, setShowFiltersModal] = useState(false);
-  const [hasActiveFilters, setHasActiveFilters] = useState(false);
+  // Processar parâmetros da URL para aplicar filtros automaticamente
+  useEffect(() => {
+    if (searchParams) {
+      const styleParam = searchParams.get('style');
+      const artistParam = searchParams.get('artist');
+      const poolParam = searchParams.get('pool');
+      const searchParam = searchParams.get('search');
 
-  // Estados para filtros
-  const [selectedGenre, setSelectedGenre] = useState('all');
-  const [selectedArtist, setSelectedArtist] = useState('all');
-  const [selectedDateRange, setSelectedDateRange] = useState('all');
-  const [selectedVersion, setSelectedVersion] = useState('all');
-  const [selectedMonth, setSelectedMonth] = useState('all');
-  const [selectedPool, setSelectedPool] = useState('all');
+      // Aplicar filtro de estilo se presente na URL
+      if (styleParam) {
+        setSelectedGenre(styleParam);
+        setHasActiveFilters(true);
+        console.log('🎵 Filtro de estilo aplicado da URL:', styleParam);
+      }
 
-  // Estado para paginação
-  const [currentPage, setCurrentPage] = useState(1);
-  const daysPerPage = 7; // Mostrar exatamente 7 dias por página
+      // Aplicar filtro de artista se presente na URL
+      if (artistParam) {
+        setSelectedArtist(artistParam);
+        setHasActiveFilters(true);
+        console.log('🎤 Filtro de artista aplicado da URL:', artistParam);
+      }
 
-  // Estados para dados dos filtros
-  const [genres, setGenres] = useState<string[]>([]);
-  const [artists, setArtists] = useState<string[]>([]);
-  const [versions, setVersions] = useState<string[]>([]);
-  const [pools, setPools] = useState<string[]>([]);
-  const [monthOptions, setMonthOptions] = useState<Array<{ value: string; label: string }>>([]);
+      // Aplicar filtro de pool se presente na URL
+      if (poolParam) {
+        setSelectedPool(poolParam);
+        setHasActiveFilters(true);
+        console.log('🏊 Filtro de pool aplicado da URL:', poolParam);
+      }
 
-  // Estados para fila de downloads (movidos da MusicTable)
-  const [downloadQueue, setDownloadQueue] = useState<Track[]>([]);
-  const [isDownloadingQueue, setIsDownloadingQueue] = useState(false);
-  const [zipProgress, setZipProgress] = useState<ZipProgressState>({
-    isActive: false,
-    progress: 0,
-    current: 0,
-    total: 0,
-    trackName: '',
-    elapsedTime: 0,
-    remainingTime: 0,
-    isGenerating: false
-  });
-
-  // Estado para controlar o cancelamento
-  const [cancelZipGeneration, setCancelZipGeneration] = useState(false);
-
-
-
-  // SEO para a página
-  const { seoData } = useSEO({
-    customTitle: 'Novos Lançamentos - Músicas Eletrônicas',
-    customDescription: 'Descubra os mais recentes lançamentos de música eletrônica. House, Techno, Trance e muito mais em alta qualidade.',
-    customKeywords: 'novos lançamentos, música eletrônica, house, techno, trance, DJ, downloads'
-  });
-
-  // Função para atualizar URL com parâmetros de pesquisa e filtros
-  const updateURL = useCallback((appliedSearchQuery: string, filters: any, page: number = 1) => {
-    const params = new URLSearchParams();
-
-    // Adicionar pesquisa se existir
-    if (appliedSearchQuery.trim()) {
-      params.set('q', appliedSearchQuery.trim());
-    }
-
-    // Adicionar filtros ativos
-    const activeFilters: string[] = [];
-    if (filters.genre !== 'all') activeFilters.push(`genres=${encodeURIComponent(filters.genre)}`);
-    if (filters.artist !== 'all') activeFilters.push(`artist=${encodeURIComponent(filters.artist)}`);
-    if (filters.version !== 'all') activeFilters.push(`version=${encodeURIComponent(filters.version)}`);
-    if (filters.pool !== 'all') activeFilters.push(`pool=${encodeURIComponent(filters.pool)}`);
-    if (filters.dateRange !== 'all') activeFilters.push(`date=${encodeURIComponent(filters.dateRange)}`);
-    if (filters.month !== 'all') activeFilters.push(`uploadDate=${encodeURIComponent(filters.month)}`);
-    if (page > 1) activeFilters.push(`page=${page}`);
-
-    let newUrl = pathname;
-    if (params.toString()) {
-      newUrl += `?${params.toString()}`;
-    }
-
-    if (activeFilters.length > 0) {
-      newUrl += `#${activeFilters.join('&')}`;
-    }
-
-    // Corrigido: garantir que newUrl seja sempre uma string
-    router.replace(newUrl ?? '', { scroll: false });
-  }, [pathname, router]);
-
-  // Função para ler parâmetros da URL na inicialização
-  const initializeFromURL = useCallback(() => {
-    // Verifica se searchParams existe antes de acessar
-    if (!searchParams) return;
-    const q = searchParams.get('q');
-    if (q) {
-      setSearchQuery(q);
-      setAppliedSearchQuery(q);
-    }
-
-    // Ler filtros do hash
-    const hash = window.location.hash.substring(1);
-    if (hash) {
-      const hashParams = new URLSearchParams(hash);
-      const genres = hashParams.get('genres');
-      const artist = hashParams.get('artist');
-      const version = hashParams.get('version');
-      const pool = hashParams.get('pool');
-      const date = hashParams.get('date');
-      const uploadDate = hashParams.get('uploadDate'); // Novo parâmetro
-      const page = hashParams.get('page'); // Parâmetro de página
-
-      if (genres) setSelectedGenre(decodeURIComponent(genres));
-      if (artist) setSelectedArtist(decodeURIComponent(artist));
-      if (version) setSelectedVersion(decodeURIComponent(version));
-      if (pool) setSelectedPool(decodeURIComponent(pool));
-      if (date) setSelectedDateRange(decodeURIComponent(date));
-      if (uploadDate) setSelectedMonth(decodeURIComponent(uploadDate));
-      if (page) setCurrentPage(parseInt(page) || 1);
+      // Aplicar pesquisa se presente na URL
+      if (searchParam) {
+        setSearchQuery(searchParam);
+        setAppliedSearchQuery(searchParam);
+        setHasActiveFilters(true);
+        console.log('🔍 Pesquisa aplicada da URL:', searchParam);
+      }
     }
   }, [searchParams]);
 
-  // Inicializar valores da URL quando a página carrega
+  // Log quando selectedGenre ou selectedPool mudam
   useEffect(() => {
-    initializeFromURL();
-  }, [initializeFromURL]);
+    console.log('🔄 selectedGenre mudou para:', selectedGenre);
+    console.log('🔄 selectedPool mudou para:', selectedPool);
 
-  // Filtrar tracks com base na pesquisa e filtros
-  const filteredTracks = useMemo(() => {
-    let filtered = [...tracks];
-
-    // Aplicar pesquisa
-    if (appliedSearchQuery.trim()) {
-      const query = appliedSearchQuery.toLowerCase().trim();
-      filtered = filtered.filter(track =>
-        track.songName.toLowerCase().includes(query) ||
-        track.artist.toLowerCase().includes(query) ||
-        track.style.toLowerCase().includes(query) ||
-        (track.version && track.version.toLowerCase().includes(query)) ||
-        (track.pool && track.pool.toLowerCase().includes(query))
-      );
-    }
-
-    // Aplicar filtros
     if (selectedGenre !== 'all') {
-      filtered = filtered.filter(track => track.style === selectedGenre);
-    }
-
-    if (selectedArtist !== 'all') {
-      filtered = filtered.filter(track => track.artist === selectedArtist);
-    }
-
-    if (selectedVersion !== 'all') {
-      filtered = filtered.filter(track => {
-        const trackVersion = track.version && track.version.trim() !== ''
-          ? track.version.trim()
-          : 'Original';
-        return trackVersion === selectedVersion;
-      });
+      console.log('🎵 Aplicando filtro de estilo:', selectedGenre);
+      console.log('📊 Total de músicas disponíveis:', tracks.length);
+      const matchingTracks = tracks.filter(track => track.style === selectedGenre);
+      console.log('🎵 Músicas que correspondem ao estilo:', matchingTracks.length);
     }
 
     if (selectedPool !== 'all') {
-      filtered = filtered.filter(track => track.pool === selectedPool);
+      console.log('🏊 Aplicando filtro de pool:', selectedPool);
+      console.log('📊 Total de músicas disponíveis:', tracks.length);
+      const matchingTracks = tracks.filter(track => track.pool === selectedPool);
+      console.log('🏊 Músicas que correspondem ao pool:', matchingTracks.length);
     }
-
-    if (selectedDateRange !== 'all') {
-      const currentDate = getCurrentDateBrazil();
-      filtered = filtered.filter(track => {
-        if (!track.releaseDate) return selectedDateRange === 'no-date';
-
-        const trackDate = convertToBrazilTimezone(track.releaseDate);
-
-        switch (selectedDateRange) {
-          case 'today':
-            return isTodayBrazil(trackDate);
-          case 'yesterday':
-            return isYesterdayBrazil(trackDate);
-          case 'this-week':
-            return (currentDate.getTime() - trackDate.getTime()) <= 7 * 24 * 60 * 60 * 1000;
-          case 'this-month':
-            return trackDate.getMonth() === currentDate.getMonth() &&
-              trackDate.getFullYear() === currentDate.getFullYear();
-          default:
-            return true;
-        }
-      });
-    }
-
-    if (selectedMonth !== 'all') {
-      filtered = filtered.filter(track => {
-        if (!track.releaseDate) return false;
-        const trackDate = new Date(track.releaseDate);
-        const year = trackDate.getFullYear();
-        const month = trackDate.getMonth(); // 0-11
-        const monthYear = `${year}-${String(month + 1).padStart(2, '0')}`;
-        return monthYear === selectedMonth;
-      });
-    }
-
-    return filtered;
-  }, [tracks, appliedSearchQuery, selectedGenre, selectedArtist, selectedVersion, selectedPool, selectedDateRange, selectedMonth]);
+  }, [selectedGenre, selectedPool, tracks]);
 
   // Função para obter o label da data
   const getDateLabel = (dateKey: string) => {
@@ -320,12 +236,6 @@ function NewPageContent() {
     }
     if (dateKey === 'future') return 'Próximos Lançamentos';
     if (dateKey === 'no-date') return 'Sem Data';
-
-    // Se é um dia da semana (não deveria mais entrar aqui com a nova lógica)
-    if (dateKey.startsWith('weekday-')) {
-      const dayName = dateKey.replace('weekday-', '');
-      return dayName;
-    }
 
     // Se recebeu uma data em formato ISO, extrair apenas a parte da data
     if (dateKey.includes('T') && dateKey.includes('Z')) {
@@ -359,109 +269,123 @@ function NewPageContent() {
       console.error(`❌ Erro ao formatar data ${dateKey}:`, error);
       return 'Data Inválida'; // Retorna um label mais amigável
     }
-  };  // Função para agrupar músicas por data de lançamento
-  const groupTracksByReleaseDate = useMemo(() => {
-    const grouped: { [key: string]: Track[] } = {};
-    const dateKeyStats: { [key: string]: number } = {};
-
-    filteredTracks.forEach((track, index) => {
-      if (track.releaseDate) {
-        // Usar nossa função corrigida
-        const dateKey = getCorrectDateKey(track.releaseDate);
-
-        // Contar estatísticas
-        dateKeyStats[dateKey] = (dateKeyStats[dateKey] || 0) + 1;
-
-        if (!grouped[dateKey]) {
-          grouped[dateKey] = [];
-        }
-        grouped[dateKey].push(track);
-      } else {
-        // Se não tem releaseDate, colocar em "Sem Data"
-        if (!grouped['no-date']) {
-          grouped['no-date'] = [];
-        }
-        grouped['no-date'].push(track);
-        dateKeyStats['no-date'] = (dateKeyStats['no-date'] || 0) + 1;
-      }
-    });    // Mostrar estatísticas
-    console.log('📊 Estatísticas de agrupamento:', dateKeyStats);
-    console.log('📊 Total de grupos:', Object.keys(grouped).length);    // Ordenar as chaves para exibir na ordem correta
-    const sortedKeys = Object.keys(grouped).sort((a, b) => {
-      if (a === 'future') return -1;
-      if (b === 'future') return 1;
-      if (a === 'today') return -1;
-      if (b === 'today') return 1;
-      if (a === 'yesterday') return -1;
-      if (b === 'yesterday') return 1;
-      if (a === 'no-date') return 1;
-      if (b === 'no-date') return -1;
-
-      // Para dias da semana, ordenar cronologicamente
-      if (a.startsWith('weekday-') && b.startsWith('weekday-')) {
-        return b.localeCompare(a); // Ordem decrescente
-      }
-      if (a.startsWith('weekday-')) return -1;
-      if (b.startsWith('weekday-')) return 1;
-
-      return b.localeCompare(a); // Ordem decrescente para datas passadas
-    });
-
-    // Aplicar paginação: 7 dias por página
-    const totalPages = Math.ceil(sortedKeys.length / daysPerPage);
-    const startIndex = (currentPage - 1) * daysPerPage;
-    const endIndex = startIndex + daysPerPage;
-    const paginatedKeys = sortedKeys.slice(startIndex, endIndex);
-
-    // Criar objeto agrupado apenas com as chaves da página atual
-    const paginatedGrouped: { [key: string]: Track[] } = {};
-    paginatedKeys.forEach(key => {
-      paginatedGrouped[key] = grouped[key];
-    });
-
-    return {
-      grouped: paginatedGrouped,
-      sortedKeys: paginatedKeys,
-      totalPages,
-      totalDays: sortedKeys.length,
-      currentPage
-    };
-  }, [filteredTracks, tracks, currentPage, daysPerPage]);
-
-  // Calcular automaticamente se há filtros ativos
-  useEffect(() => {
-    const hasFilters = appliedSearchQuery.trim() !== '' ||
-      selectedGenre !== 'all' ||
-      selectedArtist !== 'all' ||
-      selectedDateRange !== 'all' ||
-      selectedVersion !== 'all' ||
-      selectedMonth !== 'all' ||
-      selectedPool !== 'all';
-
-    setHasActiveFilters(hasFilters);
-  }, [appliedSearchQuery, selectedGenre, selectedArtist, selectedDateRange, selectedVersion, selectedMonth, selectedPool]);
-
-  // Função para mudar de página
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    updateURL(appliedSearchQuery, {
-      genre: selectedGenre,
-      artist: selectedArtist,
-      version: selectedVersion,
-      pool: selectedPool,
-      dateRange: selectedDateRange,
-      month: selectedMonth
-    }, page);
   };
 
-  // Resetar página quando filtros mudarem
-  useEffect(() => {
-    if (currentPage > 1) {
-      setCurrentPage(1);
+  // Placeholder para groupTracksByReleaseDate (será movido para depois de filteredTracks)
+
+  // Filtrar tracks com base na pesquisa e filtros
+  const filteredTracks = useMemo(() => {
+    let filtered = [...tracks];
+
+    console.log('🔍 Iniciando filtros:', {
+      totalTracks: tracks.length,
+      selectedGenre,
+      selectedArtist,
+      selectedPool,
+      appliedSearchQuery
+    });
+
+    if (appliedSearchQuery.trim()) {
+      const query = appliedSearchQuery.toLowerCase().trim();
+      filtered = filtered.filter(track =>
+        track.songName.toLowerCase().includes(query) ||
+        track.artist.toLowerCase().includes(query) ||
+        track.style.toLowerCase().includes(query) ||
+        (track.version && track.version.toLowerCase().includes(query)) ||
+        (track.pool && track.pool.toLowerCase().includes(query))
+      );
+      console.log('🔍 Após pesquisa:', filtered.length, 'músicas');
     }
-  }, [selectedGenre, selectedArtist, selectedVersion, selectedPool, selectedDateRange, selectedMonth, appliedSearchQuery]);
 
+    if (selectedGenre !== 'all') {
+      console.log('🎵 Aplicando filtro de estilo:', selectedGenre);
+      const beforeFilter = filtered.length;
 
+      // Normalizar strings para comparação mais robusta
+      const normalizedSelectedGenre = selectedGenre.trim().toLowerCase();
+      filtered = filtered.filter(track => {
+        const normalizedTrackStyle = track.style ? track.style.trim().toLowerCase() : '';
+        const matches = normalizedTrackStyle === normalizedSelectedGenre;
+        if (!matches) {
+          console.log(`❌ Não corresponde: "${track.style}" !== "${selectedGenre}"`);
+        }
+        return matches;
+      });
+
+      console.log('🎵 Após filtro de estilo:', beforeFilter, '->', filtered.length, 'músicas');
+
+      // Log das músicas que passaram no filtro
+      if (filtered.length > 0) {
+        console.log('🎵 Músicas com estilo', selectedGenre, ':', filtered.map(t => `${t.artist} - ${t.songName} (${t.style})`));
+      } else {
+        console.log('❌ Nenhuma música encontrada com estilo:', selectedGenre);
+        // Log de todos os estilos disponíveis para debug
+        const availableStyles = [...new Set(tracks.map(t => t.style))].sort();
+        console.log('📊 Estilos disponíveis:', availableStyles);
+
+        // Verificar se há estilos similares
+        const similarStyles = availableStyles.filter(style =>
+          style && style.toLowerCase().includes(normalizedSelectedGenre) ||
+          normalizedSelectedGenre.includes(style.toLowerCase())
+        );
+        if (similarStyles.length > 0) {
+          console.log('🔍 Estilos similares encontrados:', similarStyles);
+        }
+      }
+    }
+
+    if (selectedArtist !== 'all') {
+      filtered = filtered.filter(track => track.artist === selectedArtist);
+    }
+
+    if (selectedVersion !== 'all') {
+      filtered = filtered.filter(track => {
+        const trackVersion = track.version && track.version.trim() !== ''
+          ? track.version.trim()
+          : 'Original';
+        return trackVersion === selectedVersion;
+      });
+    }
+
+    if (selectedPool !== 'all') {
+      filtered = filtered.filter(track => track.pool === selectedPool);
+    }
+
+    if (selectedDateRange !== 'all') {
+      const currentDate = getCurrentDateBrazil();
+      filtered = filtered.filter(track => {
+        if (!track.releaseDate) return selectedDateRange === 'no-date';
+        const trackDate = convertToBrazilTimezone(track.releaseDate);
+        switch (selectedDateRange) {
+          case 'today':
+            return isTodayBrazil(trackDate);
+          case 'yesterday':
+            return isYesterdayBrazil(trackDate);
+          case 'this-week':
+            return (currentDate.getTime() - trackDate.getTime()) <= 7 * 24 * 60 * 60 * 1000;
+          case 'this-month':
+            return trackDate.getMonth() === currentDate.getMonth() &&
+              trackDate.getFullYear() === currentDate.getFullYear();
+          default:
+            return true;
+        }
+      });
+    }
+
+    if (selectedMonth !== 'all') {
+      filtered = filtered.filter(track => {
+        if (!track.releaseDate) return false;
+        const trackDate = new Date(track.releaseDate);
+        const year = trackDate.getFullYear();
+        const month = trackDate.getMonth();
+        const monthYear = `${year}-${String(month + 1).padStart(2, '0')}`;
+        return monthYear === selectedMonth;
+      });
+    }
+
+    console.log('✅ Filtros aplicados. Resultado final:', filtered.length, 'músicas');
+    return filtered;
+  }, [tracks, appliedSearchQuery, selectedGenre, selectedArtist, selectedVersion, selectedPool, selectedDateRange, selectedMonth]);
 
   // Fetch tracks com filtros
   const fetchTracks = useCallback(async () => {
@@ -472,7 +396,6 @@ function NewPageContent() {
       const response = await fetch('/api/tracks');
       if (response.ok) {
         const data = await response.json();
-        // Corrige para aceitar diferentes formatos de resposta
         let tracksData: Track[] = [];
         if (Array.isArray(data.tracks)) {
           tracksData = data.tracks;
@@ -484,13 +407,10 @@ function NewPageContent() {
 
         setTracks(tracksData);
 
-        // Extrair dados para filtros
         const uniqueGenres = [...new Set(tracksData.map(track => track.style))].filter(Boolean).sort();
         const uniqueArtists = [...new Set(tracksData.map(track => track.artist))].filter(Boolean).sort();
 
-        // Para versões, usar apenas os dados reais do banco de dados
         const versionSet = new Set<string>();
-
         tracksData.forEach(track => {
           if (track.version && track.version.trim() !== '') {
             versionSet.add(track.version.trim());
@@ -500,63 +420,65 @@ function NewPageContent() {
         const uniqueVersions = Array.from(versionSet).sort();
         const uniquePools = [...new Set(tracksData.map(track => track.pool || 'Nexor Records'))].filter(Boolean).sort();
 
-        // Log para debug - mostra o que foi encontrado
-        console.log('🎵 Gêneros/Estilos encontrados:', uniqueGenres.length, uniqueGenres);
-        console.log('🎧 Versões reais do banco:', uniqueVersions.length, uniqueVersions);
-        console.log('📊 Análise de dados:', {
-          totalTracks: tracksData.length,
-          tracksWithVersion: tracksData.filter(t => t.version && t.version.trim() !== '').length,
-          tracksWithoutVersion: tracksData.filter(t => !t.version || t.version.trim() === '').length,
-          tracksWithStyle: tracksData.filter(t => t.style && t.style.trim() !== '').length,
-          exemploStyles: [...new Set(tracksData.slice(0, 10).map(t => t.style))],
-          exemploVersionsReais: tracksData.slice(0, 10).map(t => ({ artist: t.artist, title: t.title, version: t.version || 'SEM_VERSÃO' }))
-        });
-
         setGenres(uniqueGenres);
         setArtists(uniqueArtists);
         setVersions(uniqueVersions);
         setPools(uniquePools);
 
-        // Gerar opções de meses baseadas nas datas reais das tracks
-        const monthsWithData = new Set<string>();
-        const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-
-        tracksData.forEach(track => {
-          // Usar releaseDate como proxy para uploadDate por enquanto
-          // TODO: Implementar campo uploadDate/createdAt se necessário
-          if (track.releaseDate) {
-            try {
-              const date = new Date(track.releaseDate);
-              // Verificar se a data é válida
-              if (!isNaN(date.getTime())) {
-                const year = date.getFullYear();
-                const month = date.getMonth(); // 0-11
-                const monthYear = `${year}-${String(month + 1).padStart(2, '0')}`;
-                const label = `${monthNames[month]} ${year}`;
-
-                monthsWithData.add(`${monthYear}|${label}`);
-              }
-            } catch (error) {
-              console.warn('Data inválida encontrada:', track.releaseDate, error);
-            }
+        // Gerar estilos principais com contadores reais
+        const styleCounts = tracksData.reduce((acc, track) => {
+          if (track.style) {
+            acc[track.style] = (acc[track.style] || 0) + 1;
           }
-        });
+          return acc;
+        }, {} as { [key: string]: number });
 
-        // Converter para o formato esperado pelo componente
-        const monthOptions = Array.from(monthsWithData)
-          .map(item => {
-            const [value, label] = item.split('|');
-            return { value, label };
-          })
-          .sort((a, b) => {
-            // Ordenar por ano/mês descendente (mais recente primeiro)
-            return b.value.localeCompare(a.value);
+        // Criar array de estilos principais ordenados por quantidade
+        const mainStylesData = Object.entries(styleCounts)
+          .sort(([, a], [, b]) => b - a) // Ordenar por quantidade decrescente
+          .slice(0, 16) // Pegar os 16 estilos mais populares
+          .map(([style, count], index) => {
+            // Cores para os estilos (reutilizando o esquema anterior)
+            const colors = ['blue', 'purple', 'cyan', 'green', 'indigo', 'pink', 'orange', 'red', 'teal', 'yellow', 'emerald', 'rose', 'violet', 'amber', 'sky', 'lime'];
+            return {
+              id: index + 1,
+              name: style,
+              color: colors[index] || 'gray',
+              count: count
+            };
           });
 
-        console.log('📅 Meses com atualizações encontrados:', monthOptions);
-        console.log('📊 Exemplo de URL que será gerada: /new#uploadDate=2025-08');
-        setMonthOptions(monthOptions);
+        setMainStyles(mainStylesData);
+
+        // Log para debug dos estilos principais
+        console.log('🎯 Estilos principais com contadores reais:', mainStylesData);
+        console.log('📊 Contadores por estilo:', styleCounts);
+
+        // Log para debug dos estilos disponíveis
+        console.log('📊 Estilos únicos encontrados:', uniqueGenres);
+        console.log('📊 Total de músicas carregadas:', tracksData.length);
+
+        // Log adicional para verificar contadores por estilo
+        console.log('🔍 Contadores detalhados por estilo:');
+        Object.entries(styleCounts).forEach(([style, count]) => {
+          console.log(`  ${style}: ${count} músicas`);
+        });
+
+        // Verificar se há músicas com estilo "Trance"
+        const tranceTracks = tracksData.filter(track => track.style === 'Trance');
+        console.log('🎵 Músicas com estilo Trance:', tranceTracks.length);
+        if (tranceTracks.length > 0) {
+          console.log('🎵 Exemplos de músicas Trance:', tranceTracks.slice(0, 3).map(t => `${t.artist} - ${t.songName}`));
+        }
+
+        // Log adicional para debug
+        console.log('📊 Primeiras 5 músicas carregadas:', tracksData.slice(0, 5).map(t => ({
+          id: t.id,
+          artist: t.artist,
+          songName: t.songName,
+          style: t.style,
+          pool: t.pool
+        })));
 
         showToast(`✅ ${tracksData.length} músicas carregadas!`, 'success');
       } else {
@@ -572,130 +494,275 @@ function NewPageContent() {
     }
   }, [showToast]);
 
+  // Função para agrupar músicas por data de lançamento
+  const groupTracksByReleaseDate = useMemo(() => {
+    const grouped: { [key: string]: Track[] } = {};
+    const dateKeyStats: { [key: string]: number } = {};
+
+    // Usar filteredTracks em vez de tracks para aplicar filtros
+    filteredTracks.forEach((track) => {
+      if (track.releaseDate) {
+        const dateKey = getCorrectDateKey(track.releaseDate);
+        dateKeyStats[dateKey] = (dateKeyStats[dateKey] || 0) + 1;
+        if (!grouped[dateKey]) {
+          grouped[dateKey] = [];
+        }
+        grouped[dateKey].push(track);
+      } else {
+        if (!grouped['no-date']) {
+          grouped['no-date'] = [];
+        }
+        grouped['no-date'].push(track);
+        dateKeyStats['no-date'] = (dateKeyStats['no-date'] || 0) + 1;
+      }
+    });
+
+    // Log para debug
+    console.log('📊 Estatísticas de agrupamento:', dateKeyStats);
+    console.log('📊 Total de grupos:', Object.keys(grouped).length);
+
+    const sortedKeys = Object.keys(grouped).sort((a, b) => {
+      if (a === 'future') return -1;
+      if (b === 'future') return 1;
+      if (a === 'today') return -1;
+      if (b === 'today') return 1;
+      if (a === 'yesterday') return -1;
+      if (b === 'yesterday') return 1;
+      if (a === 'no-date') return 1;
+      if (b === 'no-date') return -1;
+      return b.localeCompare(a);
+    });
+
+    const totalPages = Math.ceil(sortedKeys.length / daysPerPage);
+    const startIndex = (currentPage - 1) * daysPerPage;
+    const endIndex = startIndex + daysPerPage;
+    const paginatedKeys = sortedKeys.slice(startIndex, endIndex);
+
+    const paginatedGrouped: { [key: string]: Track[] } = {};
+    paginatedKeys.forEach(key => {
+      paginatedGrouped[key] = grouped[key];
+    });
+
+    return {
+      grouped: paginatedGrouped,
+      sortedKeys: paginatedKeys,
+      totalPages,
+      totalDays: sortedKeys.length,
+      currentPage
+    };
+  }, [filteredTracks, currentPage, daysPerPage]);
+
   // Carregamento inicial
   useEffect(() => {
     fetchTracks();
   }, [fetchTracks]);
 
-  // Carregar fila salva do localStorage
-  useEffect(() => {
-    try {
-      const savedQueue = localStorage.getItem('downloadQueue');
-      console.log('💾 Carregando fila do localStorage:', savedQueue ? 'encontrada' : 'não encontrada');
+  // Função para download em lote de 10 em 10
+  const downloadBatch = async (tracks: Track[], batchSize: number = 10) => {
+    const totalTracks = tracks.length;
+    let downloadedCount = 0;
 
-      if (savedQueue) {
-        const parsedQueue = JSON.parse(savedQueue);
-        console.log('📦 Fila carregada:', parsedQueue.length, 'músicas');
-        setDownloadQueue(parsedQueue);
+    for (let i = 0; i < totalTracks; i += batchSize) {
+      const batch = tracks.slice(i, i + batchSize);
+
+      // Mostrar progresso
+      showToast(`📥 Baixando lote ${Math.floor(i / batchSize) + 1}/${Math.ceil(totalTracks / batchSize)}`, 'info');
+
+      // Download de cada música do lote
+      for (const track of batch) {
+        try {
+          const response = await fetch('/api/admin/download-track', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              trackId: track.id,
+              originalFileName: `${track.artist} - ${track.songName}.mp3`
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${track.artist} - ${track.songName}.mp3`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+
+          // Adicionar à lista de músicas baixadas
+          setDownloadedTrackIds(prev => [...prev, track.id]);
+
+          // Salvar no localStorage
+          const savedTracks = JSON.parse(localStorage.getItem('downloadedTracks') || '[]');
+          const updatedTracks = [...savedTracks, track];
+          localStorage.setItem('downloadedTracks', JSON.stringify(updatedTracks));
+
+          downloadedCount++;
+
+          // Pequena pausa entre downloads para não sobrecarregar
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+        } catch (error) {
+          console.error(`❌ Erro ao baixar ${track.songName}:`, error);
+          showToast(`❌ Erro ao baixar ${track.songName}`, 'error');
+        }
       }
-    } catch (e) {
-      console.error('❌ Erro ao carregar fila do localStorage:', e);
-      localStorage.removeItem('downloadQueue');
-    }
-  }, []);
 
-  // Salvar fila no localStorage sempre que mudar
-  useEffect(() => {
-    console.log('💾 Salvando fila no localStorage:', downloadQueue.length, 'músicas');
-    localStorage.setItem('downloadQueue', JSON.stringify(downloadQueue));
-  }, [downloadQueue]);
+      // Pausa entre lotes
+      if (i + batchSize < totalTracks) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    showToast(`✅ Download concluído! ${downloadedCount} músicas baixadas`, 'success');
+  };
+
+  // Função para baixar apenas músicas novas (não baixadas)
+  const downloadNewTracks = async (tracks: Track[]) => {
+    const newTracks = tracks.filter(track => !downloadedTrackIds.includes(track.id));
+
+    if (newTracks.length === 0) {
+      showToast('ℹ️ Todas as músicas desta data já foram baixadas!', 'info');
+      return;
+    }
+
+    showToast(`📥 Iniciando download de ${newTracks.length} músicas novas...`, 'info');
+    await downloadBatch(newTracks);
+  };
+
+  // Função para baixar todas as músicas da data
+  const downloadAllTracks = async (tracks: Track[]) => {
+    showToast(`📥 Iniciando download de todas as ${tracks.length} músicas...`, 'info');
+    await downloadBatch(tracks);
+  };
+
+  // Função para adicionar/remover da fila
+  const onToggleQueue = (track: Track) => {
+    const isInQueue = downloadQueue.some((t: Track) => t.id === track.id);
+
+    if (!isInQueue) {
+      setDownloadQueue((prev: Track[]) => [...prev, track]);
+      showToast(`📦 "${track.songName}" adicionada à fila`, 'success');
+    } else {
+      setDownloadQueue(prev => prev.filter((t: Track) => t.id !== track.id));
+      showToast(`📦 "${track.songName}" removida da fila`, 'success');
+    }
+  };
 
   // Funções para filtros
   const handleGenreChange = (genre: string) => {
     setSelectedGenre(genre);
-    // Atualiza a hash da URL para formato público
-    const genreParam = encodeURIComponent(genre.replace(/ /g, '+'));
-    window.location.hash = `/genre=${genreParam}`;
-    updateURL(appliedSearchQuery, {
-      genre,
-      artist: selectedArtist,
-      version: selectedVersion,
-      pool: selectedPool,
-      dateRange: selectedDateRange,
-      month: selectedMonth
-    });
+    setHasActiveFilters(genre !== 'all');
+    updateURLHash();
     showToast(`🎵 Filtro de gênero: ${genre}`, 'info');
   };
 
   const handleArtistChange = (artist: string) => {
     setSelectedArtist(artist);
-    updateURL(appliedSearchQuery, {
-      genre: selectedGenre,
-      artist,
-      version: selectedVersion,
-      pool: selectedPool,
-      dateRange: selectedDateRange,
-      month: selectedMonth
-    });
+    setHasActiveFilters(artist !== 'all');
+    updateURLHash();
     showToast(`🎤 Filtro de artista: ${artist}`, 'info');
-  };
-
-  const handleDateRangeChange = (dateRange: string) => {
-    setSelectedDateRange(dateRange);
-    updateURL(appliedSearchQuery, {
-      genre: selectedGenre,
-      artist: selectedArtist,
-      version: selectedVersion,
-      pool: selectedPool,
-      dateRange,
-      month: selectedMonth
-    });
-    showToast(`📅 Filtro de data: ${dateRange}`, 'info');
-  };
-
-  const handleVersionChange = (version: string) => {
-    setSelectedVersion(version);
-    updateURL(appliedSearchQuery, {
-      genre: selectedGenre,
-      artist: selectedArtist,
-      version,
-      pool: selectedPool,
-      dateRange: selectedDateRange,
-      month: selectedMonth
-    });
-    showToast(`🎧 Filtro de versão: ${version}`, 'info');
-  };
-
-  const handleMonthChange = (month: string) => {
-    setSelectedMonth(month);
-    updateURL(appliedSearchQuery, {
-      genre: selectedGenre,
-      artist: selectedArtist,
-      version: selectedVersion,
-      pool: selectedPool,
-      dateRange: selectedDateRange,
-      month
-    });
-    showToast(`📅 Filtro de mês: ${month}`, 'info');
   };
 
   const handlePoolChange = (pool: string) => {
     setSelectedPool(pool);
-    updateURL(appliedSearchQuery, {
-      genre: selectedGenre,
-      artist: selectedArtist,
-      version: selectedVersion,
-      pool,
-      dateRange: selectedDateRange,
-      month: selectedMonth
-    });
+    setHasActiveFilters(pool !== 'all');
+    updateURLHash();
     showToast(`🏊 Filtro de pool: ${pool}`, 'info');
   };
 
-  const handleApplyFilters = () => {
-    // Verificar se há filtros ativos
-    const hasFilters = appliedSearchQuery.trim() !== '' ||
-      selectedGenre !== 'all' ||
-      selectedArtist !== 'all' ||
-      selectedDateRange !== 'all' ||
-      selectedVersion !== 'all' ||
-      selectedMonth !== 'all' ||
-      selectedPool !== 'all';
+  const handleVersionChange = (version: string) => {
+    setSelectedVersion(version);
+    setHasActiveFilters(version !== 'all');
+    updateURLHash();
+    showToast(`🎵 Filtro de versão: ${version}`, 'info');
+  };
+
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month);
+    setHasActiveFilters(month !== 'all');
+    updateURLHash();
+    showToast(`📅 Filtro de mês: ${month}`, 'info');
+  };
+
+  // Função para atualizar a URL hash com os filtros ativos
+  const updateURLHash = () => {
+    const hashParams = new URLSearchParams();
+
+    if (selectedGenre !== 'all') hashParams.set('genre', selectedGenre);
+    if (selectedArtist !== 'all') hashParams.set('artist', selectedArtist);
+    if (selectedPool !== 'all') hashParams.set('pool', selectedPool);
+    if (selectedVersion !== 'all') hashParams.set('version', selectedVersion);
+    if (selectedMonth !== 'all') hashParams.set('month', selectedMonth);
+    if (appliedSearchQuery) hashParams.set('search', appliedSearchQuery);
+
+    const hashString = hashParams.toString();
+    if (hashString) {
+      window.location.hash = `#${hashString}`;
+    } else {
+      window.location.hash = '';
+    }
+  };
+
+  // Função para ler filtros da URL hash
+  const readURLHash = () => {
+    const hash = window.location.hash.substring(1);
+    if (!hash) return;
+
+    const params = new URLSearchParams(hash);
+    let hasFilters = false;
+
+    if (params.has('genre')) {
+      setSelectedGenre(params.get('genre')!);
+      hasFilters = true;
+    }
+
+    if (params.has('artist')) {
+      setSelectedArtist(params.get('artist')!);
+      hasFilters = true;
+    }
+
+    if (params.has('pool')) {
+      setSelectedPool(params.get('pool')!);
+      hasFilters = true;
+    }
+
+    if (params.has('version')) {
+      setSelectedVersion(params.get('version')!);
+      hasFilters = true;
+    }
+
+    if (params.has('month')) {
+      setSelectedMonth(params.get('month')!);
+      hasFilters = true;
+    }
+
+    if (params.has('search')) {
+      const searchQuery = params.get('search')!;
+      setSearchQuery(searchQuery);
+      setAppliedSearchQuery(searchQuery);
+      hasFilters = true;
+    }
 
     setHasActiveFilters(hasFilters);
-    showToast('✅ Filtros aplicados!', 'success');
-    setShowFiltersModal(false);
   };
+
+  // Ler filtros da URL ao carregar a página
+  useEffect(() => {
+    readURLHash();
+  }, []);
+
+  // Atualizar URL quando filtros mudarem
+  useEffect(() => {
+    updateURLHash();
+  }, [selectedGenre, selectedArtist, selectedPool, selectedVersion, selectedMonth, appliedSearchQuery]);
 
   const handleClearFilters = () => {
     setSelectedGenre('all');
@@ -707,52 +774,13 @@ function NewPageContent() {
     setSearchQuery('');
     setAppliedSearchQuery('');
     setHasActiveFilters(false);
-
-    updateURL('', {
-      genre: 'all',
-      artist: 'all',
-      version: 'all',
-      pool: 'all',
-      dateRange: 'all',
-      month: 'all'
-    });
-
+    window.location.hash = ''; // Limpar hash da URL
     showToast('🧹 Filtros e pesquisa limpos!', 'success');
-  };
-
-  // Função para limpar apenas a pesquisa
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setAppliedSearchQuery('');
-    updateURL('', {
-      genre: selectedGenre,
-      artist: selectedArtist,
-      version: selectedVersion,
-      pool: selectedPool,
-      dateRange: selectedDateRange,
-      month: selectedMonth
-    });
-    showToast('🧹 Pesquisa limpa!', 'info');
-  };
-
-  // Função para lidar com mudanças na pesquisa (apenas estado local)
-  const handleSearchChange = (query: string) => {
-    setSearchQuery(query);
   };
 
   const handleSearchSubmit = () => {
     const trimmedQuery = searchQuery.trim();
     setAppliedSearchQuery(trimmedQuery);
-
-    updateURL(trimmedQuery, {
-      genre: selectedGenre,
-      artist: selectedArtist,
-      version: selectedVersion,
-      pool: selectedPool,
-      dateRange: selectedDateRange,
-      month: selectedMonth
-    });
-
     if (trimmedQuery) {
       showToast(`🔍 Buscando por: "${trimmedQuery}"`, 'info');
     } else {
@@ -760,820 +788,596 @@ function NewPageContent() {
     }
   };
 
-  // Função para obter a data da música (formato: YYYY-MM-DD)
-  const getTrackDate = (track: Track): string => {
-    if (!track.releaseDate) return 'no-date';
-    const date = new Date(track.releaseDate);
-    return date.toISOString().split('T')[0];
-  };
-
-  // Função para verificar se pode adicionar música (mesmo dia ou fila vazia)
-  const canAddTrack = (track: Track): boolean => {
-    if (downloadQueue.length === 0) return true;
-
-    const trackDate = getTrackDate(track);
-    const firstTrackDate = getTrackDate(downloadQueue[0]);
-    return trackDate === firstTrackDate;
-  };
-
-  // Função para adicionar/remover da fila
-  const onToggleQueue = (track: Track) => {
-    console.log('🎵 onToggleQueue chamada para:', track.songName);
-    console.log('📊 Estado da fila antes:', downloadQueue.length);
-
-    const isInQueue = downloadQueue.some((t: Track) => t.id === track.id);
-    console.log('🔍 Música já na fila?', isInQueue);
-
-    if (!isInQueue) {
-      // Verificar restrição de dias
-      if (!canAddTrack(track)) {
-        const firstTrackDate = getTrackDate(downloadQueue[0]);
-        const trackDate = getTrackDate(track);
-        const firstDateFormatted = new Date(firstTrackDate).toLocaleDateString('pt-BR');
-        const trackDateFormatted = new Date(trackDate).toLocaleDateString('pt-BR');
-
-        showToast(`⚠️ Você só pode adicionar músicas do mesmo dia! Fila atual: ${firstDateFormatted}, Tentativa: ${trackDateFormatted}`, 'warning');
-        return;
-      }
-
-      // Avisar se o ZIP está sendo gerado
-      if (zipProgress.isActive) {
-        showToast('⚠️ ZIP em geração! A música será adicionada à fila atual.', 'info');
-      }
-
-      setDownloadQueue((prev: Track[]) => {
-        const newQueue = [...prev, track];
-        console.log('✅ Nova fila:', newQueue.length, 'músicas');
-        return newQueue;
-      });
-      showToast(`📦 "${track.songName}" adicionada à fila`, 'success');
-
-      // Adicionar classe de animação ao ícone
-      const icon = document.querySelector('.download-queue-icon');
-      if (icon) {
-        icon.classList.add('animate-bounce');
-        setTimeout(() => {
-          icon.classList.remove('animate-bounce');
-        }, 1000);
-      }
-    } else {
-      setDownloadQueue(prev => {
-        const newQueue = prev.filter((t: Track) => t.id !== track.id);
-        console.log('❌ Música removida da fila. Nova fila:', newQueue.length, 'músicas');
-        return newQueue;
-      });
-      showToast(`📦 "${track.songName}" removida da fila`, 'success');
-    }
-  };
-
-  // Função para cancelar geração do ZIP
-  const handleCancelZipGeneration = () => {
-    setCancelZipGeneration(true);
-    setZipProgress((prev: ZipProgressState) => ({ ...prev, isActive: false, isGenerating: false }));
-    setIsDownloadingQueue(false);
-    showToast('❌ Geração do ZIP cancelada', 'warning');
-  };
-
-  // Função para download em lote (ZIP)
-  const handleDownloadQueue = async () => {
-    console.log('🎯 handleDownloadQueue chamada');
-    console.log('📊 Estado atual:', {
-      session: !!session?.user,
-      downloadQueueLength: downloadQueue.length,
-      isDownloadingQueue,
-      zipProgressActive: zipProgress.isActive
-    });
-
-    if (!session?.user) {
-      showToast('👤 Faça login para fazer downloads', 'warning');
-      return;
-    }
-
-    if (downloadQueue.length === 0) {
-      showToast('📦 Adicione músicas à fila primeiro', 'warning');
-      return;
-    }
-
-    if (isDownloadingQueue || zipProgress.isActive) {
-      console.log('⚠️ Download já em andamento');
-      return;
-    }
-
-    console.log('🚀 Iniciando download em lote...');
-    setCancelZipGeneration(false);
-    setIsDownloadingQueue(true);
-    setZipProgress((prev: ZipProgressState) => ({ ...prev, isActive: true, isGenerating: true }));
-
-    // Timeout de 5 minutos
-    const timeout = setTimeout(() => {
-      console.log('⏰ Timeout atingido');
-      setZipProgress((prev: ZipProgressState) => ({ ...prev, isActive: false, isGenerating: false }));
-      setIsDownloadingQueue(false);
-      showToast('⏰ Timeout - download em lote demorou muito', 'error');
-    }, 5 * 60 * 1000);
-
-    try {
-      const trackIds = downloadQueue.map((track: Track) => track.id);
-      const filename = `nexor-records-${new Date().toISOString().split('T')[0]}.zip`;
-
-      console.log('📤 Enviando requisição para API:', { trackIds, filename });
-
-      const response = await fetch('/api/downloads/zip-progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackIds, filename })
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao iniciar download em lote');
-      }
-
-      console.log('✅ Resposta da API recebida, iniciando stream...');
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('Erro ao ler resposta do servidor');
-      }
-
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        // Verificar se foi cancelado
-        if (cancelZipGeneration) {
-          console.log('❌ Download cancelado pelo usuário');
-          break;
-        }
-
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        buffer += chunk;
-
-        // Processar linhas completas
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Manter linha incompleta no buffer
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const jsonData = line.slice(6).trim();
-
-              // Verificar se a linha não está vazia
-              if (!jsonData) {
-                continue;
-              }
-
-              const data = JSON.parse(jsonData);
-              console.log('📊 Dados recebidos:', data);
-
-              if (data.type === 'progress') {
-                setZipProgress((prev: ZipProgressState) => ({
-                  ...prev,
-                  progress: data.progress,
-                  current: data.current,
-                  total: data.total,
-                  trackName: data.trackName,
-                  elapsedTime: data.elapsedTime,
-                  remainingTime: data.remainingTime
-                }));
-              } else if (data.type === 'complete') {
-                console.log('✅ ZIP gerado com sucesso');
-
-                // Verificar se zipData existe
-                if (!data.zipData) {
-                  throw new Error('Dados do ZIP não recebidos');
-                }
-
-                // Decodificar dados do ZIP
-                const zipBuffer = atob(data.zipData);
-                const bytes = new Uint8Array(zipBuffer.length);
-                for (let i = 0; i < zipBuffer.length; i++) {
-                  bytes[i] = zipBuffer.charCodeAt(i);
-                }
-
-                // Criar blob e fazer download
-                const blob = new Blob([bytes], { type: 'application/zip' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-
-                // Limpar fila e estados
-                setDownloadQueue([]);
-                setZipProgress((prev: ZipProgressState) => ({ ...prev, isActive: false, isGenerating: false }));
-                setIsDownloadingQueue(false);
-                clearTimeout(timeout);
-
-                showToast('✅ Download em lote concluído!', 'success');
-              } else if (data.type === 'error') {
-                throw new Error(data.message || 'Erro ao gerar ZIP');
-              }
-            } catch (error) {
-              console.error('Erro ao processar dados do ZIP:', error);
-              console.error('Linha problemática:', line);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('❌ Erro no download em lote:', error);
-      setZipProgress((prev: ZipProgressState) => ({ ...prev, isActive: false, isGenerating: false }));
-      setIsDownloadingQueue(false);
-      clearTimeout(timeout);
-      showToast('❌ Erro ao fazer download em lote', 'error');
-    }
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setAppliedSearchQuery('');
+    showToast('🧹 Pesquisa limpa!', 'info');
   };
 
   // Renderização do componente
   return (
-    <div className="min-h-screen bg-[#121212] relative overflow-hidden z-0" style={{ zIndex: 0 }}>
-      {/* SEO Components */}
-      {seoData && <SEOHead {...seoData} />}
-      {tracks.length > 0 && (
-        <MusicStructuredData
-          track={{
-            ...tracks[0],
-            imageUrl: tracks[0].imageUrl ?? '',
-          }}
-          url={window.location.href}
-        />
-      )}
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      {/* Header */}
+      <Header />
 
-      {/* Animated background particles */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[#202A3C]/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-[#26222D]/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-[#202A3C]/15 rounded-full blur-3xl animate-pulse delay-2000"></div>
-      </div>
-
-      <Header downloadQueueCount={downloadQueue.length} />
-      <main className="w-full px-2 sm:px-4 py-4 sm:py-8 pt-16 sm:pt-20 relative z-10">
-        {/* Hero Section - Primeiro Slide */}
-        <div className="mb-8 sm:mb-12">
-          {/* Header da página */}
-          <div className="mb-6 sm:mb-8">
-
-            {/* Indicadores de filtros ativos */}
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              {appliedSearchQuery && (
-                <div className="flex items-center space-x-2 bg-[#202A3C]/60 text-blue-400 px-3 py-1 rounded-full text-sm border border-[#26222D]/50">
-                  <Search className="h-3 w-3" />
-                  <span>Pesquisando: "{appliedSearchQuery}"</span>
+      {/* Conteúdo Principal */}
+      <div className="container mx-auto px-4 py-8">
+        {/* Barra de Busca e Filtros */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 min-w-0">
+              <div className="relative">
+                <span className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <Search className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Buscar músicas..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchSubmit()}
+                  className="w-full min-w-[120px] sm:min-w-0 pl-10 sm:pl-12 pr-10 sm:pr-12 py-2 sm:py-4 text-sm sm:text-base bg-gray-800/80 backdrop-blur-xl border border-gray-700/50 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-600/50 focus:border-gray-600/50 transition-all duration-300 font-sans"
+                />
+                <button
+                  onClick={handleSearchSubmit}
+                  disabled={!searchQuery.trim()}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white rounded-xl p-2 flex items-center justify-center transition-all duration-300 shadow-lg disabled:bg-gray-700 disabled:cursor-not-allowed"
+                  style={{ height: '32px', width: '32px' }}
+                  title="Buscar"
+                >
+                  <Search className="h-4 w-4 sm:h-5 sm:w-5" />
+                </button>
+                {searchQuery && (
                   <button
                     onClick={handleClearSearch}
-                    className="hover:text-blue-300 transition-colors"
+                    className="absolute right-10 sm:right-14 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white transition-colors"
+                    style={{ zIndex: 2 }}
+                    title="Limpar busca"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
-                </div>
-              )}
-
-              {hasActiveFilters && !appliedSearchQuery && (
-                <div className="flex items-center space-x-2 text-orange-400">
-                  <Filter className="h-4 w-4" />
-                  <span className="text-sm">Filtros ativos</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Banner VIP - Packs Google Drive */}
-          <div className="mb-8">
-            {/* Versão Desktop - Cards Top */}
-            <div className="hidden lg:block">
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                {/* Card 1 - Acesso Exclusivo */}
-                <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-2xl p-6 shadow-2xl border border-purple-400/30 hover:scale-105 transition-all duration-300 group">
-                  <div className="text-center">
-                    <div className="flex justify-center mb-4">
-                      <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300">
-                        <Crown className="h-8 w-8 text-white" />
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-3">
-                      👑 Acesso Exclusivo VIP
-                    </h3>
-                    <p className="text-white/90 text-sm leading-relaxed">
-                      Downloads ilimitados de todo o conteúdo premium da plataforma
-                    </p>
-                  </div>
-                </div>
-
-                {/* Card 2 - Packs Organizados */}
-                <div className="bg-gradient-to-br from-pink-600 to-pink-800 rounded-2xl p-6 shadow-2xl border border-pink-400/30 hover:scale-105 transition-all duration-300 group">
-                  <div className="text-center">
-                    <div className="flex justify-center mb-4">
-                      <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300">
-                        <Package className="h-8 w-8 text-white" />
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-3">
-                      📦 Packs Organizados
-                    </h3>
-                    <p className="text-white/90 text-sm leading-relaxed">
-                      Downloads em massa organizados por mês e estilo musical
-                    </p>
-                  </div>
-                </div>
-
-                {/* Card 3 - Google Drive */}
-                <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl p-6 shadow-2xl border border-orange-400/30 hover:scale-105 transition-all duration-300 group">
-                  <div className="text-center">
-                    <div className="flex justify-center mb-4">
-                      <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300">
-                        <Download className="h-8 w-8 text-white" />
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-3">
-                      ☁️ Google Drive
-                    </h3>
-                    <p className="text-white/90 text-sm leading-relaxed">
-                      Acesso alternativo via Google Drive para downloads rápidos
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Botão de Ação Desktop */}
-              <div className="text-center mt-8">
-                <a
-                  href="https://plataformavip.nexorrecords.com.br/atualizacoes"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-white to-gray-100 text-purple-600 rounded-2xl font-bold text-xl hover:from-gray-100 hover:to-white transition-all duration-300 shadow-2xl hover:scale-105 transform border-2 border-purple-200"
-                  title="Abrir Plataforma VIP (nova aba)"
-                >
-                  <Crown className="h-7 w-7" />
-                  VER PLATAFORMA VIP
-                </a>
-              </div>
-            </div>
-
-
-          </div>
-
-          {/* Barra de Pesquisa e Filtros */}
-          <div className="mb-8">
-            <div className="flex flex-col lg:flex-row gap-4">
-              {/* Barra de Pesquisa com Filtro como ícone no mobile */}
-              <div className="flex-1 flex flex-nowrap items-center gap-2">
-                {/* Wrapper do input */}
-                <div className="flex-1 min-w-0">
-                  <div className="relative">
-                    <span className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <Search className="h-4 w-4 sm:h-5 sm:w-5 text-white/30" />
-                    </span>
-                    <input
-                      type="text"
-                      placeholder="Buscar músicas..."
-                      value={searchQuery}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearchSubmit()}
-                      className="w-full min-w-[120px] sm:min-w-0 pl-10 sm:pl-12 pr-10 sm:pr-12 py-2 sm:py-4 text-sm sm:text-base bg-[#26222D]/60 backdrop-blur-xl border border-[#202A3C]/50 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
-                    />
-                    {/* Botão Buscar dentro do input, à direita */}
-                    <button
-                      onClick={handleSearchSubmit}
-                      disabled={!searchQuery.trim()}
-                      className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl p-2 flex items-center justify-center transition-all duration-300 shadow-lg disabled:bg-gray-600 disabled:cursor-not-allowed"
-                      style={{ height: '32px', width: '32px' }}
-                      title="Buscar"
-                    >
-                      <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </button>
-                    {/* Botão X para limpar pesquisa */}
-                    {searchQuery && (
-                      <button
-                        onClick={handleClearSearch}
-                        className="absolute right-10 sm:right-14 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white transition-colors"
-                        style={{ zIndex: 2 }}
-                        title="Limpar busca"
-                      >
-                        <X className="h-4 w-4 sm:h-5 sm:w-5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {/* Botão de filtro ao lado do input */}
-                <button
-                  onClick={() => setShowFiltersModal(true)}
-                  className="ml-1 sm:ml-2 h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center text-gray-400 hover:text-blue-400 transition-colors bg-[#232232] rounded-xl border border-[#202A3C]/50 relative flex-shrink-0"
-                  title="Filtros"
-                >
-                  <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
-                  {hasActiveFilters && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
-                  )}
-                </button>
-              </div>
-
-              {/* Botão de Limpar Filtros */}
-              {hasActiveFilters && (
-                <button
-                  onClick={handleClearFilters}
-                  className="flex items-center gap-2 px-4 py-4 rounded-2xl font-semibold transition-all duration-300 bg-red-500/20 backdrop-blur-xl border border-red-500/30 text-red-400 hover:bg-red-500/30 hover:border-red-500/50 hover:text-red-300"
-                  title="Limpar todos os filtros"
-                >
-                  <X className="h-4 w-4" />
-                  <span className="hidden sm:inline">Limpar</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Mensagem de Aviso para Dispositivos Móveis */}
-          <div className="mb-8">
-            <div className="bg-[#202A3C]/60 backdrop-blur-sm rounded-xl border border-[#26222D]/50 p-4">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-amber-400 font-semibold text-sm mb-2">💡 Dica para Melhor Experiência</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed text-justify">
-                    <span className="lg:hidden">
-                      Está no celular? Para baixar os pacotes completos com mais rapidez, use nosso Google Drive pela página de Atualizações.
-                      Toque no botão abaixo para abrir em uma nova aba.
-                    </span>
-                    <span className="hidden lg:inline">
-                      Você está utilizando a melhor experiência possível! Este site foi otimizado para oferecer a melhor navegação em telas maiores.
-                      Aproveite todas as funcionalidades disponíveis.
-                    </span>
-                  </p>
-                  <div className="mt-4 lg:hidden flex justify-center">
-                    <a
-                      href="https://plataformavip.nexorrecords.com.br/atualizacoes"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-green-500 via-yellow-500 to-blue-600 text-white text-sm font-semibold transition-all duration-300 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:brightness-110 ring-1 ring-white/10"
-                      aria-label="Abrir Packs no Google Drive em nova aba"
-                      title="Abrir packs no Google Drive (nova aba)"
-                    >
-                      <svg className="h-5 w-5" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <polygon fill="#0F9D58" points="17,21 6,40 24,40 35,21" />
-                        <polygon fill="#F4B400" points="24,8 17,21 35,21" />
-                        <polygon fill="#4285F4" points="35,21 24,40 42,40" />
-                      </svg>
-                      Abrir Packs (Drive)
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Loading State */}
-          {loading ? (
-            <div className="flex items-center justify-center py-32">
-              <div className="text-center">
-                <div className="relative">
-                  <div className="w-20 h-20 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin mx-auto mb-6"></div>
-                  <Music className="h-8 w-8 text-blue-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Carregando Músicas</h3>
-                <p className="text-gray-400">Aguarde enquanto buscamos as melhores faixas para você...</p>
-              </div>
-            </div>
-          ) : tracks.length === 0 ? (
-            <div className="text-center py-32">
-              <div className="p-6 bg-gray-800/50 rounded-2xl inline-block mb-6">
-                <Search className="h-16 w-16 text-gray-400 mx-auto" />
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-4">Nenhuma música encontrada</h3>
-              <p className="text-gray-400 mb-8">
-                Tente ajustar seus filtros ou fazer uma nova busca.
-              </p>
-              <button
-                onClick={handleClearFilters}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-              >
-                Limpar Filtros
-              </button>
-            </div>
-          ) : (
-            <>
-
-              {/* Slider de Estilos - dinâmico por frequência */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-lg font-bold text-white tracking-wide">PRINCIPAIS ESTILOS</h2>
-                  <button
-                    className="text-blue-400 font-semibold hover:underline text-sm px-3 py-1 rounded transition-colors"
-                    onClick={() => setShowAllGenres(true)}
-                  >
-                    Ver todos
-                  </button>
-                </div>
-                {(() => {
-                  // Conta a frequência dos estilos nas músicas filtradas/recentes
-                  const genreCount: Record<string, number> = {};
-                  filteredTracks.forEach(track => {
-                    if (track.style) {
-                      genreCount[track.style] = (genreCount[track.style] || 0) + 1;
-                    }
-                  });
-                  // Ordena por frequência (maior para menor)
-                  const topGenres = Object.entries(genreCount)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([genre]) => genre)
-                    .slice(0, 10);
-                  return (
-                    <div className="overflow-x-auto hide-scrollbar">
-                      <div className="flex gap-3">
-                        {topGenres.map((genre) => (
-                          <button
-                            key={genre}
-                            onClick={() => handleGenreChange(genre)}
-                            className={`min-w-[120px] px-4 py-3 rounded-xl font-bold text-sm transition-all shadow-lg border-2 ${selectedGenre === genre ? 'bg-blue-600 text-white border-blue-400' : 'bg-gray-800 text-blue-200 border-transparent hover:bg-blue-900/40'}`}
-                          >
-                            {genre.toUpperCase()}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-                {/* Modal de todos os estilos */}
-                {showAllGenres && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-                    <div className="bg-[#181828] rounded-2xl p-8 max-w-3xl w-full relative shadow-2xl overflow-y-auto max-h-[90vh] scrollbar-thin scrollbar-thumb-blue-700 scrollbar-track-[#232232] scrollbar-thumb-rounded-full scrollbar-track-rounded-full mt-16">
-                      <button
-                        className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl"
-                        onClick={() => setShowAllGenres(false)}
-                        title="Fechar"
-                      >
-                        <X />
-                      </button>
-                      <h3 className="text-xl font-bold text-white mb-6 text-center tracking-widest">TODOS OS ESTILOS</h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                        {genres.map((genre) => (
-                          <button
-                            key={genre}
-                            onClick={() => { handleGenreChange(genre); setShowAllGenres(false); }}
-                            className={`w-full px-4 py-3 rounded-xl font-bold text-sm transition-all shadow-lg border-2 ${selectedGenre === genre ? 'bg-blue-600 text-white border-blue-400' : 'bg-gray-800 text-blue-200 border-transparent hover:bg-blue-900/40'}`}
-                          >
-                            {genre.toUpperCase()}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
                 )}
               </div>
+            </div>
+          </div>
 
-              {/* Título da seção */}
-              <div className="mb-8 text-left">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-widest">NOVIDADES</h1>
+          {/* Botão de Limpar Filtros */}
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={handleClearFilters}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-300 bg-red-600/20 backdrop-blur-xl border border-red-600/30 text-red-400 hover:bg-red-600/30 hover:border-red-600/50 hover:text-red-300 font-sans"
+                title="Limpar todos os filtros"
+              >
+                <X className="h-4 w-4" />
+                <span className="hidden sm:inline">Limpar Filtros</span>
+              </button>
+
+              {/* Botões de Download para Filtros */}
+              {filteredTracks.length > 0 && (
+                <>
+                  <button
+                    onClick={() => downloadAllTracks(filteredTracks)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-300 bg-green-600/20 backdrop-blur-xl border border-green-600/30 text-green-400 hover:bg-green-600/30 hover:border-green-600/50 hover:text-green-300 font-sans"
+                    title="Baixar todas as músicas com filtros aplicados"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">BAIXAR TODAS</span>
+                    <span className="bg-green-600/30 text-green-200 px-2 py-0.5 rounded-full text-xs font-bold">
+                      {filteredTracks.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => downloadNewTracks(filteredTracks)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-300 bg-blue-600/20 backdrop-blur-xl border border-blue-600/30 text-blue-400 hover:bg-blue-600/30 hover:border-blue-600/50 hover:text-blue-300 font-sans"
+                    title="Baixar apenas músicas novas com filtros aplicados"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">BAIXAR NOVAS</span>
+                    <span className="bg-blue-600/30 text-blue-200 px-2 py-0.5 rounded-full text-xs font-bold">
+                      {filteredTracks.filter(track => !downloadedTrackIds.includes(track.id)).length}
+                    </span>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Layout Principal com Sidebar e Conteúdo */}
+        <div className="flex gap-8">
+          {/* Widget Lateral de Filtros */}
+          <div className="w-80 flex-shrink-0">
+            <div className="bg-gray-800/90 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 sticky top-8">
+              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2 font-sans">
+                <Filter className="h-5 w-5 text-gray-400" />
+                Filtros
+              </h3>
+
+              {/* Filtro de Estilo */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                  Estilo Musical
+                </label>
+                <select
+                  value={selectedGenre}
+                  onChange={(e) => handleGenreChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600/50 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500/50 transition-all duration-200 font-sans"
+                >
+                  <option value="all">Todos os Estilos</option>
+                  {genres.map((genre) => (
+                    <option key={genre} value={genre}>
+                      {genre}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Tabelas de Músicas Agrupadas por Data */}
-              <div className="space-y-8">
-                {groupTracksByReleaseDate.sortedKeys.map((dateKey) => {
-                  const tracksForDate = groupTracksByReleaseDate.grouped[dateKey];
-                  const dateLabel = getDateLabel(dateKey);
-
-                  return (
-                    <div key={dateKey} className="space-y-4">
-
-                      {/* Header da Data com Botão Adicionar Todas */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                          <h2 className="text-base sm:text-lg md:text-xl font-bold text-white capitalize">
-                            {dateLabel}
-                          </h2>
-                          <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">
-                            {tracksForDate.length} {tracksForDate.length === 1 ? 'música' : 'músicas'}
-                          </span>
-                        </div>
-
-                        {/* Botões para adicionar músicas desta data */}
-                        <div className="flex items-center gap-3">
-                          {/* Botão para adicionar apenas músicas novas (não baixadas) */}
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log(`🎯 Adicionando apenas músicas novas de ${dateLabel} à fila`);
-
-                              if (!tracksForDate || tracksForDate.length === 0) {
-                                showToast('📋 Nenhuma música disponível nesta data', 'warning');
-                                return;
-                              }
-
-
-                              // Filtrar apenas músicas novas (não baixadas e não na fila)
-                              const newTracksToAdd = tracksForDate.filter(track =>
-                                !downloadedTrackIds.includes(track.id) &&
-                                !downloadQueue.some(queueTrack => queueTrack.id === track.id)
-                              );
-
-                              if (newTracksToAdd.length === 0) {
-                                showToast('✅ Não há músicas novas para adicionar nesta data!', 'info');
-                                return;
-                              }
-
-                              // Verificar restrição de dias
-                              if (downloadQueue.length > 0) {
-                                const firstTrackDate = getTrackDate(downloadQueue[0]);
-                                const currentDate = getTrackDate(newTracksToAdd[0]);
-
-                                if (firstTrackDate !== currentDate) {
-                                  const firstDateFormatted = new Date(firstTrackDate).toLocaleDateString('pt-BR');
-                                  const currentDateFormatted = new Date(currentDate).toLocaleDateString('pt-BR');
-
-                                  showToast(`⚠️ Você só pode adicionar músicas do mesmo dia! Fila atual: ${firstDateFormatted}, Tentativa: ${currentDateFormatted}`, 'warning');
-                                  return;
-                                }
-                              }
-
-                              // Adicionar apenas músicas novas
-                              setDownloadQueue(prev => [...prev, ...newTracksToAdd]);
-                              showToast(`🆕 Adicionadas ${newTracksToAdd.length} músicas novas de ${dateLabel} à fila!`, 'success');
-
-                              // Animação de feedback
-                              const icon = document.querySelector('.download-queue-icon');
-                              if (icon) {
-                                icon.classList.add('animate-bounce');
-                                setTimeout(() => {
-                                  icon.classList.remove('animate-bounce');
-                                }, 1000);
-                              }
-                            }}
-                            disabled={!tracksForDate || tracksForDate.length === 0}
-                            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-2 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none text-sm font-semibold"
-                            title={`Adicionar apenas músicas novas (não baixadas) de ${dateLabel} à fila`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Plus className="h-4 w-4" />
-                              <span>Adicionar Novas ({tracksForDate.filter(track =>
-                                !downloadedTrackIds.includes(track.id) &&
-                                !downloadQueue.some(queueTrack => queueTrack.id === track.id)
-                              ).length})</span>
-                            </div>
-                          </button>
-
-                          {/* Botão para adicionar todas as músicas desta data */}
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log(`🎯 Adicionando todas as músicas de ${dateLabel} à fila`);
-
-                              if (!tracksForDate || tracksForDate.length === 0) {
-                                showToast('📋 Nenhuma música disponível nesta data', 'warning');
-                                return;
-                              }
-
-                              // Filtrar músicas que não estão na fila
-                              const tracksToAdd = tracksForDate.filter(track =>
-                                !downloadQueue.some(queueTrack => queueTrack.id === track.id)
-                              );
-
-                              if (tracksToAdd.length === 0) {
-                                showToast('✅ Todas as músicas desta data já estão na fila!', 'info');
-                                return;
-                              }
-
-                              // Verificar restrição de dias
-                              if (downloadQueue.length > 0) {
-                                const firstTrackDate = getTrackDate(downloadQueue[0]);
-                                const currentDate = getTrackDate(tracksToAdd[0]);
-
-                                if (firstTrackDate !== currentDate) {
-                                  const firstDateFormatted = new Date(firstTrackDate).toLocaleDateString('pt-BR');
-                                  const currentDateFormatted = new Date(currentDate).toLocaleDateString('pt-BR');
-
-                                  showToast(`⚠️ Você só pode adicionar músicas do mesmo dia! Fila atual: ${firstDateFormatted}, Tentativa: ${currentDateFormatted}`, 'warning');
-                                  return;
-                                }
-                              }
-
-                              // Adicionar todas as músicas desta data
-                              setDownloadQueue(prev => [...prev, ...tracksToAdd]);
-                              showToast(`📦 Adicionadas ${tracksToAdd.length} músicas de ${dateLabel} à fila!`, 'success');
-
-                              // Animação de feedback
-                              const icon = document.querySelector('.download-queue-icon');
-                              if (icon) {
-                                icon.classList.add('animate-bounce');
-                                setTimeout(() => {
-                                  icon.classList.remove('animate-bounce');
-                                }, 1000);
-                              }
-                            }}
-                            disabled={!tracksForDate || tracksForDate.length === 0}
-                            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none text-sm font-semibold"
-                            title={`Adicionar todas as músicas de ${dateLabel} à fila`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Plus className="h-4 w-4" />
-                              <span>Adicionar Todas ({tracksForDate.length})</span>
-                            </div>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Tabela para esta data */}
-                      <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-                        <MusicTable tracks={tracksForDate} onToggleQueue={onToggleQueue} externalDownloadQueue={downloadQueue} downloadedTrackIds={downloadedTrackIds} />
-                      </div>
-                    </div>
-                  );
-                })}
+              {/* Filtro de Artista */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                  Artista
+                </label>
+                <select
+                  value={selectedArtist}
+                  onChange={(e) => handleArtistChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600/50 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500/50 transition-all duration-200 font-sans"
+                >
+                  <option value="all">Todos os Artistas</option>
+                  {artists.map((artist) => (
+                    <option key={artist} value={artist}>
+                      {artist}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Componente de Paginação */}
-              {groupTracksByReleaseDate.totalPages > 1 && (
-                <div className="flex justify-center items-center space-x-4 mt-8 mb-8">
-                  <div className="flex items-center space-x-2">
-                    {/* Botão Anterior */}
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all ${currentPage === 1
-                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                        : 'bg-gray-700 text-white hover:bg-gray-600'
-                        }`}
-                    >
-                      ← Anterior
-                    </button>
+              {/* Filtro de Pool/Label */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                  Pool/Label
+                </label>
+                <select
+                  value={selectedPool}
+                  onChange={(e) => handlePoolChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600/50 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500/50 transition-all duration-200 font-sans"
+                >
+                  <option value="all">Todas as Pools</option>
+                  {pools.map((pool) => (
+                    <option key={pool} value={pool}>
+                      {pool}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                    {/* Números das páginas */}
-                    <div className="flex space-x-1">
-                      {[...Array(groupTracksByReleaseDate.totalPages)].map((_, index) => {
-                        const pageNum = index + 1;
-                        const isCurrentPage = pageNum === currentPage;
+              {/* Filtro de Versão */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                  Versão
+                </label>
+                <select
+                  value={selectedVersion}
+                  onChange={(e) => handleVersionChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600/50 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500/50 transition-all duration-200 font-sans"
+                >
+                  <option value="all">Todas as Versões</option>
+                  {versions.map((version) => (
+                    <option key={version} value={version}>
+                      {version}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                        // Mostrar apenas algumas páginas próximas à atual
-                        if (
-                          pageNum === 1 ||
-                          pageNum === groupTracksByReleaseDate.totalPages ||
-                          (pageNum >= currentPage - 2 && pageNum <= currentPage + 2)
-                        ) {
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => handlePageChange(pageNum)}
-                              className={`px-3 py-2 rounded-lg font-medium transition-all ${isCurrentPage
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        } else if (
-                          pageNum === currentPage - 3 ||
-                          pageNum === currentPage + 3
-                        ) {
-                          return (
-                            <span key={pageNum} className="px-2 py-2 text-gray-500">
-                              ...
-                            </span>
-                          );
-                        }
-                        return null;
-                      })}
+              {/* Filtro de Mês */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                  Mês
+                </label>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => handleMonthChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600/50 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500/50 transition-all duration-200 font-sans"
+                >
+                  <option value="all">Todos os Meses</option>
+                  {monthOptions.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Estatísticas dos Filtros */}
+              {hasActiveFilters && (
+                <div className="mt-6 p-4 bg-gray-700/40 rounded-lg border border-gray-600/30">
+                  <h4 className="text-sm font-semibold text-gray-300 mb-3 font-sans">Resultados</h4>
+                  <div className="space-y-2 text-xs font-sans">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Total encontrado:</span>
+                      <span className="text-white font-medium">{filteredTracks.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Novas:</span>
+                      <span className="text-blue-400 font-medium">
+                        {filteredTracks.filter(track => !downloadedTrackIds.includes(track.id)).length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Já baixadas:</span>
+                      <span className="text-green-400 font-medium">
+                        {filteredTracks.filter(track => downloadedTrackIds.includes(track.id)).length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Conteúdo Principal */}
+          <div className="flex-1 min-w-0">
+            {/* Hero Section */}
+            <div className="mb-8 sm:mb-12">
+              {/* Header da página */}
+              <div className="mb-6 sm:mb-8">
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  {appliedSearchQuery && (
+                    <div className="flex items-center space-x-2 bg-gray-700/60 text-blue-400 px-3 py-1 rounded-full text-sm border border-gray-600/50 font-sans">
+                      <Search className="h-3 w-3" />
+                      <span>Pesquisando: "{appliedSearchQuery}"</span>
+                      <button
+                        onClick={handleClearSearch}
+                        className="hover:text-blue-300 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {hasActiveFilters && !appliedSearchQuery && (
+                    <div className="flex items-center space-x-2 text-orange-400 font-sans">
+                      <Filter className="h-4 w-4" />
+                      <span className="text-sm">Filtros ativos</span>
+                    </div>
+                  )}
+
+                  {/* Estatísticas dos Filtros */}
+                  {hasActiveFilters && filteredTracks.length > 0 && (
+                    <div className="flex items-center space-x-2 text-green-400 bg-green-600/10 px-3 py-1 rounded-full text-sm border border-green-600/20 font-sans">
+                      <Music className="h-3 w-3" />
+                      <span>
+                        {filteredTracks.length} {filteredTracks.length === 1 ? 'música encontrada' : 'músicas encontradas'}
+                        {tracks.length !== filteredTracks.length && ` de ${tracks.length} total`}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Resumo dos Filtros Ativos */}
+                  {hasActiveFilters && (
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {selectedGenre !== 'all' && (
+                        <div className="flex items-center space-x-2 bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-sm border border-blue-600/30 font-sans">
+                          <Music className="h-3 w-3" />
+                          <span>Estilo: {selectedGenre}</span>
+                        </div>
+                      )}
+
+                      {selectedArtist !== 'all' && (
+                        <div className="flex items-center space-x-2 bg-purple-600/20 text-purple-400 px-3 py-1 rounded-full text-sm border border-purple-600/30 font-sans">
+                          <Users className="h-3 w-3" />
+                          <span>Artista: {selectedArtist}</span>
+                        </div>
+                      )}
+
+                      {selectedPool !== 'all' && (
+                        <div className="flex items-center space-x-2 bg-green-600/20 text-green-400 px-3 py-1 rounded-full text-sm border border-green-600/30 font-sans">
+                          <Package className="h-3 w-3" />
+                          <span>Pool: {selectedPool}</span>
+                        </div>
+                      )}
+
+                      {selectedVersion !== 'all' && (
+                        <div className="flex items-center space-x-2 bg-orange-600/20 text-orange-400 px-3 py-1 rounded-full text-sm border border-orange-600/30 font-sans">
+                          <Star className="h-3 w-3" />
+                          <span>Versão: {selectedVersion}</span>
+                        </div>
+                      )}
+
+                      {selectedDateRange !== 'all' && (
+                        <div className="flex items-center space-x-2 bg-cyan-600/20 text-cyan-400 px-3 py-1 rounded-full text-sm border border-cyan-600/30 font-sans">
+                          <Clock className="h-3 w-3" />
+                          <span>Período: {selectedDateRange}</span>
+                        </div>
+                      )}
+
+                      {selectedMonth !== 'all' && (
+                        <div className="flex items-center space-x-2 bg-pink-600/20 text-pink-400 px-3 py-1 rounded-full text-sm border border-pink-600/30 font-sans">
+                          <Calendar className="h-3 w-3" />
+                          <span>Mês: {selectedMonth}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Título da seção - só mostrar quando não há filtros ativos */}
+              {!hasActiveFilters && (
+                <div className="mb-8 text-left">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-widest font-sans">NOVIDADES</h1>
+                </div>
+              )}
+
+              {/* Seção de Download em Lote para Filtros */}
+              {hasActiveFilters && filteredTracks.length > 0 && (
+                <div className="mb-8 p-6 bg-gradient-to-r from-gray-700/20 to-gray-600/20 rounded-2xl border border-gray-600/30">
+                  <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-white mb-2 font-sans">
+                        🎯 Downloads em Lote para Filtros Aplicados
+                      </h2>
+                      <p className="text-gray-300 text-sm font-sans">
+                        Baixe todas as músicas que correspondem aos seus filtros atuais
+                      </p>
                     </div>
 
-                    {/* Botão Próximo */}
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === groupTracksByReleaseDate.totalPages}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all ${currentPage === groupTracksByReleaseDate.totalPages
-                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                        : 'bg-gray-700 text-white hover:bg-gray-600'
-                        }`}
-                    >
-                      Próximo →
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={() => downloadNewTracks(filteredTracks)}
+                        className="px-6 py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl transition-all duration-300 flex items-center gap-2 shadow-lg backdrop-blur-sm border border-blue-400/30 font-sans"
+                        title="Baixar apenas músicas novas com filtros aplicados"
+                      >
+                        <Download className="h-4 w-4" />
+                        BAIXAR NOVAS
+                        <span className="bg-blue-400/30 text-blue-100 px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                          {filteredTracks.filter(track => !downloadedTrackIds.includes(track.id)).length}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => downloadAllTracks(filteredTracks)}
+                        className="px-6 py-3.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-sm font-medium rounded-xl transition-all duration-300 flex items-center gap-2 shadow-lg backdrop-blur-sm border border-green-400/30 font-sans"
+                        title="Baixar todas as músicas com filtros aplicados"
+                      >
+                        <Download className="h-4 w-4" />
+                        BAIXAR TODAS
+                        <span className="bg-green-400/30 text-green-100 px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                          {filteredTracks.length}
+                        </span>
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Informações da paginação */}
-                  <div className="text-sm text-gray-400">
-                    Página {currentPage} de {groupTracksByReleaseDate.totalPages}
-                    <span className="ml-2">
-                      ({groupTracksByReleaseDate.totalDays} dias total)
-                    </span>
+                  {/* Estatísticas Detalhadas */}
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="text-center p-3 bg-gray-700/30 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-400 font-sans">{filteredTracks.length}</div>
+                      <div className="text-xs text-gray-400 font-sans">Total Filtrado</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-700/30 rounded-lg">
+                      <div className="text-2xl font-bold text-green-400 font-sans">
+                        {filteredTracks.filter(track => !downloadedTrackIds.includes(track.id)).length}
+                      </div>
+                      <div className="text-xs text-gray-400 font-sans">Novas</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-700/30 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-400 font-sans">
+                        {filteredTracks.filter(track => downloadedTrackIds.includes(track.id)).length}
+                      </div>
+                      <div className="text-xs text-gray-400 font-sans">Já Baixadas</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-700/30 rounded-lg">
+                      <div className="text-2xl font-bold text-orange-400 font-sans">
+                        {Math.ceil(filteredTracks.length / 10)}
+                      </div>
+                      <div className="text-xs text-gray-400 font-sans">Lotes de 10</div>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Footer próximo à tabela de músicas */}
+              {/* Renderização condicional baseada em filtros ativos */}
+              {hasActiveFilters ? (
+                // Lista de músicas filtradas organizadas por data
+                <div className="space-y-6">
+                  <div className="mb-6">
+                    <h2 className="text-xl font-bold text-white mb-2 font-sans">
+                      🎵 Músicas Encontradas com Filtros
+                    </h2>
+                    <p className="text-gray-400 text-sm font-sans">
+                      {filteredTracks.length} {filteredTracks.length === 1 ? 'música encontrada' : 'músicas encontradas'}
+                    </p>
+                  </div>
+
+                  {/* Agrupar músicas filtradas por data */}
+                  {(() => {
+                    const groupedFilteredTracks: { [key: string]: Track[] } = {};
+
+                    filteredTracks.forEach((track) => {
+                      if (track.releaseDate) {
+                        const dateKey = getCorrectDateKey(track.releaseDate);
+                        if (!groupedFilteredTracks[dateKey]) {
+                          groupedFilteredTracks[dateKey] = [];
+                        }
+                        groupedFilteredTracks[dateKey].push(track);
+                      } else {
+                        if (!groupedFilteredTracks['no-date']) {
+                          groupedFilteredTracks['no-date'] = [];
+                        }
+                        groupedFilteredTracks['no-date'].push(track);
+                      }
+                    });
+
+                    // Ordenar as chaves de data
+                    const sortedDateKeys = Object.keys(groupedFilteredTracks).sort((a, b) => {
+                      if (a === 'future') return -1;
+                      if (b === 'future') return 1;
+                      if (a === 'today') return -1;
+                      if (b === 'today') return 1;
+                      if (a === 'yesterday') return -1;
+                      if (b === 'yesterday') return 1;
+                      if (a === 'no-date') return 1;
+                      if (b === 'no-date') return 1;
+                      return b.localeCompare(a);
+                    });
+
+                    return (
+                      <div className="space-y-6">
+                        {sortedDateKeys.map((dateKey) => {
+                          const tracksForDate = groupedFilteredTracks[dateKey];
+                          const dateLabel = getDateLabel(dateKey);
+
+                          return (
+                            <div key={dateKey} className="space-y-4">
+                              {/* Header da Data */}
+                              <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center space-x-4">
+                                  <div className="w-2 h-2 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full shadow-lg"></div>
+                                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white capitalize font-sans tracking-wide">
+                                    {dateLabel}
+                                  </h2>
+                                </div>
+                              </div>
+
+                              {/* Quantidade de músicas com background vermelho elegante */}
+                              <div className="mb-6">
+                                <div className="flex items-center justify-between">
+                                  <div className="inline-flex items-center text-red-400 text-xs font-semibold bg-red-500/20 px-3 py-1 rounded-full border border-red-500/30 font-sans">
+                                    <span className="tracking-wide">
+                                      {tracksForDate.length} {tracksForDate.length === 1 ? 'música' : 'músicas'}
+                                    </span>
+                                  </div>
+
+                                  {/* Botões de Download em Lote para esta data */}
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      onClick={() => downloadNewTracks(tracksForDate)}
+                                      className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-medium rounded-xl transition-all duration-300 flex items-center gap-2 shadow-lg backdrop-blur-sm border border-blue-400/30 font-sans"
+                                      title="Baixar apenas músicas novas desta data"
+                                    >
+                                      <Download className="h-3.5 w-3.5" />
+                                      BAIXAR NOVAS
+                                      <span className="bg-blue-400/30 text-blue-100 px-2 py-0.5 rounded-full text-xs font-bold backdrop-blur-sm">
+                                        {tracksForDate.filter(track => !downloadedTrackIds.includes(track.id)).length}
+                                      </span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => downloadAllTracks(tracksForDate)}
+                                      className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-xs font-medium rounded-xl transition-all duration-300 flex items-center gap-2 shadow-lg backdrop-blur-sm border border-green-400/30 font-sans"
+                                      title="Baixar todas as músicas desta data"
+                                    >
+                                      <Download className="h-3.5 w-3.5" />
+                                      BAIXAR TODAS
+                                      <span className="bg-green-400/30 text-green-100 px-2 py-0.5 rounded-full text-xs font-bold backdrop-blur-sm">
+                                        {tracksForDate.length}
+                                      </span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Linha verde sutil para separar data do conteúdo */}
+                              <div className="h-0.5 bg-gradient-to-r from-transparent via-green-400/20 to-transparent mb-6"></div>
+
+                              {/* Lista de Músicas para esta data */}
+                              <div className="overflow-hidden">
+                                <MusicList
+                                  tracks={tracksForDate}
+                                  downloadedTrackIds={downloadedTrackIds}
+                                  setDownloadedTrackIds={setDownloadedTrackIds}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                // Lista de Músicas Agrupadas por Data (comportamento original)
+                <div className="space-y-8">
+                  {groupTracksByReleaseDate.sortedKeys.map((dateKey) => {
+                    const tracksForDate = groupTracksByReleaseDate.grouped[dateKey];
+                    const dateLabel = getDateLabel(dateKey);
+
+                    return (
+                      <div key={dateKey} className="space-y-4">
+                        {/* Header da Data */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                            <h2 className="text-base sm:text-lg md:text-xl font-bold text-white capitalize font-sans">
+                              {dateLabel}
+                            </h2>
+                          </div>
+                        </div>
+
+                        {/* Quantidade de músicas com background vermelho */}
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between">
+                            <div className="inline-flex items-center text-red-400 text-xs font-semibold bg-red-500/20 px-3 py-1 rounded-full border border-red-500/30 font-sans">
+                              <span className="tracking-wide">
+                                {tracksForDate.length} {tracksForDate.length === 1 ? 'música' : 'músicas'}
+                              </span>
+                            </div>
+
+                            {/* Botões de Download em Lote */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => downloadNewTracks(tracksForDate)}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center gap-2 font-sans"
+                                title="Baixar apenas músicas novas (não baixadas)"
+                              >
+                                <Download className="h-4 w-4" />
+                                BAIXAR NOVAS
+                                <span className="bg-blue-600/30 text-blue-200 px-2 py-0.5 rounded-full text-xs font-bold">
+                                  {tracksForDate.filter(track => !downloadedTrackIds.includes(track.id)).length}
+                                </span>
+                              </button>
+
+                              <button
+                                onClick={() => downloadAllTracks(tracksForDate)}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center gap-2 font-sans"
+                                title="Baixar todas as músicas desta data"
+                              >
+                                <Download className="h-4 w-4" />
+                                BAIXAR TODAS
+                                <span className="bg-green-600/30 text-green-200 px-2 py-0.5 rounded-full text-xs font-bold">
+                                  {tracksForDate.length}
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Linha verde para separar data do conteúdo */}
+                        <div className="h-0.5 bg-gradient-to-r from-green-400/20 to-emerald-400/20 rounded-full mb-4"></div>
+
+                        {/* Lista de Músicas para esta data */}
+                        <div className="overflow-hidden">
+                          <MusicList
+                            tracks={tracksForDate}
+                            downloadedTrackIds={downloadedTrackIds}
+                            setDownloadedTrackIds={setDownloadedTrackIds}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Footer próximo à lista de músicas */}
               <div className="mt-12">
                 <NewFooter />
               </div>
-            </>
-          )}
+            </div>
+          </div>
         </div>
 
         {/* Modal de Filtros */}
@@ -1593,57 +1397,18 @@ function NewPageContent() {
           selectedPool={selectedPool}
           onGenreChange={handleGenreChange}
           onArtistChange={handleArtistChange}
-          onDateRangeChange={handleDateRangeChange}
+          onDateRangeChange={() => { }}
           onVersionChange={handleVersionChange}
           onMonthChange={handleMonthChange}
           onPoolChange={handlePoolChange}
-          onApplyFilters={handleApplyFilters}
+          onApplyFilters={() => { }}
           onClearFilters={handleClearFilters}
           isLoading={loading}
           hasActiveFilters={hasActiveFilters}
         />
-
-
-
-        {/* Progress Bar Flutuante */}
-        {zipProgress.isActive && (
-          <div className="fixed bottom-24 right-6 z-50 w-80 bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-xl p-4 shadow-2xl">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-white font-medium">
-                  {zipProgress.trackName}
-                </span>
-                <button
-                  onClick={handleCancelZipGeneration}
-                  className="w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200"
-                  title="Cancelar geração do ZIP"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-              <span className="text-sm text-gray-300">
-                {zipProgress.current}/{zipProgress.total} ({zipProgress.progress}%)
-              </span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${zipProgress.progress}%` }}
-              ></div>
-            </div>
-          </div>
-        )}
-
-      </main>
+      </div>
     </div>
   );
 }
 
-// Componente principal com Suspense
-export default function NewPage() {
-  return (
-    <Suspense fallback={<PageSkeleton />}>
-      <NewPageContent />
-    </Suspense>
-  );
-}
+export default NewPageContent;

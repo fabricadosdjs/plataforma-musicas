@@ -6,7 +6,7 @@ function isValidDate(val: unknown): val is Date {
 }
 // src/components/layout/Header.tsx
 
-import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, Bell, UserCircle, Users, Home, Package } from 'lucide-react';
+import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, Bell, UserCircle, Users, Home } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -16,16 +16,16 @@ import { Filter } from 'lucide-react'; // Certifique-se de que Filter está impo
 import { getSignInUrl } from '@/lib/utils';
 
 interface HeaderProps {
-  downloadQueueCount?: number; // Quantidade de músicas na fila de downloads
 }
 
 const NEW_LOGO_URL = 'https://i.ibb.co/Y7WKPY57/logo-nexor.png';
 
-const Header = ({ downloadQueueCount = 0 }: HeaderProps) => {
+const Header = ({ }: HeaderProps) => {
   const { data: session } = useSession();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const [notifications, setNotifications] = useState<Array<{
     id: string;
     type: 'warning' | 'error' | 'info';
@@ -73,6 +73,8 @@ const Header = ({ downloadQueueCount = 0 }: HeaderProps) => {
       document.body.style.width = '';
     };
   }, [mobileMenuOpen]);
+
+
 
   // Usando a função de alerta do AppContext
   const { showAlert } = useAppContext();
@@ -377,23 +379,7 @@ const Header = ({ downloadQueueCount = 0 }: HeaderProps) => {
                   </Link>
                 </div>
 
-                {/* Botão da Fila de Downloads no Menu Móvel */}
-                {downloadQueueCount > 0 && (
-                  <div className="border-t border-gray-700/50 my-4 pt-4">
-                    <h4 className="text-gray-400 text-xs uppercase tracking-wider font-bold mb-3 px-4">FILA DE DOWNLOADS</h4>
 
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        window.open('/playlist', '_blank');
-                      }}
-                      className="w-full flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-green-600/20 hover:to-green-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-green-300 hover:scale-[1.02] transform border border-transparent hover:border-green-500/30 shadow-lg hover:shadow-green-500/20"
-                    >
-                      <Package className="h-5 w-5 text-green-400" />
-                      PLAYLIST ({downloadQueueCount} músicas)
-                    </button>
-                  </div>
-                )}
               </nav>
 
               {/* Professional Footer */}
@@ -422,22 +408,7 @@ const Header = ({ downloadQueueCount = 0 }: HeaderProps) => {
         <div className="flex items-center space-x-4">
           {session?.user ? (
             <div className="flex items-center space-x-3">
-              {/* Botão da Fila de Downloads */}
-              <div className="relative">
-                <button
-                  className="relative p-2 text-gray-300 hover:text-white focus:outline-none transition-colors"
-                  onClick={() => window.open('/playlist', '_blank')}
-                  aria-label="Ver fila de downloads"
-                  title={`Fila de Downloads (${downloadQueueCount} músicas) - Clique para abrir playlist`}
-                >
-                  <Package className="h-6 w-6" />
-                  {downloadQueueCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                      {downloadQueueCount > 99 ? '99+' : downloadQueueCount}
-                    </span>
-                  )}
-                </button>
-              </div>
+
 
               {/* Sino de Notificações */}
               <div className="relative" ref={notificationsMenuRef}>

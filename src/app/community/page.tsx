@@ -20,7 +20,7 @@ type ZipProgressState = {
     isGenerating: boolean;
 };
 
-import MusicTable from '@/components/music/MusicTable';
+import { MusicList } from '@/components/music/MusicList';
 import { useSEO } from '@/hooks/useSEO';
 import SEOHead from '@/components/seo/SEOHead';
 import MusicStructuredData from '@/components/seo/MusicStructuredData';
@@ -123,6 +123,7 @@ function CommunityPageContent() {
 
     // Estados para fila de downloads (movidos da MusicTable)
     const [downloadQueue, setDownloadQueue] = useState<Track[]>([]);
+    const [downloadedTrackIds, setDownloadedTrackIds] = useState<number[]>([]);
     const [isDownloadingQueue, setIsDownloadingQueue] = useState(false);
     const [zipProgress, setZipProgress] = useState<ZipProgressState>({
         isActive: false,
@@ -148,6 +149,20 @@ function CommunityPageContent() {
         customKeywords: 'comunidade, djs, músicas, novos lançamentos, estilos variados',
         customImage: '/images/community-og.jpg'
     });
+
+    // Carregar IDs das músicas baixadas do localStorage
+    useEffect(() => {
+        const savedDownloadedTracks = localStorage.getItem('downloadedTracks');
+        if (savedDownloadedTracks) {
+            try {
+                const parsedTracks = JSON.parse(savedDownloadedTracks);
+                const trackIds = parsedTracks.map((track: any) => track.id);
+                setDownloadedTrackIds(trackIds);
+            } catch (error) {
+                console.error('Erro ao carregar músicas baixadas:', error);
+            }
+        }
+    }, []);
 
     // Função para buscar músicas da comunidade
     const fetchCommunityTracks = useCallback(async (resetPage = false) => {
@@ -255,13 +270,21 @@ function CommunityPageContent() {
         setHasActiveFilters(false);
         setCurrentPage(1);
         fetchCommunityTracks(true);
+        showToast('🧹 Filtros e pesquisa limpos!', 'success');
     };
 
     // Função para buscar
     const handleSearch = () => {
-        setAppliedSearchQuery(searchQuery);
+        const trimmedQuery = searchQuery.trim();
+        setAppliedSearchQuery(trimmedQuery);
         setCurrentPage(1);
         fetchCommunityTracks(true);
+
+        if (trimmedQuery) {
+            showToast(`🔍 Buscando por: "${trimmedQuery}"`, 'info');
+        } else {
+            showToast('🧹 Pesquisa limpa!', 'info');
+        }
     };
 
     // Função para mudar página
@@ -272,19 +295,15 @@ function CommunityPageContent() {
 
     // Função para adicionar/remover da fila de download
     const onToggleQueue = (track: Track) => {
-        setDownloadQueue(prev => {
-            const isInQueue = prev.find(t => t.id === track.id);
-            if (isInQueue) {
-                return prev.filter(t => t.id !== track.id);
-            } else {
-                if (prev.length >= 20) {
-                    showToast('❌ Máximo de 20 músicas na fila de download', 'error');
-                    return prev;
-                }
-                showToast('✅ Música adicionada à fila de download', 'success');
-                return [...prev, track];
-            }
-        });
+        const isInQueue = downloadQueue.some((t: Track) => t.id === track.id);
+
+        if (!isInQueue) {
+            setDownloadQueue((prev: Track[]) => [...prev, track]);
+            showToast(`📦 "${track.songName}" adicionada à fila`, 'success');
+        } else {
+            setDownloadQueue(prev => prev.filter((t: Track) => t.id !== track.id));
+            showToast(`📦 "${track.songName}" removida da fila`, 'success');
+        }
     };
 
     // Função para gerar ZIP da fila de download
@@ -389,6 +408,7 @@ function CommunityPageContent() {
         setAppliedSearchQuery('');
         setHasActiveFilters(false);
         fetchCommunityTracks(true);
+        showToast('🧹 Pesquisa limpa!', 'info');
     };
 
     // Função para obter label da data
@@ -411,7 +431,92 @@ function CommunityPageContent() {
         }
     };
 
-    // Agrupar músicas por data de lançamento
+    // Filtrar e ordenar tracks com base na pesquisa e filtros
+    const filteredTracks = useMemo(() => {
+        let filtered = [...tracks];
+
+        // Aplicar pesquisa
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            filtered = filtered.filter(track =>
+                track.songName.toLowerCase().includes(query) ||
+                track.artist.toLowerCase().includes(query) ||
+                track.style.toLowerCase().includes(query) ||
+                (track.version && track.version.toLowerCase().includes(query)) ||
+                (track.pool && track.pool.toLowerCase().includes(query))
+            );
+        }
+
+        // Aplicar filtros
+        if (selectedGenre !== 'all') {
+            filtered = filtered.filter(track => track.style === selectedGenre);
+        }
+
+        if (selectedArtist !== 'all') {
+            filtered = filtered.filter(track => track.artist === selectedArtist);
+        }
+
+        if (selectedVersion !== 'all') {
+            filtered = filtered.filter(track => {
+                const trackVersion = track.version && track.version.trim() !== ''
+                    ? track.version.trim()
+                    : 'Original';
+                return trackVersion === selectedVersion;
+            });
+        }
+
+        if (selectedPool !== 'all') {
+            filtered = filtered.filter(track => track.pool === selectedPool);
+        }
+
+        if (selectedDateRange !== 'all') {
+            const currentDate = getCurrentDateBrazil();
+            filtered = filtered.filter(track => {
+                if (!track.releaseDate) return selectedDateRange === 'no-date';
+                const trackDate = convertToBrazilTimezone(track.releaseDate);
+
+                switch (selectedDateRange) {
+                    case 'today':
+                        return isTodayBrazil(trackDate);
+                    case 'yesterday':
+                        return isYesterdayBrazil(trackDate);
+                    case 'this-week':
+                        return (currentDate.getTime() - trackDate.getTime()) <= 7 * 24 * 60 * 60 * 1000;
+                    case 'this-month':
+                        return trackDate.getMonth() === currentDate.getMonth() &&
+                            trackDate.getFullYear() === currentDate.getFullYear();
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        if (selectedMonth !== 'all') {
+            filtered = filtered.filter(track => {
+                if (!track.releaseDate) return false;
+                const trackDate = new Date(track.releaseDate);
+                const year = trackDate.getFullYear();
+                const month = trackDate.getMonth();
+                const monthYear = `${year}-${String(month + 1).padStart(2, '0')}`;
+                return monthYear === selectedMonth;
+            });
+        }
+
+        // Ordenar por data de lançamento (mais recentes primeiro)
+        filtered.sort((a, b) => {
+            if (!a.releaseDate && !b.releaseDate) return 0;
+            if (!a.releaseDate) return 1;
+            if (!b.releaseDate) return -1;
+
+            const dateA = new Date(a.releaseDate);
+            const dateB = new Date(b.releaseDate);
+            return dateB.getTime() - dateA.getTime();
+        });
+
+        return filtered;
+    }, [tracks, searchQuery, selectedGenre, selectedArtist, selectedVersion, selectedPool, selectedDateRange, selectedMonth]);
+
+    // Agrupar músicas por data de lançamento (mantido para compatibilidade)
     const groupTracksByReleaseDate = useMemo(() => {
         const grouped: { [key: string]: Track[] } = {};
         const sortedKeys: string[] = [];
@@ -752,32 +857,29 @@ function CommunityPageContent() {
                         <>
 
 
-                            {/* Tabelas de Músicas Agrupadas por Data */}
-                            <div className="space-y-8">
-                                {groupTracksByReleaseDate.sortedKeys.map((dateKey) => {
-                                    const tracksForDate = groupTracksByReleaseDate.grouped[dateKey];
-                                    const dateLabel = getDateLabel(dateKey);
+                            {/* Lista Única de Músicas - Ordenadas por Data */}
+                            <div className="space-y-4">
+                                {/* Header da Lista */}
+                                <div className="flex items-center space-x-3 mb-6">
+                                    <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                                    <h2 className="text-2xl font-bold text-white">
+                                        Músicas da Comunidade
+                                    </h2>
+                                    <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">
+                                        {filteredTracks.length} {filteredTracks.length === 1 ? 'música' : 'músicas'}
+                                    </span>
+                                </div>
 
-                                    return (
-                                        <div key={dateKey} className="space-y-4">
-                                            {/* Header da Data */}
-                                            <div className="flex items-center space-x-3">
-                                                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                                                <h2 className="text-2xl font-bold text-white capitalize">
-                                                    {dateLabel}
-                                                </h2>
-                                                <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">
-                                                    {tracksForDate.length} {tracksForDate.length === 1 ? 'música' : 'músicas'}
-                                                </span>
-                                            </div>
-
-                                            {/* Tabela para esta data */}
-                                            <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-                                                <MusicTable tracks={tracksForDate} onToggleQueue={onToggleQueue} externalDownloadQueue={downloadQueue} />
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                {/* Lista única de músicas */}
+                                <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+                                    <MusicList
+                                        tracks={filteredTracks}
+                                        onToggleQueue={onToggleQueue}
+                                        externalDownloadQueue={downloadQueue}
+                                        downloadedTrackIds={downloadedTrackIds}
+                                        setDownloadedTrackIds={setDownloadedTrackIds}
+                                    />
+                                </div>
                             </div>
 
                             {/* Componente de Paginação */}

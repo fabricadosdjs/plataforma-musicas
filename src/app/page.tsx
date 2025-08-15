@@ -3,51 +3,36 @@
 
 import Header from '@/components/layout/Header';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import AdminMessagesDisplay from '@/components/ui/AdminMessagesDisplay';
+import CreditDashboard from '@/components/credit/CreditDashboard';
+import NewFooter from '@/components/layout/NewFooter';
+import {
+  Heart, Music, TrendingUp, Database, Upload, AlertTriangle, CheckCircle, Clock, Star, Zap, Play, Download, Users, Award, Globe, Headphones, Crown, Sparkles, Target, ArrowRight, ChevronRight, Shuffle, Volume2, Disc3, Mic2, Radio, Disc, Disc2, Archive, Activity, FolderOpen, Search, ShoppingCart
+} from 'lucide-react';
 
 // Extend NextAuth session user type to include is_vip
 import type { Session } from 'next-auth';
 
-declare module 'next-auth' {
-  interface User {
-    valor: any;
-    id: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-    is_vip?: boolean;
-  }
-  interface Session {
-    user: {
-      valor: any;
-      id: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      is_vip?: boolean;
-    };
-  }
-}
-
-type SessionUser = {
-  valor: any;
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-  is_vip?: boolean;
-};
-
+// Tipagem NextAuth deve ser feita em um arquivo global.d.ts ou types/next-auth.d.ts
+// Removido bloco duplicado/errado daqui
 import { useEffect, useState } from 'react';
-import { Heart, Music, TrendingUp, Database, Upload, AlertTriangle, CheckCircle, Clock, Star, Zap, Play, Download, Users, Award, Globe, Headphones, Crown, Sparkles, Target, ArrowRight, ChevronRight, Shuffle, Volume2, Disc3, Mic2, Radio, Disc, Disc2, Archive, Activity, FolderOpen } from 'lucide-react';
-import NewFooter from '@/components/layout/NewFooter';
-import Link from 'next/link';
-import AdminMessagesDisplay from '@/components/ui/AdminMessagesDisplay';
-import CreditDashboard from '@/components/credit/CreditDashboard';
 
 function HomePageContent() {
   const { data: session } = useSession();
+  // Toast
+  const { showToast } = require('@/hooks/useToast').useToast();
 
-  // Estado para as músicas mais baixadas
+  // Estados principais para estatísticas e funcionalidades (ajuste para buscar dados reais conforme necessário)
+  const [tracks, setTracks] = useState<any[]>([]); // TODO: buscar tracks reais
+  const [genres, setGenres] = useState<string[]>([]); // TODO: buscar genres reais
+  const [artists, setArtists] = useState<any[]>([]); // TODO: buscar artists reais
+  const [downloadQueue, setDownloadQueue] = useState<any[]>([]); // TODO: buscar fila real
+  const [downloadedTrackIds, setDownloadedTrackIds] = useState<any[]>([]); // TODO: buscar baixadas reais
+  const [filteredTracks, setFilteredTracks] = useState<any[]>([]); // TODO: aplicar filtros reais
+  const [groupTracksByReleaseDate, setGroupTracksByReleaseDate] = useState<{ grouped: Record<string, any[]> }>({ grouped: {} }); // TODO: agrupar por data real
+
+  // Estado para as músicas mais baixadas (mantido do original)
   const [mostDownloadedTracks, setMostDownloadedTracks] = useState<any[]>([]);
   const [loadingMostDownloaded, setLoadingMostDownloaded] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
@@ -197,6 +182,276 @@ function HomePageContent() {
         </div>
 
         {/* SEÇÃO - ESTATÍSTICAS IMPRESSIONANTES */}
+
+
+
+        {/* NOVA SEÇÃO: Cards de Estatísticas e Funcionalidades Rápidas (versão aprimorada) */}
+        <div className="mb-8 sm:mb-12">
+          {/* Header da seção */}
+          <div className="text-center mb-6 sm:mb-8">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-500 to-green-400 tracking-wider mb-2 sm:mb-3">
+              📊 ESTATÍSTICAS & FUNCIONALIDADES
+            </h2>
+            <p className="text-gray-400 text-xs sm:text-sm max-w-2xl mx-auto px-4">
+              Visualize métricas em tempo real e acesse funcionalidades rápidas para otimizar sua experiência
+            </p>
+          </div>
+
+          {/* Grid de Cards - Estatísticas */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
+            {/* Card 1: Total de Músicas */}
+            <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 card-statistics stat-card card-shine-effect">
+              {/* Background com gradiente animado */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-600 to-cyan-500 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
+
+              {/* Efeito de brilho no hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
+
+              {/* Conteúdo */}
+              <div className="relative z-10 p-3 sm:p-4 md:p-6 text-center">
+                <div className="flex justify-center mb-2 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 stat-icon">
+                    <Music className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">
+                  {tracks.length.toLocaleString('pt-BR')}
+                </h3>
+                <p className="text-white/90 text-xs sm:text-sm font-medium mb-2 sm:mb-3">
+                  Total de Músicas
+                </p>
+                <div className="text-white/70 text-[10px] sm:text-xs">
+                  <span className="inline-flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse status-indicator green"></div>
+                    <span className="hidden sm:inline">Atualizado em tempo real</span>
+                    <span className="sm:hidden">Tempo real</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Músicas na Fila */}
+            <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 card-statistics stat-card card-shine-effect">
+              {/* Background com gradiente animado */}
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-600 to-green-500 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
+
+              {/* Efeito de brilho no hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
+
+              {/* Conteúdo */}
+              <div className="relative z-10 p-3 sm:p-4 md:p-6 text-center">
+                <div className="flex justify-center mb-2 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 stat-icon">
+                    <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">
+                  {downloadQueue.length}
+                </h3>
+                <p className="text-white/90 text-xs sm:text-sm font-medium mb-2 sm:mb-3">
+                  Na Fila de Download
+                </p>
+                <div className="text-white/70 text-[10px] sm:text-xs">
+                  <span className="inline-flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full animate-pulse status-indicator blue"></div>
+                    <span className="hidden sm:inline">Pronto para baixar</span>
+                    <span className="sm:hidden">Pronto</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Estilos Disponíveis */}
+            <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 card-statistics stat-card card-shine-effect">
+              {/* Background com gradiente animado */}
+              <div className="absolute inset-0 bg-gradient-to-br from-rose-500 via-pink-600 to-red-500 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
+
+              {/* Efeito de brilho no hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
+
+              {/* Conteúdo */}
+              <div className="relative z-10 p-3 sm:p-4 md:p-6 text-center">
+                <div className="flex justify-center mb-2 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 stat-icon">
+                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">
+                  {genres.length}
+                </h3>
+                <p className="text-white/90 text-xs sm:text-sm font-medium mb-2 sm:mb-3">
+                  Estilos Musicais
+                </p>
+                <div className="text-white/70 text-[10px] sm:text-xs">
+                  <span className="inline-flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-pink-400 rounded-full animate-pulse status-indicator pink"></div>
+                    <span className="hidden sm:inline">Gêneros únicos</span>
+                    <span className="sm:hidden">Gêneros</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Músicas Baixadas */}
+            <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 card-statistics stat-card card-shine-effect">
+              {/* Background com gradiente animado */}
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-orange-600 to-yellow-500 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
+
+              {/* Efeito de brilho no hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
+
+              {/* Conteúdo */}
+              <div className="relative z-10 p-3 sm:p-4 md:p-6 text-center">
+                <div className="flex justify-center mb-2 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 stat-icon">
+                    <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">
+                  {downloadedTrackIds.length}
+                </h3>
+                <p className="text-white/90 text-xs sm:text-sm font-medium mb-2 sm:mb-3">
+                  Músicas Baixadas
+                </p>
+                <div className="text-white/70 text-[10px] sm:text-xs">
+                  <span className="inline-flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-400 rounded-full animate-pulse status-indicator orange"></div>
+                    <span className="hidden sm:inline">Biblioteca local</span>
+                    <span className="sm:hidden">Local</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid de Cards - Funcionalidades Rápidas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Card: Download em Massa */}
+            <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 cursor-pointer card-functionality card-shine-effect"
+              onClick={() => {
+                if (filteredTracks.length > 0) {
+                  const newTracks = filteredTracks.filter(track => !downloadedTrackIds.includes(track.id));
+                  // Aqui você pode implementar a lógica de download em massa
+                  showToast(`Baixando ${newTracks.length} músicas novas!`, 'success');
+                } else {
+                  showToast('Nenhuma música nova para baixar!', 'info');
+                }
+              }}>
+              {/* Background com gradiente */}
+              <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-emerald-700 to-teal-600 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
+
+              {/* Efeito de brilho no hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
+
+              {/* Conteúdo */}
+              <div className="relative z-10 p-4 sm:p-5 md:p-6 text-center">
+                <div className="flex justify-center mb-3 sm:mb-4">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 card-icon">
+                    <Clock className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 card-title-glow">
+                  📅 Organizar por Data
+                </h3>
+                <p className="text-white/90 text-xs sm:text-sm leading-relaxed mb-3 sm:mb-4">
+                  <span className="hidden sm:inline">Visualize e organize suas músicas por data de lançamento</span>
+                  <span className="sm:hidden">Organize músicas por data</span>
+                </p>
+                <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/20 rounded-xl text-white/90 text-xs sm:text-sm font-medium">
+                  <span>{Object.keys(groupTracksByReleaseDate.grouped).length} datas</span>
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-400 rounded-full animate-pulse status-indicator blue"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card: Estatísticas Avançadas */}
+            <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 cursor-pointer card-functionality card-shine-effect"
+              onClick={() => {
+                const stats = {
+                  totalTracks: tracks.length,
+                  downloadedTracks: downloadedTrackIds.length,
+                  queueTracks: downloadQueue.length,
+                  uniqueGenres: genres.length,
+                  uniqueArtists: artists.length
+                };
+                showToast(`📊 Estatísticas: ${stats.totalTracks} total, ${stats.downloadedTracks} baixadas, ${stats.queueTracks} na fila`, 'info');
+              }}>
+              {/* Background com gradiente */}
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-600 via-blue-700 to-indigo-600 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
+
+              {/* Efeito de brilho no hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
+
+              {/* Conteúdo */}
+              <div className="relative z-10 p-4 sm:p-5 md:p-6 text-center">
+                <div className="flex justify-center mb-3 sm:mb-4">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 card-icon">
+                    <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 card-title-glow">
+                  📊 Estatísticas Avançadas
+                </h3>
+                <p className="text-white/90 text-xs sm:text-sm leading-relaxed mb-3 sm:mb-4">
+                  <span className="hidden sm:inline">Visualize métricas detalhadas sobre sua biblioteca musical</span>
+                  <span className="sm:hidden">Métricas da biblioteca</span>
+                </p>
+                <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/20 rounded-xl text-white/90 text-xs sm:text-sm font-medium">
+                  <span>Clique para ver</span>
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-cyan-400 rounded-full animate-pulse status-indicator blue"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Seção de Insights e Dicas */}
+          <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-r from-[#1a1a2e]/60 via-[#16213e]/60 to-[#0f3460]/60 backdrop-blur-xl rounded-2xl border border-white/10">
+            <div className="text-center mb-4 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+                💡 Dicas e Insights
+              </h3>
+              <p className="text-gray-400 text-xs sm:text-sm">
+                <span className="hidden sm:inline">Aproveite ao máximo a plataforma com estas dicas úteis</span>
+                <span className="sm:hidden">Dicas para usar a plataforma</span>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+              <div className="text-center p-3 sm:p-4 bg-white/5 rounded-xl border border-white/10 insight-card">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 insight-icon">
+                  <Search className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+                <h4 className="text-white font-semibold text-xs sm:text-sm mb-2">Busca Inteligente</h4>
+                <p className="text-gray-400 text-[10px] sm:text-xs">
+                  <span className="hidden sm:inline">Use filtros combinados para encontrar exatamente o que procura</span>
+                  <span className="sm:hidden">Filtros combinados para busca</span>
+                </p>
+              </div>
+
+              <div className="text-center p-3 sm:p-4 bg-white/5 rounded-xl border border-white/10 insight-card">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 insight-icon">
+                  <Download className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+                <h4 className="text-white font-semibold text-xs sm:text-sm mb-2">Downloads em Lote</h4>
+                <p className="text-gray-400 text-[10px] sm:text-xs">
+                  <span className="hidden sm:inline">Adicione várias músicas à fila e baixe tudo de uma vez</span>
+                  <span className="sm:hidden">Downloads em massa</span>
+                </p>
+              </div>
+
+              <div className="text-center p-3 sm:p-4 bg-white/5 rounded-xl border border-white/10 insight-card">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 insight-icon">
+                  <Star className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+                <h4 className="text-white font-semibold text-xs sm:text-sm mb-2">Favoritos</h4>
+                <p className="text-gray-400 text-[10px] sm:text-xs">
+                  <span className="hidden sm:inline">Marque suas músicas favoritas para acesso rápido</span>
+                  <span className="sm:hidden">Músicas favoritas</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
 
         {/* SEÇÃO - RECADOS DA ADM */}
@@ -1269,13 +1524,10 @@ function HomePageContent() {
 
       </main>
     </div>
+
   );
 }
 
 export default function HomePage() {
-  return (
-    <div className="min-h-screen bg-black">
-      <HomePageContent />
-    </div>
-  );
+  return <HomePageContent />;
 }

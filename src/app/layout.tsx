@@ -8,7 +8,7 @@ import FooterPlayerNew from '@/components/player/FooterPlayerNew';
 import { AppProvider } from '@/context/AppContext';
 import AuthProvider from '@/context/AuthProvider';
 import type { Metadata } from 'next';
-import { Lato, Inter } from 'next/font/google'; // Lato como fonte principal, Inter para elementos específicos
+import { Inter } from 'next/font/google'; // Inter como fonte principal
 import './globals.css';
 import '../styles/beatport-effects.css';
 import '../styles/mobile-optimizations.css';
@@ -20,14 +20,7 @@ import { ToastProvider } from '@/context/ToastContext';
 
 import BrowserExtensionHandler from '@/components/layout/BrowserExtensionHandler';
 
-// Configura a fonte Lato como a fonte principal
-const lato = Lato({
-  subsets: ['latin'],
-  weight: ['300', '400', '700', '900'], // Incluindo light (300), regular (400), bold (700) e black (900)
-  variable: '--font-lato', // Define uma variável CSS para Lato
-});
-
-// Configura a fonte Inter para elementos específicos
+// Configura a fonte Inter como a fonte principal
 const inter = Inter({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
@@ -125,7 +118,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${lato.variable} ${inter.variable}`}>
+    <html lang="pt-BR" className={`${inter.variable}`}>
       <body suppressHydrationWarning={true}>
         {/* Meta tags para melhorar downloads - movido para head.tsx ou metadata */}
         <meta
@@ -149,19 +142,30 @@ export default function RootLayout({
           </AppProvider>
         </AuthProvider>
 
-        {/* Tawk.to Script */}
+        {/* Tawk.to Script com proteção e carga após hydration, neutraliza i18next não existente */}
         <script
           type="text/javascript"
           dangerouslySetInnerHTML={{
             __html: `
-              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
               (function(){
-                var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-                s1.async=true;
-                s1.src='https://embed.tawk.to/6872e7e08a0a5f1914737f11/1j00dji02';
-                s1.charset='UTF-8';
-                s1.setAttribute('crossorigin','*');
-                s0.parentNode.insertBefore(s1,s0);
+                if (typeof window === 'undefined') return;
+                // Prevenir erros de i18next esperado por Tawk (algumas builds):
+                try {
+                  window.Tawk_API = window.Tawk_API || {};
+                  window.Tawk_API.i18next = window.Tawk_API.i18next || function(k){ return k; };
+                } catch(e) {}
+                function loadTawk(){
+                  if (window.Tawk_API && window.Tawk_API.onLoad) return; // já carregado
+                  var s1=document.createElement('script'), s0=document.getElementsByTagName('script')[0];
+                  s1.async=true;
+                  s1.src='https://embed.tawk.to/6872e7e08a0a5f1914737f11/1j00dji02';
+                  s1.charset='UTF-8';
+                  s1.setAttribute('crossorigin','*');
+                  s1.onerror=function(){ console.warn('[tawk] falha ao carregar'); };
+                  s0.parentNode.insertBefore(s1,s0);
+                }
+                if (document.readyState === 'complete') { loadTawk(); }
+                else { window.addEventListener('load', loadTawk, { once:true }); }
               })();
             `
           }}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Brain, Cloud, LayoutDashboard, Music, PlusCircle, Users, MessageSquare, Package } from 'lucide-react';
+import { Brain, Cloud, LayoutDashboard, Music, PlusCircle, Users, MessageSquare, Package, Download, Image } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -91,6 +91,30 @@ export default function AdminPage() {
               <Brain size={48} className="mb-4 text-purple-400" />
               <h2 className="text-xl font-semibold mb-2">Importação Inteligente</h2>
               <p className="text-gray-400">IA detecta e importa músicas automaticamente com metadados</p>
+            </Link>
+
+            <Link href="/admin/contabo-extractor" className="p-6 rounded-lg transition-colors" style={{ backgroundColor: '#2d2f32' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#374151'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2d2f32'}>
+              <Download size={48} className="mb-4 text-green-400" />
+              <h2 className="text-xl font-semibold mb-2">Extrator de Músicas</h2>
+              <p className="text-gray-400">Baixar músicas organizadas por estilo do Contabo</p>
+            </Link>
+
+            <Link href="/admin/fix-thumbnails" className="p-6 rounded-lg transition-colors" style={{ backgroundColor: '#2d2f32' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#374151'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2d2f32'}>
+              <Image size={48} className="mb-4 text-yellow-400" />
+              <h2 className="text-xl font-semibold mb-2">Corrigir Thumbnails</h2>
+              <p className="text-gray-400">Corrigir automaticamente thumbnails das músicas sem imagem</p>
+            </Link>
+
+            <Link href="/admin/ai-stats" className="p-6 rounded-lg transition-colors" style={{ backgroundColor: '#2d2f32' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#374151'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2d2f32'}>
+              <Brain size={48} className="mb-4 text-purple-400" />
+              <h2 className="text-xl font-semibold mb-2">Estatísticas da IA</h2>
+              <p className="text-gray-400">Monitore a precisão da IA de detecção de estilos musicais</p>
             </Link>
           </div>
         </div>

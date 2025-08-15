@@ -21,8 +21,8 @@ const config: Config = {
                 'gray-light': '#6b7280', // Cinza mais claro para hover
             },
             fontFamily: {
-                // Definindo Lato como fonte principal
-                sans: ['Lato', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                // Definindo Inter como fonte principal
+                sans: ['Inter', 'var(--font-inter)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
                 mono: ['Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'monospace'],
             },
             keyframes: {

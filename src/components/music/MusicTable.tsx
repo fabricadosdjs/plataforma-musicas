@@ -198,9 +198,10 @@ interface MusicTableProps {
     onToggleQueue?: (track: Track) => void;
     externalDownloadQueue?: Track[];
     downloadedTrackIds?: number[];
+    onTrackDownloaded?: (trackId: number) => void;
 }
 
-const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownloadingProp, onToggleQueue: externalOnToggleQueue, externalDownloadQueue, downloadedTrackIds }: MusicTableProps) => {
+const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownloadingProp, onToggleQueue: externalOnToggleQueue, externalDownloadQueue, downloadedTrackIds, onTrackDownloaded }: MusicTableProps) => {
     // Hooks e Estados
     const { data: session } = useSession();
     const { showToast } = useToastContext();
@@ -317,6 +318,14 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
 
             // Atualizar estado local imediatamente após registro bem-sucedido
             updateDownloadedTrack(track.id);
+
+            // Notificar componente pai sobre o download (para /new)
+            if (onTrackDownloaded) {
+                onTrackDownloaded(track.id);
+            }
+
+            // Remover da fila se estiver nela
+            removeFromQueueIfDownloaded(track.id);
 
             // Se o registro foi bem-sucedido, baixar o arquivo
             if (track.downloadUrl) {
@@ -449,6 +458,22 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
         }
     };
 
+    // Função para remover música da fila quando baixada
+    const removeFromQueueIfDownloaded = (trackId: number) => {
+        if (externalDownloadQueue) {
+            // Para filas externas, notificar o componente pai
+            if (externalOnToggleQueue) {
+                const track = tracks?.find(t => t.id === trackId);
+                if (track) {
+                    externalOnToggleQueue(track); // Remove da fila
+                }
+            }
+        } else {
+            // Para filas internas
+            setDownloadQueue(prev => prev.filter(t => t.id !== trackId));
+        }
+    };
+
     // Função para verificar se uma música está na fila
     const isTrackInQueue = (trackId: number) => {
         if (externalDownloadQueue) {
@@ -537,28 +562,40 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                             } else if (data.type === 'complete') {
                                 console.log('✅ ZIP gerado com sucesso');
 
-                                // Verificar se zipData existe
-                                if (!data.zipData) {
+                                // Preferir URL direta do servidor
+                                if (data.downloadUrl) {
+                                    window.location.href = data.downloadUrl;
+                                } else if (data.zipData) {
+                                    // Fallback para base64
+                                    const zipBuffer = atob(data.zipData);
+                                    const bytes = new Uint8Array(zipBuffer.length);
+                                    for (let i = 0; i < zipBuffer.length; i++) bytes[i] = zipBuffer.charCodeAt(i);
+                                    const blob = new Blob([bytes], { type: 'application/zip' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = filename;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                    document.body.removeChild(a);
+                                } else {
                                     throw new Error('Dados do ZIP não recebidos');
                                 }
 
-                                // Decodificar dados do ZIP
-                                const zipBuffer = atob(data.zipData);
-                                const bytes = new Uint8Array(zipBuffer.length);
-                                for (let i = 0; i < zipBuffer.length; i++) {
-                                    bytes[i] = zipBuffer.charCodeAt(i);
+                                // Notificar componente pai sobre downloads em lote (para /new)
+                                if (onTrackDownloaded) {
+                                    const trackIds = downloadQueue.map(track => track.id);
+                                    trackIds.forEach(trackId => onTrackDownloaded(trackId));
                                 }
 
-                                // Criar blob e fazer download
-                                const blob = new Blob([bytes], { type: 'application/zip' });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = filename;
-                                document.body.appendChild(a);
-                                a.click();
-                                URL.revokeObjectURL(url);
-                                document.body.removeChild(a);
+                                // Remover todas as músicas da fila após download em lote
+                                if (externalDownloadQueue && externalOnToggleQueue) {
+                                    // Para filas externas, notificar o componente pai
+                                    downloadQueue.forEach(track => {
+                                        externalOnToggleQueue(track); // Remove da fila
+                                    });
+                                }
 
                                 // Limpar fila e estados
                                 setDownloadQueue([]);

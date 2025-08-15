@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
         console.log('🔍 Iniciando análise IA do arquivo:', fileKey);
 
         // Verifica se as variáveis de ambiente estão configuradas
-        const requiredEnvVars = ['CONTABO_ENDPOINT', 'CONTABO_ACCESS_KEY_ID', 'CONTABO_SECRET_ACCESS_KEY', 'CONTABO_BUCKET_NAME'];
+        const requiredEnvVars = ['CONTABO_ENDPOINT', 'CONTABO_ACCESS_KEY', 'CONTABO_SECRET_KEY', 'CONTABO_BUCKET_NAME'];
         const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
         if (missingVars.length > 0) {
