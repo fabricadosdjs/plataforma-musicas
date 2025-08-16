@@ -48,17 +48,17 @@ const NewFooter = () => {
 
                 {/* Partículas animadas com cores escuras */}
                 <div className="absolute inset-0">
-                    <div className="absolute top-10 left-10 w-2 h-2 bg-purple-600/30 rounded-full animate-ping" style={{ animationDelay: '0s' }}></div>
-                    <div className="absolute top-20 right-20 w-1 h-1 bg-pink-600/40 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
-                    <div className="absolute bottom-20 left-1/4 w-1.5 h-1.5 bg-blue-600/30 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
-                    <div className="absolute bottom-10 right-1/3 w-1 h-1 bg-emerald-600/40 rounded-full animate-ping" style={{ animationDelay: '3s' }}></div>
+                    <div className="absolute top-10 left-10 w-2 h-2 bg-red-600/30 rounded-full animate-ping" style={{ animationDelay: '0s' }}></div>
+                    <div className="absolute top-20 right-20 w-1 h-1 bg-red-600/40 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
+                    <div className="absolute bottom-20 left-1/4 w-1.5 h-1.5 bg-red-600/30 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
+                    <div className="absolute bottom-10 right-1/3 w-1 h-1 bg-red-600/40 rounded-full animate-ping" style={{ animationDelay: '3s' }}></div>
                 </div>
 
                 {/* Linhas decorativas escuras */}
                 <div className="absolute inset-0">
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-600/40 to-transparent"></div>
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-pink-600/40 to-transparent transform translate-y-0.5"></div>
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-600/40 to-transparent transform translate-y-1"></div>
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-600/40 to-transparent"></div>
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-600/40 to-transparent transform translate-y-0.5"></div>
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-600/40 to-transparent transform translate-y-1"></div>
                 </div>
 
                 {/* Padrão de fundo sutil */}
@@ -77,12 +77,12 @@ const NewFooter = () => {
                     {/* Logo animado com tema escuro */}
                     <div className="flex items-center justify-center gap-4 mb-6">
                         <div className="relative">
-                            <div className="bg-gradient-to-r from-purple-800 via-pink-800 to-blue-800 p-3 rounded-xl shadow-2xl border border-purple-700/30">
+                            <div className="bg-gradient-to-r from-red-800 via-red-700 to-red-600 p-3 rounded-xl shadow-2xl border border-red-700/30">
                                 <Music className="h-8 w-8 text-white" />
                             </div>
-                            <div className="absolute -inset-1 bg-gradient-to-r from-purple-800 via-pink-800 to-blue-800 rounded-xl blur opacity-30 animate-pulse"></div>
+                            <div className="absolute -inset-1 bg-gradient-to-r from-red-800 via-red-700 to-red-600 rounded-xl blur opacity-30 animate-pulse"></div>
                         </div>
-                        <h2 className="text-3xl font-black bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent drop-shadow-lg">
+                        <h2 className="text-3xl font-black bg-gradient-to-r from-red-400 via-red-500 to-red-600 bg-clip-text text-transparent drop-shadow-lg">
                             NEXOR RECORDS
                         </h2>
                     </div>

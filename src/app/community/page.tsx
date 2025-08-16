@@ -874,8 +874,6 @@ function CommunityPageContent() {
                                 <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
                                     <MusicList
                                         tracks={filteredTracks}
-                                        onToggleQueue={onToggleQueue}
-                                        externalDownloadQueue={downloadQueue}
                                         downloadedTrackIds={downloadedTrackIds}
                                         setDownloadedTrackIds={setDownloadedTrackIds}
                                     />

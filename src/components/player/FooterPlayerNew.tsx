@@ -48,16 +48,16 @@ const ProgressBar = ({ currentTime, duration, onSeek, isDragging, setIsDragging 
 
     return (
         <div className="flex w-full max-w-lg items-center gap-3">
-            <span className="text-xs text-gray-400 font-mono w-10 text-right">{formatTime(currentTime)}</span>
+            <span className="text-xs text-red-400 font-mono w-10 text-right">{formatTime(currentTime)}</span>
             <div
                 ref={progressBarRef}
-                className="group relative h-1.5 w-full cursor-pointer rounded-full bg-zinc-700/80"
+                className="group relative h-1.5 w-full cursor-pointer rounded-full bg-red-900/50"
                 onMouseDown={(e) => { setIsDragging(true); handleSeek(e); }}
             >
-                <div className="absolute h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500" style={{ width: `${progressPercentage}%` }} />
-                <div className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white shadow-lg opacity-0 transition-opacity group-hover:opacity-100" style={{ left: `calc(${progressPercentage}% - 7px)` }} />
+                <div className="absolute h-full rounded-full bg-gradient-to-r from-red-500 to-red-600" style={{ width: `${progressPercentage}%` }} />
+                <div className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-red-400 shadow-lg opacity-0 transition-opacity group-hover:opacity-100" style={{ left: `calc(${progressPercentage}% - 7px)` }} />
             </div>
-            <span className="text-xs text-gray-400 font-mono w-10">{formatTime(duration)}</span>
+            <span className="text-xs text-red-400 font-mono w-10">{formatTime(duration)}</span>
         </div>
     );
 };
@@ -72,16 +72,16 @@ interface VolumeControlProps {
 const VolumeControl = ({ volume, onVolumeChange, isMuted, toggleMute }: VolumeControlProps) => {
     return (
         <div className="group flex items-center gap-2">
-            <button onClick={toggleMute} className="p-2 text-gray-400 transition hover:text-white" title={isMuted ? "Ativar som" : "Silenciar"}>
+            <button onClick={toggleMute} className="p-2 text-red-400 transition hover:text-red-300" title={isMuted ? "Ativar som" : "Silenciar"}>
                 {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </button>
-            <div className="relative w-24 h-1.5 rounded-full bg-zinc-700/80 cursor-pointer" onClick={(e) => {
+            <div className="relative w-24 h-1.5 rounded-full bg-red-900/50 cursor-pointer" onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const newVolume = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                 onVolumeChange(newVolume);
             }}>
-                <div className="absolute h-full rounded-full bg-white" style={{ width: `${isMuted ? 0 : volume * 100}%` }} />
-                <div className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white shadow-lg opacity-0 transition-opacity group-hover:opacity-100" style={{ left: `calc(${isMuted ? 0 : volume * 100}% - 7px)` }} />
+                <div className="absolute h-full rounded-full bg-red-500" style={{ width: `${isMuted ? 0 : volume * 100}%` }} />
+                <div className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-red-400 shadow-lg opacity-0 transition-opacity group-hover:opacity-100" style={{ left: `calc(${isMuted ? 0 : volume * 100}% - 7px)` }} />
             </div>
         </div>
     );
@@ -146,6 +146,14 @@ const FooterPlayer = () => {
 
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+    // Debug: verificar se a capa está sendo recebida
+    console.log('🎵 FooterPlayerNew Debug:', {
+        currentTrack: currentTrack,
+        imageUrl: currentTrack.imageUrl,
+        songName: currentTrack.songName,
+        artist: currentTrack.artist
+    });
+
     return (
         <footer
             className={clsx(
@@ -154,9 +162,9 @@ const FooterPlayer = () => {
             )}
         >
             {/* Efeito de brilho para destacar o player */}
-            <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/50 to-transparent blur-2xl" />
+            <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-red-900/30 to-transparent blur-2xl" />
 
-            <div className="relative h-full rounded-t-xl border-t border-zinc-800 bg-[#1A1B1C]/80 backdrop-blur-xl">
+            <div className="relative h-full rounded-t-xl border-t border-red-800/50 bg-[#0a0a0a]/90 backdrop-blur-xl">
                 {/* Layout responsivo: mobile = coluna, desktop = grid */}
                 <div className="flex flex-col sm:grid h-full sm:grid-cols-[1fr_auto_1fr] items-center px-2 sm:px-4 py-2 gap-2 sm:gap-0">
                     {/* Música e info */}
@@ -168,7 +176,7 @@ const FooterPlayer = () => {
                                 src={currentTrack.imageUrl || "/placeholder.png"}
                                 alt={currentTrack.songName || "Capa da música"}
                                 width={48} height={48}
-                                className={clsx("rounded-md object-cover shadow-md transition-all duration-300", isMinimized ? "h-10 w-10" : "h-12 w-12")}
+                                className={clsx("rounded-md object-cover shadow-md transition-all duration-300 border border-red-500/30", isMinimized ? "h-10 w-10" : "h-12 w-12")}
                                 onError={(e) => {
                                     const target = e.target as HTMLImageElement;
                                     if (!target.src.endsWith('/placeholder.png')) {
@@ -179,18 +187,18 @@ const FooterPlayer = () => {
                         </div>
                         <div className="min-w-0">
                             <p className="truncate font-bold text-white text-xs sm:text-sm max-w-[200px] sm:max-w-none text-center sm:text-left">{currentTrack.songName}</p>
-                            <p className="truncate text-[11px] sm:text-xs text-gray-400 max-w-[200px] sm:max-w-none text-center sm:text-left">{currentTrack.artist}</p>
+                            <p className="truncate text-[11px] sm:text-xs text-red-300 max-w-[200px] sm:max-w-none text-center sm:text-left">{currentTrack.artist}</p>
                         </div>
                     </div>
 
                     {/* Controles centrais */}
                     <div className="flex flex-col items-center justify-center gap-1 w-full order-3 sm:order-2">
                         <div className="flex items-center justify-center gap-3">
-                            <button onClick={handlePrevious} className="p-2 text-gray-400 transition active:scale-90 hover:text-white" title="Anterior"><SkipBack size={20} fill="currentColor" /></button>
-                            <button onClick={togglePlayPause} className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition active:scale-90 hover:scale-105" title={isPlaying ? "Pausar" : "Tocar"}>
+                            <button onClick={handlePrevious} className="p-2 text-red-400 transition active:scale-90 hover:text-red-300" title="Anterior"><SkipBack size={20} fill="currentColor" /></button>
+                            <button onClick={togglePlayPause} className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white transition active:scale-90 hover:scale-105 hover:bg-red-700" title={isPlaying ? "Pausar" : "Tocar"}>
                                 {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} className="ml-0.5" fill="currentColor" />}
                             </button>
-                            <button onClick={nextTrack} className="p-2 text-gray-400 transition active:scale-90 hover:text-white" title="Próxima"><SkipForward size={20} fill="currentColor" /></button>
+                            <button onClick={nextTrack} className="p-2 text-red-400 transition active:scale-90 hover:text-red-300" title="Próxima"><SkipForward size={20} fill="currentColor" /></button>
                         </div>
                         {/* Barra de progresso: sempre centralizada e com padding extra no mobile */}
                         <div className={clsx("w-full px-2 sm:px-0 transition-all duration-300", isMinimized ? 'invisible h-0 opacity-0' : 'visible h-auto opacity-100')}>
@@ -202,17 +210,17 @@ const FooterPlayer = () => {
                     <div className="flex items-center justify-center sm:justify-end gap-2 w-full sm:w-auto order-2 sm:order-3">
                         <div className={clsx("flex items-center gap-2 transition-all duration-300", isMinimized && 'invisible w-0 opacity-0')}>
                             <VolumeControl volume={volume} onVolumeChange={handleVolumeChange} isMuted={isMuted} toggleMute={toggleMute} />
-                            <button onClick={stopTrack} className="p-2 text-gray-400 transition active:scale-90 hover:text-red-500" title="Fechar player"><X size={20} /></button>
+                            <button onClick={stopTrack} className="p-2 text-red-400 transition active:scale-90 hover:text-red-300" title="Fechar player"><X size={20} /></button>
                         </div>
-                        <button onClick={() => setIsMinimized(!isMinimized)} className="p-2 text-gray-400 transition active:scale-90 hover:text-white" title={isMinimized ? "Maximizar" : "Minimizar"}>
+                        <button onClick={() => setIsMinimized(!isMinimized)} className="p-2 text-red-400 transition active:scale-90 hover:text-red-300" title={isMinimized ? "Maximizar" : "Minimizar"}>
                             {isMinimized ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                         </button>
                     </div>
                 </div>
 
                 {/* Barra de progresso fina para o modo compacto */}
-                <div className={clsx("absolute bottom-0 left-0 w-full h-1 bg-zinc-700/50 transition-opacity duration-300", isMinimized ? 'opacity-100' : 'opacity-0')}>
-                    <div className="h-full bg-gradient-to-r from-cyan-400 to-blue-500" style={{ width: `${progressPercentage}%` }}></div>
+                <div className={clsx("absolute bottom-0 left-0 w-full h-1 bg-red-900/50 transition-opacity duration-300", isMinimized ? 'opacity-100' : 'opacity-0')}>
+                    <div className="h-full bg-gradient-to-r from-red-500 to-red-600" style={{ width: `${progressPercentage}%` }}></div>
                 </div>
             </div>
         </footer>

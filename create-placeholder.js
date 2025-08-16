@@ -25,3 +25,5 @@ const pngData = Buffer.from([
 // Escrever o arquivo
 fs.writeFileSync('public/placeholder.png', pngData);
 console.log('✅ Arquivo placeholder.png criado com sucesso!');
+
+

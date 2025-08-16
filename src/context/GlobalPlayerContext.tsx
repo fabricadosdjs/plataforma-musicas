@@ -13,6 +13,7 @@ interface Track {
     url?: string;
     downloadUrl?: string;
     previewUrl?: string;
+    imageUrl?: string;
 }
 
 interface GlobalPlayerContextType {
@@ -96,18 +97,14 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
 
     const playTrack = async (track: Track, newPlaylist?: Track[]) => {
-        // Verificar se o usuário está logado
-        if (!session?.user) {
-            showToast('🔒 Faça login para reproduzir músicas', 'error');
-            return;
-        }
-
+        // Permitir reprodução para todos os usuários (logados e não logados)
         console.log('🎵 GlobalPlayer: playTrack called with:', {
             id: track.id,
             songName: track.songName,
             downloadUrl: track.downloadUrl,
             previewUrl: track.previewUrl,
-            url: track.url
+            url: track.url,
+            imageUrl: track.imageUrl
         });
 
         // Obter URL segura se necessário

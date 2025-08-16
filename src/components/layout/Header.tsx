@@ -150,7 +150,7 @@ const Header = ({ }: HeaderProps) => {
         <div className="flex items-center space-x-4 md:space-x-6">
           {/* Mobile menu button */}
           <button
-            className="md:hidden flex items-center justify-center p-2 rounded-lg text-gray-200 hover:bg-gray-700/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 bg-gray-800/50"
+            className="md:hidden flex items-center justify-center p-2 rounded-lg text-gray-200 hover:bg-gray-700/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-200 bg-gray-800/50"
             onClick={() => {
               console.log('🔘 Botão do menu clicado');
               setMobileMenuOpen(true);
@@ -176,7 +176,7 @@ const Header = ({ }: HeaderProps) => {
           <nav className="hidden md:flex space-x-2 text-gray-300 font-medium items-center">
             <Link
               href="/"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-blue-400 hover:bg-blue-500/10 hover:scale-105 border border-transparent hover:border-blue-500/30 shadow-lg hover:shadow-blue-500/20"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
             >
               <Home className="h-4 w-4" />
               HOME
@@ -243,9 +243,9 @@ const Header = ({ }: HeaderProps) => {
                 </Link>
                 <Link
                   href="/allavsoft"
-                  className="flex items-center gap-3 px-4 py-3.5 text-gray-200 hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-blue-700/20 border-b border-gray-700/50 transition-all duration-300 font-semibold tracking-wide hover:text-blue-300 hover:scale-[1.02] transform"
+                  className="flex items-center gap-3 px-4 py-3.5 text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 border-b border-gray-700/50 transition-all duration-300 font-semibold tracking-wide hover:text-red-300 hover:scale-[1.02] transform"
                 >
-                  <Download className="h-4 w-4 text-blue-400" />
+                  <Download className="h-4 w-4 text-red-400" />
                   ALLAVSOFT
                 </Link>
                 <Link
@@ -293,7 +293,7 @@ const Header = ({ }: HeaderProps) => {
               <nav className="flex flex-col gap-2 px-6 py-4 flex-1 overflow-y-auto">
                 <Link
                   href="/"
-                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-blue-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-blue-300 hover:scale-[1.02] transform border border-transparent hover:border-blue-500/30 shadow-lg hover:shadow-blue-500/20"
+                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-red-300 hover:scale-[1.02] transform border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Home className="h-5 w-5" />
@@ -362,10 +362,10 @@ const Header = ({ }: HeaderProps) => {
 
                   <Link
                     href="/allavsoft"
-                    className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-blue-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-blue-300 hover:scale-[1.02] transform border border-transparent hover:border-blue-500/30 shadow-lg hover:shadow-blue-500/20"
+                    className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-red-300 hover:scale-[1.02] transform border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Download className="h-5 w-5 text-blue-400" />
+                    <Download className="h-5 w-5 text-red-400" />
                     ALLAVSOFT
                   </Link>
 
@@ -560,7 +560,7 @@ const Header = ({ }: HeaderProps) => {
               </div>
             </div>
           ) : (
-            <Link href="/auth/sign-in" className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg">
+            <Link href="/auth/sign-in" className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl font-semibold hover:from-red-700 hover:to-red-800 transition-all shadow-lg">
               Entrar
             </Link>
           )}

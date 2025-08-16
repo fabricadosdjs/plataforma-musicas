@@ -15,12 +15,8 @@ export async function GET(request: NextRequest) {
     try {
         console.log('🎵 API audio-url: Iniciando requisição');
 
-        const session = await getServerSession(authOptions);
-
-        if (!session?.user?.email) {
-            console.log('🎵 API audio-url: Usuário não autenticado');
-            return NextResponse.json({ error: 'Usuário não autenticado' }, { status: 401 });
-        }
+        // Permitir acesso para todos os usuários (logados e não logados) para reprodução
+        // A autenticação é mantida apenas para downloads
 
         const { searchParams } = new URL(request.url);
         let key = searchParams.get('key');

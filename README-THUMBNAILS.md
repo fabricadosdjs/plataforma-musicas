@@ -153,3 +153,4 @@ Para dúvidas ou problemas:
 - [ ] Histórico de alterações
 - [ ] Backup automático antes das alterações
 - [ ] Validação de formato de imagem
+

@@ -8,42 +8,41 @@ datasource db {
 }
 
 model User {
-  id                      String     @id @default(cuid())
-  email                   String     @unique
-  name                    String?
-  dailyDownloadCount      Int?       @default(0)
-  lastDownloadReset       DateTime?
-  createdAt               DateTime   @default(now())
-  updatedAt               DateTime   @updatedAt
-  is_vip                  Boolean?   @default(false)
-  status                  String?    @default("ativo")
-  valor                   Float?
-  vencimento              DateTime?
-  customBenefits          Json?
-  dataPagamento           DateTime?
-  dataPrimeiroPagamento   DateTime?  // Nova coluna para data do primeiro pagamento
-  planName                String?    // Nome do plano salvo manualmente
-  lastWeekReset           DateTime?
-  weeklyPackRequests      Int?       @default(0)
-  weeklyPlaylistDownloads Int?       @default(0)
-  weeklyPackRequestsUsed      Int?       @default(0)
-  weeklyPlaylistDownloadsUsed Int?       @default(0)
-  whatsapp                String?
-  deemix                  Boolean?   @default(false)
-  deezerPremium           Boolean?   @default(false)
-  deezerEmail             String?
-  deezerPassword          String?
-  isPro                   Boolean?   @default(false)
-  isAdmin                  Boolean?   @default(false)
-  password                String?
-          // Campo do uploader (opção adicional aos planos VIP)
-        isUploader              Boolean?   @default(false)
-  downloads               Download[]
-  likes                   Like[]
-  plays                   Play[]
-  uploadedTracks          Track[]    // Músicas enviadas pelo usuário
-  customItems             CustomItem[] // Items personalizados criados pelo admin
-  adminMessages           AdminMessage[] // Recados criados pelo admin
+  id                          String         @id @default(cuid())
+  email                       String         @unique
+  name                        String?
+  dailyDownloadCount          Int?           @default(0)
+  lastDownloadReset           DateTime?
+  createdAt                   DateTime       @default(now())
+  updatedAt                   DateTime       @updatedAt
+  is_vip                      Boolean?       @default(false)
+  status                      String?        @default("ativo")
+  valor                       Float?
+  vencimento                  DateTime?
+  customBenefits              Json?
+  dataPagamento               DateTime?
+  lastWeekReset               DateTime?
+  weeklyPackRequests          Int?           @default(0)
+  weeklyPlaylistDownloads     Int?           @default(0)
+  weeklyPackRequestsUsed      Int?           @default(0)
+  weeklyPlaylistDownloadsUsed Int?           @default(0)
+  whatsapp                    String?
+  deemix                      Boolean?       @default(false)
+  deezerPremium               Boolean?       @default(false)
+  deezerEmail                 String?
+  deezerPassword              String?
+  isPro                       Boolean?       @default(false)
+  isAdmin                     Boolean?       @default(false)
+  password                    String?
+  isUploader                  Boolean?       @default(false)
+  dataPrimeiroPagamento       DateTime?
+  planName                    String?
+  adminMessages               AdminMessage[]
+  customItems                 CustomItem[]
+  downloads                   Download[]
+  likes                       Like[]
+  plays                       Play[]
+  uploadedTracks              Track[]
 }
 
 model Track {
@@ -52,20 +51,20 @@ model Track {
   artist      String
   style       String
   version     String?
-  pool        String?    @default("Nexor Records")  // Pool da música
+  pool        String?    @default("Nexor Records")
   imageUrl    String
   previewUrl  String
   downloadUrl String
   releaseDate DateTime
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  isCommunity Boolean    @default(false)  // Identifica se é música da comunidade
-  uploadedBy  String?    // ID do usuário que enviou a música
-  aiMeta      Json?      // Metadados de IA (confiança, label, cover, fonte, etc)
+  isCommunity Boolean    @default(false)
+  uploadedBy  String?
+  aiMeta      Json?
   downloads   Download[]
   likes       Like[]
   plays       Play[]
-  uploader    User?      @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
+  uploader    User?      @relation(fields: [uploadedBy], references: [id])
 }
 
 model Like {
@@ -113,24 +112,24 @@ model CustomItem {
   id          Int      @id @default(autoincrement())
   name        String
   description String?
-  type        String   // 'benefit', 'feature', 'tool', etc.
+  type        String
   isActive    Boolean  @default(true)
-  icon        String?  // Icon name or URL
-  color       String?  // Color theme
+  icon        String?
+  color       String?
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  createdBy   String   // Admin user ID
+  createdBy   String
   user        User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 }
 
 model AdminMessage {
   id        Int      @id @default(autoincrement())
-  title     String   // Título do recado
-  message   String   // Texto do recado
+  title     String
+  message   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  isActive  Boolean  @default(true) // Se o recado está ativo
-  createdBy String   // ID do admin que criou o recado
+  isActive  Boolean  @default(true)
+  createdBy String
   user      User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 }

@@ -13,9 +13,7 @@
     "contabo:import": "npx tsx import-contabo-music.js",
     "contabo:smart": "npx tsx test-smart-import.js",
     "contabo:style": "npx tsx test-style-detector.js",
-    "contabo:setup": "echo 'Configurando Contabo...' && cp .env.contabo.example .env.local && echo 'Configure suas credenciais no .env.local e execute: npm run contabo:test'",
-    "fix-thumbnails": "node scripts/fix-thumbnails.js",
-    "fix-thumbnail": "node scripts/fix-thumbnails.js"
+    "contabo:setup": "echo 'Configurando Contabo...' && cp .env.contabo.example .env.local && echo 'Configure suas credenciais no .env.local e execute: npm run contabo:test'"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",

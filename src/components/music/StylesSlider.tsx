@@ -18,8 +18,28 @@ export const StylesSlider = ({ styles }: StylesSliderProps) => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [showAllStyles, setShowAllStyles] = useState(false);
 
-    const itemsPerSlide = 8;
+    // Itens por slide responsivos
+    const getItemsPerSlide = () => {
+        if (typeof window !== 'undefined') {
+            if (window.innerWidth < 640) return 4; // Mobile
+            if (window.innerWidth < 1024) return 6; // Tablet
+            return 8; // Desktop
+        }
+        return 8; // Default
+    };
+
+    const [itemsPerSlide, setItemsPerSlide] = useState(getItemsPerSlide());
     const totalSlides = Math.ceil(styles.length / itemsPerSlide);
+
+    // Atualizar itens por slide quando a tela mudar
+    React.useEffect(() => {
+        const handleResize = () => {
+            setItemsPerSlide(getItemsPerSlide());
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const nextSlide = () => {
         setCurrentSlide((prev) => (prev + 1) % totalSlides);
@@ -39,10 +59,10 @@ export const StylesSlider = ({ styles }: StylesSliderProps) => {
             {/* Slider de Estilos Principais */}
             <section className="mb-8">
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-white">Principais Estilos</h2>
+                    <h2 className="text-lg sm:text-2xl font-bold text-white">Principais Estilos</h2>
                     <button
                         onClick={() => setShowAllStyles(true)}
-                        className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+                        className="text-red-400 hover:text-red-300 text-xs sm:text-sm font-medium"
                     >
                         Ver todos os estilos
                     </button>
@@ -54,34 +74,34 @@ export const StylesSlider = ({ styles }: StylesSliderProps) => {
                         <>
                             <button
                                 onClick={prevSlide}
-                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full backdrop-blur-sm"
+                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-1.5 sm:p-2 rounded-full backdrop-blur-sm"
                             >
-                                <ChevronLeft className="h-5 w-5" />
+                                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                             </button>
                             <button
                                 onClick={nextSlide}
-                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full backdrop-blur-sm"
+                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-1.5 sm:p-2 rounded-full backdrop-blur-sm"
                             >
-                                <ChevronRight className="h-5 w-5" />
+                                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                             </button>
                         </>
                     )}
 
-                    {/* Grid de estilos */}
-                    <div className="grid grid-cols-8 gap-3">
+                    {/* Grid de estilos - responsivo */}
+                    <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3">
                         {getCurrentStyles().map((style) => (
                             <button
                                 key={style.id}
                                 onClick={() => window.location.href = `/new?style=${encodeURIComponent(style.name)}`}
                                 className="group relative overflow-hidden rounded-lg aspect-square bg-gradient-to-br from-gray-800/50 to-gray-900/50 hover:from-gray-700/50 hover:to-gray-800/50 transition-all duration-200"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                                <div className="relative z-10 h-full flex flex-col items-center justify-center p-2 text-center">
-                                    <span className="text-white font-semibold text-sm leading-tight">
+                                <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-red-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                                <div className="relative z-10 h-full flex flex-col items-center justify-center p-1 sm:p-2 text-center">
+                                    <span className="text-white font-semibold text-xs sm:text-sm leading-tight">
                                         {style.name}
                                     </span>
                                     <span className="text-gray-400 text-xs mt-1">
-                                        {style.count} músicas
+                                        {style.count}
                                     </span>
                                 </div>
                             </button>

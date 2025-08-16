@@ -4,11 +4,19 @@ import fs from 'fs';
 import path from 'path';
 import { promises as fsPromises } from 'fs';
 import https from 'https';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
     try {
+        // Verificar autenticação
+        const session = await getServerSession(authOptions);
+        if (!session) {
+            return NextResponse.json({ error: 'Acesso negado. Faça login para baixar músicas.' }, { status: 401 });
+        }
+
         const { trackId } = await request.json();
 
         if (!trackId) {
