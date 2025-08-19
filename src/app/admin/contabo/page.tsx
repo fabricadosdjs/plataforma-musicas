@@ -59,6 +59,8 @@ interface ImportableFile {
         previewUrl: string;
         downloadUrl: string;
         releaseDate: string;
+        pool?: string;
+        bitrate?: number;
     };
     detectedData?: {
         style?: string;
@@ -100,6 +102,7 @@ export default function ContaboStoragePage() {
     const [importableFiles, setImportableFiles] = useState<ImportableFile[]>([]);
     const [styleOptions, setStyleOptions] = useState<string[]>([]);
     const [versionOptions, setVersionOptions] = useState<string[]>(["Original", "Extended Mix", "Radio Edit", "Club Mix", "Vocal Mix", "Instrumental", "Dub Mix", "Remix", "VIP Mix", "Acoustic"]);
+    const [bitrateOptions] = useState<number[]>([320, 256, 192, 128]);
     const [loading, setLoading] = useState(false);
     const [importing, setImporting] = useState(false);
     const [aiConfidenceThreshold, setAiConfidenceThreshold] = useState(0.55);
@@ -152,7 +155,7 @@ export default function ContaboStoragePage() {
 
     useEffect(() => {
         loadFiles();
-        setStyleOptions(Array.from(new Set(getAllStyleNames())));
+        // Estilos agora são carregados do banco de dados via loadStylesFromDatabase()
     }, []);
 
     // Carrega automaticamente os arquivos importáveis quando a página é acessada
@@ -180,6 +183,13 @@ export default function ContaboStoragePage() {
             detectStyleAndLabelBatchAuto();
         }
     }, [importableFiles.length]);
+
+    useEffect(() => {
+        if (isLoaded && user) {
+            loadFiles();
+            loadStylesFromDatabase(); // Carrega estilos do banco de dados
+        }
+    }, [isLoaded, user]);
 
     const loadFiles = async () => {
         setLoading(true);
@@ -343,7 +353,8 @@ export default function ContaboStoragePage() {
                             ...f,
                             importData: {
                                 ...f.importData,
-                                pool
+                                pool,
+                                bitrate: f.importData?.bitrate || null
                             },
                             detectedData: f.detectedData || (detectedStyles[f.file.key] ? {
                                 style: detectedStyles[f.file.key].style,
@@ -374,6 +385,9 @@ export default function ContaboStoragePage() {
                 }
 
                 setSelectedFiles([]);
+
+                // Recarrega estilos do banco para incluir novos estilos criados
+                setTimeout(() => loadStylesFromDatabase(), 1000);
             } else {
                 showMessage(data.error || 'Erro na importação', 'error');
             }
@@ -957,6 +971,8 @@ export default function ContaboStoragePage() {
     const handleAddNewStyle = (newStyle: string) => {
         if (newStyle && !styleOptions.includes(newStyle)) {
             setStyleOptions((prev) => Array.from(new Set([...prev, newStyle])));
+            // Recarrega estilos do banco para manter sincronizado
+            setTimeout(() => loadStylesFromDatabase(), 1000);
         }
     };
 
@@ -964,6 +980,22 @@ export default function ContaboStoragePage() {
     const handleAddNewVersion = (newVersion: string) => {
         if (newVersion && !versionOptions.includes(newVersion)) {
             setVersionOptions((prev) => [...prev, newVersion]);
+        }
+    };
+
+    // Função para carregar estilos do banco de dados
+    const loadStylesFromDatabase = async () => {
+        try {
+            const response = await fetch('/api/tracks/styles');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    setStyleOptions(data.styles);
+                    console.log(`🎵 ${data.styles.length} estilos carregados do banco de dados`);
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao carregar estilos do banco:', error);
         }
     };
 
@@ -1662,6 +1694,67 @@ export default function ContaboStoragePage() {
                                                 </span>
                                             </div>
 
+                                            {/* Campo para definir bitrate em lote */}
+                                            <div className="flex items-center gap-3 mt-3">
+                                                <label className="text-sm font-medium text-gray-300 min-w-fit">
+                                                    Definir bitrate para selecionados:
+                                                </label>
+                                                <select
+                                                    className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                    onChange={(e) => {
+                                                        const newBitrate = e.target.value ? parseInt(e.target.value) : undefined;
+                                                        if (selectedFiles.length > 0) {
+                                                            // Aplica o bitrate para todos os arquivos marcados
+                                                            setImportableFiles(prev => {
+                                                                const updated = [...prev];
+                                                                selectedFiles.forEach(fileKey => {
+                                                                    const fileIndex = updated.findIndex(item => item.file.key === fileKey);
+                                                                    if (fileIndex !== -1) {
+                                                                        updated[fileIndex] = {
+                                                                            ...updated[fileIndex],
+                                                                            importData: {
+                                                                                ...updated[fileIndex].importData,
+                                                                                bitrate: newBitrate
+                                                                            }
+                                                                        };
+                                                                    }
+                                                                });
+                                                                return updated;
+                                                            });
+                                                            const bitrateText = newBitrate ? `${newBitrate} kbps` : 'não definido';
+                                                            showMessage(`🎵 Bitrate "${bitrateText}" aplicado a ${selectedFiles.length} arquivo(s) selecionado(s)`, 'success');
+                                                            e.target.value = ''; // Reset select
+                                                        }
+                                                    }}
+                                                    defaultValue=""
+                                                >
+                                                    <option value="">Selecione um bitrate...</option>
+                                                    {bitrateOptions.map(bitrate => (
+                                                        <option key={bitrate} value={bitrate}>{bitrate} kbps</option>
+                                                    ))}
+                                                    <option value="">Remover bitrate</option>
+                                                </select>
+                                                <span className="text-xs text-gray-400 min-w-fit">
+                                                    ({selectedFiles.length} selecionados)
+                                                </span>
+                                            </div>
+
+                                            {/* Botão para recarregar estilos do banco */}
+                                            <div className="flex items-center gap-3 mt-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={loadStylesFromDatabase}
+                                                    className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                                                    title="Recarregar estilos do banco de dados"
+                                                >
+                                                    <RefreshCw className="w-4 h-4" />
+                                                    Atualizar Estilos
+                                                </button>
+                                                <span className="text-xs text-gray-400">
+                                                    {styleOptions.length} estilos carregados do banco
+                                                </span>
+                                            </div>
+
                                             {/* Campo para definir URL da capa manualmente */}
                                             <div className="flex items-center gap-3 mt-3">
                                                 <label className="text-sm font-medium text-gray-300 min-w-fit">
@@ -2083,6 +2176,42 @@ export default function ContaboStoragePage() {
                                                                                             </div>
                                                                                         </div>
                                                                                     ) : null}
+
+                                                                                    {/* Campo para Bitrate */}
+                                                                                    <div className="flex items-center gap-2 mt-2">
+                                                                                        <span className="text-gray-500 w-16">Bitrate:</span>
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <select
+                                                                                                className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                                                                                                value={item.importData.bitrate || ''}
+                                                                                                onChange={e => {
+                                                                                                    const newBitrate = e.target.value ? parseInt(e.target.value) : undefined;
+                                                                                                    setImportableFiles((prev) => {
+                                                                                                        const updated = [...prev];
+                                                                                                        const fileIndex = prev.findIndex(p => p.file.key === item.file.key);
+                                                                                                        if (fileIndex > -1) {
+                                                                                                            updated[fileIndex] = {
+                                                                                                                ...updated[fileIndex],
+                                                                                                                importData: {
+                                                                                                                    ...updated[fileIndex].importData,
+                                                                                                                    bitrate: newBitrate
+                                                                                                                }
+                                                                                                            };
+                                                                                                        }
+                                                                                                        return updated;
+                                                                                                    });
+                                                                                                }}
+                                                                                            >
+                                                                                                <option value="">Não definido</option>
+                                                                                                {bitrateOptions.map(bitrate => (
+                                                                                                    <option key={bitrate} value={bitrate}>{bitrate} kbps</option>
+                                                                                                ))}
+                                                                                            </select>
+                                                                                            <div className="flex items-center gap-1">
+                                                                                                <span className="text-xs text-purple-400 font-semibold">Qualidade</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>

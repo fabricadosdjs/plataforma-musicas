@@ -12,6 +12,7 @@ interface ImportTrackData {
     downloadUrl: string;
     releaseDate: Date | string;
     pool?: string; // Gravadora / pool
+    bitrate?: number; // Bitrate em kbps
     // Metadados de IA opcionais
     aiStyle?: string;
     aiLabel?: string;
@@ -224,6 +225,7 @@ export async function POST(request: NextRequest) {
                         style: finalStyle || 'Electronic',
                         version: importData.version || null,
                         pool: finalPool || 'Nexor Records',
+                        bitrate: importData.bitrate || null,
                         imageUrl: finalImage,
                         previewUrl: importData.previewUrl,
                         downloadUrl: importData.downloadUrl,
@@ -233,7 +235,7 @@ export async function POST(request: NextRequest) {
                 });
 
                 results.success++;
-                console.log(`✅ Música importada: ${newTrack.songName} - ${newTrack.artist} | Style: ${newTrack.style} | Pool: ${newTrack.pool}`);
+                console.log(`✅ Música importada: ${newTrack.songName} - ${newTrack.artist} | Style: ${newTrack.style} | Pool: ${newTrack.pool} | Bitrate: ${newTrack.bitrate || 'N/A'} kbps`);
 
             } catch (error) {
                 results.failed++;

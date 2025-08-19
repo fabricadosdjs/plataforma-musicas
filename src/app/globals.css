@@ -21,37 +21,75 @@
 @tailwind utilities;
 
 :root {
-  --background: #1B1C1D;
-  --foreground: #ffffff;
-  --card-background: #1B1C1D;
-  --border-color: #2D2E2F;
-  --muted-background: #1B1C1D;
-  --accent-blue: #3b82f6;
-  --accent-purple: #8b5cf6;
-  --gray-dark: #2D2E2F;
-  --gray-darker: #1B1C1D;
-  --gray-light: #6b7280;
-  /* A variável --font-inter será gerada automaticamente pelo Next.js com base no layout.tsx */
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 38, 38, 38;
+  --background-end-rgb: 38, 38, 38;
 }
-
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #1B1C1D;
-    --foreground: #ffffff;
-    --card-background: #1B1C1D;
-    --border-color: #2D2E2F;
-    --muted-background: #1B1C1D;
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 38, 38, 38;
+    --background-end-rgb: 38, 38, 38;
   }
 }
 
 body {
-  background: #1B1C1D;
-  color: var(--foreground);
-  font-family: 'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  min-height: 100vh;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+}
+
+/* Tema global #262626 */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+  background-color: #262626 !important;
+  color: #ffffff !important;
+}
+
+/* Componentes específicos com tema #262626 */
+.bg-theme-primary {
+  background-color: #262626 !important;
+}
+
+.bg-theme-secondary {
+  background-color: #404040 !important;
+}
+
+.bg-theme-tertiary {
+  background-color: #525252 !important;
+}
+
+.text-theme-primary {
+  color: #ffffff !important;
+}
+
+.text-theme-secondary {
+  color: #d4d4d4 !important;
+}
+
+.text-theme-muted {
+  color: #a3a3a3 !important;
+}
+
+.border-theme-primary {
+  border-color: #525252 !important;
+}
+
+.border-theme-secondary {
+  border-color: #737373 !important;
+}
+
+.shadow-theme {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+}
+
+.shadow-theme-lg {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
 }
 
 /* Estilos personalizados para o slider de volume */
@@ -703,4 +741,22 @@ code {
   100% {
     left: 100%;
   }
+}
+
+@import "slick-carousel/slick/slick.css";
+@import "slick-carousel/slick/slick-theme.css";
+
+/* Animações personalizadas */
+@keyframes scroll-text {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-scroll-text {
+  animation: scroll-text 3s linear infinite;
 }

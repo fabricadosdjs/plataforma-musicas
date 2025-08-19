@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { SEOHead } from '@/components/seo/SEOHead';
+import SEOHead from '@/components/seo/SEOHead';
 import { AdminAuth } from '@/components/admin/AdminAuth';
 import {
     Brain,
@@ -87,7 +87,7 @@ export default function AIStatsPage() {
     }
 
     if (!session?.user?.is_vip) {
-        return <AdminAuth />;
+    return <AdminAuth>{null}</AdminAuth>;
     }
 
     return (

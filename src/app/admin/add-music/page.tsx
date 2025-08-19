@@ -317,6 +317,7 @@ export default function AddMusicPage() {
                       <ul className="text-gray-300 space-y-1 ml-4">
                         <li>• <code className="bg-gray-800 px-1 rounded">version</code> - Versão (Original Mix, Extended, etc.) - pode ser <code>null</code></li>
                         <li>• <code className="bg-gray-800 px-1 rounded">pool</code> - Nome do pool/gravadora</li>
+                        <li>• <code className="bg-gray-800 px-1 rounded">bitrate</code> - <strong>Bitrate em kbps</strong> (ex: 320, 256, 192) - <span className="text-green-400">✅ Suportado</span></li>
                       </ul>
                     </div>
 
@@ -330,6 +331,7 @@ export default function AddMusicPage() {
     "style": "Pop",
     "version": "Original Mix",
     "pool": "Republic Records",
+    "bitrate": 320,
     "imageUrl": "https://example.com/cover1.jpg",
     "previewUrl": "https://example.com/preview1.mp3",
     "downloadUrl": "https://example.com/download1.mp3",
@@ -341,6 +343,7 @@ export default function AddMusicPage() {
     "style": "Pop Rock",
     "version": "Radio Edit",
     "pool": "Geffen Records",
+    "bitrate": 256,
     "imageUrl": "https://example.com/cover2.jpg",
     "previewUrl": "https://example.com/preview2.mp3",
     "downloadUrl": "https://example.com/download2.mp3",
@@ -351,7 +354,24 @@ export default function AddMusicPage() {
                     </div>
 
                     <div>
-                      <h5 className="font-semibold text-white mb-2">4. Dicas Importantes:</h5>
+                      <h5 className="font-semibold text-white mb-2">4. Campo Bitrate - Qualidade do Áudio:</h5>
+                      <div className="bg-green-900 bg-opacity-30 p-3 rounded border border-green-700 mb-4">
+                        <p className="text-green-200 text-sm">
+                          🎵 <strong>Campo Bitrate:</strong> Este campo é totalmente suportado e permite especificar a qualidade do áudio em kbps.
+                        </p>
+                      </div>
+                      <ul className="text-gray-300 space-y-1 ml-4">
+                        <li>• <strong>320 kbps</strong> - Qualidade máxima (recomendado para músicas de alta qualidade)</li>
+                        <li>• <strong>256 kbps</strong> - Qualidade alta (boa para streaming)</li>
+                        <li>• <strong>192 kbps</strong> - Qualidade média (economia de espaço)</li>
+                        <li>• <strong>128 kbps</strong> - Qualidade básica (não recomendado para DJs)</li>
+                        <li>• Campo é <strong>opcional</strong> - se não especificado, será <code>null</code> no banco</li>
+                        <li>• <strong>Valores aceitos:</strong> números inteiros (ex: 320, 256, 192)</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h5 className="font-semibold text-white mb-2">5. Dicas Importantes:</h5>
                       <ul className="text-gray-300 space-y-1 ml-4">
                         <li>• URLs devem ser válidas e acessíveis</li>
                         <li>• Data deve estar no formato YYYY-MM-DD</li>
@@ -359,6 +379,7 @@ export default function AddMusicPage() {
                         <li>• Use preferencialmente <strong>files.catbox.moe</strong> para downloads</li>
                         <li>• Campo <code className="bg-gray-800 px-1 rounded">version</code> pode ser <code>null</code> se não houver versão específica</li>
                         <li>• Campo <code className="bg-gray-800 px-1 rounded">pool</code> é opcional e representa a gravadora/pool</li>
+                        <li>• Campo <code className="bg-gray-800 px-1 rounded">bitrate</code> é opcional e representa a qualidade do áudio em kbps - <span className="text-green-400">✅ Totalmente suportado</span></li>
                         <li>• Você pode adicionar múltiplas músicas de uma vez</li>
                         <li>• Verifique o arquivo <code className="bg-gray-800 px-1 rounded">exemplo-musicas.json</code> na raiz do projeto</li>
                       </ul>

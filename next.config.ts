@@ -29,6 +29,26 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'dashboard.dittomusic.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'i.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.pixabay.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'turbobit.me',
+      },
+      {
+        protocol: 'https',
+        hostname: 'filesearch.link',
+      },
     ],
   },
   serverExternalPackages: ['@prisma/client', '@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner'],

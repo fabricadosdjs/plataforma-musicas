@@ -7,12 +7,16 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit') || '0') : undefined;
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit') || '0') : 50; // Limite padrão de 50
+    const page = searchParams.get('page') ? parseInt(searchParams.get('page') || '1') : 1;
+    const search = searchParams.get('search') || ''; // Parâmetro de busca
+    const community = searchParams.get('community'); // Parâmetro para filtrar músicas da comunidade
+    const offset = (page - 1) * limit;
 
-    console.log('🔍 API Tracks chamada - carregando todas as músicas');
-    console.log('🔍 Parâmetros:', { limit, searchParams: Object.fromEntries(searchParams.entries()) });
+    console.log('🔍 API Tracks chamada - carregando músicas com paginação');
+    console.log('🔍 Parâmetros:', { limit, page, offset, search, community, searchParams: Object.fromEntries(searchParams.entries()) });
 
-    // Verificar conexão com o banco
+    // Verificar conexão com o banco (sem desconectar a cada chamada)
     try {
       await prisma.$connect();
       console.log('✅ Conexão com banco estabelecida');
@@ -21,9 +25,36 @@ export async function GET(request: Request) {
       throw dbError;
     }
 
-    // Query para retornar todas as músicas (sem limite)
-    console.log('🔍 Executando query Prisma...');
+    // Query otimizada com paginação, índices e busca
+    console.log('🔍 Executando query Prisma otimizada...');
+
+    // Construir condições de busca
+    let whereClause: any = {};
+    
+    if (search) {
+      whereClause.OR = [
+        { songName: { contains: search, mode: 'insensitive' as const } },
+        { artist: { contains: search, mode: 'insensitive' as const } },
+        { style: { contains: search, mode: 'insensitive' as const } },
+        { pool: { contains: search, mode: 'insensitive' as const } }
+      ];
+    }
+
+    // Filtrar por músicas da comunidade se especificado
+    if (community === 'true') {
+      whereClause.isCommunity = true;
+    } else if (community === 'false') {
+      whereClause.isCommunity = false;
+    }
+
+    // Primeiro, contar total de tracks (query rápida)
+    const totalCount = await prisma.track.count({
+      where: whereClause
+    });
+
+    // Depois, buscar tracks paginadas
     const tracks = await prisma.track.findMany({
+      where: whereClause,
       select: {
         id: true,
         songName: true,
@@ -41,53 +72,32 @@ export async function GET(request: Request) {
       orderBy: [
         { createdAt: 'desc' }
       ],
-      ...(limit && { take: limit }),
+      take: limit,
+      skip: offset,
     });
 
-    console.log(`📊 Resultado: ${tracks.length} músicas encontradas.`);
+    console.log(`📊 Resultado: ${tracks.length} músicas encontradas (página ${page} de ${Math.ceil(totalCount / limit)})${search ? ` para busca: "${search}"` : ''}${community ? ` (comunidade: ${community})` : ''}`);
 
-    // Log das primeiras tracks para debug
-    if (tracks.length > 0) {
-      console.log('🎵 Primeiras 3 tracks:', tracks.slice(0, 3).map(t => ({
-        id: t.id,
-        songName: t.songName,
-        artist: t.artist,
-        style: t.style
-      })));
-    } else {
-      console.log('⚠️ Nenhuma track encontrada - verificando se a tabela existe...');
-
-      // Verificar se a tabela Track existe e tem dados
-      try {
-        const tableInfo = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "Track"`;
-        console.log('📊 Info da tabela Track:', tableInfo);
-
-        const allTables = await prisma.$queryRaw`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`;
-        console.log('📊 Tabelas disponíveis:', allTables);
-      } catch (tableError) {
-        console.error('❌ Erro ao verificar tabela:', tableError);
-      }
-    }
-
-    // Processar tracks de forma ultra-simplificada
+    // Processar tracks de forma otimizada
     const tracksWithPreview = tracks.map((track: any) => ({
       ...track,
       previewUrl: track.downloadUrl || '',
-      isCommunity: false,
-      uploadedBy: null,
+      // Preservar isCommunity original
       downloadCount: 0,
       likeCount: 0,
       playCount: 0,
     }));
 
-    console.log('✅ Processamento concluído, retornando resposta');
+    console.log(`✅ Processamento concluído${search ? ` para busca: "${search}"` : ''}${community ? ` (comunidade: ${community})` : ''}, retornando resposta otimizada`);
 
     return NextResponse.json({
       tracks: tracksWithPreview,
-      totalCount: tracksWithPreview.length,
-      currentPage: 1,
-      totalPages: 1,
-      hasMore: false
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      hasMore: page < Math.ceil(totalCount / limit),
+      limit,
+      offset
     });
 
   } catch (error) {
@@ -107,13 +117,6 @@ export async function GET(request: Request) {
       tracks: [],
       totalCount: 0
     }, { status: 500 });
-  } finally {
-    // Fechar conexão
-    try {
-      await prisma.$disconnect();
-      console.log('🔌 Conexão com banco fechada');
-    } catch (disconnectError) {
-      console.error('❌ Erro ao fechar conexão:', disconnectError);
-    }
   }
+  // Remover finally block para manter conexão ativa
 }

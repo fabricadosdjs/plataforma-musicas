@@ -15,13 +15,22 @@ export default function Error({
         console.error(error)
     }, [error])
 
+    const handleReset = () => {
+        if (typeof reset === 'function') {
+            reset();
+        } else {
+            // Fallback: recarregar a página se reset não estiver disponível
+            window.location.reload();
+        }
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-900 z-0" style={{ zIndex: 0 }}>
             <div className="text-center">
                 <h2 className="text-4xl font-bold text-red-600 mb-4">Algo deu errado!</h2>
                 <p className="text-gray-600 mb-8">Ocorreu um erro inesperado.</p>
                 <button
-                    onClick={() => reset()}
+                    onClick={handleReset}
                     className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 mr-4"
                 >
                     Tentar novamente

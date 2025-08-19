@@ -1,20 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
+import { Track } from '@/types/track';
 import { useSession } from 'next-auth/react';
-import { useToast } from '@/hooks/useToast';
-
-interface Track {
-    id: number;
-    title?: string;
-    songName?: string;
-    artist?: string;
-    artistName?: string;
-    url?: string;
-    downloadUrl?: string;
-    previewUrl?: string;
-    imageUrl?: string;
-}
+import { useToastContext } from '@/context/ToastContext';
 
 interface GlobalPlayerContextType {
     currentTrack: Track | null;
@@ -34,7 +23,7 @@ const GlobalPlayerContext = createContext<GlobalPlayerContextType | undefined>(u
 
 export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { data: session } = useSession();
-    const { showToast } = useToast();
+    const { showToast } = useToastContext();
     const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [playlist, setPlaylist] = useState<Track[]>([]);
@@ -45,13 +34,22 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
         const audioUrl = track.downloadUrl || track.previewUrl || track.url;
         if (!audioUrl) return null;
 
+        // Detectar se é dispositivo móvel
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        // Em mobile, usar URL direta da Contabo (sem assinatura)
+        if (isMobile && audioUrl.includes('contabostorage.com')) {
+            console.log('🎵 GlobalPlayer: Mobile detectado - usando URL direta da Contabo');
+            return audioUrl;
+        }
+
         // Se a URL já é uma URL segura (assinada), use-a
         if (audioUrl.includes('X-Amz-Signature')) {
             return audioUrl;
         }
 
-        // Se é uma URL do Contabo, tente obter uma URL segura
-        if (audioUrl.includes('contabostorage.com')) {
+        // Se é uma URL do Contabo e é desktop, tente obter uma URL segura
+        if (audioUrl.includes('contabostorage.com') && !isMobile) {
             try {
                 // Extrair o caminho completo do arquivo da URL
                 // Exemplo: https://usc1.contabostorage.com/211285f2fbcc4760a62df1aff280735f:plataforma-de-musicas/community/DEORRO%20Y%20VOCES%20DEL%20RANCHO%20-%20CAMARON%20PELAO%20MAIN.mp3
@@ -62,7 +60,7 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 const bucketIndex = audioUrl.indexOf(bucketPattern);
                 if (bucketIndex !== -1) {
                     const key = audioUrl.substring(bucketIndex + bucketPattern.length);
-                    console.log('🎵 GlobalPlayer: Extraindo chave do arquivo:', {
+                    console.log('🎵 GlobalPlayer: Desktop - extraindo chave do arquivo:', {
                         originalUrl: audioUrl,
                         extractedKey: key,
                         bucketPattern,
@@ -97,6 +95,17 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
 
     const playTrack = async (track: Track, newPlaylist?: Track[]) => {
+        // Verificar se é dispositivo móvel
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        // Permitir reprodução para todos os usuários (logados e não logados)
+        console.log('🎵 GlobalPlayer: Reprodução permitida para todos os usuários');
+
+        // Em mobile, garantir que o áudio seja reproduzido apenas após interação do usuário
+        if (isMobile) {
+            console.log('🎵 GlobalPlayer: Mobile - garantindo interação do usuário para reprodução');
+        }
+
         // Permitir reprodução para todos os usuários (logados e não logados)
         console.log('🎵 GlobalPlayer: playTrack called with:', {
             id: track.id,
@@ -215,6 +224,12 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
     useEffect(() => {
         if (!audioRef.current || !currentTrack) return;
 
+        // Verificar se é dispositivo móvel
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        // Permitir carregamento de áudio para todos os usuários
+        console.log('🎵 GlobalPlayer: Carregando áudio para todos os usuários');
+
         const audio = audioRef.current;
         // Priorizar downloadUrl que é o mesmo link do botão download
         const audioUrl = currentTrack.downloadUrl || currentTrack.previewUrl || currentTrack.url;
@@ -222,18 +237,29 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
         console.log('🎵 GlobalPlayer: Audio effect triggered', {
             trackId: currentTrack.id,
             trackName: currentTrack.songName || currentTrack.title,
-            audioUrl,
-            isPlaying,
-            hasDownloadUrl: !!currentTrack.downloadUrl,
-            hasPreviewUrl: !!currentTrack.previewUrl,
-            hasUrl: !!currentTrack.url
         });
 
-        if (!audioUrl) {
-            console.error('🎵 GlobalPlayer: No audio URL found for track');
-            setIsPlaying(false);
-            return;
-        }
+        // Função interna para reproduzir áudio de forma assíncrona
+        const playAudioAsync = async () => {
+            try {
+                await audioRef.current?.play();
+                setIsPlaying(true);
+            } catch (err: any) {
+                const url = audioRef.current?.src;
+                let msg = "";
+                if (err?.name === "NotAllowedError") {
+                    msg = "O navegador bloqueou a reprodução automática. Toque para liberar o áudio.";
+                } else if (err?.name === "NotSupportedError") {
+                    msg = "O formato de áudio pode não ser compatível com seu dispositivo.";
+                } else if (err?.name === "NetworkError") {
+                    msg = "Erro de rede ao tentar carregar o áudio.";
+                } else {
+                    msg = "Erro ao tentar reproduzir a música.";
+                }
+                showToast(`${msg}\nURL: ${url || "(desconhecida)"}`, "error");
+                setIsPlaying(false);
+            }
+        };
 
         // Verificar se a URL é válida
         try {
@@ -251,9 +277,55 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
             return;
         }
 
+        // Verificar se a URL parece ser de um serviço de streaming conhecido
+        const isStreamingService = /\.(mp3|wav|ogg|m4a|aac)$/i.test(audioUrl) ||
+            audioUrl.includes('blob:') ||
+            audioUrl.includes('data:audio');
+
+        if (!isStreamingService && !audioUrl.startsWith('http')) {
+            console.warn('🎵 GlobalPlayer: Potentially problematic audio URL format:', audioUrl);
+        }
+
+        // Chamar a função assíncrona após as verificações
+        playAudioAsync();
+
         // Função para tentar reproduzir o áudio de forma segura
-        const playAudioSafely = async () => {
+        const playAudioSafely = async (retryCount = 0) => {
             try {
+                // Em mobile, tentar reprodução mais direta
+                if (isMobile) {
+                    console.log('🎵 GlobalPlayer: Mobile - tentando reprodução direta');
+
+                    // Verificar se o áudio está em um estado válido
+                    if (audio.error) {
+                        console.error('🎵 GlobalPlayer: Mobile - áudio em erro, tentando reproduzir mesmo assim');
+                        // Em mobile, tentar reproduzir mesmo com erro
+                    }
+
+                    // Tentar reproduzir imediatamente em mobile
+                    try {
+                        await audio.play();
+                        console.log('🎵 GlobalPlayer: Mobile - reprodução iniciada com sucesso');
+                        return;
+                    } catch (playError) {
+                        console.warn('🎵 GlobalPlayer: Mobile - reprodução direta falhou, tentando método padrão:', playError);
+
+                        // Tratar erro específico de autoplay bloqueado em mobile
+                        if (playError instanceof Error && playError.name === 'NotAllowedError') {
+                            console.error('🎵 GlobalPlayer: Mobile - Autoplay bloqueado! Usuário precisa tocar no botão');
+                            showToast('🔇 Toque no botão de play para ativar o áudio no seu dispositivo', 'warning');
+                            return;
+                        }
+                    }
+                }
+
+                // Limitar tentativas de retry
+                if (retryCount >= 2) {
+                    console.error('🎵 GlobalPlayer: Max retry attempts reached');
+                    handlePlayError(new Error('Máximo de tentativas de reprodução atingido'));
+                    return;
+                }
+
                 // Verificar se o áudio está em um estado válido
                 if (audio.error) {
                     console.error('🎵 GlobalPlayer: Audio has error state, cannot play');
@@ -267,12 +339,13 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     await audio.play();
                 } else {
                     console.log('🎵 GlobalPlayer: Audio not ready, waiting for canplay event');
+
                     // Aguardar o evento canplay antes de tentar reproduzir
                     const canPlayHandler = () => {
                         // Verificar novamente se não há erro antes de reproduzir
                         if (audio.error) {
                             console.error('🎵 GlobalPlayer: Audio error detected while waiting for canplay');
-                            handlePlayError(new Error('Erro no áudio detectado durante carregamento'));
+                            handlePlayError(new Error('Áudio em estado de erro'));
                             return;
                         }
 
@@ -287,12 +360,34 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                         audio.removeEventListener('canplay', canPlayHandler);
                     };
 
-                    // Adicionar timeout para evitar espera infinita
+                    // Reduzir timeout para 5 segundos e melhorar tratamento
                     const timeoutId = setTimeout(() => {
-                        console.error('🎵 GlobalPlayer: Timeout waiting for canplay event');
+                        console.warn('🎵 GlobalPlayer: Audio loading timeout, attempting fallback');
                         audio.removeEventListener('canplay', canPlayHandler);
-                        handlePlayError(new Error('Timeout aguardando carregamento do áudio'));
-                    }, 10000); // 10 segundos de timeout
+
+                        // Tentar reproduzir mesmo sem o evento canplay
+                        if (audio.readyState >= 1) { // HAVE_METADATA ou superior
+                            console.log('🎵 GlobalPlayer: Attempting playback despite timeout');
+                            audio.play().catch((error: any) => {
+                                console.error('🎵 GlobalPlayer: Fallback play failed:', error);
+                                // Tentar retry se ainda não atingiu o limite
+                                if (retryCount < 2) {
+                                    console.log('🎵 GlobalPlayer: Retrying audio playback...');
+                                    setTimeout(() => playAudioSafely(retryCount + 1), 1000);
+                                } else {
+                                    handlePlayError(new Error('Falha ao reproduzir áudio após timeout'));
+                                }
+                            });
+                        } else {
+                            // Tentar retry se ainda não atingiu o limite
+                            if (retryCount < 2) {
+                                console.log('🎵 GlobalPlayer: Retrying audio loading...');
+                                setTimeout(() => playAudioSafely(retryCount + 1), 1000);
+                            } else {
+                                handlePlayError(new Error('Áudio não carregou em tempo hábil'));
+                            }
+                        }
+                    }, 5000); // Reduzido para 5 segundos
 
                     audio.addEventListener('canplay', canPlayHandler);
 
@@ -320,7 +415,12 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 console.error('🎵 GlobalPlayer: User interaction required to play audio');
                 // Mostrar toast informativo para o usuário
                 if (showToast) {
-                    showToast('Clique no botão de play para reproduzir o áudio', 'info');
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    if (isMobile) {
+                        showToast('🔇 Toque no botão de play para ativar o áudio no seu dispositivo', 'warning');
+                    } else {
+                        showToast('🔇 Clique no botão de play para reproduzir o áudio', 'info');
+                    }
                 }
             } else if (error?.name === 'NotSupportedError') {
                 console.error('🎵 GlobalPlayer: Audio format not supported');
@@ -331,6 +431,16 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 console.error('🎵 GlobalPlayer: Network error loading audio');
                 if (showToast) {
                     showToast('Erro de rede ao carregar o áudio', 'error');
+                }
+            } else if (error?.message?.includes('timeout') || error?.message?.includes('tempo hábil')) {
+                console.error('🎵 GlobalPlayer: Audio loading timeout');
+                if (showToast) {
+                    showToast('Áudio demorou para carregar. Tente novamente.', 'warning');
+                }
+            } else if (error?.message?.includes('Falha ao reproduzir')) {
+                console.error('🎵 GlobalPlayer: Audio playback failed after timeout');
+                if (showToast) {
+                    showToast('Falha ao reproduzir áudio. Verifique a conexão.', 'error');
                 }
             } else {
                 console.error('🎵 GlobalPlayer: Unknown audio error:', error);
@@ -346,10 +456,30 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
             console.log('🎵 GlobalPlayer: Loading new audio URL:', audioUrl);
             audio.src = audioUrl;
             audio.load();
+
+            // Log adicional para debug
+            console.log('🎵 GlobalPlayer: Audio element state after load:', {
+                src: audio.src,
+                readyState: audio.readyState,
+                networkState: audio.networkState,
+                error: audio.error,
+                paused: audio.paused,
+                ended: audio.ended
+            });
+        }
+
+        // Em mobile, garantir que o volume está correto
+        if (isMobile) {
+            audio.volume = 1.0; // Volume máximo em mobile
+            audio.muted = false; // Garantir que não está mutado
+            console.log('🎵 GlobalPlayer: Mobile - volume configurado:', { volume: audio.volume, muted: audio.muted });
         }
 
         if (isPlaying) {
             console.log('🎵 GlobalPlayer: Attempting to start audio playback');
+            if (isMobile) {
+                console.log('🎵 GlobalPlayer: Mobile - iniciando reprodução com URL direta');
+            }
             playAudioSafely();
         } else {
             console.log('🎵 GlobalPlayer: Pausing audio');
@@ -377,44 +507,39 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
             const target = e.target as HTMLAudioElement;
             const audioError = target.error;
 
-            console.error('🎵 GlobalPlayer: Audio error event triggered', {
-                error: audioError || e,
-                errorCode: audioError?.code,
-                errorMessage: audioError?.message || 'Erro ao carregar o áudio',
-                networkState: target.networkState,
-                readyState: target.readyState,
-                src: target.src,
-                currentTrack: currentTrack?.songName || currentTrack?.title
-            });
+            // Detectar se é dispositivo móvel
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-            // Tratar diferentes tipos de erro com mensagens mais informativas
+            // Log mais limpo para evitar spam no console
             if (audioError) {
-                let errorMessage = '';
-                switch (audioError.code) {
-                    case MediaError.MEDIA_ERR_ABORTED:
-                        console.error('🎵 GlobalPlayer: Audio loading aborted');
-                        errorMessage = 'Carregamento do áudio foi interrompido';
-                        break;
-                    case MediaError.MEDIA_ERR_NETWORK:
-                        console.error('🎵 GlobalPlayer: Network error loading audio');
-                        errorMessage = 'Erro de rede ao carregar o áudio';
-                        break;
-                    case MediaError.MEDIA_ERR_DECODE:
-                        console.error('🎵 GlobalPlayer: Audio decode error');
-                        errorMessage = 'Erro ao decodificar o áudio';
-                        break;
-                    case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                        console.error('🎵 GlobalPlayer: Audio format not supported');
-                        errorMessage = 'Formato de áudio não suportado';
-                        break;
-                    default:
-                        console.error('🎵 GlobalPlayer: Unknown audio error');
-                        errorMessage = 'Erro desconhecido no áudio';
-                }
+                console.warn('🎵 GlobalPlayer: Audio error in useEffect', {
+                    code: audioError.code,
+                    message: audioError.message,
+                    track: currentTrack?.songName || 'Unknown'
+                });
+            }
 
-                // Mostrar toast informativo para o usuário
-                if (showToast && errorMessage) {
-                    showToast(errorMessage, 'error');
+            // Tratar erros específicos para mobile vs desktop
+            if (isMobile) {
+                if (audioError?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+                    showToast?.('⚠️ Formato de áudio pode não ser compatível com seu dispositivo', 'warning');
+                } else if (audioError?.code === MediaError.MEDIA_ERR_NETWORK) {
+                    showToast?.('📱 Verifique sua conexão de internet', 'warning');
+                } else if (audioError?.code === MediaError.MEDIA_ERR_ABORTED) {
+                    showToast?.('🔇 Áudio interrompido - toque no botão de play novamente', 'info');
+                } else {
+                    showToast?.('📱 Problema de compatibilidade de áudio em mobile', 'warning');
+                }
+            } else {
+                // Para desktop, mensagens mais específicas
+                if (audioError?.code === MediaError.MEDIA_ERR_NETWORK) {
+                    showToast?.('❌ Erro de rede ao carregar o áudio', 'error');
+                } else if (audioError?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+                    showToast?.('❌ Formato de áudio não suportado', 'error');
+                } else if (audioError?.code === MediaError.MEDIA_ERR_DECODE) {
+                    showToast?.('❌ Erro ao decodificar o áudio', 'error');
+                } else {
+                    showToast?.('❌ Erro ao carregar o áudio', 'error');
                 }
             }
 
@@ -422,15 +547,40 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
         };
 
         const handleLoadedData = () => {
-            console.log('🎵 GlobalPlayer: Audio loaded successfully');
+            console.log('🎵 GlobalPlayer: Audio loadeddata event fired');
+            console.log('🎵 GlobalPlayer: Audio state on loadeddata:', {
+                readyState: audio.readyState,
+                networkState: audio.networkState,
+                error: audio.error,
+                paused: audio.paused,
+                ended: audio.ended,
+                currentTime: audio.currentTime,
+                duration: audio.duration
+            });
         };
 
         const handleLoadStart = () => {
-            console.log('🎵 GlobalPlayer: Audio loading started');
+            console.log('🎵 GlobalPlayer: Audio loadstart event fired');
+            console.log('🎵 GlobalPlayer: Audio state on loadstart:', {
+                readyState: audio.readyState,
+                networkState: audio.networkState,
+                error: audio.error,
+                paused: audio.paused,
+                ended: audio.ended
+            });
         };
 
         const handleCanPlay = () => {
-            console.log('🎵 GlobalPlayer: Audio can play');
+            console.log('🎵 GlobalPlayer: Audio can play event fired');
+            console.log('🎵 GlobalPlayer: Audio state on canplay:', {
+                readyState: audio.readyState,
+                networkState: audio.networkState,
+                error: audio.error,
+                paused: audio.paused,
+                ended: audio.ended,
+                currentTime: audio.currentTime,
+                duration: audio.duration
+            });
         };
 
         audio.addEventListener('ended', handleEnded);
@@ -487,7 +637,6 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 ref={audioRef}
                 preload="metadata"
                 crossOrigin="anonymous"
-                onLoadStart={() => console.log('🎵 GlobalPlayer: Audio loadstart')}
                 onLoadedData={() => console.log('🎵 GlobalPlayer: Audio loadeddata')}
                 onCanPlay={() => console.log('🎵 GlobalPlayer: Audio canplay')}
                 onPlay={() => console.log('🎵 GlobalPlayer: Audio play event')}
@@ -495,31 +644,38 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 onError={(e) => {
                     const target = e.target as HTMLAudioElement;
                     const audioError = target.error;
-
-                    console.error('🎵 GlobalPlayer: Audio error event', {
-                        error: audioError || e,
-                        errorCode: audioError?.code,
-                        errorMessage: audioError?.message || 'Erro ao carregar o áudio',
-                        networkState: target.networkState,
-                        readyState: target.readyState,
-                        src: target.src,
-                        currentTrack: currentTrack?.songName || currentTrack?.title
-                    });
-
-                    // Mostrar mensagem de erro para o usuário
-                    if (audioError?.code === MediaError.MEDIA_ERR_NETWORK) {
-                        showToast('❌ Erro de rede ao carregar o áudio', 'error');
-                    } else if (audioError?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-                        showToast('❌ Formato de áudio não suportado', 'error');
-                    } else {
-                        showToast('❌ Erro ao carregar o áudio', 'error');
+                    const url = target.src;
+                    // Log mais limpo para evitar spam no console
+                    if (audioError) {
+                        console.warn('🎵 GlobalPlayer: Audio error detected', {
+                            code: audioError.code,
+                            message: audioError.message,
+                            track: currentTrack?.songName || 'Unknown',
+                            url
+                        });
                     }
+                    // Toast sempre mostra a URL
+                    let msg = '';
+                    if (audioError?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+                        msg = '⚠️ Formato de áudio pode não ser compatível com seu dispositivo';
+                    } else if (audioError?.code === MediaError.MEDIA_ERR_NETWORK) {
+                        msg = '❌ Erro de rede ao carregar o áudio';
+                    } else if (audioError?.code === MediaError.MEDIA_ERR_ABORTED) {
+                        msg = '🔇 Áudio interrompido - toque no botão de play novamente';
+                    } else {
+                        msg = '❌ Erro ao carregar o áudio';
+                    }
+                    showToast(`${msg}\nURL: ${url || '(desconhecida)'}`, audioError?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED ? 'warning' : 'error');
+                    setIsPlaying(false);
                 }}
                 onEnded={() => console.log('🎵 GlobalPlayer: Audio ended')}
                 onAbort={() => console.log('🎵 GlobalPlayer: Audio loading aborted')}
                 onSuspend={() => console.log('🎵 GlobalPlayer: Audio loading suspended')}
                 onStalled={() => console.log('🎵 GlobalPlayer: Audio stalled')}
                 onWaiting={() => console.log('🎵 GlobalPlayer: Audio waiting for data')}
+                onLoadStart={() => {
+                    console.log('🎵 GlobalPlayer: Audio loadstart event');
+                }}
             />
         </GlobalPlayerContext.Provider>
     );

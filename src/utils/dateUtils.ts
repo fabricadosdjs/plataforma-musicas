@@ -4,7 +4,11 @@
  * Obtém a data atual no timezone do Brasil (America/Sao_Paulo)
  */
 export function getCurrentDateBrazil(): Date {
-    return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+    // Usar uma abordagem mais direta para evitar problemas de timezone
+    const now = new Date();
+    const brazilOffset = -3 * 60; // UTC-3 para Brasil
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    return new Date(utc + (brazilOffset * 60000));
 }
 
 /**
@@ -12,6 +16,14 @@ export function getCurrentDateBrazil(): Date {
  */
 export function convertToBrazilTimezone(date: Date | string): Date {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+    // Se a data é uma string sem hora (ex: "2025-08-18"), assumir que é no timezone local do Brasil
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        // Criar a data no timezone local do Brasil (meio-dia para evitar problemas de timezone)
+        const [year, month, day] = date.split('-').map(Number);
+        return new Date(year, month - 1, day, 12, 0, 0);
+    }
+
     const brazilDate = new Date(dateObj.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
     return brazilDate;
 }
@@ -62,6 +74,23 @@ export function formatDateBrazil(date: Date | string): string {
         year: 'numeric'
     };
     return brazilDate.toLocaleDateString('pt-BR', options);
+}
+
+/**
+ * Formata uma data para exibição no formato solicitado: "Domingo, 17 de Agosto de 2025"
+ */
+export function formatDateExtendedBrazil(date: Date | string): string {
+    const brazilDate = convertToBrazilTimezone(date);
+
+    const diaSemana = brazilDate.toLocaleDateString('pt-BR', { weekday: 'long' });
+    const dia = brazilDate.getDate();
+    const mes = brazilDate.toLocaleDateString('pt-BR', { month: 'long' });
+    const ano = brazilDate.getFullYear();
+
+    // Capitalizar primeira letra do dia da semana
+    const diaSemanaCapitalizado = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
+
+    return `${diaSemanaCapitalizado}, ${dia} de ${mes} de ${ano}`;
 }
 
 /**

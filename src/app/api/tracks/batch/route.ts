@@ -21,17 +21,29 @@ export async function POST(req: Request) {
 
       // 3. Validação dos dados recebidos (formato JSON)
       console.log('🔍 Validando músicas...');
+
       for (const track of tracks) {
         const missingFields = [];
-        if (!track.songName) missingFields.push('songName');
-        if (!track.artist) missingFields.push('artist');
-        if (!track.style) missingFields.push('style');
-        if (!track.version) missingFields.push('version');
-        if (!track.pool) missingFields.push('pool');
-        if (!track.imageUrl) missingFields.push('imageUrl');
-        if (!track.previewUrl) missingFields.push('previewUrl');
-        if (!track.downloadUrl) missingFields.push('downloadUrl');
-        if (!track.releaseDate) missingFields.push('releaseDate');
+
+        // Campos obrigatórios
+        if (!track.songName || typeof track.songName !== 'string' || track.songName.trim() === '') {
+          missingFields.push('songName (obrigatório e não pode ser vazio)');
+        }
+        if (!track.artist || typeof track.artist !== 'string' || track.artist.trim() === '') {
+          missingFields.push('artist (obrigatório e não pode ser vazio)');
+        }
+        if (!track.style || typeof track.style !== 'string' || track.style.trim() === '') {
+          missingFields.push('style (obrigatório e não pode ser vazio)');
+        }
+        if (!track.previewUrl || typeof track.previewUrl !== 'string' || track.previewUrl.trim() === '') {
+          missingFields.push('previewUrl (obrigatório e não pode ser vazio)');
+        }
+        if (!track.downloadUrl || typeof track.downloadUrl !== 'string' || track.downloadUrl.trim() === '') {
+          missingFields.push('downloadUrl (obrigatório e não pode ser vazio)');
+        }
+        if (!track.releaseDate) {
+          missingFields.push('releaseDate (obrigatório)');
+        }
 
         if (missingFields.length > 0) {
           console.log(`❌ Música "${track.songName || 'Desconhecida'}" tem campos faltando: ${missingFields.join(', ')}`);
@@ -42,20 +54,35 @@ export async function POST(req: Request) {
 
       // 4. Prepara os dados para o banco de dados (formato JSON)
       const now = new Date();
-      const tracksToCreate = tracks.map((track: any) => ({
-        songName: track.songName,
-        artist: track.artist,
-        previewUrl: track.previewUrl,
-        downloadUrl: track.downloadUrl,
-        style: track.style,
-        version: track.version,
-        pool: track.pool || 'Nexor Records',
-        imageUrl: track.imageUrl,
-        releaseDate: new Date(track.releaseDate),
-        isCommunity: false, // Explicitamente define como false para músicas oficiais
-        createdAt: now,
-        updatedAt: now,
-      }));
+
+      const tracksToCreate = tracks.map((track: any) => {
+        // Validar e processar a data de lançamento
+        let releaseDate;
+        try {
+          releaseDate = new Date(track.releaseDate);
+          if (isNaN(releaseDate.getTime())) {
+            releaseDate = new Date();
+          }
+        } catch (dateError) {
+          releaseDate = new Date();
+        }
+
+        return {
+          songName: track.songName,
+          artist: track.artist,
+          previewUrl: track.previewUrl,
+          downloadUrl: track.downloadUrl,
+          style: track.style,
+          version: track.version || null,
+          pool: track.pool || 'Nexor Records',
+          bitrate: track.bitrate || null,
+          imageUrl: track.imageUrl || `https://placehold.co/300x300/1f2937/ffffff?text=${encodeURIComponent((track.artist || 'A').substring(0, 2))}`,
+          releaseDate: releaseDate,
+          isCommunity: false, // Explicitamente define como false para músicas oficiais
+          uploadedBy: null,
+          // Removendo createdAt e updatedAt - são gerenciados automaticamente pelo Prisma
+        };
+      });
 
       // 5. Verificar duplicados apenas no banco de dados
       console.log('🔍 Verificando duplicados no banco de dados...');
@@ -79,16 +106,14 @@ export async function POST(req: Request) {
       );
 
       // Separar músicas únicas e duplicadas
-      const uniqueTracks = [];
-      const duplicateTracks = [];
-      const duplicateReasons = [];
+      const uniqueTracks: any[] = [];
+      const duplicateTracks: any[] = [];
+      const duplicateReasons: string[] = [];
 
       for (const track of tracksToCreate) {
         const songKey = `${track.artist} - ${track.songName}`.toLowerCase();
         const isDuplicateUrl = existingUrls.has(track.previewUrl) || existingUrls.has(track.downloadUrl);
         const isDuplicateSong = existingSongs.has(songKey);
-
-        console.log(`🔍 Verificando: ${track.artist} - ${track.songName}`);
 
         if (isDuplicateUrl || isDuplicateSong) {
           duplicateTracks.push(track);
@@ -112,11 +137,33 @@ export async function POST(req: Request) {
       let insertResult = null;
       if (uniqueTracks.length > 0) {
         console.log('💾 Inserindo músicas únicas no banco de dados...');
-        insertResult = await prisma.track.createMany({
-          data: uniqueTracks,
-          skipDuplicates: true,
-        });
-        console.log(`✅ ${insertResult.count} músicas inseridas com sucesso!`);
+
+        try {
+          insertResult = await prisma.track.createMany({
+            data: uniqueTracks,
+            skipDuplicates: true,
+          });
+          console.log(`✅ ${insertResult.count} músicas inseridas com sucesso!`);
+        } catch (insertError) {
+          console.error('❌ Erro na inserção:', insertError);
+
+          // Fallback: inserir uma por vez
+          let successCount = 0;
+
+          for (const track of uniqueTracks) {
+            try {
+              await prisma.track.create({
+                data: track
+              });
+              successCount++;
+            } catch (singleError) {
+              console.error(`❌ Erro ao inserir ${track.artist} - ${track.songName}:`, singleError);
+            }
+          }
+
+          insertResult = { count: successCount };
+          console.log(`📊 Inserção individual: ${successCount} sucessos de ${uniqueTracks.length} tentativas`);
+        }
       }
 
       // 7. Preparar resposta detalhada
@@ -135,7 +182,6 @@ export async function POST(req: Request) {
         }
       };
 
-      console.log('📋 Resumo final:', response.summary);
       return NextResponse.json(response);
 
     } else {

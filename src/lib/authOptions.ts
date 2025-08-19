@@ -258,7 +258,7 @@ export const authOptions: AuthOptions = {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
-                token.is_vip = (user as any).is_vip;
+                token.isVip = (user as any).is_vip;
                 token.isAdmin = (user as any).isAdmin; // Adicionar isAdmin ao token
                 token.valor = (user as any).valor;
                 // Get benefits dynamically using the user data from the database or admin master
@@ -282,7 +282,7 @@ export const authOptions: AuthOptions = {
         async session({ session, token }) {
             if (session.user) {
                 (session.user as any).id = token.id as string;
-                (session.user as any).is_vip = token.is_vip as boolean;
+                (session.user as any).isVip = token.isVip as boolean;
                 (session.user as any).isAdmin = token.isAdmin as boolean; // Adicionar isAdmin à sessão
                 (session.user as any).valor = token.valor as string;
                 (session.user as any).benefits = token.benefits as any;

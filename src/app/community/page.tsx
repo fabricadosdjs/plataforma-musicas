@@ -29,7 +29,8 @@ import NewFooter from '@/components/layout/NewFooter';
 import FiltersModal from '@/components/music/FiltersModal';
 import { useAppContext } from '@/context/AppContext';
 import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
-import { useToast } from '@/hooks/useToast';
+import { useToastContext } from '@/context/ToastContext';
+import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { YouTubeSkeleton } from '@/components/ui/LoadingSkeleton';
 import Link from 'next/link';
 import {
@@ -86,7 +87,7 @@ const getCorrectDateKey = (dateString: string): string => {
 // Componente principal da página
 function CommunityPageContent() {
     const { data: session } = useSession();
-    const { showToast } = useToast();
+    const { showToast } = useToastContext();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();

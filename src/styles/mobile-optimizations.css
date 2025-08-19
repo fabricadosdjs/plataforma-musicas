@@ -133,3 +133,221 @@ body {
         text-align: center;
     }
 }
+
+/* ===== OTIMIZAÇÕES PARA NOVA PÁGINA /NEW ===== */
+
+/* Animações fluidas para elementos da página */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulseGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
+    }
+}
+
+/* Elementos com animação de entrada */
+.animate-fadeInUp {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-scaleIn {
+    animation: scaleIn 0.4s ease-out forwards;
+}
+
+.animate-pulseGlow {
+    animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Grid responsivo para cards de gênero */
+@media (max-width: 640px) {
+    .genre-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .genre-card {
+        padding: 1rem;
+        min-height: 120px;
+    }
+
+    .genre-card .genre-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .genre-card .genre-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .genre-card .genre-count {
+        font-size: 0.75rem;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+    .genre-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+}
+
+/* Otimizações para barra de busca mobile */
+@media (max-width: 768px) {
+    .search-container {
+        padding: 1rem;
+    }
+
+    .search-input {
+        font-size: 16px;
+        /* Evita zoom no iOS */
+        padding: 1rem 1rem 1rem 3rem;
+    }
+
+    .search-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .search-button {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Otimizações para estatísticas mobile */
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .stats-card {
+        padding: 1rem;
+    }
+
+    .stats-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .stats-number {
+        font-size: 1.5rem;
+    }
+
+    .stats-label {
+        font-size: 0.75rem;
+    }
+}
+
+/* Otimizações para controles de visualização */
+@media (max-width: 640px) {
+    .view-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .view-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .results-info {
+        text-align: center;
+    }
+}
+
+/* Melhorias de performance para animações mobile */
+@media (prefers-reduced-motion: reduce) {
+
+    .animate-fadeInUp,
+    .animate-scaleIn,
+    .animate-pulseGlow {
+        animation: none;
+    }
+
+    .transition-all {
+        transition: none;
+    }
+}
+
+/* Otimizações para touch devices */
+@media (pointer: coarse) {
+    .hover\:scale-105:hover {
+        transform: scale(1.02);
+        /* Reduzir escala em touch devices */
+    }
+
+    .hover\:shadow-2xl:hover {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        /* Sombra mais sutil */
+    }
+}
+
+/* Gradientes otimizados para mobile */
+@media (max-width: 768px) {
+    .hero-background {
+        background: linear-gradient(135deg,
+                rgba(147, 51, 234, 0.1) 0%,
+                rgba(59, 130, 246, 0.1) 50%,
+                rgba(236, 72, 153, 0.1) 100%);
+    }
+
+    .card-background {
+        background: rgba(17, 24, 39, 0.8);
+        backdrop-filter: blur(10px);
+    }
+}
+
+/* Responsividade para texto */
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 2.5rem;
+        line-height: 1.1;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+    }
+
+    .section-subtitle {
+        font-size: 0.875rem;
+    }
+}

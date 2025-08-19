@@ -10,7 +10,8 @@ import { TrendingUp, Calendar, Award, Play, Download, Heart, Clock, Star, Music,
 import NewFooter from '@/components/layout/NewFooter';
 import { useAppContext } from '@/context/AppContext';
 import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
-import { useToast } from '@/hooks/useToast';
+import { useToastContext } from '@/context/ToastContext';
+import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { Track } from '@/types/track';
 
 interface TrendingTrack {
@@ -43,14 +44,14 @@ function TrendingPageContent() {
 
     // Audio player context
     const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAppContext();
-    const { showToast } = useToast();
+    const { showToast } = useToastContext();
 
     // Check if user is admin
     const isAdmin = session?.user?.email === 'admin@djpool.com' ||
         session?.user?.name === 'Admin' ||
         session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
 
-        const fetchTrendingTracks = async () => {
+    const fetchTrendingTracks = async () => {
         try {
             setLoading(true);
             const response = await fetch('/api/tracks/trending');
@@ -59,12 +60,12 @@ function TrendingPageContent() {
                 // Get current week tracks (week 1)
                 const currentWeekTracks = data.tracks.filter((track: TrendingTrack) => track.weekNumber === 1);
                 setTrendingTracks(currentWeekTracks);
-                
+
                 // Calculate stats
                 const totalDownloads = currentWeekTracks.reduce((sum: number, track: TrendingTrack) => sum + track.downloadCount, 0);
                 const totalLikes = currentWeekTracks.reduce((sum: number, track: TrendingTrack) => sum + (track.likeCount || 0), 0);
                 const trendingScore = Math.round((totalDownloads * 0.7) + (totalLikes * 0.3));
-                
+
                 setStats(prevStats => ({
                     ...prevStats,
                     totalDownloads,
@@ -709,7 +710,7 @@ export default function TrendingPage() {
     const router = useRouter();
     const { playTrack, currentTrack, isPlaying, togglePlayPause } = useAppContext();
     const { hasExtension, detectedExtensions } = useDownloadExtensionDetector();
-    const { showToast } = useToast();
+    const { showToast } = useToastContext();
     const [trendingTracks, setTrendingTracks] = useState<TrendingTrack[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(false);

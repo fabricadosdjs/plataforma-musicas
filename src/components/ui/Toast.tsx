@@ -162,6 +162,11 @@ const Toast: React.FC<ToastProps> = ({ message, type, onClose, duration = 4000 }
         <div
             className={`w-full transform transition-all duration-500 ease-out ${isVisible ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-full opacity-0 scale-95'
                 }`}
+            style={{
+                position: 'relative',
+                zIndex: 9999999,
+                pointerEvents: 'auto'
+            }}
         >
             <div className={`${getBgColor()} backdrop-blur-xl border rounded-xl p-4 shadow-2xl shadow-black/20 hover:shadow-black/30 transition-all duration-300`}>
                 <div className="flex items-start space-x-3">

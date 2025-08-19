@@ -1,473 +1,593 @@
 "use client";
 
-// Versão ÉPICA da página new com cards lindos e animações
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSession } from 'next-auth/react';
-import { Search, X, Filter, Download, Music, Heart, Check, Play, Pause, Star, TrendingUp, Clock, Users, Award, Zap, Sparkles } from 'lucide-react';
-import Image from 'next/image';
-import Header from '@/components/layout/Header';
-import NewFooter from '@/components/layout/NewFooter';
-import FiltersModal from '@/components/music/FiltersModal';
-import { MusicList } from '@/components/music/MusicList';
-import { useAppContext } from '@/context/AppContext';
-import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
-import { Track } from '@/types/track';
+import React, { useState, useEffect, useMemo } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import {
+  Search,
+  Filter,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import Image from "next/image";
+import MainLayout from "@/components/layout/MainLayout";
+import FiltersModal from "@/components/music/FiltersModal";
+import { MusicList } from "@/components/music/MusicList";
+import { useAppContext } from "@/context/AppContext";
+import { useGlobalPlayer } from "@/context/GlobalPlayerContext";
+import { usePageLoading } from "@/hooks/usePageLoading";
+import { Track } from "@/types/track";
+import { motion } from "framer-motion";
 
 const NewPage = () => {
-  // Estados básicos
+  // Estados para filtros
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
   const [showFiltersModal, setShowFiltersModal] = useState(false);
-
-  // Estados de filtros
-  const [selectedGenre, setSelectedGenre] = useState('all');
-  const [selectedArtist, setSelectedArtist] = useState('all');
-  const [selectedPool, setSelectedPool] = useState('all');
-  const [selectedVersion, setSelectedVersion] = useState('all');
-  const [selectedMonth, setSelectedMonth] = useState('all');
-  const [selectedDateRange, setSelectedDateRange] = useState('all');
-
-  // Estados de interação
   const [downloadedTrackIds, setDownloadedTrackIds] = useState<number[]>([]);
-  const [likedTrackIds, setLikedTrackIds] = useState<number[]>([]);
-  const [downloadQueue, setDownloadQueue] = useState<number[]>([]);
-  const [zipProgress, setZipProgress] = useState(0);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<Track[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  // Estados para filtros
+  const [selectedGenre, setSelectedGenre] = useState("");
+  const [selectedArtist, setSelectedArtist] = useState("");
+  const [selectedDateRange, setSelectedDateRange] = useState("");
+  const [selectedVersion, setSelectedVersion] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedPool, setSelectedPool] = useState("");
 
-  // Hooks
+  // Extrair dados únicos para filtros
+  const genres = useMemo(() => Array.from(new Set(tracks.map(t => t.style).filter((v): v is string => Boolean(v)))), [tracks]);
+  const artists = useMemo(() => Array.from(new Set(tracks.map(t => t.artist).filter((v): v is string => Boolean(v)))), [tracks]);
+  const versions = useMemo(() => Array.from(new Set(tracks.map(t => t.version).filter((v): v is string => Boolean(v)))), [tracks]);
+  const pools = useMemo(() => Array.from(new Set(tracks.map(t => t.pool).filter((v): v is string => Boolean(v)))), [tracks]);
+  const monthOptions = useMemo(() => {
+    const months = tracks
+      .map(t => {
+        if (!t.releaseDate) return null;
+        const d = new Date(t.releaseDate);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      })
+      .filter((v): v is string => Boolean(v));
+    return Array.from(new Set(months)).map(m => ({ value: m, label: m }));
+  }, [tracks]);
+
   const { data: session } = useSession();
   const { showAlert } = useAppContext();
   const { currentTrack, isPlaying, playTrack } = useGlobalPlayer();
+  const { startLoading, stopLoading } = usePageLoading();
+  const router = useRouter();
 
-  // Dados derivados
-  const filteredTracks = useMemo(() => {
-    let filtered = tracks;
+  // --- SLIDES PRINCIPAIS (destaques da produtora) ---
+  const slides = [
+    {
+      id: 0,
+      title: "Lone Wolf (Original Mix)",
+      artist: "Dj Jéssika Luana",
+      image: "https://i.ibb.co/sdzRfhCj/atwork-4417627.jpg",
+      link: "https://ditto.fm/lone-wolf-dj-jessika-luana",
+      badge: "LANÇAMENTO",
+    },
+    {
+      id: 1,
+      title: "Exclusive Release 01",
+      artist: "Nexor Records",
+      image: "https://i.ibb.co/Vm1xPqt/slide1.jpg",
+      link: "/release/1",
+      badge: "EXCLUSIVO",
+    },
+    {
+      id: 2,
+      title: "New Track Showcase",
+      artist: "DJ Nexor",
+      image: "https://i.ibb.co/ZfDzHn9/slide2.jpg",
+      link: "/release/2",
+      badge: "NOVIDADE",
+    },
+    {
+      id: 3,
+      title: "Pool Exclusive Drop",
+      artist: "Various Artists",
+      image: "https://i.ibb.co/4sfx2D4/slide3.jpg",
+      link: "/release/3",
+      badge: "EXCLUSIVO",
+    },
+  ];
 
-    // Aplicar pesquisa
-    if (appliedSearchQuery) {
-      const query = appliedSearchQuery.toLowerCase();
-      filtered = filtered.filter(track =>
-        track.songName.toLowerCase().includes(query) ||
-        track.artist.toLowerCase().includes(query) ||
-        track.style.toLowerCase().includes(query) ||
-        (track.pool && track.pool.toLowerCase().includes(query))
-      );
-    }
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
-    // Aplicar filtros
-    if (selectedGenre !== 'all') {
-      filtered = filtered.filter(track => track.style === selectedGenre);
-    }
-    if (selectedArtist !== 'all') {
-      filtered = filtered.filter(track => track.artist === selectedArtist);
-    }
-    if (selectedPool !== 'all') {
-      filtered = filtered.filter(track => track.pool && track.pool === selectedPool);
-    }
-    if (selectedVersion !== 'all') {
-      filtered = filtered.filter(track => track.version === selectedVersion);
-    }
+  useEffect(() => {
+    if (isHovered) return; // Pausa o autoplay ao passar o mouse
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [slides.length, isHovered]);
 
-    return filtered;
-  }, [tracks, appliedSearchQuery, selectedGenre, selectedArtist, selectedPool, selectedVersion]);
-
-  const hasActiveFilters = selectedGenre !== 'all' || selectedArtist !== 'all' || selectedPool !== 'all' || selectedVersion !== 'all';
-
-  // Estatísticas épicas
-  const stats = useMemo(() => ({
-    totalTracks: tracks.length,
-    newTracks: tracks.filter(t => {
-      const releaseDate = new Date(t.releaseDate || '');
-      const now = new Date();
-      const diffDays = (now.getTime() - releaseDate.getTime()) / (1000 * 3600 * 24);
-      return diffDays <= 30;
-    }).length,
-    topGenres: tracks.reduce((acc, track) => {
-      acc[track.style] = (acc[track.style] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>),
-    topArtists: tracks.reduce((acc, track) => {
-      acc[track.artist] = (acc[track.artist] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>)
-  }), [tracks]);
-
-  // Funções auxiliares
-  const handleSearchSubmit = () => {
-    setAppliedSearchQuery(searchQuery);
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setAppliedSearchQuery('');
-  };
-
-  const handleClearFilters = () => {
-    setSelectedGenre('all');
-    setSelectedArtist('all');
-    setSelectedPool('all');
-    setSelectedVersion('all');
-    setSelectedMonth('all');
-    setSelectedDateRange('all');
-  };
-
-  const handleStyleClick = (style: string | undefined) => {
-    if (style) {
-      setSelectedGenre(style);
-      setAppliedSearchQuery('');
-    }
-  };
-
-  const handlePoolClick = (pool: string | undefined) => {
-    if (pool) {
-      setSelectedPool(pool);
-      setAppliedSearchQuery('');
-    }
-  };
-
-  const handleLikeToggle = (trackId: number) => {
-    setLikedTrackIds(prev =>
-      prev.includes(trackId)
-        ? prev.filter(id => id !== trackId)
-        : [...prev, trackId]
-    );
-  };
-
-  const handleDownload = (track: Track) => {
-    // Implementar lógica de download
-    console.log('Downloading track:', track.songName);
-  };
-
-  const downloadAllTracks = (tracksToDownload: Track[]) => {
-    // Implementar lógica de download em lote
-    console.log('Downloading all tracks:', tracksToDownload.length);
-  };
-
-  const downloadNewTracks = (tracksToDownload: Track[]) => {
-    const newTracks = tracksToDownload.filter(track => !downloadedTrackIds.includes(track.id));
-    console.log('Downloading new tracks:', newTracks.length);
-  };
-
-  // Carregar dados
+  // --- Busca de músicas da API ---
   useEffect(() => {
     const fetchTracks = async () => {
+      startLoading("Carregando novidades...");
       try {
-        setLoading(true);
-        console.log('🔍 Iniciando fetch de músicas...');
+        const res = await fetch("/api/tracks/new");
+        if (!res.ok) throw new Error("Erro ao buscar músicas");
+        const data = await res.json();
 
-        const response = await fetch('/api/tracks');
-        console.log('📡 Resposta da API:', response.status, response.statusText);
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log('📊 Dados recebidos:', data);
-          console.log('📊 Tipo de dados:', typeof data);
-          console.log('📊 É array?', Array.isArray(data));
-          console.log('📊 Quantidade:', data?.length || 'N/A');
-
-          // Verificar estrutura dos dados
-          if (Array.isArray(data)) {
-            setTracks(data);
-            console.log('✅ Músicas carregadas:', data.length);
-          } else if (data?.tracks && Array.isArray(data.tracks)) {
-            setTracks(data.tracks);
-            console.log('✅ Músicas carregadas de data.tracks:', data.tracks.length);
-          } else {
-            console.error('❌ Estrutura de dados inválida:', data);
-            setTracks([]);
-          }
+        // 🔥 Garante que seja array
+        if (Array.isArray(data)) {
+          setTracks(data);
+        } else if (Array.isArray(data.tracks)) {
+          setTracks(data.tracks);
+        } else if (Array.isArray(data.data)) {
+          setTracks(data.data);
         } else {
-          console.error('❌ Erro na API:', response.status, response.statusText);
-          const errorText = await response.text();
-          console.error('❌ Detalhes do erro:', errorText);
+          console.warn("⚠️ API não retornou array de tracks:", data);
           setTracks([]);
         }
-      } catch (error) {
-        console.error('❌ Erro ao buscar músicas:', error);
-        setTracks([]);
+      } catch (err) {
+        console.error(err);
+        showAlert("Erro ao carregar músicas");
       } finally {
         setLoading(false);
-        console.log('🏁 Fetch finalizado');
+        stopLoading();
       }
     };
-
     fetchTracks();
-  }, []);
+  }, [showAlert, startLoading, stopLoading]);
 
-  // Renderização
+  // --- Função de busca ---
+  const performSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setHasSearched(false);
+      setAppliedSearchQuery("");
+      return;
+    }
+
+    setSearchLoading(true);
+    setHasSearched(true);
+    startLoading(`Buscando por "${query}"...`);
+
+    try {
+      const res = await fetch(`/api/tracks/search?q=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error("Erro ao buscar músicas");
+      const data = await res.json();
+
+      setSearchResults(data.tracks || []);
+      setAppliedSearchQuery(query);
+    } catch (err) {
+      console.error("Erro na busca:", err);
+      showAlert("Erro ao buscar músicas");
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+      stopLoading();
+    }
+  };
+
+  // --- Limpar busca ---
+  const clearSearch = () => {
+    setSearchQuery("");
+    setAppliedSearchQuery("");
+    setSearchResults([]);
+    setHasSearched(false);
+  };
+
+  // --- Determinar quais músicas mostrar ---
+  const displayTracks = useMemo(() => {
+    // Se há busca ativa, mostrar resultados da busca
+    if (hasSearched) {
+      return searchResults;
+    }
+    // Caso contrário, mostrar músicas normais
+    return tracks;
+  }, [hasSearched, searchResults, tracks]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a0a1a] to-[#0a0a0a] text-white overflow-hidden">
-      {/* Header */}
-      <Header />
+    <MainLayout>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 overflow-x-hidden">
+        {/* CARROUSEL "NOVO EM NOSSA GRAVADORA" */}
+        <div className="w-full max-w-6xl mx-auto mt-8 mb-12 px-4 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24 transition-all duration-300">
+          {/* Header do carrousel */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></div>
+              <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+                NOVO EM NOSSA GRAVADORA
+              </h2>
+            </div>
 
-      {/* Barra de Busca Épica */}
-      <div className="relative z-[9997] bg-gradient-to-r from-[#1a0a1a] via-[#2a0a2a] to-[#1a0a1a] border-b border-red-500/30 shadow-2xl" style={{ marginTop: '76px' }}>
-        <div className="container mx-auto px-4 py-8">
-          {/* Título Épico */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-6xl font-black bg-gradient-to-r from-red-400 via-pink-500 to-purple-600 bg-clip-text text-transparent mb-4 animate-pulse">
-              🎵 NOVIDADES ÉPICAS
-            </h1>
-            <p className="text-xl text-gray-300 font-medium">
-              Descubra as melhores músicas eletrônicas do momento
-            </p>
+            {/* Controles de navegação */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCurrentSlide(prev => prev === 0 ? slides.length - 1 : prev - 1)}
+                className="p-3 bg-gray-900/80 hover:bg-gray-800/90 rounded-xl text-white transition-all duration-300 backdrop-blur-md border border-gray-700/50 hover:border-gray-600/70 hover:shadow-lg hover:shadow-gray-900/50 group"
+                title="Slide anterior"
+              >
+                <ChevronLeft size={22} className="group-hover:scale-110 transition-transform duration-200" />
+              </button>
+              <button
+                onClick={() => setCurrentSlide(prev => (prev + 1) % slides.length)}
+                className="p-3 bg-gray-900/80 hover:bg-gray-800/90 rounded-xl text-white transition-all duration-300 backdrop-blur-md border border-gray-700/50 hover:border-gray-600/70 hover:shadow-lg hover:shadow-gray-900/50 group"
+                title="Próximo slide"
+              >
+                <ChevronRight size={22} className="group-hover:scale-110 transition-transform duration-200" />
+              </button>
+            </div>
           </div>
 
-          {/* Barra de Busca com Efeitos */}
-          <div className="max-w-4xl mx-auto">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-purple-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-              <div className="relative bg-gray-900/80 backdrop-blur-xl border border-red-500/30 rounded-2xl p-2 shadow-2xl">
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <Search className="h-6 w-6 text-red-400 animate-pulse" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="🔍 Buscar músicas épicas..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSearchSubmit()}
-                        className="w-full pl-14 pr-20 py-4 text-lg bg-transparent border-none outline-none text-white placeholder-gray-400 font-medium"
-                      />
-                      <button
-                        onClick={handleSearchSubmit}
-                        disabled={!searchQuery.trim()}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white rounded-xl p-3 flex items-center justify-center transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
-                        title="Buscar"
-                      >
-                        <Search className="h-5 w-5" />
-                      </button>
-                      {searchQuery && (
-                        <button
-                          onClick={handleClearSearch}
-                          className="absolute right-16 top-1/2 -translate-y-1/2 h-8 w-8 text-gray-400 hover:text-white transition-colors transform hover:scale-110"
-                          title="Limpar busca"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      )}
+          {/* Container do carrousel */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900/50 via-gray-800/30 to-black/50 border border-gray-700/30 shadow-2xl">
+            {/* Slides container */}
+            <div
+              className="flex transition-transform duration-700 ease-out"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
+              {slides.map((slide) => (
+                <div key={slide.id} className="w-full flex-shrink-0">
+                  {/* Mobile: Layout ultra-compacto sem overflow */}
+                  <div className="block sm:hidden">
+                    <div className="relative h-40 overflow-hidden group">
+                      {/* Background image com overlay */}
+                      <div className="absolute inset-0">
+                        <Image
+                          src={slide.image}
+                          alt={slide.title}
+                          fill
+                          className="object-cover opacity-60 group-hover:opacity-80 transition-all duration-500"
+                          priority={currentSlide === slide.id - 1}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                      </div>
+
+                      {/* Conteúdo mobile ultra-compacto */}
+                      <div className="relative z-10 h-full flex flex-col justify-end p-2">
+                        {/* Badge no topo */}
+                        <div className="absolute top-2 right-2">
+                          <span className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-lg backdrop-blur-md border border-green-400/30">
+                            {slide.badge}
+                          </span>
+                        </div>
+
+                        {/* Informações ultra-compactas */}
+                        <div className="text-center space-y-1">
+                          <h3 className="text-sm font-black text-white leading-tight tracking-tight drop-shadow-lg line-clamp-1">
+                            {slide.title}
+                          </h3>
+                          <p className="text-xs text-gray-200 font-medium truncate">
+                            {slide.artist}
+                          </p>
+
+                          {/* Botão único ultra-compacto */}
+                          <a
+                            href={slide.link}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded hover:from-pink-600 hover:to-purple-600 transition-all duration-300 shadow-lg transform hover:scale-105"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <span>Ouvir</span>
+                            <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </a>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Botão de Filtros Épico */}
-                  <button
-                    onClick={() => setShowFiltersModal(true)}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg border border-purple-500/30 flex items-center gap-2"
-                  >
-                    <Filter className="h-5 w-5" />
-                    Filtros
-                  </button>
+                  {/* Desktop: Layout original */}
+                  <div className="hidden sm:block">
+                    <div className="relative h-80 md:h-96 lg:h-[28rem] xl:h-[32rem] overflow-hidden group">
+                      {/* Background image com overlay melhorado */}
+                      <div className="absolute inset-0">
+                        <Image
+                          src={slide.image}
+                          alt={slide.title}
+                          fill
+                          className="object-cover opacity-70 group-hover:opacity-90 transition-all duration-700 scale-105 group-hover:scale-100"
+                          priority={currentSlide === slide.id - 1}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                      </div>
+
+                      {/* Conteúdo do slide */}
+                      <div className="relative z-10 h-full flex items-center justify-center">
+                        <div className="w-full max-w-6xl mx-auto px-6 md:px-8 lg:px-12 xl:px-16 flex flex-col items-center text-center gap-6 md:gap-8 lg:gap-12">
+                          {/* Imagem destacada */}
+                          <div className="flex-shrink-0">
+                            <div className="relative w-32 h-32 md:w-40 md:h-40 lg:w-52 lg:h-52 xl:w-60 xl:h-60 2xl:w-72 2xl:h-72 group">
+                              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-blue-500/20 rounded-2xl lg:rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                              <div className="relative w-full h-full">
+                                <Image
+                                  src={slide.image}
+                                  alt={slide.title}
+                                  fill
+                                  className="object-cover rounded-2xl lg:rounded-3xl shadow-2xl group-hover:scale-105 transition-all duration-500 border-2 border-white/10"
+                                  priority={currentSlide === slide.id - 1}
+                                />
+                                {/* Badge profissional */}
+                                <span className="absolute -top-2 -right-2 md:-top-3 md:-right-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold px-2 md:px-3 lg:px-4 py-1 md:py-1.5 lg:py-2 rounded-full uppercase tracking-wider shadow-xl backdrop-blur-md border border-green-400/30">
+                                  {slide.badge}
+                                </span>
+
+                                {/* Play button overlay melhorado */}
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 rounded-2xl lg:rounded-3xl transition-all duration-500">
+                                  <div className="w-10 h-10 md:w-12 md:h-12 lg:w-16 lg:h-16 xl:w-20 xl:h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 shadow-2xl transform scale-75 group-hover:scale-100 border-2 md:border-3 lg:border-4 border-white/20">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      viewBox="0 0 24 24"
+                                      fill="white"
+                                      className="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 xl:w-10 xl:h-10 ml-0.5"
+                                    >
+                                      <path d="M8 5v14l11-7z" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Informações do slide */}
+                          <div className="flex-1 text-center space-y-4 md:space-y-6">
+                            <div className="space-y-2 md:space-y-4">
+                              <h3 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-black text-white leading-tight tracking-tight drop-shadow-2xl">
+                                {slide.title}
+                              </h3>
+                              <p className="text-base md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl text-gray-200 font-medium leading-relaxed">
+                                {slide.artist}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
+                              <a
+                                href={slide.link}
+                                className="group relative px-4 md:px-6 lg:px-8 xl:px-10 py-2 md:py-3 lg:py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg sm:rounded-xl lg:rounded-2xl hover:from-pink-600 hover:to-purple-600 transition-all duration-500 shadow-2xl hover:shadow-purple-500/25 transform hover:scale-105 backdrop-blur-md border border-purple-500/30 hover:border-purple-400/50 overflow-hidden text-sm md:text-base lg:text-lg"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <span className="relative z-10 flex items-center gap-2 md:gap-3 justify-center">
+                                  Ouvir Agora
+                                  <svg className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-white/10 to-purple-600/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                              </a>
+
+                              <button className="px-4 md:px-6 lg:px-8 xl:px-10 py-2 md:py-3 lg:py-4 bg-white/5 backdrop-blur-md text-white font-semibold rounded-lg sm:rounded-xl lg:rounded-2xl border border-white/20 hover:bg-white/10 hover:border-white/30 transition-all duration-500 shadow-lg hover:shadow-xl group text-sm md:text-base lg:text-lg">
+                                <span className="flex items-center gap-2 md:gap-3 justify-center">
+                                  Mais Detalhes
+                                  <svg className="w-4 h-4 md:w-5 md:h-5 group-hover:rotate-12 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                                  </svg>
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
+            </div>
+
+            {/* Indicadores de slide */}
+            <div className="absolute bottom-2 sm:bottom-4 md:bottom-6 lg:bottom-8 left-1/2 transform -translate-x-1/2 hidden sm:flex gap-1.5 sm:gap-2 md:gap-3">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 md:w-3 md:h-3 lg:w-4 lg:h-4 rounded-full transition-all duration-500 transform hover:scale-125 ${index === currentSlide
+                    ? 'bg-white shadow-lg shadow-white/50 scale-125'
+                    : 'bg-white/40 hover:bg-white/60 hover:shadow-md'
+                    }`}
+                  title={`Ir para slide ${index + 1}`}
+                />
+              ))}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Conteúdo Principal */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="space-y-8">
-          {/* Cards de Estatísticas Épicas */}
-          {!hasActiveFilters && !appliedSearchQuery && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              {/* Card Total de Músicas */}
-              <div className="group relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                <div className="relative bg-gradient-to-br from-red-900/40 to-orange-900/40 backdrop-blur-xl border border-red-500/30 rounded-2xl p-6 text-center transform group-hover:scale-105 transition-all duration-300 shadow-2xl">
-                  <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <Music className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">{stats.totalTracks}</h3>
-                  <p className="text-gray-300 font-medium">Total de Músicas</p>
-                </div>
-              </div>
+        {/* HEADER + BUSCA + FILTROS */}
+        <div className="w-full max-w-6xl mx-auto pt-6 pb-6 px-4 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24 transition-all duration-300">
+          {/* Título principal */}
+          <div className="mb-6">
+            <h1 className="flex items-center gap-3">
+              <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></div>
+              <span className="text-white text-3xl font-bold tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+                {hasSearched ? `RESULTADOS PARA "${appliedSearchQuery}"` : "NOVIDADES"}
+              </span>
+            </h1>
+          </div>
 
-              {/* Card Novidades */}
-              <div className="group relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                <div className="relative bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-xl border border-green-500/30 rounded-2xl p-6 text-center transform group-hover:scale-105 transition-all duration-300 shadow-2xl">
-                  <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <Sparkles className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">{stats.newTracks}</h3>
-                  <p className="text-gray-300 font-medium">Novidades</p>
+          {/* Container de busca e filtros - responsivo abaixo do título */}
+          <div className="space-y-4">
+            {/* Barra de pesquisa responsiva */}
+            <div className="relative w-full">
+              <input
+                type="text"
+                placeholder="Buscar por música, artista, estilo..."
+                className="bg-gray-800 text-white rounded-lg px-4 py-2 pl-10 pr-10 focus:ring-2 focus:ring-purple-600 outline-none w-full h-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    performSearch(searchQuery);
+                  }
+                }}
+                disabled={searchLoading}
+              />
+              {searchLoading ? (
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full"></div>
                 </div>
-              </div>
+              ) : (
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-purple-400 transition-colors"
+                  size={18}
+                  onClick={() => performSearch(searchQuery)}
+                />
+              )}
+              {hasSearched && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-400 transition-colors"
+                  title="Limpar busca"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
-              {/* Card Top Gênero */}
-              <div className="group relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                <div className="relative bg-gradient-to-br from-blue-900/40 to-cyan-900/40 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-6 text-center transform group-hover:scale-105 transition-all duration-300 shadow-2xl">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <TrendingUp className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    {Object.keys(stats.topGenres).length > 0
-                      ? Object.entries(stats.topGenres).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A'
-                      : 'N/A'
-                    }
-                  </h3>
-                  <p className="text-gray-300 font-medium">Top Gênero</p>
-                </div>
-              </div>
+            {/* Botões de ação responsivos */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+              <button
+                onClick={() => performSearch(searchQuery)}
+                disabled={searchLoading || !searchQuery.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition h-10 w-full sm:w-auto min-w-[120px]"
+              >
+                {searchLoading ? "Buscando..." : "Buscar"}
+              </button>
+              <button
+                onClick={() => setShowFiltersModal(true)}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition h-10 w-full sm:w-auto min-w-[120px]"
+              >
+                <Filter size={18} /> Filtros
+              </button>
+            </div>
+          </div>
 
-              {/* Card Top Artista */}
-              <div className="group relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                <div className="relative bg-gradient-to-br from-purple-900/40 to-pink-900/40 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-6 text-center transform group-hover:scale-105 transition-all duration-300 shadow-2xl">
-                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <Award className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    {Object.keys(stats.topArtists).length > 0
-                      ? Object.entries(stats.topArtists).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A'
-                      : 'N/A'
-                    }
-                  </h3>
-                  <p className="text-gray-300 font-medium">Top Artista</p>
-                </div>
+          {/* Indicador de resultados */}
+          {hasSearched && (
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="text-gray-400 text-sm">
+                {searchLoading ? (
+                  "Buscando..."
+                ) : searchResults.length > 0 ? (
+                  `${searchResults.length} resultado${searchResults.length !== 1 ? 's' : ''} encontrado${searchResults.length !== 1 ? 's' : ''}`
+                ) : (
+                  "Nenhum resultado encontrado"
+                )}
               </div>
+              <button
+                onClick={clearSearch}
+                className="text-sm text-purple-400 hover:text-purple-300 transition-colors self-start sm:self-auto"
+              >
+                Voltar às novidades
+              </button>
             </div>
           )}
+        </div>
 
-          {/* Botões de Download Épicos */}
-          {!hasActiveFilters && !appliedSearchQuery && tracks.length > 0 && (
-            <div className="relative mb-12">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl"></div>
-              <div className="relative bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-xl border border-green-500/30 rounded-2xl p-8 shadow-2xl">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-bold text-white mb-2">🚀 Downloads Épicos</h2>
-                  <p className="text-gray-300 text-lg">Baixe suas músicas favoritas em massa</p>
-                </div>
 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button
-                    onClick={() => downloadNewTracks(tracks)}
-                    className="group bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg border border-green-400/30 flex items-center justify-center gap-3"
-                  >
-                    <Zap className="h-6 w-6 group-hover:animate-pulse" />
-                    BAIXAR NOVAS {stats.newTracks}
-                  </button>
-
-                  <button
-                    onClick={() => downloadAllTracks(tracks)}
-                    className="group bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg border border-blue-400/30 flex items-center justify-center gap-3"
-                  >
-                    <Download className="h-6 w-6 group-hover:animate-bounce" />
-                    BAIXAR TODAS {stats.totalTracks}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Renderização condicional baseada em filtros ativos ou pesquisa */}
-          {(hasActiveFilters || appliedSearchQuery) ? (
-            // Lista de músicas filtradas/pesquisadas
-            <div className="space-y-6">
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold text-white mb-2 font-sans bg-gradient-to-r from-red-400 to-purple-600 bg-clip-text text-transparent">
-                  {appliedSearchQuery ? '🔍 Resultados da Pesquisa' : '🎵 Músicas Encontradas com Filtros'}
-                </h2>
-                <p className="text-gray-400 text-lg font-sans">
-                  {filteredTracks.length} {filteredTracks.length === 1 ? 'música encontrada' : 'músicas encontradas'}
-                  {appliedSearchQuery && tracks.length !== filteredTracks.length && ` de ${tracks.length} total`}
+        {/* LISTA DE MÚSICAS */}
+        <div className="w-full max-w-6xl mx-auto pb-8 px-4 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24 transition-all duration-300">
+          {/* Estado de loading */}
+          {(loading || searchLoading) && (
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                <div className="animate-spin w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-gray-400 text-lg">
+                  {searchLoading ? "Buscando músicas..." : "Carregando novidades..."}
                 </p>
               </div>
-
-              {/* Usar MusicList para mostrar as músicas */}
-              <MusicList
-                tracks={filteredTracks}
-                downloadedTrackIds={downloadedTrackIds}
-                setDownloadedTrackIds={setDownloadedTrackIds}
-              />
-            </div>
-          ) : (
-            // Conteúdo padrão quando não há filtros ou pesquisa
-            <div className="space-y-8">
-              {/* Mostrar todas as músicas quando não há pesquisa */}
-              {tracks.length > 0 && (
-                <div className="space-y-6">
-                  <div className="mb-6">
-                    <h2 className="text-3xl font-bold text-white mb-2 font-sans bg-gradient-to-r from-red-400 to-purple-600 bg-clip-text text-transparent">
-                      🎵 Todas as Músicas
-                    </h2>
-                    <p className="text-gray-400 text-lg font-sans">
-                      {tracks.length} {tracks.length === 1 ? 'música disponível' : 'músicas disponíveis'}
-                    </p>
-                  </div>
-
-                  {/* Usar MusicList para mostrar todas as músicas */}
-                  <MusicList
-                    tracks={tracks}
-                    downloadedTrackIds={downloadedTrackIds}
-                    setDownloadedTrackIds={setDownloadedTrackIds}
-                  />
-                </div>
-              )}
-
-              {/* Loading state épico */}
-              {loading && (
-                <div className="text-center py-16">
-                  <div className="relative">
-                    <div className="w-24 h-24 border-4 border-red-500/30 rounded-full animate-spin"></div>
-                    <div className="absolute inset-0 w-24 h-24 border-4 border-transparent border-t-red-500 rounded-full animate-spin" style={{ animationDuration: '1.5s' }}></div>
-                    <div className="absolute inset-0 w-24 h-24 border-4 border-transparent border-t-purple-500 rounded-full animate-spin" style={{ animationDuration: '2s' }}></div>
-                  </div>
-                  <p className="text-gray-400 mt-6 text-xl font-medium">Carregando músicas épicas...</p>
-                </div>
-              )}
-
-              {/* Estado vazio */}
-              {!loading && tracks.length === 0 && (
-                <div className="text-center py-16">
-                  <div className="w-32 h-32 bg-gradient-to-r from-red-500/20 to-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Music className="h-16 w-16 text-gray-400" />
-                  </div>
-                  <p className="text-gray-400 text-xl font-medium">Nenhuma música encontrada</p>
-                </div>
-              )}
             </div>
           )}
 
-          {/* Footer */}
-          <div className="mt-16">
-            <NewFooter />
-          </div>
-        </div>
-      </div>
+          {/* Nenhum resultado encontrado */}
+          {!loading && !searchLoading && hasSearched && searchResults.length === 0 && (
+            <div className="text-center py-16">
+              <div className="bg-gray-800/50 rounded-2xl p-8 max-w-md mx-auto">
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  Nenhum resultado encontrado
+                </h3>
+                <p className="text-gray-400 mb-6">
+                  Não encontramos nenhuma música para "{appliedSearchQuery}".
+                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-500 mb-4">Tente buscar por:</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {["Progressive House", "Trance", "Techno", "Deep House", "Melodic Techno"].map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => {
+                          setSearchQuery(suggestion);
+                          performSearch(suggestion);
+                        }}
+                        className="px-3 py-1 bg-purple-600/20 text-purple-300 rounded-full text-sm hover:bg-purple-600/40 transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={clearSearch}
+                    className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Ver todas as novidades
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
-      {/* Modal de Filtros */}
-      <FiltersModal
-        isOpen={showFiltersModal}
-        onClose={() => setShowFiltersModal(false)}
-        genres={[]}
-        artists={[]}
-        versions={[]}
-        pools={[]}
-        monthOptions={[]}
-        selectedGenre={selectedGenre}
-        selectedArtist={selectedArtist}
-        selectedDateRange={selectedDateRange}
-        selectedVersion={selectedVersion}
-        selectedMonth={selectedMonth}
-        selectedPool={selectedPool}
-        onGenreChange={setSelectedGenre}
-        onArtistChange={setSelectedArtist}
-        onDateRangeChange={() => { }}
-        onVersionChange={setSelectedVersion}
-        onMonthChange={setSelectedMonth}
-        onPoolChange={setSelectedPool}
-        onApplyFilters={() => { }}
-        onClearFilters={handleClearFilters}
-        isLoading={loading}
-        hasActiveFilters={hasActiveFilters}
-      />
-    </div>
+          {/* Lista de músicas */}
+          {!loading && !searchLoading && displayTracks.length > 0 && (
+            <MusicList
+              tracks={displayTracks}
+              downloadedTrackIds={downloadedTrackIds}
+              setDownloadedTrackIds={setDownloadedTrackIds}
+            />
+          )}
+        </div>
+
+        {/* MODAL DE FILTROS */}
+        {showFiltersModal && (
+          <FiltersModal
+            isOpen={showFiltersModal}
+            onClose={() => setShowFiltersModal(false)}
+            genres={genres}
+            artists={artists}
+            versions={versions}
+            pools={pools}
+            monthOptions={monthOptions}
+            selectedGenre={selectedGenre}
+            selectedArtist={selectedArtist}
+            selectedDateRange={selectedDateRange}
+            selectedVersion={selectedVersion}
+            selectedMonth={selectedMonth}
+            selectedPool={selectedPool}
+            onGenreChange={setSelectedGenre}
+            onArtistChange={setSelectedArtist}
+            onDateRangeChange={setSelectedDateRange}
+            onVersionChange={setSelectedVersion}
+            onMonthChange={setSelectedMonth}
+            onPoolChange={setSelectedPool}
+            onApplyFilters={() => setShowFiltersModal(false)}
+            onClearFilters={() => {
+              setSelectedGenre("");
+              setSelectedArtist("");
+              setSelectedDateRange("");
+              setSelectedVersion("");
+              setSelectedMonth("");
+              setSelectedPool("");
+            }}
+            isLoading={loading}
+            hasActiveFilters={Boolean(selectedGenre || selectedArtist || selectedDateRange || selectedVersion || selectedMonth || selectedPool)}
+          />
+        )}
+
+      </div>
+    </MainLayout>
   );
 };
 

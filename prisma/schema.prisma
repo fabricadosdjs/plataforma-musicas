@@ -3,109 +3,150 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
+// Tabela de usuários (estrutura completa do Neon)
 model User {
-  id                          String         @id @default(cuid())
-  email                       String         @unique
-  name                        String?
-  dailyDownloadCount          Int?           @default(0)
-  lastDownloadReset           DateTime?
-  createdAt                   DateTime       @default(now())
-  updatedAt                   DateTime       @updatedAt
-  is_vip                      Boolean?       @default(false)
-  status                      String?        @default("ativo")
-  valor                       Float?
-  vencimento                  DateTime?
-  customBenefits              Json?
-  dataPagamento               DateTime?
-  lastWeekReset               DateTime?
-  weeklyPackRequests          Int?           @default(0)
-  weeklyPlaylistDownloads     Int?           @default(0)
-  weeklyPackRequestsUsed      Int?           @default(0)
-  weeklyPlaylistDownloadsUsed Int?           @default(0)
-  whatsapp                    String?
-  deemix                      Boolean?       @default(false)
-  deezerPremium               Boolean?       @default(false)
-  deezerEmail                 String?
-  deezerPassword              String?
-  isPro                       Boolean?       @default(false)
-  isAdmin                     Boolean?       @default(false)
-  password                    String?
-  isUploader                  Boolean?       @default(false)
-  dataPrimeiroPagamento       DateTime?
-  planName                    String?
-  adminMessages               AdminMessage[]
-  customItems                 CustomItem[]
-  downloads                   Download[]
-  likes                       Like[]
-  plays                       Play[]
-  uploadedTracks              Track[]
-}
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  dailyDownloadCount Int? @default(0)
+  lastDownloadReset DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  is_vip    Boolean? @default(false)
+  status    String? @default("ativo")
+  valor     Float?
+  vencimento DateTime?
+  customBenefits Json?
+  dataPagamento DateTime?
+  lastWeekReset DateTime?
+  weeklyPackRequests Int? @default(0)
+  weeklyPlaylistDownloads Int? @default(0)
+  weeklyPackRequestsUsed Int? @default(0)
+  weeklyPlaylistDownloadsUsed Int? @default(0)
+  whatsapp String?
+  deemix   Boolean? @default(false)
+  deezerPremium Boolean? @default(false)
+  deezerEmail String?
+  deezerPassword String?
+  isPro     Boolean? @default(false)
+  isAdmin   Boolean? @default(false)
+  password  String?
+  isUploader Boolean? @default(false)
+  dataPrimeiroPagamento DateTime?
+  planName  String?
 
-model Track {
-  id          Int        @id @default(autoincrement())
-  songName    String
-  artist      String
-  style       String
-  version     String?
-  pool        String?    @default("Nexor Records")
-  imageUrl    String
-  previewUrl  String
-  downloadUrl String
-  releaseDate DateTime
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  isCommunity Boolean    @default(false)
-  uploadedBy  String?
-  aiMeta      Json?
+  // Relacionamentos
+  requests    Request[]
   downloads   Download[]
   likes       Like[]
   plays       Play[]
-  uploader    User?      @relation(fields: [uploadedBy], references: [id])
 }
 
+// Tabela de faixas musicais (estrutura completa do Neon)
+model Track {
+  id          Int      @id @default(autoincrement())
+  songName    String
+  artist      String
+  style       String?
+  version     String?
+  pool        String?
+  imageUrl    String?
+  previewUrl  String?
+  downloadUrl String?
+  releaseDate DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isCommunity Boolean?
+  uploadedBy  String?
+  aiMeta      Json?
+  bitrate     Int?
+
+  // Relacionamentos
+  requests  Request[]
+  downloads Download[]
+  likes     Like[]
+  plays     Play[]
+}
+
+// Tabela de solicitações de músicas
+model Request {
+  id                   String   @id @default(cuid())
+  songName             String
+  artist               String
+  genre                String?
+  priority             Priority @default(MEDIUM)
+  status               Status   @default(PENDING)
+  requestedBy          String
+  requestedAt          DateTime @default(now())
+  notes                String?
+  estimatedCompletion  DateTime?
+  completedAt          DateTime?
+  completedBy          String?
+
+  // Relacionamentos
+  user  User   @relation(fields: [requestedBy], references: [email])
+  track Track? @relation(fields: [trackId], references: [id])
+  trackId Int?
+}
+
+// Tabela de downloads (estrutura completa do Neon)
+model Download {
+  id           Int      @id @default(autoincrement())
+  trackId      Int
+  userId       String?
+  downloadedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  nextAllowedDownload DateTime?
+
+  // Relacionamentos
+  track Track @relation(fields: [trackId], references: [id])
+  user  User? @relation(fields: [userId], references: [id])
+}
+
+// Tabela de likes (estrutura completa do Neon)
 model Like {
   id        Int      @id @default(autoincrement())
   trackId   Int
   userId    String
   createdAt DateTime @default(now())
-  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, trackId])
+  // Relacionamentos
+  track Track @relation(fields: [trackId], references: [id])
+  user  User @relation(fields: [userId], references: [id])
+
+  @@unique([trackId, userId])
 }
 
-model Download {
-  id                  Int       @id @default(autoincrement())
-  trackId             Int
-  userId              String
-  downloadedAt        DateTime  @default(now())
-  createdAt           DateTime  @default(now())
-  nextAllowedDownload DateTime?
-  track               Track     @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, trackId])
-}
-
+// Tabela de plays (estrutura completa do Neon)
 model Play {
-  id         Int      @id @default(autoincrement())
-  trackId    Int
-  userId     String
-  duration   Int?
-  completed  Boolean  @default(false)
+  id        Int      @id @default(autoincrement())
+  trackId   Int
+  userId    String?
+  duration  Int?
+  completed Boolean  @default(false)
   deviceInfo String?
-  ipAddress  String?
-  createdAt  DateTime @default(now())
-  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress String?
+  createdAt DateTime @default(now())
 
-  @@index([userId])
-  @@index([trackId])
-  @@index([createdAt])
+  // Relacionamentos
+  track Track @relation(fields: [trackId], references: [id])
+  user  User? @relation(fields: [userId], references: [id])
+}
+
+// Tabelas adicionais do Neon
+model AdminMessage {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  isActive  Boolean  @default(true)
+  createdBy String
 }
 
 model CustomItem {
@@ -116,20 +157,24 @@ model CustomItem {
   isActive    Boolean  @default(true)
   icon        String?
   color       String?
-  order       Int      @default(0)
+  order       Int
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now())
   createdBy   String
-  user        User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 }
 
-model AdminMessage {
-  id        Int      @id @default(autoincrement())
-  title     String
-  message   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isActive  Boolean  @default(true)
-  createdBy String
-  user      User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+// Enums
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum Status {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ON_HOLD
 }

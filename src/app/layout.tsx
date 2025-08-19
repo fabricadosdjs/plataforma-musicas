@@ -7,6 +7,8 @@ import FooterPlayerNew from '@/components/player/FooterPlayerNew';
 
 import { AppProvider } from '@/context/AppContext';
 import AuthProvider from '@/context/AuthProvider';
+import { LoadingProvider } from '@/context/LoadingContext';
+import { PageTransitionLoading } from '@/components/ui/PageTransitionLoading';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google'; // Inter como fonte principal
 import './globals.css';
@@ -17,7 +19,6 @@ import '../styles/whmcs-custom.css';
 import { ExtensionDetector } from '@/components/layout/ExtensionDetector';
 import { GlobalToastManager } from '@/components/layout/GlobalToastManager';
 import { ToastProvider } from '@/context/ToastContext';
-
 import BrowserExtensionHandler from '@/components/layout/BrowserExtensionHandler';
 
 // Configura a fonte Inter como a fonte principal
@@ -128,16 +129,20 @@ export default function RootLayout({
         <AuthProvider>
           <AppProvider>
             <ToastProvider>
-              <GlobalPlayerProvider>
-                <BrowserExtensionHandler />
-                <MusicRouteHandler />
-                <ExtensionDetector />
-                <GlobalToastManager />
-                <DynamicGradientBackground />
-                {children}
-                {/* Player global sempre renderizado */}
-                <FooterPlayerNew />
-              </GlobalPlayerProvider>
+              <LoadingProvider>
+                <GlobalPlayerProvider>
+                  <BrowserExtensionHandler />
+                  <MusicRouteHandler />
+                  <ExtensionDetector />
+                  <GlobalToastManager />
+                  <DynamicGradientBackground />
+                  <PageTransitionLoading>
+                    {children}
+                  </PageTransitionLoading>
+                  {/* Player global sempre renderizado */}
+                  <FooterPlayerNew />
+                </GlobalPlayerProvider>
+              </LoadingProvider>
             </ToastProvider>
           </AppProvider>
         </AuthProvider>

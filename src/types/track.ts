@@ -18,6 +18,7 @@ export interface Track {
     bpm?: number;
     key?: string;
     mode?: string;
+    bitrate?: number; // bitrate em kbps
     sampleRate?: number;
     channels?: number;
     bitDepth?: number;

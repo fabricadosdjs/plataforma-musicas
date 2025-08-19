@@ -144,6 +144,12 @@ const FooterPlayer = () => {
 
     if (!currentTrack) return null;
 
+    // Detectar se é dispositivo móvel
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Em mobile, não mostrar o footer player - apenas o play/pause da thumbnail é suficiente
+    if (isMobile) return null;
+
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
     // Debug: verificar se a capa está sendo recebida

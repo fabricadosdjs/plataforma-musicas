@@ -7,6 +7,15 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const handleReset = () => {
+    if (typeof reset === 'function') {
+      reset();
+    } else {
+      // Fallback: recarregar a página se reset não estiver disponível
+      window.location.reload();
+    }
+  };
+
   return (
     <html>
       <body>
@@ -19,7 +28,7 @@ export default function GlobalError({
               Ocorreu um erro inesperado. Tente novamente.
             </p>
             <button
-              onClick={() => reset()}
+              onClick={handleReset}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
             >
               Tentar novamente

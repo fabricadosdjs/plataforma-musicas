@@ -1,7 +1,7 @@
 // src/components/music/FiltersModal.tsx
 "use client";
 
-import { Calendar, Filter, X } from 'lucide-react';
+import { Calendar, Filter, X, Sparkles, Music, User, Clock, Zap } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 interface FiltersModalProps {
@@ -101,80 +101,97 @@ export default function FiltersModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 pb-8">
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 pb-8 px-4">
+            {/* Backdrop com blur */}
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
 
             {/* Modal */}
             <div
                 ref={modalRef}
-                className="relative w-full max-w-4xl mx-4 rounded-3xl border border-[#26222D] shadow-2xl max-h-[calc(100vh-160px)] overflow-y-auto bg-[#202A3C] mb-24"
+                className="relative w-full max-w-5xl rounded-3xl border border-gray-800/50 shadow-2xl max-h-[calc(100vh-80px)] overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-900 to-black"
             >
-                {/* Header */}
-                <div className="flex items-center justify-between p-8 border-b border-[#26222D]">
+                {/* Header elegante */}
+                <div className="sticky top-0 z-10 flex items-center justify-between p-6 md:p-8 border-b border-gray-800/50 bg-gradient-to-r from-gray-900/95 to-black/95 backdrop-blur-xl">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-lg">
+                        <div className="p-3 bg-gradient-to-br from-purple-600 via-pink-600 to-purple-700 rounded-2xl shadow-2xl shadow-purple-500/25">
                             <Filter className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Filtros Avançados</h2>
-                            <p className="text-gray-400 text-sm mt-1">Refine sua busca com filtros específicos</p>
+                            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
+                                Filtros Avançados
+                            </h2>
+                            <p className="text-gray-400 text-sm mt-1 hidden sm:block">
+                                Refine sua busca com filtros específicos e personalizados
+                            </p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-3 hover:bg-[#26222D] rounded-xl transition-all duration-300 group"
+                        className="p-3 hover:bg-gray-800/50 rounded-2xl transition-all duration-300 group hover:scale-110"
                     >
-                        <X className="h-6 w-6 text-gray-400 group-hover:text-white" />
+                        <X className="h-6 w-6 text-gray-400 group-hover:text-white transition-colors" />
                     </button>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between px-8 py-4 border-b border-[#2D2E2F]">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 md:px-8 py-4 border-b border-gray-800/30 bg-gray-900/50">
                     <div className="flex items-center gap-3">
                         {hasActiveFilters && (
                             <button
                                 onClick={onClearFilters}
                                 disabled={isLoading}
-                                className="px-6 py-3 text-red-400 border border-red-600/30 hover:bg-red-600/20 rounded-xl transition-all duration-300 disabled:opacity-50 font-medium"
+                                className="px-6 py-3 text-red-400 border border-red-600/30 hover:bg-red-600/20 rounded-2xl transition-all duration-300 disabled:opacity-50 font-medium hover:scale-105 transform"
                             >
+                                <Sparkles className="h-4 w-4 inline mr-2" />
                                 Limpar Filtros
                             </button>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                         <button
                             onClick={onClose}
-                            className="px-6 py-3 text-gray-400 hover:text-white hover:bg-[#26222D] rounded-xl transition-all duration-300 font-medium"
+                            className="px-6 py-3 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-2xl transition-all duration-300 font-medium"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={handleApply}
                             disabled={isLoading}
-                            className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-purple-400 disabled:to-blue-400 text-white rounded-xl transition-all duration-300 font-medium shadow-lg hover:shadow-purple-500/20 transform hover:scale-105 disabled:transform-none"
+                            className="px-8 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 hover:from-purple-700 hover:via-pink-700 hover:to-purple-800 disabled:from-purple-400 disabled:via-pink-400 disabled:to-purple-500 text-white rounded-2xl transition-all duration-300 font-medium shadow-2xl hover:shadow-purple-500/25 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed"
                         >
-                            {isLoading ? 'Aplicando...' : 'Aplicar Filtros'}
+                            {isLoading ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Aplicando...
+                                </div>
+                            ) : (
+                                <>
+                                    <Zap className="h-4 w-4 inline mr-2" />
+                                    Aplicar Filtros
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>
 
-                {/* Content */}
-                <div className="p-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Content com grid responsivo */}
+                <div className="p-6 md:p-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
                         {/* Filtro por Gênero */}
-                        <div className="space-y-3">
+                        <div className="space-y-3 group">
                             <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
-                                <span className="text-purple-400">🎵</span>
+                                <div className="p-2 bg-purple-600/20 rounded-lg group-hover:bg-purple-600/30 transition-colors">
+                                    <Music className="h-4 w-4 text-purple-400" />
+                                </div>
                                 Gênero Musical
                             </label>
                             <select
                                 value={selectedGenre}
                                 onChange={(e) => onGenreChange(e.target.value)}
-                                className="w-full px-4 py-3 bg-[#26222D] border border-[#121212] rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300"
+                                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-300 hover:border-gray-600/50 hover:bg-gray-800/70"
                             >
-                                <option value="all">Todos os gêneros</option>
+                                <option value="all">🎵 Todos os gêneros</option>
                                 {genres.map(genre => (
                                     <option key={genre} value={genre}>{genre}</option>
                                 ))}
@@ -182,17 +199,19 @@ export default function FiltersModal({
                         </div>
 
                         {/* Filtro por Artista */}
-                        <div className="space-y-3">
+                        <div className="space-y-3 group">
                             <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
-                                <span className="text-purple-400">🎤</span>
+                                <div className="p-2 bg-pink-600/20 rounded-lg group-hover:bg-pink-600/30 transition-colors">
+                                    <User className="h-4 w-4 text-pink-400" />
+                                </div>
                                 Artista
                             </label>
                             <select
                                 value={selectedArtist}
                                 onChange={(e) => onArtistChange(e.target.value)}
-                                className="w-full px-4 py-3 bg-[#26222D] border border-[#121212] rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300"
+                                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500/50 transition-all duration-300 hover:border-gray-600/50 hover:bg-gray-800/70"
                             >
-                                <option value="all">Todos os artistas</option>
+                                <option value="all">🎤 Todos os artistas</option>
                                 {artists.map(artist => (
                                     <option key={artist} value={artist}>{artist}</option>
                                 ))}
@@ -201,21 +220,19 @@ export default function FiltersModal({
 
                         {/* Filtro por Versão */}
                         {versions.length > 0 && (
-                            <div className="space-y-3">
+                            <div className="space-y-3 group">
                                 <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
-                                    <span className="text-purple-400">🎧</span>
+                                    <div className="p-2 bg-blue-600/20 rounded-lg group-hover:bg-blue-600/30 transition-colors">
+                                        <Sparkles className="h-4 w-4 text-blue-400" />
+                                    </div>
                                     Versão
                                 </label>
                                 <select
                                     value={selectedVersion}
                                     onChange={(e) => onVersionChange(e.target.value)}
-                                    className="w-full px-3 py-2 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    style={{
-                                        backgroundColor: '#26222D',
-                                        borderColor: '#121212'
-                                    }}
+                                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 hover:border-gray-600/50 hover:bg-gray-800/70"
                                 >
-                                    <option value="all">Todas as versões</option>
+                                    <option value="all">🎧 Todas as versões</option>
                                     {versions.map(version => (
                                         <option key={version} value={version}>{version}</option>
                                     ))}
@@ -224,20 +241,19 @@ export default function FiltersModal({
                         )}
 
                         {/* Filtro por Pool */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-3">
-                                🏊‍♂️ Pool
+                        <div className="space-y-3 group">
+                            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+                                <div className="p-2 bg-green-600/20 rounded-lg group-hover:bg-green-600/30 transition-colors">
+                                    <span className="text-green-400 text-lg">🏊‍♂️</span>
+                                </div>
+                                Pool
                             </label>
                             <select
                                 value={selectedPool}
                                 onChange={(e) => onPoolChange(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                style={{
-                                    backgroundColor: '#26222D',
-                                    borderColor: '#121212'
-                                }}
+                                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all duration-300 hover:border-gray-600/50 hover:bg-gray-800/70"
                             >
-                                <option value="all">Todos os pools</option>
+                                <option value="all">🌊 Todos os pools</option>
                                 {pools.map(pool => (
                                     <option key={pool} value={pool}>{pool}</option>
                                 ))}
@@ -245,21 +261,19 @@ export default function FiltersModal({
                         </div>
 
                         {/* Filtro por Mês */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-3">
-                                <Calendar className="inline h-4 w-4 mr-2" />
+                        <div className="space-y-3 group">
+                            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+                                <div className="p-2 bg-yellow-600/20 rounded-lg group-hover:bg-yellow-600/30 transition-colors">
+                                    <Calendar className="h-4 w-4 text-yellow-400" />
+                                </div>
                                 Mês de Lançamento
                             </label>
                             <select
                                 value={selectedMonth}
                                 onChange={(e) => onMonthChange(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                style={{
-                                    backgroundColor: '#26222D',
-                                    borderColor: '#121212'
-                                }}
+                                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/50 transition-all duration-300 hover:border-gray-600/50 hover:bg-gray-800/70"
                             >
-                                <option value="all">Todos os meses</option>
+                                <option value="all">📅 Todos os meses</option>
                                 {monthOptions.map(month => (
                                     <option key={month.value} value={month.value}>
                                         {month.label}
@@ -269,26 +283,38 @@ export default function FiltersModal({
                         </div>
 
                         {/* Filtro por Data Range */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-3">
-                                📅 Período
+                        <div className="space-y-3 group">
+                            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+                                <div className="p-2 bg-indigo-600/20 rounded-lg group-hover:bg-indigo-600/30 transition-colors">
+                                    <Clock className="h-4 w-4 text-indigo-400" />
+                                </div>
+                                Período
                             </label>
                             <select
                                 value={selectedDateRange}
                                 onChange={(e) => onDateRangeChange(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                style={{
-                                    backgroundColor: '#26222D',
-                                    borderColor: '#121212'
-                                }}
+                                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all duration-300 hover:border-gray-600/50 hover:bg-gray-800/70"
                             >
-                                <option value="all">Todos os períodos</option>
-                                <option value="week">Última semana</option>
-                                <option value="month">Último mês</option>
-                                <option value="3months">Últimos 3 meses</option>
-                                <option value="6months">Últimos 6 meses</option>
-                                <option value="year">Último ano</option>
+                                <option value="all">⏰ Todos os períodos</option>
+                                <option value="week">📅 Última semana</option>
+                                <option value="month">📅 Último mês</option>
+                                <option value="3months">📅 Últimos 3 meses</option>
+                                <option value="6months">📅 Últimos 6 meses</option>
+                                <option value="year">📅 Último ano</option>
                             </select>
+                        </div>
+                    </div>
+
+                    {/* Dica de uso */}
+                    <div className="mt-8 p-4 bg-gray-800/30 border border-gray-700/30 rounded-2xl">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-purple-600/20 rounded-lg">
+                                <Sparkles className="h-5 w-5 text-purple-400" />
+                            </div>
+                            <div>
+                                <p className="text-gray-300 font-medium">💡 Dica de Uso</p>
+                                <p className="text-gray-400 text-sm">Combine múltiplos filtros para encontrar exatamente o que procura. Os filtros são aplicados em tempo real.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

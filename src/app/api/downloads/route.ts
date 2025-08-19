@@ -22,8 +22,6 @@ export async function GET(request: NextRequest) {
             where: { id: session.user.id },
             select: {
                 is_vip: true,
-                dailyDownloadCount: true,
-                lastDownloadReset: true,
                 downloads: {
                     select: {
                         trackId: true,
@@ -43,8 +41,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             downloads: downloadedTrackIds,
             isVip: user.is_vip,
-            dailyDownloadCount: user.dailyDownloadCount || 0,
-            dailyLimit: (session.user as any).benefits?.downloadsPerDay || 15
+            dailyDownloadCount: 0, // Não implementado no novo schema
+            dailyLimit: user.is_vip ? 'Ilimitado' : 15
         });
 
     } catch (error) {
@@ -73,7 +71,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "ID da música é obrigatório" }, { status: 400 });
         }
 
-        let user = await prisma.user.findUnique({ where: { id: session.user.id } });
+        let user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                id: true,
+                is_vip: true
+            }
+        });
+
         if (!user) {
             console.log('❌ API /downloads: Usuário não encontrado');
             return NextResponse.json({ error: "Utilizador não encontrado" }, { status: 404 });
@@ -89,68 +94,70 @@ export async function POST(req: NextRequest) {
         const now = new Date();
         const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-        // Lógica para resetar o contador diário (mantida para estatísticas)
-        if (!user.lastDownloadReset || user.lastDownloadReset < twentyFourHoursAgo) {
-            user = await prisma.user.update({
-                where: { id: user.id },
-                data: { dailyDownloadCount: 0, lastDownloadReset: now },
-            });
-        }
-
         // Para usuários VIP, não há limite de downloads
         const isVipUser = user.is_vip || isAdmin;
-        const dailyLimit = isVipUser ? Infinity : ((session.user as any).benefits?.downloadsPerDay || 15);
+        const dailyLimit = isVipUser ? Infinity : 15;
 
         // Lógica de confirmação de re-download
         const recentDownload = await prisma.download.findFirst({
-            where: { userId: user.id, trackId: trackId, downloadedAt: { gte: twentyFourHoursAgo } },
+            where: {
+                userId: user.id,
+                trackId: trackId,
+                downloadedAt: { gte: twentyFourHoursAgo }
+            },
         });
 
         if (recentDownload && !confirmReDownload) {
             console.log('⚠️ API /downloads: Re-download solicitado');
-            return NextResponse.json({ needsConfirmation: true, message: `Você já baixou esta música hoje. Deseja baixar novamente?` }, { status: 202 });
-        }
-
-        // Verifica se o download deve contar para o limite diário (apenas para não-VIP)
-        const existingDownload = await prisma.download.findUnique({ where: { userId_trackId: { userId: user.id, trackId } } });
-        const shouldIncrementCount = !recentDownload && !isVipUser; // Só incrementa se não for VIP e não for re-download recente
-
-        // Verifica o limite APENAS para usuários não-VIP
-        if (!isVipUser && shouldIncrementCount && (user.dailyDownloadCount || 0) >= dailyLimit) {
-            console.log('❌ API /downloads: Limite diário atingido');
-            return NextResponse.json({ error: `Você atingiu seu limite de ${dailyLimit} downloads diários.` }, { status: 429 });
+            return NextResponse.json({
+                needsConfirmation: true,
+                message: `Você já baixou esta música hoje. Deseja baixar novamente?`
+            }, { status: 202 });
         }
 
         // Processa o download (cria/atualiza o registro)
         await prisma.download.upsert({
-            where: { userId_trackId: { userId: user.id, trackId: trackId } },
+            where: {
+                id: recentDownload?.id || 'temp-id' // Usar ID temporário se não existir
+            },
             update: { downloadedAt: now },
-            create: { userId: user.id, trackId: trackId, downloadedAt: now }
+            create: {
+                userId: user.id,
+                trackId: trackId,
+                downloadedAt: now
+            }
         });
 
-        let updatedUser = user;
-        if (shouldIncrementCount) {
-            updatedUser = await prisma.user.update({
-                where: { id: user.id },
-                data: { dailyDownloadCount: { increment: 1 } },
-            });
-        }
+        const track = await prisma.track.findUnique({
+            where: { id: trackId },
+            select: {
+                id: true,
+                songName: true,
+                artist: true,
+                downloadUrl: true
+            }
+        });
 
-        const track = await prisma.track.findUnique({ where: { id: trackId } });
         if (!track) {
             console.log('❌ API /downloads: Track não encontrada');
             return NextResponse.json({ error: "Música não encontrada." }, { status: 404 });
         }
+
+        // Buscar todos os downloads do usuário
+        const userDownloads = await prisma.download.findMany({
+            where: { userId: user.id },
+            select: { trackId: true }
+        });
 
         console.log('✅ API /downloads: Download processado com sucesso');
         return NextResponse.json({
             success: true,
             message: 'Download autorizado!',
             downloadUrl: track.downloadUrl,
-            dailyDownloadCount: updatedUser.dailyDownloadCount,
+            dailyDownloadCount: 0, // Não implementado no novo schema
             dailyLimit: isVipUser ? 'Ilimitado' : dailyLimit,
-            remainingDownloads: isVipUser ? 'Ilimitado' : (dailyLimit - (updatedUser.dailyDownloadCount || 0)),
-            downloadedTrackIds: (await prisma.download.findMany({ where: { userId: user.id } })).map(d => d.trackId),
+            remainingDownloads: isVipUser ? 'Ilimitado' : 'N/A',
+            downloadedTrackIds: userDownloads.map(d => d.trackId),
             downloadedTracksTime: {}, // Será calculado no frontend
             isVipUser: isVipUser
         }, { status: 200 });
