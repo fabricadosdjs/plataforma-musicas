@@ -72,38 +72,11 @@ export const authOptions: AuthOptions = {
             credentials: {
                 email: { label: 'Email', type: 'text' },
                 password: { label: 'Password', type: 'password' },
-                turnstileToken: { label: 'Turnstile Token', type: 'text' },
             },
             async authorize(credentials) {
                 try {
-                    if (!credentials?.email || !credentials?.password || !credentials?.turnstileToken) {
-                        console.log('❌ Credenciais incompletas ou captcha não verificado');
-                        return null;
-                    }
-
-                    // Validar token do Turnstile
-                    try {
-                        const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                secret: process.env.TURNSTILE_SECRET_KEY,
-                                response: credentials.turnstileToken,
-                            }),
-                        });
-
-                        const turnstileResult = await turnstileResponse.json();
-
-                        if (!turnstileResult.success) {
-                            console.log('❌ Falha na verificação do Turnstile:', turnstileResult);
-                            return null;
-                        }
-
-                        console.log('✅ Turnstile verificado com sucesso');
-                    } catch (turnstileError) {
-                        console.error('❌ Erro ao verificar Turnstile:', turnstileError);
+                    if (!credentials?.email || !credentials?.password) {
+                        console.log('❌ Credenciais incompletas');
                         return null;
                     }
 
@@ -190,13 +163,34 @@ export const authOptions: AuthOptions = {
 
                     console.log('✅ Senha validada com sucesso');
 
+                    // Determinar status VIP baseado no valor da assinatura E vencimento
+                    const userBenefits = getUserBenefits(dbUser);
+                    const hasValidVencimento = dbUser.vencimento && new Date(dbUser.vencimento) > new Date();
+                    const isVipByValue = userBenefits.plan !== 'GRATUITO';
+                    const isVip = isVipByValue || hasValidVencimento;
+
+                    // Se tem vencimento válido mas não tem valor, definir plano padrão
+                    let finalPlan = userBenefits.plan;
+                    if (hasValidVencimento && !isVipByValue) {
+                        finalPlan = 'BÁSICO'; // Plano padrão para usuários com vencimento válido
+                    }
+
+                    console.log('🔍 Status VIP calculado:', {
+                        valor: dbUser.valor,
+                        vencimento: dbUser.vencimento,
+                        hasValidVencimento,
+                        planByValue: userBenefits.plan,
+                        finalPlan,
+                        isVipByValue,
+                        isVip
+                    });
+
                     // Retornar dados mínimos para sessão
-                    // isPro não existe no modelo User aqui, assumindo que is_vip é o correto
                     return {
                         id: dbUser.id,
                         email: dbUser.email,
                         name: dbUser.name || dbUser.email.split('@')[0],
-                        is_vip: dbUser.is_vip, // Corrected from isPro
+                        is_vip: isVip, // Calculado dinamicamente baseado no valor E vencimento
                         isAdmin: dbUser.isAdmin, // Adicionar campo isAdmin
                         // Ensure other properties are included if needed in the session/JWT process from dbUser
                         valor: dbUser.valor,
@@ -211,6 +205,7 @@ export const authOptions: AuthOptions = {
                         vencimento: dbUser.vencimento,
                         dataPagamento: dbUser.dataPagamento,
                         whatsapp: dbUser.whatsapp, // Adicionar campo whatsapp
+                        plan: finalPlan, // Plano final considerando vencimento
                     };
 
                 } catch (error) {

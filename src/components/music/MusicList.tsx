@@ -9,6 +9,8 @@ import { Play, Pause, Download, Heart, Plus, Calendar } from 'lucide-react';
 import { formatDateBrazil, formatDateExtendedBrazil, getDateKeyBrazil, isTodayBrazil, isYesterdayBrazil } from '@/utils/dateUtils';
 import { useRouter } from 'next/navigation';
 import { useMobileAudio } from '@/hooks/useMobileAudio';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useDownloadsCache } from '@/hooks/useDownloadsCache';
 
 interface MusicListProps {
     tracks: Track[];
@@ -16,6 +18,11 @@ interface MusicListProps {
     setDownloadedTrackIds: (ids: number[] | ((prev: number[]) => number[])) => void;
     showDate?: boolean;
     itemsPerPage?: number;
+    // Props para infinite scroll
+    hasMore?: boolean;
+    isLoading?: boolean;
+    onLoadMore?: () => void;
+    enableInfiniteScroll?: boolean;
 }
 
 interface GroupedTracks {
@@ -26,15 +33,18 @@ interface GroupedTracks {
     };
 }
 
-export const MusicList = ({
+export const MusicList = React.memo(({
     tracks,
     downloadedTrackIds,
     setDownloadedTrackIds,
     showDate = true,
-    itemsPerPage = 4
+    itemsPerPage = 4,
+    hasMore = false,
+    isLoading = false,
+    onLoadMore = () => { },
+    enableInfiniteScroll = false
 }: MusicListProps) => {
     const [downloadingTracks, setDownloadingTracks] = useState<Set<number>>(new Set());
-    const [likedTrackIds, setLikedTrackIds] = useState<Set<number>>(new Set());
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [testingAudio, setTestingAudio] = useState<Set<number>>(new Set());
@@ -43,6 +53,24 @@ export const MusicList = ({
     const { data: session } = useSession();
     const router = useRouter();
     const { isMobile, hasUserInteracted, canPlayAudio, requestAudioPermission } = useMobileAudio();
+
+    // Hook para cache de downloads
+    const downloadsCache = useDownloadsCache();
+
+    // Usar cache se disponível, senão usar props
+    const finalDownloadedTrackIds = downloadsCache.downloadedTrackIds.length > 0
+        ? downloadsCache.downloadedTrackIds
+        : downloadedTrackIds;
+    const finalLikedTrackIds = downloadsCache.likedTrackIds;
+
+    // Hook para infinite scroll
+    const { loadingRef, isLoadingMore: infiniteScrollLoading } = useInfiniteScroll({
+        hasMore: enableInfiniteScroll ? hasMore : false,
+        isLoading: isLoading || isLoadingMore,
+        onLoadMore,
+        threshold: 200,
+        rootMargin: '0px 0px 300px 0px'
+    });
 
     // Agrupar músicas por data de postagem
     const groupedTracks = useMemo(() => {
@@ -96,20 +124,35 @@ export const MusicList = ({
         return sortedGroups;
     }, [tracks]);
 
-    // Paginação dos grupos
+    // Paginação dos grupos - modificada para infinite scroll
     const paginatedGroups = useMemo(() => {
         const groupKeys = Object.keys(groupedTracks);
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const pageGroups = groupKeys.slice(startIndex, endIndex);
 
-        const result: GroupedTracks = {};
-        pageGroups.forEach(key => {
-            result[key] = groupedTracks[key];
-        });
+        if (enableInfiniteScroll) {
+            // Para infinite scroll, mostrar todos os grupos até a página atual
+            const endIndex = currentPage * itemsPerPage;
+            const pageGroups = groupKeys.slice(0, endIndex);
 
-        return result;
-    }, [groupedTracks, currentPage, itemsPerPage]);
+            const result: GroupedTracks = {};
+            pageGroups.forEach(key => {
+                result[key] = groupedTracks[key];
+            });
+
+            return result;
+        } else {
+            // Paginação tradicional
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageGroups = groupKeys.slice(startIndex, endIndex);
+
+            const result: GroupedTracks = {};
+            pageGroups.forEach(key => {
+                result[key] = groupedTracks[key];
+            });
+
+            return result;
+        }
+    }, [groupedTracks, currentPage, itemsPerPage, enableInfiniteScroll]);
 
     const totalPages = Math.ceil(Object.keys(groupedTracks).length / itemsPerPage);
 
@@ -138,8 +181,8 @@ export const MusicList = ({
         return { initials, colors: colors[colorIndex] };
     };
 
-    const isDownloaded = (track: Track) => downloadedTrackIds.includes(track.id);
-    const isLiked = (track: Track) => likedTrackIds.has(track.id);
+    const isDownloaded = (track: Track) => finalDownloadedTrackIds.includes(track.id);
+    const isLiked = (track: Track) => finalLikedTrackIds.includes(track.id);
 
     const handlePlayPause = async (track: Track) => {
         try {
@@ -221,7 +264,7 @@ export const MusicList = ({
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
 
-            setDownloadedTrackIds(prev => [...prev, track.id]);
+            downloadsCache.markAsDownloaded(track.id);
             showToast('✅ Download concluído!', 'success');
         } catch (error) {
             console.error('Erro no download:', error);
@@ -236,7 +279,7 @@ export const MusicList = ({
 
     const handleLike = async (track: Track) => {
         try {
-            const isCurrentlyLiked = isLiked(track);
+            const isCurrentlyLiked = finalLikedTrackIds.includes(track.id);
             const method = isCurrentlyLiked ? 'DELETE' : 'POST';
 
             const response = await fetch(`/api/tracks/${track.id}/like`, {
@@ -250,17 +293,13 @@ export const MusicList = ({
                 throw new Error('Falha ao curtir/descurtir música');
             }
 
-            setLikedTrackIds(prev => {
-                const newSet = new Set(prev);
-                if (isCurrentlyLiked) {
-                    newSet.delete(track.id);
-                    showToast('💔 Removido dos favoritos', 'info');
-                } else {
-                    newSet.add(track.id);
-                    showToast('❤️ Adicionado aos favoritos!', 'success');
-                }
-                return newSet;
-            });
+            if (isCurrentlyLiked) {
+                downloadsCache.markAsUnliked(track.id);
+                showToast('💔 Removido dos favoritos', 'info');
+            } else {
+                downloadsCache.markAsLiked(track.id);
+                showToast('❤️ Adicionado aos favoritos!', 'success');
+            }
         } catch (error) {
             console.error('Erro ao curtir música:', error);
             showToast('❌ Erro ao curtir música', 'error');
@@ -280,13 +319,25 @@ export const MusicList = ({
     const loadMoreGroups = () => {
         if (currentPage < totalPages && !isLoadingMore) {
             setIsLoadingMore(true);
-            const timeoutId = setTimeout(() => {
-                setCurrentPage(prev => prev + 1);
-                setIsLoadingMore(false);
-            }, 500);
 
-            // Cleanup se o componente for desmontado
-            return () => clearTimeout(timeoutId);
+            if (enableInfiniteScroll) {
+                // Para infinite scroll, carregar próxima página automaticamente
+                const timeoutId = setTimeout(() => {
+                    setCurrentPage(prev => prev + 1);
+                    setIsLoadingMore(false);
+                    console.log(`📄 Infinite scroll: Carregada página ${currentPage + 1} de ${totalPages}`);
+                }, 300);
+
+                return () => clearTimeout(timeoutId);
+            } else {
+                // Paginação tradicional
+                const timeoutId = setTimeout(() => {
+                    setCurrentPage(prev => prev + 1);
+                    setIsLoadingMore(false);
+                }, 500);
+
+                return () => clearTimeout(timeoutId);
+            }
         }
     };
 
@@ -829,8 +880,23 @@ export const MusicList = ({
                 </div>
             ))}
 
-            {/* Indicador de mais conteúdo responsivo */}
-            {currentPage < totalPages && (
+            {/* Elemento de loading para infinite scroll */}
+            {enableInfiniteScroll && hasMore && (
+                <div
+                    ref={loadingRef}
+                    className="text-center py-8 px-4"
+                >
+                    <div className="inline-flex items-center gap-3 px-4 sm:px-6 py-4 bg-gray-800/40 border border-gray-700/50 rounded-xl">
+                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-gray-300 text-sm font-medium">
+                            {infiniteScrollLoading || isLoadingMore ? 'Carregando mais músicas...' : 'Role para carregar mais'}
+                        </span>
+                    </div>
+                </div>
+            )}
+
+            {/* Indicador de mais conteúdo responsivo - apenas para paginação tradicional */}
+            {!enableInfiniteScroll && currentPage < totalPages && (
                 <div className="text-center py-8 px-4">
                     <div className="inline-flex items-center gap-3 px-4 sm:px-6 py-4 bg-gray-800/40 border border-gray-700/50 rounded-xl">
                         <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
@@ -842,8 +908,8 @@ export const MusicList = ({
                 </div>
             )}
 
-            {/* Controles de paginação responsivos */}
-            {totalPages > 1 && (
+            {/* Controles de paginação responsivos - ocultos quando infinite scroll está ativo */}
+            {!enableInfiniteScroll && totalPages > 1 && (
                 <div className="mt-8 mb-4 px-4">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="text-gray-400 text-sm text-center sm:text-left">
@@ -903,4 +969,4 @@ export const MusicList = ({
             )}
         </div>
     );
-};
+});

@@ -1,4 +1,4 @@
-import ProfilePlan from "../components/ProfilePlan";
+import MyPlan from "../components/MyPlan";
 export default function MeuPlanoPage() {
-    return <ProfilePlan />;
+    return <MyPlan />;
 }

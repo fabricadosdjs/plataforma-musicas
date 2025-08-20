@@ -19,6 +19,7 @@ import '../styles/whmcs-custom.css';
 import { ExtensionDetector } from '@/components/layout/ExtensionDetector';
 import { GlobalToastManager } from '@/components/layout/GlobalToastManager';
 import { ToastProvider } from '@/context/ToastContext';
+import { TrackingProvider } from '@/context/TrackingContext';
 import BrowserExtensionHandler from '@/components/layout/BrowserExtensionHandler';
 
 // Configura a fonte Inter como a fonte principal
@@ -129,20 +130,22 @@ export default function RootLayout({
         <AuthProvider>
           <AppProvider>
             <ToastProvider>
-              <LoadingProvider>
-                <GlobalPlayerProvider>
-                  <BrowserExtensionHandler />
-                  <MusicRouteHandler />
-                  <ExtensionDetector />
-                  <GlobalToastManager />
-                  <DynamicGradientBackground />
-                  <PageTransitionLoading>
-                    {children}
-                  </PageTransitionLoading>
-                  {/* Player global sempre renderizado */}
-                  <FooterPlayerNew />
-                </GlobalPlayerProvider>
-              </LoadingProvider>
+              <TrackingProvider>
+                <LoadingProvider>
+                  <GlobalPlayerProvider>
+                    <BrowserExtensionHandler />
+                    <MusicRouteHandler />
+                    <ExtensionDetector />
+                    <GlobalToastManager />
+                    <DynamicGradientBackground />
+                    <PageTransitionLoading>
+                      {children}
+                    </PageTransitionLoading>
+                    {/* Player global sempre renderizado */}
+                    <FooterPlayerNew />
+                  </GlobalPlayerProvider>
+                </LoadingProvider>
+              </TrackingProvider>
             </ToastProvider>
           </AppProvider>
         </AuthProvider>

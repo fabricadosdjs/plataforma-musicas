@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AdminAuth } from '@/components/admin/AdminAuth';
+import { VipStatusDebugger } from '@/components/admin/VipStatusDebugger';
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -116,6 +117,11 @@ export default function AdminPage() {
               <h2 className="text-xl font-semibold mb-2">Estatísticas da IA</h2>
               <p className="text-gray-400">Monitore a precisão da IA de detecção de estilos musicais</p>
             </Link>
+          </div>
+
+          {/* Debug Status VIP */}
+          <div className="mt-8">
+            <VipStatusDebugger />
           </div>
         </div>
       </div>

@@ -1,101 +1,140 @@
 // src/app/api/tracks/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
-import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit') || '0') : 50; // Limite padrão de 50
-    const page = searchParams.get('page') ? parseInt(searchParams.get('page') || '1') : 1;
-    const search = searchParams.get('search') || ''; // Parâmetro de busca
-    const community = searchParams.get('community'); // Parâmetro para filtrar músicas da comunidade
-    const offset = (page - 1) * limit;
+    console.log('🔍 API /tracks: Iniciando requisição GET');
 
-    console.log('🔍 API Tracks chamada - carregando músicas com paginação');
-    console.log('🔍 Parâmetros:', { limit, page, offset, search, community, searchParams: Object.fromEntries(searchParams.entries()) });
+    const session = await getServerSession(authOptions);
+    console.log('🔍 API /tracks: Session:', session?.user);
 
-    // Query otimizada com paginação, índices e busca
-    console.log('🔍 Executando query Prisma otimizada...');
-
-    // Construir condições de busca
-    let whereClause: any = {};
-
-    if (search) {
-      whereClause.OR = [
-        { songName: { contains: search, mode: 'insensitive' as const } },
-        { artist: { contains: search, mode: 'insensitive' as const } },
-        { style: { contains: search, mode: 'insensitive' as const } },
-        { pool: { contains: search, mode: 'insensitive' as const } }
-      ];
+    if (!session?.user?.id) {
+      console.log('❌ API /tracks: Usuário não autenticado');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Filtrar por músicas da comunidade se especificado
-    if (community === 'true') {
-      whereClause.isCommunity = true;
-    } else if (community === 'false') {
-      whereClause.isCommunity = false;
-    }
+    console.log('🔍 API /tracks: Usuário autenticado, ID:', session.user.id);
 
-    // Primeiro, contar total de tracks (query rápida)
-    const totalCount = await prisma.track.count({
-      where: whereClause
-    });
-
-    // Depois, buscar tracks paginadas
+    // Buscar todas as músicas com informações básicas
     const tracks = await prisma.track.findMany({
-      where: whereClause,
       select: {
         id: true,
         songName: true,
         artist: true,
         style: true,
+        version: true,
         pool: true,
         imageUrl: true,
+        previewUrl: true,
         downloadUrl: true,
         releaseDate: true,
         createdAt: true,
-        previewUrl: true,
         isCommunity: true,
         uploadedBy: true,
+        bitrate: true
       },
-      orderBy: [
-        { createdAt: 'desc' }
-      ],
-      take: limit,
-      skip: offset,
+      orderBy: {
+        releaseDate: 'desc'
+      }
     });
 
-    console.log(`📊 Resultado: ${tracks.length} músicas encontradas (página ${page} de ${Math.ceil(totalCount / limit)})${search ? ` para busca: "${search}"` : ''}${community ? ` (comunidade: ${community})` : ''}`);
+    console.log('🔍 API /tracks: Tracks encontradas:', tracks.length);
 
-    // Processar tracks de forma otimizada
-    const tracksWithPreview = tracks.map((track: any) => ({
-      ...track,
-      previewUrl: track.downloadUrl || '',
-      // Preservar isCommunity original
-      downloadCount: 0,
-      likeCount: 0,
-      playCount: 0,
-    }));
-
-    console.log(`✅ Processamento concluído${search ? ` para busca: "${search}"` : ''}${community ? ` (comunidade: ${community})` : ''}, retornando resposta otimizada`);
-
-    return NextResponse.json({
-      tracks: tracksWithPreview,
-      totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
-      hasMore: page < Math.ceil(totalCount / limit),
-      limit,
-      offset
+    // Buscar downloads do usuário
+    console.log('🔍 API /tracks: Buscando downloads para usuário:', session.user.id);
+    const userDownloads = await prisma.download.findMany({
+      where: {
+        userId: session.user.id
+      },
+      select: {
+        trackId: true,
+        downloadedAt: true
+      }
     });
+
+    // Buscar likes do usuário
+    console.log('🔍 API /tracks: Buscando likes para usuário:', session.user.id);
+    const userLikes = await prisma.like.findMany({
+      where: {
+        userId: session.user.id
+      },
+      select: {
+        trackId: true
+      }
+    });
+
+    console.log('🔍 API /tracks: Downloads encontrados:', userDownloads.length);
+    console.log('🔍 API /tracks: Likes encontrados:', userLikes.length);
+
+    // Buscar dados do usuário para verificar VIP
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        is_vip: true,
+        dailyDownloadCount: true,
+        lastDownloadReset: true
+      }
+    });
+
+    // Calcular downloads restantes para hoje
+    let downloadsLeft: number | string = 'Ilimitado';
+    if (!user?.is_vip) {
+      const now = new Date();
+      const lastReset = user?.lastDownloadReset ? new Date(user.lastDownloadReset) : null;
+
+      if (!lastReset || (now.getTime() - lastReset.getTime()) > (24 * 60 * 60 * 1000)) {
+        downloadsLeft = 15; // Reset diário
+      } else {
+        const used = user?.dailyDownloadCount || 0;
+        downloadsLeft = Math.max(15 - used, 0);
+      }
+    }
+
+    // Preparar resposta com cache
+    const response = {
+      tracks: tracks.map(track => ({
+        ...track,
+        downloadCount: 0, // Será calculado separadamente se necessário
+        likeCount: 0, // Será calculado separadamente se necessário
+        isDownloaded: userDownloads.some(d => d.trackId === track.id),
+        isLiked: userLikes.some(l => l.trackId === track.id),
+        downloadedAt: userDownloads.find(d => d.trackId === track.id)?.downloadedAt || null
+      })),
+      userData: {
+        isVip: user?.is_vip || false,
+        downloadsLeft,
+        downloadedTrackIds: userDownloads.map(d => d.trackId),
+        likedTrackIds: userLikes.map(l => l.trackId),
+        dailyDownloadCount: user?.dailyDownloadCount || 0
+      },
+      cacheInfo: {
+        timestamp: new Date().toISOString(),
+        totalTracks: tracks.length,
+        totalDownloads: userDownloads.length,
+        totalLikes: userLikes.length
+      }
+    };
+
+    console.log('✅ API /tracks: Retornando dados com cache');
+    return NextResponse.json(response);
 
   } catch (error) {
-    console.error('❌ Erro na API Tracks:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    console.error('❌ Erro na API /tracks GET:', error);
+
+    // Log mais detalhado do erro
+    if (error instanceof Error) {
+      console.error('❌ Mensagem de erro:', error.message);
+      console.error('❌ Stack trace:', error.stack);
+    }
+
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Erro desconhecido'
+    }, { status: 500 });
   }
 }

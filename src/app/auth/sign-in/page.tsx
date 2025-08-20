@@ -18,7 +18,7 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (email: string, password: string, turnstileToken: string) => {
+  const handleSubmit = async (email: string, password: string) => {
     setError(null);
     setLoading(true);
 
@@ -26,7 +26,6 @@ export default function SignInPage() {
       const result = await signIn('credentials', {
         email,
         password,
-        turnstileToken,
         redirect: false,
       });
 

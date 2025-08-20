@@ -108,17 +108,25 @@ const FooterPlayer = () => {
             setDuration(audio.duration || 0);
         };
         const handleEnded = () => nextTrack();
+        const handlePlay = () => console.log('🎵 FooterPlayerNew: Áudio começou a tocar');
+        const handlePause = () => console.log('🎵 FooterPlayerNew: Áudio pausado');
 
         audio.addEventListener('timeupdate', updateState);
         audio.addEventListener('loadedmetadata', updateState);
         audio.addEventListener('ended', handleEnded);
+        audio.addEventListener('play', handlePlay);
+        audio.addEventListener('pause', handlePause);
 
         return () => {
             audio.removeEventListener('timeupdate', updateState);
             audio.removeEventListener('loadedmetadata', updateState);
             audio.removeEventListener('ended', handleEnded);
+            audio.removeEventListener('play', handlePlay);
+            audio.removeEventListener('pause', handlePause);
         };
     }, [isDragging, nextTrack, audioRef]);
+
+    // Removido useEffect conflitante que causava despausar automático
 
     useEffect(() => {
         if (audioRef.current) audioRef.current.volume = isMuted ? 0 : volume;
@@ -146,7 +154,7 @@ const FooterPlayer = () => {
 
     // Detectar se é dispositivo móvel
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
+
     // Em mobile, não mostrar o footer player - apenas o play/pause da thumbnail é suficiente
     if (isMobile) return null;
 
@@ -200,11 +208,36 @@ const FooterPlayer = () => {
                     {/* Controles centrais */}
                     <div className="flex flex-col items-center justify-center gap-1 w-full order-3 sm:order-2">
                         <div className="flex items-center justify-center gap-3">
-                            <button onClick={handlePrevious} className="p-2 text-red-400 transition active:scale-90 hover:text-red-300" title="Anterior"><SkipBack size={20} fill="currentColor" /></button>
-                            <button onClick={togglePlayPause} className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white transition active:scale-90 hover:scale-105 hover:bg-red-700" title={isPlaying ? "Pausar" : "Tocar"}>
+                            <button
+                                onClick={() => {
+                                    console.log('🎵 FooterPlayerNew: Botão anterior clicado');
+                                    handlePrevious();
+                                }}
+                                className="p-2 text-red-400 transition active:scale-90 hover:text-red-300"
+                                title="Anterior"
+                            >
+                                <SkipBack size={20} fill="currentColor" />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    console.log('🎵 FooterPlayerNew: Botão play/pause clicado, isPlaying atual:', isPlaying);
+                                    togglePlayPause();
+                                }}
+                                className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white transition active:scale-90 hover:scale-105 hover:bg-red-700"
+                                title={isPlaying ? "Pausar" : "Tocar"}
+                            >
                                 {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} className="ml-0.5" fill="currentColor" />}
                             </button>
-                            <button onClick={nextTrack} className="p-2 text-red-400 transition active:scale-90 hover:text-red-300" title="Próxima"><SkipForward size={20} fill="currentColor" /></button>
+                            <button
+                                onClick={() => {
+                                    console.log('🎵 FooterPlayerNew: Botão próximo clicado');
+                                    nextTrack();
+                                }}
+                                className="p-2 text-red-400 transition active:scale-90 hover:text-red-300"
+                                title="Próxima"
+                            >
+                                <SkipForward size={20} fill="currentColor" />
+                            </button>
                         </div>
                         {/* Barra de progresso: sempre centralizada e com padding extra no mobile */}
                         <div className={clsx("w-full px-2 sm:px-0 transition-all duration-300", isMinimized ? 'invisible h-0 opacity-0' : 'visible h-auto opacity-100')}>
@@ -216,7 +249,16 @@ const FooterPlayer = () => {
                     <div className="flex items-center justify-center sm:justify-end gap-2 w-full sm:w-auto order-2 sm:order-3">
                         <div className={clsx("flex items-center gap-2 transition-all duration-300", isMinimized && 'invisible w-0 opacity-0')}>
                             <VolumeControl volume={volume} onVolumeChange={handleVolumeChange} isMuted={isMuted} toggleMute={toggleMute} />
-                            <button onClick={stopTrack} className="p-2 text-red-400 transition active:scale-90 hover:text-red-300" title="Fechar player"><X size={20} /></button>
+                            <button
+                                onClick={() => {
+                                    console.log('🎵 FooterPlayerNew: Fechando player, parando música...');
+                                    stopTrack();
+                                }}
+                                className="p-2 text-red-400 transition active:scale-90 hover:text-red-300"
+                                title="Fechar player"
+                            >
+                                <X size={20} />
+                            </button>
                         </div>
                         <button onClick={() => setIsMinimized(!isMinimized)} className="p-2 text-red-400 transition active:scale-90 hover:text-red-300" title={isMinimized ? "Maximizar" : "Minimizar"}>
                             {isMinimized ? <ChevronUp size={20} /> : <ChevronDown size={20} />}

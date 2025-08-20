@@ -14,20 +14,21 @@ import Image from "next/image";
 import MainLayout from "@/components/layout/MainLayout";
 import FiltersModal from "@/components/music/FiltersModal";
 import { MusicList } from "@/components/music/MusicList";
+
 import { useAppContext } from "@/context/AppContext";
 import { useGlobalPlayer } from "@/context/GlobalPlayerContext";
 import { usePageLoading } from "@/hooks/usePageLoading";
+import { useTracksFetch } from "@/hooks/useTracksFetch";
+import { useDownloadsCache } from "@/hooks/useDownloadsCache";
 import { Track } from "@/types/track";
 import { motion } from "framer-motion";
 
 const NewPage = () => {
   // Estados para filtros
   const [tracks, setTracks] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
   const [showFiltersModal, setShowFiltersModal] = useState(false);
-  const [downloadedTrackIds, setDownloadedTrackIds] = useState<number[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<Track[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
@@ -39,12 +40,29 @@ const NewPage = () => {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedPool, setSelectedPool] = useState("");
 
-  // Extrair dados únicos para filtros
-  const genres = useMemo(() => Array.from(new Set(tracks.map(t => t.style).filter((v): v is string => Boolean(v)))), [tracks]);
-  const artists = useMemo(() => Array.from(new Set(tracks.map(t => t.artist).filter((v): v is string => Boolean(v)))), [tracks]);
-  const versions = useMemo(() => Array.from(new Set(tracks.map(t => t.version).filter((v): v is string => Boolean(v)))), [tracks]);
-  const pools = useMemo(() => Array.from(new Set(tracks.map(t => t.pool).filter((v): v is string => Boolean(v)))), [tracks]);
+  // Extrair dados únicos para filtros - otimizado para evitar re-cálculos desnecessários
+  const genres = useMemo(() => {
+    if (tracks.length === 0) return [];
+    return Array.from(new Set(tracks.map(t => t.style).filter((v): v is string => Boolean(v))));
+  }, [tracks.length]); // Depende apenas do tamanho, não do conteúdo completo
+
+  const artists = useMemo(() => {
+    if (tracks.length === 0) return [];
+    return Array.from(new Set(tracks.map(t => t.artist).filter((v): v is string => Boolean(v))));
+  }, [tracks.length]);
+
+  const versions = useMemo(() => {
+    if (tracks.length === 0) return [];
+    return Array.from(new Set(tracks.map(t => t.version).filter((v): v is string => Boolean(v))));
+  }, [tracks.length]);
+
+  const pools = useMemo(() => {
+    if (tracks.length === 0) return [];
+    return Array.from(new Set(tracks.map(t => t.pool).filter((v): v is string => Boolean(v))));
+  }, [tracks.length]);
+
   const monthOptions = useMemo(() => {
+    if (tracks.length === 0) return [];
     const months = tracks
       .map(t => {
         if (!t.releaseDate) return null;
@@ -53,13 +71,20 @@ const NewPage = () => {
       })
       .filter((v): v is string => Boolean(v));
     return Array.from(new Set(months)).map(m => ({ value: m, label: m }));
-  }, [tracks]);
+  }, [tracks.length]);
 
   const { data: session } = useSession();
   const { showAlert } = useAppContext();
   const { currentTrack, isPlaying, playTrack } = useGlobalPlayer();
   const { startLoading, stopLoading } = usePageLoading();
   const router = useRouter();
+
+  // Hook para cache de downloads
+  const downloadsCache = useDownloadsCache();
+
+
+
+
 
   // --- SLIDES PRINCIPAIS (destaques da produtora) ---
   const slides = [
@@ -108,36 +133,35 @@ const NewPage = () => {
     return () => clearInterval(interval);
   }, [slides.length, isHovered]);
 
-  // --- Busca de músicas da API ---
-  useEffect(() => {
-    const fetchTracks = async () => {
+  // --- Busca de músicas da API usando hook otimizado ---
+  const { data: tracksData, loading: tracksLoading, error: tracksError } = useTracksFetch({
+    endpoint: "/api/tracks/new",
+    onSuccess: (data) => {
       startLoading("Carregando novidades...");
-      try {
-        const res = await fetch("/api/tracks/new");
-        if (!res.ok) throw new Error("Erro ao buscar músicas");
-        const data = await res.json();
 
-        // 🔥 Garante que seja array
-        if (Array.isArray(data)) {
-          setTracks(data);
-        } else if (Array.isArray(data.tracks)) {
-          setTracks(data.tracks);
-        } else if (Array.isArray(data.data)) {
-          setTracks(data.data);
-        } else {
-          console.warn("⚠️ API não retornou array de tracks:", data);
-          setTracks([]);
-        }
-      } catch (err) {
-        console.error(err);
-        showAlert("Erro ao carregar músicas");
-      } finally {
-        setLoading(false);
-        stopLoading();
+      // 🔥 Garante que seja array
+      if (Array.isArray(data)) {
+        setTracks(data);
+      } else if (Array.isArray(data.tracks)) {
+        setTracks(data.tracks);
+      } else if (Array.isArray(data.data)) {
+        setTracks(data.data);
+      } else {
+        console.warn("⚠️ API não retornou array de tracks:", data);
+        setTracks([]);
       }
-    };
-    fetchTracks();
-  }, [showAlert, startLoading, stopLoading]);
+
+      stopLoading();
+    },
+    onError: (error) => {
+      console.error("❌ Erro na busca:", error);
+      showAlert("Erro ao carregar músicas");
+      stopLoading();
+    },
+    onLoadingChange: (loading) => {
+      // Estado de loading é gerenciado pelo hook
+    }
+  });
 
   // --- Função de busca ---
   const performSearch = async (query: string) => {
@@ -462,6 +486,8 @@ const NewPage = () => {
               >
                 <Filter size={18} /> Filtros
               </button>
+
+
             </div>
           </div>
 
@@ -489,9 +515,9 @@ const NewPage = () => {
 
 
         {/* LISTA DE MÚSICAS */}
-        <div className="w-full max-w-6xl mx-auto pb-8 px-4 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24 transition-all duration-300">
+        <div className="w-full max-w-6xl mx-auto pb-8 px-4 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
           {/* Estado de loading */}
-          {(loading || searchLoading) && (
+          {(tracksLoading || searchLoading) && (
             <div className="flex items-center justify-center py-16">
               <div className="text-center">
                 <div className="animate-spin w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -503,7 +529,7 @@ const NewPage = () => {
           )}
 
           {/* Nenhum resultado encontrado */}
-          {!loading && !searchLoading && hasSearched && searchResults.length === 0 && (
+          {!tracksLoading && !searchLoading && hasSearched && searchResults.length === 0 && (
             <div className="text-center py-16">
               <div className="bg-gray-800/50 rounded-2xl p-8 max-w-md mx-auto">
                 <div className="text-6xl mb-4">🔍</div>
@@ -540,12 +566,31 @@ const NewPage = () => {
             </div>
           )}
 
+
+
+
+
           {/* Lista de músicas */}
-          {!loading && !searchLoading && displayTracks.length > 0 && (
+          {!tracksLoading && !searchLoading && displayTracks.length > 0 && (
             <MusicList
               tracks={displayTracks}
-              downloadedTrackIds={downloadedTrackIds}
-              setDownloadedTrackIds={setDownloadedTrackIds}
+              downloadedTrackIds={downloadsCache.downloadedTrackIds}
+              setDownloadedTrackIds={(ids) => {
+                if (typeof ids === 'function') {
+                  const newIds = ids(downloadsCache.downloadedTrackIds);
+                  downloadsCache.markAsDownloaded(newIds[newIds.length - 1]);
+                } else {
+                  // Para compatibilidade, mas o cache já gerencia isso
+                  console.log('Cache de downloads gerenciado automaticamente');
+                }
+              }}
+              enableInfiniteScroll={true}
+              hasMore={displayTracks.length >= 50} // Assumindo que temos mais dados se há pelo menos 50 músicas
+              isLoading={tracksLoading || searchLoading}
+              onLoadMore={() => {
+                console.log('🔄 Carregando mais músicas na página /new...');
+                // Aqui você pode implementar lógica adicional para carregar mais dados da API
+              }}
             />
           )}
         </div>
@@ -581,7 +626,7 @@ const NewPage = () => {
               setSelectedMonth("");
               setSelectedPool("");
             }}
-            isLoading={loading}
+            isLoading={tracksLoading}
             hasActiveFilters={Boolean(selectedGenre || selectedArtist || selectedDateRange || selectedVersion || selectedMonth || selectedPool)}
           />
         )}

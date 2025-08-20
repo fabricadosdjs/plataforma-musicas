@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
+import { useDownloadsCache } from '@/hooks/useDownloadsCache';
 import { getSignInUrl } from '@/lib/utils';
 
 interface SidebarProps {
@@ -20,6 +21,9 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Hook para cache de downloads
+  const downloadsCache = useDownloadsCache();
 
   const [notifications, setNotifications] = useState<Array<{
     id: string;
@@ -156,7 +160,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
       {/* Sidebar Desktop - SEMPRE ABERTO */}
       <div className="hidden lg:flex fixed left-0 top-0 h-full z-50 w-64">
         {/* Sidebar Background */}
-        <div className="w-full h-full bg-gradient-to-b from-gray-900 via-gray-800 to-black border-r border-gray-700/50 shadow-2xl">
+        <div className="w-full h-full bg-gradient-to-b from-gray-900 via-gray-800 to-black border-r border-gray-800/20 shadow-2xl">
           {/* Header do Sidebar - SEM BOTÃO TOGGLE */}
           <div className="flex items-center justify-center p-4 border-b border-gray-700/50">
             <Link href="/" className="flex items-center">
@@ -301,14 +305,40 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                   >
                     <div className="relative">
                       <UserCircle className="h-4 w-4" />
-                      {session.user.is_vip && (
-                        <Crown className="h-2.5 w-2.5 text-yellow-400 absolute -top-1 -right-1 bg-gray-900 rounded-full p-0.5" />
-                      )}
+                      {(() => {
+                        // Lógica para determinar status VIP real
+                        const isVipByField = session.user.is_vip;
+                        const vencimento = (session.user as any).vencimento;
+                        const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
+                        const isVipReal = isVipByField || hasValidVencimento;
+
+                        return isVipReal ? (
+                          <Crown className="h-2.5 w-2.5 text-yellow-400 absolute -top-1 -right-1 bg-gray-900 rounded-full p-0.5" />
+                        ) : null;
+                      })()}
                     </div>
                     <div className="flex-1 text-left">
                       <div className="font-medium text-xs truncate">{session.user.name || 'Usuário'}</div>
                       <div className="text-xs text-gray-400 truncate">
-                        {session.user.is_vip ? 'VIP' : 'Free'}
+                        {(() => {
+                          // Lógica para determinar status VIP real
+                          const isVipByField = session.user.is_vip;
+                          const vencimento = (session.user as any).vencimento;
+                          const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
+                          const isVipReal = isVipByField || hasValidVencimento;
+
+                          if (isVipReal) {
+                            if ((session.user as any).plan) {
+                              return (session.user as any).plan;
+                            } else if (hasValidVencimento) {
+                              return 'BÁSICO';
+                            } else {
+                              return 'VIP';
+                            }
+                          } else {
+                            return 'Free';
+                          }
+                        })()}
                       </div>
                     </div>
                   </button>
@@ -320,9 +350,17 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                         <div className="flex items-center gap-3 mb-3">
                           <div className="relative">
                             <UserCircle className="h-12 w-12 text-gray-300" />
-                            {session.user.is_vip && (
-                              <Crown className="h-5 w-5 text-yellow-400 absolute -top-1 -right-1 bg-gray-900 rounded-full p-0.5" />
-                            )}
+                            {(() => {
+                              // Lógica para determinar status VIP real
+                              const isVipByField = session.user.is_vip;
+                              const vencimento = (session.user as any).vencimento;
+                              const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
+                              const isVipReal = isVipByField || hasValidVencimento;
+
+                              return isVipReal ? (
+                                <Crown className="h-5 w-5 text-yellow-400 absolute -top-1 -right-1 bg-gray-900 rounded-full p-0.5" />
+                              ) : null;
+                            })()}
                           </div>
                           <div>
                             <div className="font-bold text-lg">{session.user.name || 'Usuário'}</div>
@@ -332,31 +370,137 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                           </div>
                         </div>
 
-                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${session.user.is_vip
-                          ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-                          : 'bg-red-500/20 text-red-300 border border-red-500/30'
-                          }`}>
-                          {session.user.is_vip ? (
-                            <><Crown className="h-4 w-4" /> VIP</>
-                          ) : (
-                            <><AlertCircle className="h-4 w-4" /> Free</>
-                          )}
-                        </div>
+                        {/* Status VIP Inteligente */}
+                        {(() => {
+                          // Lógica para determinar status VIP real
+                          const isVipByField = session.user.is_vip;
+                          const vencimento = (session.user as any).vencimento;
+                          const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
+                          const isVipReal = isVipByField || hasValidVencimento;
 
-                        {session.user.vencimento && (
-                          <div className="mt-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                            <div className="text-gray-400 text-xs mb-1">Vencimento:</div>
-                            <div className="text-white font-semibold">
-                              {typeof session.user.vencimento === 'string' || typeof session.user.vencimento === 'number'
-                                ? formatDate(session.user.vencimento)
-                                : 'Data inválida'
-                              }
+                          // Determinar plano
+                          let planDisplay = 'Free';
+                          if (isVipReal) {
+                            if ((session.user as any).plan) {
+                              planDisplay = (session.user as any).plan;
+                            } else if (hasValidVencimento) {
+                              planDisplay = 'BÁSICO'; // Plano padrão para vencimento válido
+                            } else {
+                              planDisplay = 'VIP';
+                            }
+                          }
+
+                          return (
+                            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${isVipReal
+                              ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+                              : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                              }`}>
+                              {isVipReal ? (
+                                <><Crown className="h-4 w-4" /> {planDisplay}</>
+                              ) : (
+                                <><AlertCircle className="h-4 w-4" /> {planDisplay}</>
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Status do Cache */}
+                        <div className="mt-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                          <div className="text-gray-400 text-xs mb-2">Status do Sistema:</div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-300">Cache:</span>
+                              <span className={`text-xs px-2 py-1 rounded-full ${downloadsCache.isLoading
+                                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                : downloadsCache.error
+                                  ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                  : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                }`}>
+                                {downloadsCache.isLoading ? 'Sincronizando...' : downloadsCache.error ? 'Erro' : 'Sincronizado'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-300">Downloads:</span>
+                              <span className="text-white font-medium">
+                                {downloadsCache.downloadedTrackIds.length} músicas
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-300">Likes:</span>
+                              <span className="text-white font-medium">
+                                {downloadsCache.likedTrackIds.length} músicas
+                              </span>
                             </div>
                           </div>
-                        )}
+                        </div>
+
+                        {/* Informações VIP Detalhadas */}
+                        {(() => {
+                          // Lógica para determinar status VIP real
+                          const isVipByField = session.user.is_vip;
+                          const vencimento = (session.user as any).vencimento;
+                          const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
+                          const isVipReal = isVipByField || hasValidVencimento;
+
+                          if (!isVipReal) return null;
+
+                          // Determinar plano para exibição
+                          let planDisplay = 'VIP';
+                          if ((session.user as any).plan) {
+                            planDisplay = (session.user as any).plan;
+                          } else if (hasValidVencimento) {
+                            planDisplay = 'BÁSICO';
+                          }
+
+                          return (
+                            <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                              <div className="text-yellow-300 text-xs mb-2 font-semibold">
+                                👑 Plano {planDisplay}
+                              </div>
+                              <div className="space-y-2 text-sm">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-300">Downloads Diários:</span>
+                                  <span className="text-yellow-300 font-medium">
+                                    {downloadsCache.downloadsLeft === 'Ilimitado' ? '∞ Ilimitado' : `${downloadsCache.downloadsLeft} restantes`}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-300">Usados Hoje:</span>
+                                  <span className="text-white font-medium">
+                                    {downloadsCache.dailyDownloadCount}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-300">Status:</span>
+                                  <span className="text-green-400 font-medium">Ativo</span>
+                                </div>
+                                {hasValidVencimento && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-gray-300">Vencimento:</span>
+                                    <span className="text-white font-medium">
+                                      {formatDate(vencimento)}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+
                       </div>
 
                       <div className="space-y-2">
+                        {/* Botão para atualizar cache */}
+                        <button
+                          onClick={() => downloadsCache.refreshCache()}
+                          disabled={downloadsCache.isLoading}
+                          className="flex items-center gap-3 w-full text-left px-4 py-3 text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors font-medium disabled:opacity-50"
+                        >
+                          <CheckCircle className="h-5 w-5" />
+                          {downloadsCache.isLoading ? 'Sincronizando...' : 'Atualizar Cache'}
+                        </button>
+
                         <Link
                           href="/profile"
                           className="flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 rounded-lg transition-colors font-medium"
@@ -407,7 +551,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
           />
 
           {/* Sidebar Mobile */}
-          <div className="absolute left-0 top-0 h-full w-80 bg-gradient-to-b from-gray-900 via-gray-800 to-black border-r border-gray-700/50 shadow-2xl">
+          <div className="absolute left-0 top-0 h-full w-80 bg-gradient-to-b from-gray-900 via-gray-800 to-black border-r border-gray-800/20 shadow-2xl">
             {/* Header Mobile */}
             <div className="flex items-center justify-between p-4 border-b border-gray-700/50">
               <Link href="/" onClick={() => setMobileMenuOpen(false)}>

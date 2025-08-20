@@ -18,21 +18,26 @@ import {
     Circle,
     Waves
 } from 'lucide-react';
-import { useGlobalPlayer } from '@/context/GlobalPlayerContext'; // Alterado de useAppContext para useGlobalPlayer
+import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { useSession } from 'next-auth/react';
 
 const FooterPlayer = () => {
-    // O hook foi alterado para useGlobalPlayer para consumir o estado correto
-    const { currentTrack, isPlaying, togglePlayPause, nextTrack, previousTrack } = useGlobalPlayer();
+    const {
+        currentTrack,
+        isPlaying,
+        togglePlayPause,
+        nextTrack,
+        previousTrack,
+        audioRef
+    } = useGlobalPlayer();
     const { data: session } = useSession();
 
-    const [volume, setVolume] = useState(1.0); // Começar com 100%
+    const [volume, setVolume] = useState(1.0);
     const [isMuted, setIsMuted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isMinimized, setIsMinimized] = useState(false);
     const [isHidden, setIsHidden] = useState(false);
-    const audioRef = useRef<HTMLAudioElement>(null);
     const waveformRef = useRef<HTMLCanvasElement>(null);
     const animationFrameId = useRef<number>();
     const [isChangingVolume, setIsChangingVolume] = useState(false);
@@ -47,15 +52,49 @@ const FooterPlayer = () => {
     };
     const [waveformData] = useState(generateWaveformData());
 
+    // Sincronizar com o áudio do contexto global
     useEffect(() => {
-        if (audioRef.current && !isChangingVolume) {
-            if (isPlaying) {
-                audioRef.current.play().catch(() => { });
-            } else {
-                audioRef.current.pause();
-            }
-        }
-    }, [isPlaying, currentTrack, isChangingVolume]);
+        if (!audioRef.current || !currentTrack) return;
+
+        const audio = audioRef.current;
+
+        // Event listeners para sincronização
+        const handleLoadedMetadata = () => {
+            setDuration(audio.duration);
+            console.log('🎵 FooterPlayer: Metadata carregado, duração:', audio.duration);
+        };
+
+        const handleTimeUpdate = () => {
+            setCurrentTime(audio.currentTime);
+        };
+
+        const handleEnded = () => {
+            console.log('🎵 FooterPlayer: Música terminou');
+            // Não chamar togglePlayPause aqui, deixar o contexto global gerenciar
+        };
+
+        const handlePlay = () => {
+            console.log('🎵 FooterPlayer: Áudio começou a tocar');
+        };
+
+        const handlePause = () => {
+            console.log('🎵 FooterPlayer: Áudio pausado');
+        };
+
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('ended', handleEnded);
+        audio.addEventListener('play', handlePlay);
+        audio.addEventListener('pause', handlePause);
+
+        return () => {
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            audio.removeEventListener('timeupdate', handleTimeUpdate);
+            audio.removeEventListener('ended', handleEnded);
+            audio.removeEventListener('play', handlePlay);
+            audio.removeEventListener('pause', handlePause);
+        };
+    }, [currentTrack, audioRef]);
 
     // Desenhar waveform
     const drawWaveform = () => {
@@ -79,7 +118,7 @@ const FooterPlayer = () => {
 
             // Cor baseada no progresso
             const isPlayed = index / waveformData.length <= progress;
-            ctx.fillStyle = isPlayed ? '#3b82f6' : '#4A5568'; // Blue for played, gray for unplayed
+            ctx.fillStyle = isPlayed ? '#3b82f6' : '#4A5568';
 
             ctx.fillRect(x, y, Math.max(barWidth - 1, 1), barHeight);
         });
@@ -105,62 +144,19 @@ const FooterPlayer = () => {
         };
     }, [currentTrack, isPlaying, currentTime, duration, waveformData]);
 
-    const animateProgress = () => {
-        if (audioRef.current) {
-            setCurrentTime(audioRef.current.currentTime);
-            animationFrameId.current = requestAnimationFrame(animateProgress);
-        }
-    };
-
-    useEffect(() => {
-        if (isPlaying) {
-            animationFrameId.current = requestAnimationFrame(animateProgress);
-        } else {
-            if (animationFrameId.current) {
-                cancelAnimationFrame(animationFrameId.current);
-            }
-        }
-
-        return () => {
-            if (animationFrameId.current) {
-                cancelAnimationFrame(animationFrameId.current);
-            }
-        };
-    }, [isPlaying]);
-
-    // Gerenciar áudio
-    useEffect(() => {
-        if (!audioRef.current || !currentTrack?.previewUrl) return;
-
-        const audio = audioRef.current;
-        audio.src = currentTrack.previewUrl;
-        audio.volume = isMuted ? 0 : volume;
-        audio.load();
-
-        const handleLoadedMetadataEvent = () => {
-            setDuration(audio.duration);
-        };
-
-        const handleEndedEvent = () => {
-            // Parar quando a música terminar
-            togglePlayPause();
-        };
-
-        audio.addEventListener('loadedmetadata', handleLoadedMetadataEvent);
-        audio.addEventListener('ended', handleEndedEvent);
-
-        return () => {
-            audio.removeEventListener('loadedmetadata', handleLoadedMetadataEvent);
-            audio.removeEventListener('ended', handleEndedEvent);
-        };
-    }, [currentTrack, togglePlayPause]);
-
     // Atualizar volume
     useEffect(() => {
         if (audioRef.current) {
             audioRef.current.volume = isMuted ? 0 : volume;
         }
-    }, [volume, isMuted]);
+    }, [volume, isMuted, audioRef]);
+
+    // Sincronizar volume quando mudar
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.volume = isMuted ? 0 : volume;
+        }
+    }, [volume, isMuted, audioRef]);
 
     // Buscar posição no waveform
     const handleWaveformClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -276,13 +272,7 @@ const FooterPlayer = () => {
                 </div>
             </div>
 
-            <audio
-                id="footer-audio"
-                ref={audioRef}
-                src={currentTrack.previewUrl || currentTrack.downloadUrl}
-                autoPlay={isPlaying}
-                style={{ display: "none" }}
-            />
+            {/* O elemento audio é gerenciado pelo GlobalPlayerContext */}
             <div className="w-full max-w-3xl flex flex-col items-center px-4 py-2">
                 {/* Controles centrais acima do waveform */}
                 <div className="flex items-center w-full justify-between mb-4">

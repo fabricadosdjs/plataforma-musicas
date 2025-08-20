@@ -164,3 +164,5 @@ Este projeto foi migrado do Supabase para o Prisma. As principais mudanças incl
 - **Atualização** do schema para usar Prisma
 - **Manutenção** da mesma interface de usuário
 
+
+

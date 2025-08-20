@@ -138,3 +138,5 @@ Para dúvidas sobre o Supabase, consulte:
 - [Exemplos de SSR](https://supabase.com/docs/guides/auth/server-side/nextjs)
 - [Referência da API](https://supabase.com/docs/reference/javascript)
 
+
+

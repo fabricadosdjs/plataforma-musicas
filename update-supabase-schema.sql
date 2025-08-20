@@ -87,3 +87,5 @@ SELECT 'Download' as table_name, COUNT(*) as columns FROM information_schema.col
 UNION ALL
 SELECT 'Like' as table_name, COUNT(*) as columns FROM information_schema.columns WHERE table_name = 'Like';
 
+
+

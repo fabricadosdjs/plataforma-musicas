@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import { Lock, Mail, User, Eye, EyeOff, Shield } from 'lucide-react';
-import { TurnstileWidget } from './TurnstileDynamic';
-import { useTurnstile } from '@/hooks/useTurnstile';
+import { Lock, Mail, User, Eye, EyeOff } from 'lucide-react';
 
 interface SignInFormProps {
-    onSubmit: (email: string, password: string, turnstileToken: string) => void;
+    onSubmit: (email: string, password: string) => void;
     loading: boolean;
     error: string | null;
 }
@@ -16,18 +14,9 @@ export function SignInForm({ onSubmit, loading, error }: SignInFormProps) {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
-    // Hook do Turnstile
-    const { token, isVerified, error: turnstileError, isClient, handleVerify, handleError, handleExpire } = useTurnstile();
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Verificar se o captcha foi completado (apenas no cliente)
-        if (isClient && (!isVerified || !token)) {
-            return;
-        }
-
-        onSubmit(email, password, token || '');
+        onSubmit(email, password);
     };
 
     return (
@@ -89,37 +78,9 @@ export function SignInForm({ onSubmit, loading, error }: SignInFormProps) {
                 </div>
             </div>
 
-            {/* Turnstile Widget */}
-            {isClient && (
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                        <div className="flex items-center gap-2">
-                            <Shield className="w-4 h-4 text-blue-400" />
-                            Verificação de Segurança
-                        </div>
-                    </label>
-
-                    <TurnstileWidget
-                        onVerify={handleVerify}
-                        onError={handleError}
-                        onExpire={handleExpire}
-                        theme="dark"
-                        language="pt-BR"
-                        size="normal"
-                    />
-
-                    {turnstileError && (
-                        <div className="text-red-400 text-xs flex items-center gap-1">
-                            <Shield className="w-3 h-3" />
-                            {turnstileError}
-                        </div>
-                    )}
-                </div>
-            )}
-
             <button
                 type="submit"
-                disabled={loading || (isClient && !isVerified)}
+                disabled={loading}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-2.5 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
             >
                 {loading ? (
