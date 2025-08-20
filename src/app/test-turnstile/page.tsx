@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { TurnstileWidget } from '@/components/auth/TurnstileDynamic';
 import { useTurnstile } from '@/hooks/useTurnstile';
+import { TurnstileDebug } from '@/components/auth/TurnstileDebug';
 
 export default function TestTurnstilePage() {
     const { token, isVerified, error, handleVerify, handleError, handleExpire, reset } = useTurnstile();
@@ -42,49 +43,7 @@ export default function TestTurnstilePage() {
                     🧪 Teste do Turnstile
                 </h1>
 
-                <div className="bg-gray-800 rounded-lg p-6 mb-6">
-                    <h2 className="text-xl font-semibold mb-4">Status do Widget</h2>
-
-                    <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-gray-400">Token:</span>
-                            <span className={`font-mono text-sm ${token ? 'text-green-400' : 'text-red-400'}`}>
-                                {token ? `${token.substring(0, 20)}...` : 'Não disponível'}
-                            </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <span className="text-gray-400">Verificado:</span>
-                            <span className={isVerified ? 'text-green-400' : 'text-red-400'}>
-                                {isVerified ? '✅ Sim' : '❌ Não'}
-                            </span>
-                        </div>
-
-                        {error && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-gray-400">Erro:</span>
-                                <span className="text-red-400">{error}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex gap-2">
-                        <button
-                            onClick={testTurnstile}
-                            disabled={!isVerified}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg"
-                        >
-                            Testar Verificação
-                        </button>
-
-                        <button
-                            onClick={reset}
-                            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg"
-                        >
-                            Resetar
-                        </button>
-                    </div>
-                </div>
+                <TurnstileDebug />
 
                 <div className="bg-gray-800 rounded-lg p-6 mb-6">
                     <h2 className="text-xl font-semibold mb-4">Widget Turnstile</h2>
