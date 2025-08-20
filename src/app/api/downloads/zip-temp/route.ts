@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createReadStream, existsSync, unlinkSync, statSync } from 'fs';
 import crypto from 'crypto';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 function withCorsHeaders(headers: Record<string, string> = {}) {

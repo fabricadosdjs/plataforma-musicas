@@ -9,7 +9,7 @@ import { join } from 'path';
 import crypto from 'crypto';
 import { Readable } from 'stream';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // Registro global de arquivos temporários e limpeza periódica
