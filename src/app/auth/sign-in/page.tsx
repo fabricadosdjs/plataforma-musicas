@@ -1,24 +1,21 @@
 // app/auth/sign-in/page.tsx
 'use client';
 
-import { Lock, Mail, MessageCircle, User, Eye, EyeOff } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import NewFooter from '@/components/layout/NewFooter';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { SignInForm } from '@/components/auth/SignInForm';
 
 // Note: Metadata não pode ser exportada de componentes "use client"
 
 export default function SignInPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    const handleSubmit = async (email: string, password: string, turnstileToken: string) => {
     setError(null);
     setLoading(true);
 
@@ -26,6 +23,7 @@ export default function SignInPage() {
       const result = await signIn('credentials', {
         email,
         password,
+        turnstileToken,
         redirect: false,
       });
 
@@ -88,7 +86,8 @@ export default function SignInPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {mounted ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="email">
                 Email
@@ -146,9 +145,37 @@ export default function SignInPage() {
               </div>
             </div>
 
+            {/* Turnstile Widget */}
+            {isClient && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-blue-400" />
+                    Verificação de Segurança
+                  </div>
+                </label>
+
+                <TurnstileWidget
+                  onVerify={handleVerify}
+                  onError={handleError}
+                  onExpire={handleExpire}
+                  theme="dark"
+                  language="pt-BR"
+                  size="normal"
+                />
+
+                {turnstileError && (
+                  <div className="text-red-400 text-xs flex items-center gap-1">
+                    <Shield className="w-3 h-3" />
+                    {turnstileError}
+                  </div>
+                )}
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (isClient && !isVerified)}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-2.5 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
             >
               {loading ? (
@@ -164,6 +191,13 @@ export default function SignInPage() {
               )}
             </button>
           </form>
+        ) : (
+          <div className="space-y-4">
+            <div className="w-full h-12 bg-gray-700 rounded-lg animate-pulse"></div>
+            <div className="w-full h-12 bg-gray-700 rounded-lg animate-pulse"></div>
+            <div className="w-full h-12 bg-gray-700 rounded-lg"></div>
+          </div>
+        )}
 
           {/* WhatsApp Button */}
           <div className="mt-6 text-center">

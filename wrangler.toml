@@ -1,0 +1,3 @@
+name = "plataforma-musicas-worker"
+main = "src/index.ts"
+compatibility_date = "2025-08-20"

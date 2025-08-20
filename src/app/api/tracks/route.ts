@@ -16,21 +16,12 @@ export async function GET(request: Request) {
     console.log('🔍 API Tracks chamada - carregando músicas com paginação');
     console.log('🔍 Parâmetros:', { limit, page, offset, search, community, searchParams: Object.fromEntries(searchParams.entries()) });
 
-    // Verificar conexão com o banco (sem desconectar a cada chamada)
-    try {
-      await prisma.$connect();
-      console.log('✅ Conexão com banco estabelecida');
-    } catch (dbError) {
-      console.error('❌ Erro na conexão com banco:', dbError);
-      throw dbError;
-    }
-
     // Query otimizada com paginação, índices e busca
     console.log('🔍 Executando query Prisma otimizada...');
 
     // Construir condições de busca
     let whereClause: any = {};
-    
+
     if (search) {
       whereClause.OR = [
         { songName: { contains: search, mode: 'insensitive' as const } },
@@ -101,22 +92,10 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error("[GET_TRACKS_ERROR]", error);
-
-    // Log mais detalhado do erro
-    if (error instanceof Error) {
-      console.error('🔍 Detalhes do erro:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
-    }
-
-    return NextResponse.json({
-      error: "Erro interno do servidor ao buscar músicas",
-      tracks: [],
-      totalCount: 0
-    }, { status: 500 });
+    console.error('❌ Erro na API Tracks:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
-  // Remover finally block para manter conexão ativa
 }

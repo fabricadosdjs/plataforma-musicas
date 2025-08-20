@@ -1,63 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
-        console.log('🎵 API Styles chamada - buscando estilos únicos');
+        console.log('🎭 API Styles: Carregando estilos musicais...');
 
-        // Verificar conexão com o banco
-        try {
-            await prisma.$connect();
-            console.log('✅ Conexão com banco estabelecida');
-        } catch (dbError) {
-            console.error('❌ Erro na conexão com banco:', dbError);
-            throw dbError;
-        }
-
-        // Buscar estilos únicos do banco de dados
-        const uniqueStyles = await prisma.track.findMany({
-            select: {
+        // Buscar estilos únicos ordenados por popularidade
+        const styles = await prisma.track.groupBy({
+            by: ['style'],
+            _count: {
                 style: true
+            },
+            orderBy: {
+                _count: {
+                    style: 'desc'
+                }
             },
             where: {
                 style: {
                     not: null
                 }
-            },
-            distinct: ['style']
+            }
         });
 
-        // Extrair apenas os nomes dos estilos
-        const styles = uniqueStyles
-            .map(item => item.style)
-            .filter(style => style && style.trim() !== '')
-            .sort();
+        // Formatar resultado
+        const formattedStyles = styles
+            .filter(style => style.style && style.style !== 'N/A')
+            .map(style => ({
+                name: style.style,
+                count: style._count.style
+            }));
 
-        console.log(`📊 ${styles.length} estilos únicos encontrados no banco`);
+        console.log(`✅ ${formattedStyles.length} estilos carregados`);
 
         return NextResponse.json({
             success: true,
-            styles,
-            count: styles.length
+            styles: formattedStyles,
+            total: formattedStyles.length
         });
 
     } catch (error) {
-        console.error("[GET_STYLES_ERROR]", error);
-
-        if (error instanceof Error) {
-            console.error('🔍 Detalhes do erro:', {
-                message: error.message,
-                stack: error.stack,
-                name: error.name
-            });
-        }
-
-        return NextResponse.json({
-            error: "Erro interno do servidor ao buscar estilos",
-            styles: [],
-            count: 0
-        }, { status: 500 });
+        console.error('❌ Erro ao carregar estilos:', error);
+        return NextResponse.json(
+            {
+                success: false,
+                error: 'Erro interno do servidor',
+                styles: [],
+                total: 0
+            },
+            { status: 500 }
+        );
     }
 }

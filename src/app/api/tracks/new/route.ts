@@ -12,15 +12,6 @@ export async function GET(request: NextRequest) {
 
         console.log(`📊 API New Tracks chamada - page: ${page}, daysPerPage: ${daysPerPage}, offset: ${offset}`);
 
-        // Verificar conexão com o banco
-        try {
-            await prisma.$connect();
-            console.log('✅ Conexão com banco estabelecida');
-        } catch (dbError) {
-            console.error('❌ Erro na conexão com banco:', dbError);
-            throw dbError;
-        }
-
         // Buscar todas as músicas ordenadas por data de lançamento
         const allTracks = await prisma.track.findMany({
             orderBy: [

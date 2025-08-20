@@ -184,18 +184,33 @@ export const MusicList = ({
         setDownloadingTracks(prev => new Set([...prev, track.id]));
 
         try {
-            const response = await fetch(`/api/download/${track.id}`, {
-                method: 'GET',
+            const response = await fetch(`/api/download`, {
+                method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${session?.user?.id || ''}`,
                 },
+                body: JSON.stringify({ trackId: track.id }),
             });
 
             if (!response.ok) {
-                throw new Error('Falha no download');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Falha no download');
             }
 
-            const blob = await response.blob();
+            const data = await response.json();
+
+            if (!data.downloadUrl) {
+                throw new Error('URL de download não disponível');
+            }
+
+            // Fazer download do arquivo
+            const downloadResponse = await fetch(data.downloadUrl);
+            if (!downloadResponse.ok) {
+                throw new Error('Erro ao baixar arquivo');
+            }
+
+            const blob = await downloadResponse.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
@@ -210,7 +225,6 @@ export const MusicList = ({
             showToast('✅ Download concluído!', 'success');
         } catch (error) {
             console.error('Erro no download:', error);
-            showToast('❌ Erro no download', 'error');
         } finally {
             setDownloadingTracks(prev => {
                 const newSet = new Set(prev);
@@ -316,18 +330,30 @@ export const MusicList = ({
                 setDownloadingTracks(prev => new Set([...prev, track.id]));
 
                 try {
-                    const response = await fetch(`/api/download/${track.id}`, {
-                        method: 'GET',
+                    const response = await fetch(`/api/download`, {
+                        method: 'POST',
                         headers: {
+                            'Content-Type': 'application/json',
                             'Authorization': `Bearer ${session?.user?.id || ''}`,
                         },
+                        body: JSON.stringify({ trackId: track.id }),
                     });
 
                     if (!response.ok) {
                         throw new Error('Falha no download');
                     }
 
-                    const blob = await response.blob();
+                    const data = await response.json();
+                    if (!data.downloadUrl) {
+                        throw new Error('URL de download não encontrada');
+                    }
+
+                    // Baixar o arquivo diretamente da URL retornada
+                    const fileResponse = await fetch(data.downloadUrl);
+                    if (!fileResponse.ok) {
+                        throw new Error('Falha ao baixar o arquivo');
+                    }
+                    const blob = await fileResponse.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.style.display = 'none';
@@ -619,7 +645,8 @@ export const MusicList = ({
                                                         <img
                                                             src={track.imageUrl}
                                                             alt={`${track.artist} - ${track.songName}`}
-                                                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg border border-red-500/30"
+                                                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg border border-red-500/30 z-10"
+                                                            style={{ position: 'absolute', inset: 0 }}
                                                             onError={(e) => {
                                                                 const target = e.target as HTMLImageElement;
                                                                 target.style.display = 'none';
@@ -635,6 +662,16 @@ export const MusicList = ({
                                                         {initials}
                                                     </div>
 
+                                                    {/* Animação na thumbnail se estiver tocando (desktop) */}
+                                                    {isCurrentlyPlaying && (
+                                                        <img
+                                                            src="https://cdn.pixabay.com/animation/2023/10/08/03/19/03-19-26-213_512.gif"
+                                                            alt="Animação tocando"
+                                                            className="absolute inset-0 w-full h-full object-cover pointer-events-none z-20 rounded-lg sm:rounded-xl"
+                                                            style={{ background: 'transparent', opacity: 0.7 }}
+                                                        />
+                                                    )}
+
                                                     {/* Botão Play/Pause responsivo */}
                                                     <button
                                                         onClick={() => {
@@ -645,7 +682,7 @@ export const MusicList = ({
                                                             handlePlayPause(track);
                                                         }}
                                                         disabled={testingAudio.has(track.id)}
-                                                        className="absolute inset-0 bg-red-900/60 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="absolute inset-0 bg-red-900/60 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed z-30"
                                                         title={testingAudio.has(track.id) ? 'Testando compatibilidade...' : isCurrentlyPlaying ? 'Pausar' : 'Tocar'}
                                                     >
                                                         {testingAudio.has(track.id) ? (
@@ -664,11 +701,7 @@ export const MusicList = ({
                                                         <h3 className="text-white font-bold text-xs sm:text-sm truncate tracking-wide font-sans">
                                                             {track.songName}
                                                         </h3>
-                                                        {isCurrentlyPlaying && (
-                                                            <span className="text-red-400 text-xs font-semibold bg-red-500/20 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-red-500/30 font-sans">
-                                                                Tocando
-                                                            </span>
-                                                        )}
+                                                        {/* Removido: palavra 'Tocando' quando está tocando */}
                                                     </div>
 
                                                     <p className="text-gray-300 text-xs sm:text-sm font-medium mb-0.5 font-sans">

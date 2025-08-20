@@ -1,114 +1,63 @@
 // src/app/api/tracks/stats/route.ts
-import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        console.log('📊 API Stats chamada - carregando estatísticas da plataforma');
+        console.log('📊 API Stats: Carregando estatísticas...');
 
-        // Verificar conexão com o banco
-        try {
-            await prisma.$connect();
-            console.log('✅ Conexão com banco estabelecida');
-        } catch (dbError) {
-            console.error('❌ Erro na conexão com banco:', dbError);
-            throw dbError;
-        }
+        // Buscar estatísticas em paralelo para otimizar
+        const [totalTracks, totalStyles, totalPools, totalArtists] = await Promise.all([
+            prisma.track.count(),
+            prisma.track.groupBy({
+                by: ['style'],
+                where: { style: { not: null } }
+            }),
+            prisma.track.groupBy({
+                by: ['pool'],
+                where: { pool: { not: null } }
+            }),
+            prisma.track.groupBy({
+                by: ['artist'],
+                where: { artist: { not: null } }
+            })
+        ]);
 
-        // Contar total de músicas
-        const totalTracks = await prisma.track.count();
-        console.log(`📊 Total de tracks: ${totalTracks}`);
+        // Calcular totais únicos
+        const uniqueStyles = totalStyles.length;
+        const uniquePools = totalPools.length;
+        const uniqueArtists = totalArtists.length;
 
-        if (totalTracks === 0) {
-            console.log('⚠️ Nenhuma música encontrada no banco de dados');
-            return NextResponse.json({
-                totalTracks: 0,
-                newTracks: 0,
-                topGenres: {},
-                topArtists: {},
-                lastUpdated: new Date().toISOString()
-            });
-        }
-
-        // Contar músicas dos últimos 30 dias
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        const newTracks = await prisma.track.count({
-            where: {
-                OR: [
-                    { releaseDate: { gte: thirtyDaysAgo } },
-                    { createdAt: { gte: thirtyDaysAgo } }
-                ]
-            }
-        });
-        console.log(`📊 Músicas dos últimos 30 dias: ${newTracks}`);
-
-        // Top gêneros
-        const topGenres = await prisma.track.groupBy({
-            by: ['style'],
-            _count: {
-                style: true
-            },
-            orderBy: {
-                _count: {
-                    style: 'desc'
-                }
-            },
-            take: 10
-        });
-
-        const topGenresMap = topGenres.reduce((acc, item) => {
-            if (item.style && item.style !== 'N/A') {
-                acc[item.style] = item._count.style;
-            }
-            return acc;
-        }, {} as Record<string, number>);
-
-        // Top artistas
-        const topArtists = await prisma.track.groupBy({
-            by: ['artist'],
-            _count: {
-                artist: true
-            },
-            orderBy: {
-                _count: {
-                    artist: 'desc'
-                }
-            },
-            take: 10
-        });
-
-        const topArtistsMap = topArtists.reduce((acc, item) => {
-            if (item.artist && item.artist !== 'N/A') {
-                acc[item.artist] = item._count.artist;
-            }
-            return acc;
-        }, {} as Record<string, number>);
-
-        const stats = {
-            totalTracks,
-            newTracks,
-            topGenres: topGenresMap,
-            topArtists: topArtistsMap,
-            lastUpdated: new Date().toISOString()
-        };
-
-        console.log('✅ Estatísticas calculadas com sucesso');
-
-        return NextResponse.json(stats);
-
-    } catch (error) {
-        console.error("[GET_STATS_ERROR]", error);
+        console.log(`✅ Estatísticas carregadas: ${totalTracks} tracks, ${uniqueStyles} estilos, ${uniquePools} pools, ${uniqueArtists} artistas`);
 
         return NextResponse.json({
-            error: "Erro interno do servidor ao buscar estatísticas",
-            totalTracks: 0,
-            newTracks: 0,
-            topGenres: {},
-            topArtists: {}
-        }, { status: 500 });
+            success: true,
+            stats: {
+                totalTracks,
+                totalStyles: uniqueStyles,
+                totalPools: uniquePools,
+                totalArtists: uniqueArtists,
+                lastUpdated: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar estatísticas:', error);
+        return NextResponse.json(
+            {
+                success: false,
+                error: 'Erro interno do servidor',
+                stats: {
+                    totalTracks: 0,
+                    totalStyles: 0,
+                    totalPools: 0,
+                    totalArtists: 0,
+                    lastUpdated: null
+                }
+            },
+            { status: 500 }
+        );
     }
 }

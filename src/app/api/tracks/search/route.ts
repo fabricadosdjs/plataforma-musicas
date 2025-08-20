@@ -8,173 +8,68 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const query = searchParams.get('q') || '';
         const page = parseInt(searchParams.get('page') || '1');
-        const limit = parseInt(searchParams.get('limit') || '50');
+        const limit = parseInt(searchParams.get('limit') || '20');
         const offset = (page - 1) * limit;
 
-        console.log(`🔍 API Search chamada - query: "${query}", page: ${page}, limit: ${limit}`);
-
-        // Verificar conexão com o banco
-        try {
-            await prisma.$connect();
-            console.log('✅ Conexão com banco estabelecida');
-        } catch (dbError) {
-            console.error('❌ Erro na conexão com banco:', dbError);
-            throw dbError;
-        }
-
-        // Se não há query, retorna as músicas mais recentes
         if (!query.trim()) {
-            const recentTracks = await prisma.track.findMany({
-                take: limit,
-                skip: offset,
-                orderBy: [
-                    { releaseDate: 'desc' },
-                    { createdAt: 'desc' }
-                ],
-                select: {
-                    id: true,
-                    songName: true,
-                    artist: true,
-                    style: true,
-                    pool: true,
-                    version: true,
-                    releaseDate: true,
-                    createdAt: true,
-                    imageUrl: true,
-                    previewUrl: true,
-                    downloadUrl: true,
-                    isCommunity: true,
-                    uploadedBy: true,
-                    bitrate: true,
-                }
-            });
-
-            const totalCount = await prisma.track.count();
-
-            console.log(`📊 Retornando ${recentTracks.length} músicas recentes de ${totalCount} total`);
-
-            const processedTracks = recentTracks.map((track: any) => ({
-                ...track,
-                previewUrl: track.downloadUrl || '',
-                downloadCount: 0,
-                likeCount: 0,
-                playCount: 0,
-            }));
-
             return NextResponse.json({
-                tracks: processedTracks,
-                query: '',
-                page,
-                limit,
-                totalCount,
-                totalPages: Math.ceil(totalCount / limit),
-                hasMore: (page * limit) < totalCount,
-                isSearch: false
+                tracks: [],
+                totalCount: 0,
+                currentPage: page,
+                totalPages: 0,
+                hasMore: false
             });
         }
 
-        // Buscar músicas que correspondem à query
-        const searchTracks = await prisma.track.findMany({
+        console.log(`🔍 Busca por: "${query}" - página ${page}, limite ${limit}`);
+
+        // Buscar total de resultados
+        const totalCount = await prisma.track.count({
             where: {
                 OR: [
-                    {
-                        songName: {
-                            contains: query,
-                            mode: 'insensitive'
-                        }
-                    },
-                    {
-                        artist: {
-                            contains: query,
-                            mode: 'insensitive'
-                        }
-                    },
-                    {
-                        style: {
-                            contains: query,
-                            mode: 'insensitive'
-                        }
-                    },
-                    {
-                        pool: {
-                            contains: query,
-                            mode: 'insensitive'
-                        }
-                    },
-                    {
-                        version: {
-                            contains: query,
-                            mode: 'insensitive'
-                        }
-                    }
+                    { songName: { contains: query, mode: 'insensitive' as const } },
+                    { artist: { contains: query, mode: 'insensitive' as const } },
+                    { style: { contains: query, mode: 'insensitive' as const } },
+                    { pool: { contains: query, mode: 'insensitive' as const } }
+                ]
+            }
+        });
+
+        // Buscar tracks com paginação
+        const tracks = await prisma.track.findMany({
+            where: {
+                OR: [
+                    { songName: { contains: query, mode: 'insensitive' as const } },
+                    { artist: { contains: query, mode: 'insensitive' as const } },
+                    { style: { contains: query, mode: 'insensitive' as const } },
+                    { pool: { contains: query, mode: 'insensitive' as const } }
                 ]
             },
-            take: limit,
-            skip: offset,
-            orderBy: [
-                { releaseDate: 'desc' },
-                { createdAt: 'desc' }
-            ],
             select: {
                 id: true,
                 songName: true,
                 artist: true,
                 style: true,
                 pool: true,
-                version: true,
+                imageUrl: true,
+                downloadUrl: true,
                 releaseDate: true,
                 createdAt: true,
-                imageUrl: true,
                 previewUrl: true,
-                downloadUrl: true,
                 isCommunity: true,
                 uploadedBy: true,
-                bitrate: true,
-            }
+            },
+            orderBy: [
+                { createdAt: 'desc' }
+            ],
+            take: limit,
+            skip: offset,
         });
 
-        // Contar total de resultados da busca
-        const totalCount = await prisma.track.count({
-            where: {
-                OR: [
-                    {
-                        songName: {
-                            contains: query,
-                            mode: 'insensitive'
-                        }
-                    },
-                    {
-                        artist: {
-                            contains: query,
-                            mode: 'insensitive'
-                        }
-                    },
-                    {
-                        style: {
-                            contains: query,
-                            mode: 'insensitive'
-                        }
-                    },
-                    {
-                        pool: {
-                            contains: query,
-                            mode: 'insensitive'
-                        }
-                    },
-                    {
-                        version: {
-                            contains: query,
-                            mode: 'insensitive'
-                        }
-                    }
-                ]
-            }
-        });
+        console.log(`✅ Busca concluída: ${tracks.length} resultados para "${query}"`);
 
-        console.log(`🔍 Encontradas ${searchTracks.length} músicas de ${totalCount} total para query: "${query}"`);
-
-        // Processar tracks para retorno
-        const processedTracks = searchTracks.map((track: any) => ({
+        // Processar tracks
+        const tracksWithPreview = tracks.map((track: any) => ({
             ...track,
             previewUrl: track.downloadUrl || '',
             downloadCount: 0,
@@ -183,37 +78,21 @@ export async function GET(request: NextRequest) {
         }));
 
         return NextResponse.json({
-            tracks: processedTracks,
-            query,
-            page,
-            limit,
+            tracks: tracksWithPreview,
             totalCount,
+            currentPage: page,
             totalPages: Math.ceil(totalCount / limit),
-            hasMore: (page * limit) < totalCount,
-            isSearch: true
+            hasMore: page < Math.ceil(totalCount / limit),
+            query,
+            limit,
+            offset
         });
 
     } catch (error) {
-        console.error("[GET_SEARCH_TRACKS_ERROR]", error);
-
-        if (error instanceof Error) {
-            console.error('🔍 Detalhes do erro:', {
-                message: error.message,
-                stack: error.stack,
-                name: error.name
-            });
-        }
-
-        return NextResponse.json({
-            error: "Erro interno do servidor ao buscar músicas",
-            tracks: [],
-            query: '',
-            page: 1,
-            limit: 50,
-            totalCount: 0,
-            totalPages: 0,
-            hasMore: false,
-            isSearch: false
-        }, { status: 500 });
+        console.error('❌ Erro na busca:', error);
+        return NextResponse.json(
+            { error: 'Erro interno do servidor' },
+            { status: 500 }
+        );
     }
 }

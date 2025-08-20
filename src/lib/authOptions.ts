@@ -72,11 +72,38 @@ export const authOptions: AuthOptions = {
             credentials: {
                 email: { label: 'Email', type: 'text' },
                 password: { label: 'Password', type: 'password' },
+                turnstileToken: { label: 'Turnstile Token', type: 'text' },
             },
             async authorize(credentials) {
                 try {
-                    if (!credentials?.email || !credentials?.password) {
-                        console.log('❌ Credenciais incompletas');
+                    if (!credentials?.email || !credentials?.password || !credentials?.turnstileToken) {
+                        console.log('❌ Credenciais incompletas ou captcha não verificado');
+                        return null;
+                    }
+
+                    // Validar token do Turnstile
+                    try {
+                        const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                secret: process.env.TURNSTILE_SECRET_KEY,
+                                response: credentials.turnstileToken,
+                            }),
+                        });
+
+                        const turnstileResult = await turnstileResponse.json();
+
+                        if (!turnstileResult.success) {
+                            console.log('❌ Falha na verificação do Turnstile:', turnstileResult);
+                            return null;
+                        }
+
+                        console.log('✅ Turnstile verificado com sucesso');
+                    } catch (turnstileError) {
+                        console.error('❌ Erro ao verificar Turnstile:', turnstileError);
                         return null;
                     }
 
