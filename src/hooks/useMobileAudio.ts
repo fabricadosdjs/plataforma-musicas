@@ -18,8 +18,12 @@ export const useMobileAudio = (): UseMobileAudioReturn => {
     const audioTestRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        // Detectar dispositivo móvel
+        // Detectar dispositivo móvel (apenas no cliente)
         const checkMobile = () => {
+            if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+                setIsMobile(false);
+                return false;
+            }
             const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             setIsMobile(mobile);
             return mobile;
@@ -84,7 +88,7 @@ export const useMobileAudio = (): UseMobileAudioReturn => {
 
         try {
             // Para iOS, tentar reproduzir um áudio silencioso
-            if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            if (typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                 console.log('🎵 useMobileAudio: Solicitando permissão iOS');
 
                 const testAudio = new Audio();

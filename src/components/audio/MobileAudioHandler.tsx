@@ -15,7 +15,11 @@ export const MobileAudioHandler: React.FC = () => {
     const isMobile = useRef(false);
 
     useEffect(() => {
-        // Detectar se é dispositivo móvel
+        // Detectar se é dispositivo móvel (apenas no cliente)
+        if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+            isMobile.current = false;
+            return;
+        }
         isMobile.current = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         if (!isMobile.current) return;
@@ -37,13 +41,13 @@ export const MobileAudioHandler: React.FC = () => {
                     audio.muted = false;
 
                     // Para iOS, garantir reprodução inline
-                    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                    if (typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                         console.log('🎵 MobileAudioHandler: Configurando iOS para reprodução inline');
                         // O atributo playsInline já está definido no elemento audio
                     }
 
                     // Para Android, garantir que o áudio seja carregado
-                    if (/Android/i.test(navigator.userAgent)) {
+                    if (typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)) {
                         console.log('🎵 MobileAudioHandler: Configurando Android');
                         // Android geralmente tem menos restrições
                     }

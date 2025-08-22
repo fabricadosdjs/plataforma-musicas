@@ -152,8 +152,10 @@ const FooterPlayer = () => {
 
     if (!currentTrack) return null;
 
-    // Detectar se é dispositivo móvel
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // Detectar se é dispositivo móvel (apenas no cliente)
+    const isMobile = typeof window !== 'undefined' && typeof navigator !== 'undefined' 
+        ? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        : false;
 
     // Em mobile, não mostrar o footer player - apenas o play/pause da thumbnail é suficiente
     if (isMobile) return null;

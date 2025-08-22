@@ -7,8 +7,10 @@ interface FooterSpacerProps {
 }
 
 const FooterSpacer: React.FC<FooterSpacerProps> = ({ className = "h-6" }) => {
-    // Detectar se é dispositivo móvel
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // Detectar se é dispositivo móvel (apenas no cliente)
+    const isMobile = typeof window !== 'undefined' && typeof navigator !== 'undefined' 
+        ? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        : false;
     
     // Em mobile, não adicionar espaçamento (footer player não é visível)
     if (isMobile) return null;

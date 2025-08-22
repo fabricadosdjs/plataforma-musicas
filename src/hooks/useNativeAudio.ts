@@ -117,7 +117,7 @@ export const useNativeAudio = (): UseNativeAudioReturn => {
 
         try {
             // Configurar metadados da sessão de mídia
-            if (navigator.mediaSession) {
+            if (typeof navigator !== 'undefined' && navigator.mediaSession) {
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: metadata.title || 'Música',
                     artist: metadata.artist || 'Artista',
@@ -160,6 +160,9 @@ export const useNativeAudio = (): UseNativeAudioReturn => {
         if (!capabilities.hasGetUserMedia) return null;
 
         try {
+            if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
+                throw new Error('MediaDevices API não disponível');
+            }
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             console.log('🎵 NativeAudio: Acesso ao microfone concedido');
             return stream;
