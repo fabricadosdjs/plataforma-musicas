@@ -40,8 +40,11 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
         const audioUrl = track.downloadUrl || track.previewUrl || track.url;
         if (!audioUrl) return null;
 
-        // Detectar se é dispositivo móvel
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        // Detectar se é dispositivo móvel (apenas no cliente)
+        let isMobile = false;
+        if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+            isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
 
         // Em mobile, usar URL direta da Contabo (sem assinatura)
         if (isMobile && audioUrl.includes('contabostorage.com')) {

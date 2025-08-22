@@ -2,6 +2,8 @@
 
 // Força renderização dinâmica para evitar erro de pré-renderização
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
+export const preferredRegion = 'auto';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
