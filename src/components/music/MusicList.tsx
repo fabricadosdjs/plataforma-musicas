@@ -713,15 +713,7 @@ export const MusicList = React.memo(({
                                                         />
                                                     </ImageErrorBoundary>
 
-                                                    {/* Animação na thumbnail se estiver tocando (desktop) */}
-                                                    {isCurrentlyPlaying && (
-                                                        <img
-                                                            src="https://cdn.pixabay.com/animation/2023/10/08/03/19/03-19-26-213_512.gif"
-                                                            alt="Animação tocando"
-                                                            className="absolute inset-0 w-full h-full object-cover pointer-events-none z-20 rounded-lg sm:rounded-xl"
-                                                            style={{ background: 'transparent', opacity: 0.7 }}
-                                                        />
-                                                    )}
+
 
                                                     {/* Botão Play/Pause responsivo */}
                                                     <button

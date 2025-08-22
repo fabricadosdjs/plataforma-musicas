@@ -90,7 +90,7 @@ const VolumeControl = ({ volume, onVolumeChange, isMuted, toggleMute }: VolumeCo
 
 // --- Componente Principal: FooterPlayer ---
 const FooterPlayer = () => {
-    const { currentTrack, isPlaying, togglePlayPause, stopTrack, nextTrack, previousTrack, audioRef } = useGlobalPlayer();
+    const { currentTrack, isPlaying, togglePlayPause, stopTrack, nextTrack, previousTrack, audioRef, playlist, currentTrackIndex, nextMusicListTrack, previousMusicListTrack, currentMusicList, currentMusicListIndex } = useGlobalPlayer();
 
     const [volume, setVolume] = useState(1.0);
     const [isMuted, setIsMuted] = useState(false);
@@ -186,7 +186,6 @@ const FooterPlayer = () => {
                         {/* Imagem só aparece em desktop */}
                         <div className="hidden sm:block">
                             <Image
-                                // @ts-expect-error: Garantir compatibilidade temporária
                                 src={currentTrack.imageUrl || "/placeholder.png"}
                                 alt={currentTrack.songName || "Capa da música"}
                                 width={48} height={48}
@@ -211,10 +210,15 @@ const FooterPlayer = () => {
                             <button
                                 onClick={() => {
                                     console.log('🎵 FooterPlayerNew: Botão anterior clicado');
-                                    handlePrevious();
+                                    console.log('🎵 FooterPlayerNew: Estado atual:', {
+                                        currentTrack: currentTrack?.songName,
+                                        musicList: currentMusicList.length,
+                                        currentMusicListIndex
+                                    });
+                                    previousMusicListTrack();
                                 }}
                                 className="p-2 text-red-400 transition active:scale-90 hover:text-red-300"
-                                title="Anterior"
+                                title="Música anterior da lista"
                             >
                                 <SkipBack size={20} fill="currentColor" />
                             </button>
@@ -231,10 +235,15 @@ const FooterPlayer = () => {
                             <button
                                 onClick={() => {
                                     console.log('🎵 FooterPlayerNew: Botão próximo clicado');
-                                    nextTrack();
+                                    console.log('🎵 FooterPlayerNew: Estado atual:', {
+                                        currentTrack: currentTrack?.songName,
+                                        musicList: currentMusicList.length,
+                                        currentMusicListIndex
+                                    });
+                                    nextMusicListTrack();
                                 }}
                                 className="p-2 text-red-400 transition active:scale-90 hover:text-red-300"
-                                title="Próxima"
+                                title="Próxima música da lista"
                             >
                                 <SkipForward size={20} fill="currentColor" />
                             </button>

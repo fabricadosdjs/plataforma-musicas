@@ -10,12 +10,16 @@ interface GlobalPlayerContextType {
     isPlaying: boolean;
     playlist: Track[];
     currentTrackIndex: number;
-    playTrack: (track: Track, newPlaylist?: Track[]) => Promise<void>;
+    currentMusicList: Track[]; // Lista de músicas atual (MusicList)
+    currentMusicListIndex: number; // Índice na lista de músicas
+    playTrack: (track: Track, newPlaylist?: Track[], musicList?: Track[]) => Promise<void>;
     pauseTrack: () => void;
     stopTrack: () => void;
     togglePlayPause: () => void;
     nextTrack: () => void;
     previousTrack: () => void;
+    nextMusicListTrack: () => void; // Próxima música da lista
+    previousMusicListTrack: () => void; // Música anterior da lista
     audioRef: React.RefObject<HTMLAudioElement>;
 }
 
@@ -28,6 +32,8 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const [isPlaying, setIsPlaying] = useState(false);
     const [playlist, setPlaylist] = useState<Track[]>([]);
     const [currentTrackIndex, setCurrentTrackIndex] = useState(-1);
+    const [currentMusicList, setCurrentMusicList] = useState<Track[]>([]);
+    const [currentMusicListIndex, setCurrentMusicListIndex] = useState(-1);
     const audioRef = useRef<HTMLAudioElement>(null);
 
     const getSecureAudioUrl = async (track: Track): Promise<string | null> => {
@@ -85,28 +91,20 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return audioUrl;
     };
 
-    const playTrack = async (track: Track, newPlaylist?: Track[]) => {
+    const playTrack = async (track: Track, newPlaylist?: Track[], musicList?: Track[]) => {
         console.log('🎵 GlobalPlayer: playTrack called with:', {
             id: track.id,
             songName: track.songName,
             downloadUrl: track.downloadUrl,
             previewUrl: track.previewUrl,
             url: track.url,
-            imageUrl: track.imageUrl
+            imageUrl: track.imageUrl,
+            musicList: musicList?.length || 0
         });
 
         // Obter URL segura se necessário
         const secureUrl = await getSecureAudioUrl(track);
         if (!secureUrl) {
-            console.error('🎵 GlobalPlayer: No valid audio URL found for track:', track);
-            showToast('❌ URL de áudio inválida para esta faixa', 'error');
-            return;
-        }
-
-        // Verificar se a URL é válida
-        try {
-            new URL(secureUrl);
-        } catch (error) {
             console.error('🎵 GlobalPlayer: Invalid audio URL:', secureUrl);
             showToast('❌ URL de áudio inválida para esta faixa', 'error');
             return;
@@ -118,9 +116,23 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
             const index = newPlaylist.findIndex(t => t.id === track.id);
             setCurrentTrackIndex(index);
         } else {
-            // Se não há playlist nova, procure na playlist atual
-            const index = playlist.findIndex(t => t.id === track.id);
-            setCurrentTrackIndex(index >= 0 ? index : 0);
+            // Se não há playlist nova, criar uma playlist com apenas esta música
+            // para permitir que nextTrack/previousTrack funcionem
+            if (playlist.length === 0 || !playlist.find(t => t.id === track.id)) {
+                setPlaylist([track]);
+                setCurrentTrackIndex(0);
+            } else {
+                // Se a música já está na playlist atual, apenas atualizar o índice
+                const index = playlist.findIndex(t => t.id === track.id);
+                setCurrentTrackIndex(index >= 0 ? index : 0);
+            }
+        }
+
+        // Se uma lista de músicas foi fornecida, atualize a lista atual
+        if (musicList) {
+            setCurrentMusicList(musicList);
+            const index = musicList.findIndex(t => t.id === track.id);
+            setCurrentMusicListIndex(index >= 0 ? index : -1);
         }
 
         setCurrentTrack(track);
@@ -191,28 +203,68 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
 
     const nextTrack = () => {
-        if (playlist.length === 0 || currentTrackIndex === -1) return;
+        console.log('🎵 GlobalPlayer: nextTrack chamado', {
+            playlistLength: playlist.length,
+            currentTrackIndex,
+            currentTrack: currentTrack?.songName
+        });
+
+        if (playlist.length === 0) {
+            console.log('🎵 GlobalPlayer: Playlist vazia, não é possível avançar');
+            return;
+        }
+
+        if (currentTrackIndex === -1) {
+            console.log('🎵 GlobalPlayer: Índice inválido, não é possível avançar');
+            return;
+        }
 
         const nextIndex = (currentTrackIndex + 1) % playlist.length;
         const nextTrackToPlay = playlist[nextIndex];
 
         if (nextTrackToPlay) {
-            console.log('🎵 GlobalPlayer: Avançando para próxima track:', nextTrackToPlay.songName);
+            console.log('🎵 GlobalPlayer: Avançando para próxima track:', {
+                from: currentTrack?.songName,
+                to: nextTrackToPlay.songName,
+                index: nextIndex
+            });
             // Usar playTrack para carregar o novo áudio
             playTrack(nextTrackToPlay);
+        } else {
+            console.log('🎵 GlobalPlayer: Próxima track não encontrada');
         }
     };
 
     const previousTrack = () => {
-        if (playlist.length === 0 || currentTrackIndex === -1) return;
+        console.log('🎵 GlobalPlayer: previousTrack chamado', {
+            playlistLength: playlist.length,
+            currentTrackIndex,
+            currentTrack: currentTrack?.songName
+        });
+
+        if (playlist.length === 0) {
+            console.log('🎵 GlobalPlayer: Playlist vazia, não é possível voltar');
+            return;
+        }
+
+        if (currentTrackIndex === -1) {
+            console.log('🎵 GlobalPlayer: Índice inválido, não é possível voltar');
+            return;
+        }
 
         const prevIndex = currentTrackIndex === 0 ? playlist.length - 1 : currentTrackIndex - 1;
         const prevTrackToPlay = playlist[prevIndex];
 
         if (prevTrackToPlay) {
-            console.log('🎵 GlobalPlayer: Voltando para track anterior:', prevTrackToPlay.songName);
+            console.log('🎵 GlobalPlayer: Voltando para track anterior:', {
+                from: currentTrack?.songName,
+                to: prevTrackToPlay.songName,
+                index: prevIndex
+            });
             // Usar playTrack para carregar o novo áudio
             playTrack(prevTrackToPlay);
+        } else {
+            console.log('🎵 GlobalPlayer: Track anterior não encontrada');
         }
     };
 
@@ -257,6 +309,72 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 console.log('🎵 GlobalPlayer: Nenhum elemento de áudio disponível');
                 setIsPlaying(true);
             }
+        }
+    };
+
+    const nextMusicListTrack = () => {
+        console.log('🎵 GlobalPlayer: nextMusicListTrack chamado', {
+            musicListLength: currentMusicList.length,
+            currentMusicListIndex,
+            currentTrack: currentTrack?.songName
+        });
+
+        if (currentMusicList.length === 0) {
+            console.log('🎵 GlobalPlayer: Lista de músicas vazia, não é possível avançar');
+            return;
+        }
+
+        if (currentMusicListIndex === -1) {
+            console.log('🎵 GlobalPlayer: Índice inválido na lista de músicas, não é possível avançar');
+            return;
+        }
+
+        const nextIndex = (currentMusicListIndex + 1) % currentMusicList.length;
+        const nextTrackToPlay = currentMusicList[nextIndex];
+
+        if (nextTrackToPlay) {
+            console.log('🎵 GlobalPlayer: Avançando para próxima música da lista:', {
+                from: currentTrack?.songName,
+                to: nextTrackToPlay.songName,
+                index: nextIndex
+            });
+            // Usar playTrack para carregar o novo áudio
+            playTrack(nextTrackToPlay, undefined, currentMusicList);
+        } else {
+            console.log('🎵 GlobalPlayer: Próxima música da lista não encontrada');
+        }
+    };
+
+    const previousMusicListTrack = () => {
+        console.log('🎵 GlobalPlayer: previousMusicListTrack chamado', {
+            musicListLength: currentMusicList.length,
+            currentMusicListIndex,
+            currentTrack: currentTrack?.songName
+        });
+
+        if (currentMusicList.length === 0) {
+            console.log('🎵 GlobalPlayer: Lista de músicas vazia, não é possível voltar');
+            return;
+        }
+
+        if (currentMusicListIndex === -1) {
+            console.log('🎵 GlobalPlayer: Índice inválido na lista de músicas, não é possível voltar');
+            return;
+        }
+
+        const prevIndex = currentMusicListIndex === 0 ? currentMusicList.length - 1 : currentMusicListIndex - 1;
+        const prevTrackToPlay = currentMusicList[prevIndex];
+
+        if (prevTrackToPlay) {
+            console.log('🎵 GlobalPlayer: Voltando para música anterior da lista:', {
+                from: currentTrack?.songName,
+                to: prevTrackToPlay.songName,
+                index: prevIndex
+            });
+            // Usar playTrack para carregar o novo áudio
+            playTrack(prevTrackToPlay, undefined, currentMusicList);
+        } else {
+            console.log('🎵 GlobalPlayer: Música anterior da lista não encontrada');
         }
     };
 
@@ -306,12 +424,16 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 isPlaying,
                 playlist,
                 currentTrackIndex,
+                currentMusicList,
+                currentMusicListIndex,
                 playTrack,
                 pauseTrack,
                 stopTrack,
                 togglePlayPause,
                 nextTrack,
                 previousTrack,
+                nextMusicListTrack,
+                previousMusicListTrack,
                 audioRef,
             }}
         >
