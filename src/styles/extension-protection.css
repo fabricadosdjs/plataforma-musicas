@@ -1,0 +1,104 @@
+/* CSS para ocultar elementos injetados por extensões do navegador */
+/* Isso previne erros de hidratação causados por extensões de senha */
+
+/* DualSafe e outras extensões de segurança */
+.DualSafe-inputfiled-icon,
+.DualSafe-element,
+[id*="dualsafe"],
+[class*="dualsafe"],
+[class*="DualSafe"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Extensões gerais de gerenciadores de senha */
+[class*="password-manager"],
+[class*="extension-icon"],
+[class*="password-extension"],
+[id*="password-manager"],
+[id*="extension-icon"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Elementos injetados por extensões do Chrome/Firefox */
+div[style*="chrome-extension://"],
+div[style*="moz-extension://"],
+span[style*="chrome-extension://"],
+span[style*="moz-extension://"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* LastPass */
+[id*="lastpass"],
+[class*="lastpass"],
+[data-lastpass-icon-root] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Dashlane */
+[id*="dashlane"],
+[class*="dashlane"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* 1Password */
+[id*="1password"],
+[class*="1password"],
+[class*="_1password"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Bitwarden */
+[id*="bitwarden"],
+[class*="bitwarden"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Keeper */
+[id*="keeper"],
+[class*="keeper"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* RoboForm */
+[id*="roboform"],
+[class*="roboform"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Extensões genéricas que podem causar problemas */
+[data-extension-id],
+[data-extension-root],
+[class*="extension-overlay"],
+[id*="extension-overlay"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}

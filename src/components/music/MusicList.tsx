@@ -11,6 +11,10 @@ import { useRouter } from 'next/navigation';
 import { useMobileAudio } from '@/hooks/useMobileAudio';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useDownloadsCache } from '@/hooks/useDownloadsCache';
+import { useMusicImageLoader } from '@/hooks/useImageLoader';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { ImageErrorBoundary } from '@/components/ui/ImageErrorBoundary';
+import { generateGradientColors, generateInitials } from '@/utils/imageUtils';
 
 interface MusicListProps {
     tracks: Track[];
@@ -161,24 +165,10 @@ export const MusicList = React.memo(({
             return { initials: '?', colors: 'from-gray-500 to-gray-700' };
         }
 
-        const songInitial = track.songName.charAt(0).toUpperCase();
-        const artistInitial = track.artist.charAt(0).toUpperCase();
-        const initials = songInitial + artistInitial;
-
-        const colors = [
-            'from-red-500 to-pink-600',
-            'from-blue-500 to-cyan-600',
-            'from-green-500 to-emerald-600',
-            'from-yellow-500 to-orange-600',
-            'from-purple-500 to-indigo-600',
-            'from-pink-500 to-rose-600',
-            'from-indigo-500 to-purple-600',
-            'from-cyan-500 to-blue-600'
-        ];
-
-        const colorIndex = (track.songName.charCodeAt(0) + track.artist.charCodeAt(0)) % colors.length;
-
-        return { initials, colors: colors[colorIndex] };
+        return {
+            initials: generateInitials(track.songName, track.artist),
+            colors: generateGradientColors(track.songName, track.artist)
+        };
     };
 
     const isDownloaded = (track: Track) => finalDownloadedTrackIds.includes(track.id);
@@ -314,6 +304,34 @@ export const MusicList = React.memo(({
     const handlePoolClick = (pool: string | null | undefined) => {
         if (!pool || pool === 'N/A') return;
         router.push(`/pool/${encodeURIComponent(pool)}`);
+    };
+
+    const handleArtistClick = (artist: string | null | undefined) => {
+        if (!artist || artist === 'N/A') return;
+        router.push(`/artist/${encodeURIComponent(artist)}`);
+    };
+
+    // Função para renderizar artistas separados por background
+    const renderArtists = (artistString: string | null | undefined) => {
+        if (!artistString || artistString === 'N/A') return null;
+
+        // Separar artistas por vírgula e limpar espaços
+        const artists = artistString.split(',').map(artist => artist.trim()).filter(artist => artist);
+
+        return (
+            <div className="flex flex-wrap gap-1 max-w-full">
+                {artists.map((artist, index) => (
+                    <button
+                        key={index}
+                        onClick={() => handleArtistClick(artist)}
+                        className="text-[#1db954] hover:text-[#1ed760] text-xs font-medium transition-all duration-200 cursor-pointer hover:underline"
+                        title={`Filtrar por artista: ${artist}`}
+                    >
+                        {artist}
+                    </button>
+                ))}
+            </div>
+        );
     };
 
     const loadMoreGroups = () => {
@@ -533,25 +551,12 @@ export const MusicList = React.memo(({
                                                     <div className="relative mb-1.5 sm:mb-2">
                                                         {/* Thumbnail com botão play centralizado */}
                                                         <div className="w-full aspect-square bg-black border border-gray-700 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden relative">
-                                                            {track.imageUrl && track.imageUrl !== '' && track.imageUrl !== 'undefined' ? (
-                                                                <img
-                                                                    src={track.imageUrl}
-                                                                    alt={`${track.artist} - ${track.songName}`}
-                                                                    className="w-full h-full object-cover"
-                                                                    onError={(e) => {
-                                                                        const target = e.target as HTMLImageElement;
-                                                                        target.style.display = 'none';
-                                                                        const fallback = target.nextElementSibling as HTMLElement;
-                                                                        if (fallback) fallback.style.display = 'flex';
-                                                                    }}
-                                                                />
-                                                            ) : null}
-                                                            <div
-                                                                className={`w-full h-full bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-lg shadow-lg border border-gray-700 ${track.imageUrl && track.imageUrl !== '' && track.imageUrl !== 'undefined' ? 'hidden' : ''}`}
-                                                                style={{ display: track.imageUrl && track.imageUrl !== '' && track.imageUrl !== 'undefined' ? 'none' : 'flex' }}
-                                                            >
-                                                                {initials}
-                                                            </div>
+                                                            <OptimizedImage
+                                                                track={track}
+                                                                className="w-full h-full object-cover"
+                                                                fallbackClassName={`w-full h-full bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-lg shadow-lg border border-gray-700`}
+                                                                fallbackContent={initials}
+                                                            />
 
                                                             {/* Badge do estilo da música */}
                                                             <div className="absolute top-1.5 left-1.5">
@@ -600,9 +605,9 @@ export const MusicList = React.memo(({
                                                                 {track.songName}
                                                             </h3>
                                                         </div>
-                                                        <p className="text-xs sm:text-sm text-gray-300 relative z-10 -mt-1 font-medium truncate">
-                                                            {track.artist}
-                                                        </p>
+                                                        <div className="text-xs sm:text-sm text-gray-300 relative z-10 -mt-1 font-medium">
+                                                            {renderArtists(track.artist)}
+                                                        </div>
 
                                                         {/* Botões de ação - Mobile */}
                                                         <div className="flex flex-col gap-2 mt-3">
@@ -692,26 +697,21 @@ export const MusicList = React.memo(({
                                             <div className="flex items-start gap-2 min-h-16 sm:min-h-20">
                                                 {/* Thumbnail responsivo */}
                                                 <div className="flex-shrink-0 relative h-16 w-16 sm:h-20 sm:w-20">
-                                                    {track.imageUrl && track.imageUrl !== '' && track.imageUrl !== 'undefined' ? (
-                                                        <img
-                                                            src={track.imageUrl}
-                                                            alt={`${track.artist} - ${track.songName}`}
-                                                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg border border-red-500/30 z-10"
-                                                            style={{ position: 'absolute', inset: 0 }}
-                                                            onError={(e) => {
-                                                                const target = e.target as HTMLImageElement;
-                                                                target.style.display = 'none';
-                                                                const fallback = target.nextElementSibling as HTMLElement;
-                                                                if (fallback) fallback.style.display = 'flex';
-                                                            }}
-                                                        />
-                                                    ) : null}
-                                                    <div
-                                                        className={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg border border-red-500/30 ${track.imageUrl && track.imageUrl !== '' && track.imageUrl !== 'undefined' ? 'hidden' : ''}`}
-                                                        style={{ display: track.imageUrl && track.imageUrl !== '' && track.imageUrl !== 'undefined' ? 'none' : 'flex' }}
+                                                    <ImageErrorBoundary
+                                                        fallback={
+                                                            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg border border-red-500/30`}>
+                                                                {initials}
+                                                            </div>
+                                                        }
                                                     >
-                                                        {initials}
-                                                    </div>
+                                                        <OptimizedImage
+                                                            track={track}
+                                                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg border border-red-500/30 z-10"
+                                                            fallbackClassName={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg border border-red-500/30`}
+                                                            fallbackContent={initials}
+                                                            style={{ position: 'absolute', inset: 0 }}
+                                                        />
+                                                    </ImageErrorBoundary>
 
                                                     {/* Animação na thumbnail se estiver tocando (desktop) */}
                                                     {isCurrentlyPlaying && (
@@ -755,9 +755,9 @@ export const MusicList = React.memo(({
                                                         {/* Removido: palavra 'Tocando' quando está tocando */}
                                                     </div>
 
-                                                    <p className="text-gray-300 text-xs sm:text-sm font-medium mb-0.5 font-sans">
-                                                        {track.artist}
-                                                    </p>
+                                                    <div className="text-gray-300 text-xs sm:text-sm font-medium mb-0.5 font-sans">
+                                                        {renderArtists(track.artist)}
+                                                    </div>
 
                                                     {/* Estilo, Pool e Bitrate - Responsivos */}
                                                     <div className="hidden sm:flex items-center gap-2 lg:gap-3">

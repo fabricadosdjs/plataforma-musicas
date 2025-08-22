@@ -40,6 +40,10 @@ const NewPage = () => {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedPool, setSelectedPool] = useState("");
 
+  // Estados para paginação baseada em datas
+  const [currentPage, setCurrentPage] = useState(1);
+  const [daysPerPage] = useState(3); // Cada página mostra 3 dias de conteúdo
+
   // Extrair dados únicos para filtros - otimizado para evitar re-cálculos desnecessários
   const genres = useMemo(() => {
     if (tracks.length === 0) return [];
@@ -82,9 +86,112 @@ const NewPage = () => {
   // Hook para cache de downloads
   const downloadsCache = useDownloadsCache();
 
+  // Função para agrupar tracks por data
+  const groupedTracksByDate = useMemo(() => {
+    if (tracks.length === 0) return {};
 
+    const groups: { [key: string]: Track[] } = {};
 
+    tracks.forEach(track => {
+      const date = track.releaseDate || track.createdAt;
+      if (!date) return;
 
+      const dateKey = new Date(date).toISOString().split('T')[0]; // YYYY-MM-DD
+
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(track);
+    });
+
+    // Ordenar por data (mais recente primeiro)
+    return Object.fromEntries(
+      Object.entries(groups).sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
+    );
+  }, [tracks]);
+
+  // Calcular páginas baseadas em datas
+  const dateKeys = Object.keys(groupedTracksByDate);
+  const totalPages = Math.ceil(dateKeys.length / daysPerPage);
+
+  // Obter datas para a página atual
+  const currentPageDates = useMemo(() => {
+    const startIndex = (currentPage - 1) * daysPerPage;
+    const endIndex = startIndex + daysPerPage;
+    return dateKeys.slice(startIndex, endIndex);
+  }, [dateKeys, currentPage, daysPerPage]);
+
+  // Obter tracks para a página atual
+  const currentPageTracks = useMemo(() => {
+    return currentPageDates.flatMap(dateKey => groupedTracksByDate[dateKey] || []);
+  }, [currentPageDates, groupedTracksByDate]);
+
+  // Função para navegar para uma página específica
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      // Atualizar URL com hash
+      window.location.hash = `#/page=${page}`;
+    }
+  };
+
+  // Função para ir para a próxima página
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  };
+
+  // Função para ir para a página anterior
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  };
+
+  // Função para ir para a primeira página
+  const goToFirstPage = () => {
+    goToPage(1);
+  };
+
+  // Função para ir para a última página
+  const goToLastPage = () => {
+    goToPage(totalPages);
+  };
+
+  // Efeito para sincronizar com hash da URL
+  useEffect(() => {
+    const hash = window.location.hash;
+    const pageMatch = hash.match(/#\/page=(\d+)/);
+
+    if (pageMatch) {
+      const page = parseInt(pageMatch[1]);
+      if (page >= 1 && page <= totalPages) {
+        setCurrentPage(page);
+      }
+    } else {
+      // Se não há hash, definir como página 1 e adicionar #/page=1
+      setCurrentPage(1);
+      window.location.hash = '#/page=1';
+    }
+  }, [totalPages]);
+
+  // Efeito para sincronizar com parâmetros de pesquisa da URL
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const query = searchParams.get('q');
+
+    if (query && query.trim()) {
+      setSearchQuery(query);
+      performSearch(query);
+    }
+  }, []); // Executar apenas uma vez ao carregar a página
+
+  // Efeito para atualizar hash quando a página muda
+  useEffect(() => {
+    // Sempre manter o hash, mesmo para a primeira página
+    window.location.hash = `#/page=${currentPage}`;
+  }, [currentPage]);
 
   // --- SLIDES PRINCIPAIS (destaques da produtora) ---
   const slides = [
@@ -163,42 +270,55 @@ const NewPage = () => {
     }
   });
 
-  // --- Função de busca ---
+  // Função para realizar busca
   const performSearch = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setHasSearched(false);
-      setAppliedSearchQuery("");
-      return;
-    }
-
-    setSearchLoading(true);
-    setHasSearched(true);
-    startLoading(`Buscando por "${query}"...`);
+    if (!query.trim()) return;
 
     try {
-      const res = await fetch(`/api/tracks/search?q=${encodeURIComponent(query)}`);
-      if (!res.ok) throw new Error("Erro ao buscar músicas");
-      const data = await res.json();
+      startLoading(`Buscando por "${query}"...`);
+      setSearchLoading(true);
 
-      setSearchResults(data.tracks || []);
-      setAppliedSearchQuery(query);
-    } catch (err) {
-      console.error("Erro na busca:", err);
-      showAlert("Erro ao buscar músicas");
+      const response = await fetch(`/api/tracks/search?q=${encodeURIComponent(query)}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.tracks || []);
+        setAppliedSearchQuery(query);
+        setHasSearched(true);
+
+        // Atualizar URL com a pesquisa
+        const searchParams = new URLSearchParams(window.location.search);
+        searchParams.set('q', query);
+        const newUrl = `${window.location.pathname}?${searchParams.toString()}#/page=1`;
+        window.history.pushState({}, '', newUrl);
+      } else {
+        setSearchResults([]);
+        setAppliedSearchQuery(query);
+        setHasSearched(true);
+        showAlert("Erro ao buscar músicas");
+      }
+    } catch (error) {
+      console.error("Erro na busca:", error);
       setSearchResults([]);
+      setAppliedSearchQuery(query);
+      setHasSearched(true);
+      showAlert("Erro ao buscar músicas");
     } finally {
       setSearchLoading(false);
       stopLoading();
     }
   };
 
-  // --- Limpar busca ---
+  // Função para limpar busca
   const clearSearch = () => {
     setSearchQuery("");
-    setAppliedSearchQuery("");
     setSearchResults([]);
+    setAppliedSearchQuery("");
     setHasSearched(false);
+
+    // Limpar URL da pesquisa
+    const newUrl = `${window.location.pathname}#/page=1`;
+    window.history.pushState({}, '', newUrl);
   };
 
   // --- Determinar quais músicas mostrar ---
@@ -208,44 +328,44 @@ const NewPage = () => {
       return searchResults;
     }
     // Caso contrário, mostrar músicas normais
-    return tracks;
-  }, [hasSearched, searchResults, tracks]);
+    return currentPageTracks;
+  }, [hasSearched, searchResults, currentPageTracks]);
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 overflow-x-hidden">
-        {/* CARROUSEL "NOVO EM NOSSA GRAVADORA" */}
-        <div className="w-full max-w-6xl mx-auto mt-8 mb-12 px-4 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24 transition-all duration-300">
-          {/* Header do carrousel */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></div>
-              <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+      <div className="min-h-screen bg-[#121212] overflow-x-hidden">
+        {/* CARROUSEL "NOVO EM NOSSA GRAVADORA" - Mobile First */}
+        <div className="w-full max-w-6xl mx-auto mt-4 sm:mt-8 mb-8 sm:mb-12 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24 transition-all duration-300">
+          {/* Header do carrousel - Mobile First */}
+          <div className="flex items-center justify-between mb-4 sm:mb-8">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-1 h-6 sm:h-8 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
+              <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">
                 NOVO EM NOSSA GRAVADORA
               </h2>
             </div>
 
-            {/* Controles de navegação */}
-            <div className="flex items-center gap-3">
+            {/* Controles de navegação - Mobile First */}
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => setCurrentSlide(prev => prev === 0 ? slides.length - 1 : prev - 1)}
-                className="p-3 bg-gray-900/80 hover:bg-gray-800/90 rounded-xl text-white transition-all duration-300 backdrop-blur-md border border-gray-700/50 hover:border-gray-600/70 hover:shadow-lg hover:shadow-gray-900/50 group"
+                className="p-2 sm:p-3 bg-[#181818]/80 hover:bg-[#282828]/90 rounded-lg sm:rounded-xl text-white transition-all duration-300 backdrop-blur-md border border-[#282828]/50 hover:border-[#3e3e3e]/70 hover:shadow-lg hover:shadow-[#1db954]/20 group"
                 title="Slide anterior"
               >
-                <ChevronLeft size={22} className="group-hover:scale-110 transition-transform duration-200" />
+                <ChevronLeft size={18} className="sm:w-[22px] sm:h-[22px] group-hover:scale-110 transition-transform duration-200" />
               </button>
               <button
                 onClick={() => setCurrentSlide(prev => (prev + 1) % slides.length)}
-                className="p-3 bg-gray-900/80 hover:bg-gray-800/90 rounded-xl text-white transition-all duration-300 backdrop-blur-md border border-gray-700/50 hover:border-gray-600/70 hover:shadow-lg hover:shadow-gray-900/50 group"
+                className="p-2 sm:p-3 bg-[#181818]/80 hover:bg-[#282828]/90 rounded-lg sm:rounded-xl text-white transition-all duration-300 backdrop-blur-md border border-[#282828]/50 hover:border-[#3e3e3e]/70 hover:shadow-lg hover:shadow-[#1db954]/20 group"
                 title="Próximo slide"
               >
-                <ChevronRight size={22} className="group-hover:scale-110 transition-transform duration-200" />
+                <ChevronRight size={18} className="sm:w-[22px] sm:h-[22px] group-hover:scale-110 transition-transform duration-200" />
               </button>
             </div>
           </div>
 
-          {/* Container do carrousel */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900/50 via-gray-800/30 to-black/50 border border-gray-700/30 shadow-2xl">
+          {/* Container do carrousel - Mobile First */}
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-[#181818] border border-[#282828] shadow-2xl">
             {/* Slides container */}
             <div
               className="flex transition-transform duration-700 ease-out"
@@ -257,7 +377,7 @@ const NewPage = () => {
                 <div key={slide.id} className="w-full flex-shrink-0">
                   {/* Mobile: Layout ultra-compacto sem overflow */}
                   <div className="block sm:hidden">
-                    <div className="relative h-40 overflow-hidden group">
+                    <div className="relative h-32 sm:h-40 overflow-hidden group">
                       {/* Background image com overlay */}
                       <div className="absolute inset-0">
                         <Image
@@ -271,7 +391,7 @@ const NewPage = () => {
                       </div>
 
                       {/* Conteúdo mobile ultra-compacto */}
-                      <div className="relative z-10 h-full flex flex-col justify-end p-2">
+                      <div className="relative z-10 h-full flex flex-col justify-end p-2 sm:p-3">
                         {/* Badge no topo */}
                         <div className="absolute top-2 right-2">
                           <span className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-lg backdrop-blur-md border border-green-400/30">
@@ -403,144 +523,143 @@ const NewPage = () => {
               ))}
             </div>
 
-            {/* Indicadores de slide */}
-            <div className="absolute bottom-2 sm:bottom-4 md:bottom-6 lg:bottom-8 left-1/2 transform -translate-x-1/2 hidden sm:flex gap-1.5 sm:gap-2 md:gap-3">
+            {/* Indicadores de slide - Mobile First */}
+            <div className="absolute bottom-3 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 sm:gap-3">
               {slides.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 md:w-3 md:h-3 lg:w-4 lg:h-4 rounded-full transition-all duration-500 transform hover:scale-125 ${index === currentSlide
-                    ? 'bg-white shadow-lg shadow-white/50 scale-125'
-                    : 'bg-white/40 hover:bg-white/60 hover:shadow-md'
+                  className={`w-2 sm:w-3 h-2 sm:h-3 rounded-full transition-all duration-300 transform hover:scale-125 ${index === currentSlide
+                    ? 'bg-[#1db954] scale-125'
+                    : 'bg-[#535353] hover:bg-[#b3b3b3]'
                     }`}
-                  title={`Ir para slide ${index + 1}`}
+                  title={`Slide ${index + 1}`}
                 />
               ))}
             </div>
           </div>
         </div>
 
-        {/* HEADER + BUSCA + FILTROS */}
-        <div className="w-full max-w-6xl mx-auto pt-6 pb-6 px-4 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24 transition-all duration-300">
-          {/* Título principal */}
-          <div className="mb-6">
-            <h1 className="flex items-center gap-3">
-              <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></div>
-              <span className="text-white text-3xl font-bold tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
-                {hasSearched ? `RESULTADOS PARA "${appliedSearchQuery}"` : "NOVIDADES"}
-              </span>
-            </h1>
-          </div>
+        {/* BARRA DE BUSCA E FILTROS - Mobile First */}
+        <div className="w-full max-w-6xl mx-auto mb-6 sm:mb-8 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
+          <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg">
+            {/* Título principal - Mobile First */}
+            <div className="mb-4 sm:mb-6">
+              <h1 className="flex items-center gap-2 sm:gap-3">
+                <div className="w-1 h-6 sm:h-8 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
+                <span className="text-white text-2xl sm:text-3xl font-bold tracking-tight">
+                  {hasSearched ? `RESULTADOS PARA "${appliedSearchQuery}"` : "NOVIDADES"}
+                </span>
+              </h1>
+            </div>
 
-          {/* Container de busca e filtros - responsivo abaixo do título */}
-          <div className="space-y-4">
-            {/* Barra de pesquisa responsiva */}
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Buscar por música, artista, estilo..."
-                className="bg-gray-800 text-white rounded-lg px-4 py-2 pl-10 pr-10 focus:ring-2 focus:ring-purple-600 outline-none w-full h-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    performSearch(searchQuery);
-                  }
-                }}
-                disabled={searchLoading}
-              />
-              {searchLoading ? (
-                <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                  <div className="animate-spin w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full"></div>
-                </div>
-              ) : (
-                <Search
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-purple-400 transition-colors"
-                  size={18}
-                  onClick={() => performSearch(searchQuery)}
+            {/* Container de busca e filtros - Mobile First */}
+            <div className="space-y-3 sm:space-y-4">
+              {/* Barra de pesquisa responsiva - Mobile First */}
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Buscar por música, artista, estilo..."
+                  className="bg-[#282828] text-white rounded-lg px-4 py-2 pl-10 pr-10 focus:ring-2 focus:ring-[#1db954] outline-none w-full h-10 text-sm sm:text-base border border-[#3e3e3e] focus:border-[#1db954]"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      performSearch(searchQuery);
+                    }
+                  }}
+                  disabled={searchLoading}
                 />
-              )}
-              {hasSearched && (
-                <button
-                  onClick={clearSearch}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-400 transition-colors"
-                  title="Limpar busca"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-
-            {/* Botões de ação responsivos */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
-              <button
-                onClick={() => performSearch(searchQuery)}
-                disabled={searchLoading || !searchQuery.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition h-10 w-full sm:w-auto min-w-[120px]"
-              >
-                {searchLoading ? "Buscando..." : "Buscar"}
-              </button>
-              <button
-                onClick={() => setShowFiltersModal(true)}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition h-10 w-full sm:w-auto min-w-[120px]"
-              >
-                <Filter size={18} /> Filtros
-              </button>
-
-
-            </div>
-          </div>
-
-          {/* Indicador de resultados */}
-          {hasSearched && (
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="text-gray-400 text-sm">
                 {searchLoading ? (
-                  "Buscando..."
-                ) : searchResults.length > 0 ? (
-                  `${searchResults.length} resultado${searchResults.length !== 1 ? 's' : ''} encontrado${searchResults.length !== 1 ? 's' : ''}`
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin w-4 h-4 border-2 border-[#1db954] border-t-transparent rounded-full"></div>
+                  </div>
                 ) : (
-                  "Nenhum resultado encontrado"
+                  <Search
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#b3b3b3] cursor-pointer hover:text-[#1db954] transition-colors"
+                    size={18}
+                    onClick={() => performSearch(searchQuery)}
+                  />
+                )}
+                {hasSearched && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#b3b3b3] hover:text-red-400 transition-colors"
+                    title="Limpar busca"
+                  >
+                    ✕
+                  </button>
                 )}
               </div>
-              <button
-                onClick={clearSearch}
-                className="text-sm text-purple-400 hover:text-purple-300 transition-colors self-start sm:self-auto"
-              >
-                Voltar às novidades
-              </button>
+
+              {/* Botões de ação responsivos - Mobile First */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+                <button
+                  onClick={() => performSearch(searchQuery)}
+                  disabled={searchLoading || !searchQuery.trim()}
+                  className="px-4 py-2 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition h-10 w-full sm:w-auto min-w-[120px] text-sm sm:text-base font-medium shadow-lg"
+                >
+                  {searchLoading ? "Buscando..." : "Buscar"}
+                </button>
+                <button
+                  onClick={() => setShowFiltersModal(true)}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-[#282828] text-white rounded-lg hover:bg-[#3e3e3e] transition h-10 w-full sm:w-auto min-w-[120px] text-sm sm:text-base border border-[#3e3e3e]"
+                >
+                  <Filter size={18} /> Filtros
+                </button>
+              </div>
             </div>
-          )}
+
+            {/* Indicador de resultados - Mobile First */}
+            {hasSearched && (
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="text-[#b3b3b3] text-sm">
+                  {searchLoading ? (
+                    "Buscando..."
+                  ) : searchResults.length > 0 ? (
+                    `${searchResults.length} resultado${searchResults.length !== 1 ? 's' : ''} encontrado${searchResults.length !== 1 ? 's' : ''}`
+                  ) : (
+                    "Nenhum resultado encontrado"
+                  )}
+                </div>
+                <button
+                  onClick={clearSearch}
+                  className="text-sm text-[#1db954] hover:text-[#1ed760] transition-colors self-start sm:self-auto"
+                >
+                  Voltar às novidades
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-
-        {/* LISTA DE MÚSICAS */}
-        <div className="w-full max-w-6xl mx-auto pb-8 px-4 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
-          {/* Estado de loading */}
+        {/* LISTA DE MÚSICAS - Mobile First */}
+        <div className="w-full max-w-6xl mx-auto pb-6 sm:pb-8 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
+          {/* Estado de loading - Mobile First */}
           {(tracksLoading || searchLoading) && (
-            <div className="flex items-center justify-center py-16">
+            <div className="flex items-center justify-center py-12 sm:py-16">
               <div className="text-center">
-                <div className="animate-spin w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-400 text-lg">
+                <div className="animate-spin w-10 h-10 sm:w-12 sm:h-12 border-4 border-[#1db954] border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-[#b3b3b3] text-base sm:text-lg">
                   {searchLoading ? "Buscando músicas..." : "Carregando novidades..."}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Nenhum resultado encontrado */}
+          {/* Nenhum resultado encontrado - Mobile First */}
           {!tracksLoading && !searchLoading && hasSearched && searchResults.length === 0 && (
-            <div className="text-center py-16">
-              <div className="bg-gray-800/50 rounded-2xl p-8 max-w-md mx-auto">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-xl font-bold text-white mb-2">
+            <div className="text-center py-12 sm:py-16">
+              <div className="bg-[#181818] rounded-2xl p-6 sm:p-8 max-w-md mx-auto border border-[#282828]">
+                <div className="text-5xl sm:text-6xl mb-4">🔍</div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
                   Nenhum resultado encontrado
                 </h3>
-                <p className="text-gray-400 mb-6">
+                <p className="text-[#b3b3b3] mb-6 text-sm sm:text-base">
                   Não encontramos nenhuma música para "{appliedSearchQuery}".
                 </p>
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-500 mb-4">Tente buscar por:</p>
+                  <p className="text-sm text-[#535353] mb-4">Tente buscar por:</p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {["Progressive House", "Trance", "Techno", "Deep House", "Melodic Techno"].map((suggestion) => (
                       <button
@@ -549,7 +668,7 @@ const NewPage = () => {
                           setSearchQuery(suggestion);
                           performSearch(suggestion);
                         }}
-                        className="px-3 py-1 bg-purple-600/20 text-purple-300 rounded-full text-sm hover:bg-purple-600/40 transition-colors"
+                        className="px-3 py-1 bg-[#1db954]/20 text-[#1db954] rounded-full text-sm hover:bg-[#1db954]/40 transition-colors border border-[#1db954]/30"
                       >
                         {suggestion}
                       </button>
@@ -557,7 +676,7 @@ const NewPage = () => {
                   </div>
                   <button
                     onClick={clearSearch}
-                    className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="mt-4 px-6 py-2 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] transition-colors text-sm sm:text-base font-medium shadow-lg"
                   >
                     Ver todas as novidades
                   </button>
@@ -566,11 +685,7 @@ const NewPage = () => {
             </div>
           )}
 
-
-
-
-
-          {/* Lista de músicas */}
+          {/* Lista de músicas - Mobile First */}
           {!tracksLoading && !searchLoading && displayTracks.length > 0 && (
             <MusicList
               tracks={displayTracks}
@@ -584,14 +699,101 @@ const NewPage = () => {
                   console.log('Cache de downloads gerenciado automaticamente');
                 }
               }}
-              enableInfiniteScroll={true}
-              hasMore={displayTracks.length >= 50} // Assumindo que temos mais dados se há pelo menos 50 músicas
+              enableInfiniteScroll={false} // Desabilitar infinite scroll para usar paginação baseada em datas
+              hasMore={false}
               isLoading={tracksLoading || searchLoading}
-              onLoadMore={() => {
-                console.log('🔄 Carregando mais músicas na página /new...');
-                // Aqui você pode implementar lógica adicional para carregar mais dados da API
-              }}
+              onLoadMore={() => { }}
             />
+          )}
+
+          {/* Paginação baseada em datas */}
+          {!tracksLoading && !searchLoading && !hasSearched && totalPages > 1 && (
+            <div className="mt-8 sm:mt-12">
+              <div className="bg-[#121212] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg">
+                {/* Controles de paginação */}
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                  {/* Primeira página */}
+                  <button
+                    onClick={goToFirstPage}
+                    disabled={currentPage === 1}
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage === 1
+                      ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
+                      : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
+                      }`}
+                    title="Primeira página"
+                  >
+                    <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z" />
+                    </svg>
+                    Primeira
+                  </button>
+
+                  {/* Página anterior */}
+                  <button
+                    onClick={goToPreviousPage}
+                    disabled={currentPage === 1}
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage === 1
+                      ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
+                      : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
+                      }`}
+                    title="Página anterior"
+                  >
+                    <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                    </svg>
+                    Anterior
+                  </button>
+
+                  {/* Navegação rápida por páginas */}
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => goToPage(page)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${page === currentPage
+                          ? 'bg-[#1db954] text-white shadow-lg'
+                          : 'bg-[#282828] text-[#b3b3b3] hover:bg-[#3e3e3e] hover:text-white'
+                          }`}
+                      >
+                        {page.toString().padStart(2, '0')}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Próxima página */}
+                  <button
+                    onClick={goToNextPage}
+                    disabled={currentPage >= totalPages}
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage >= totalPages
+                      ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
+                      : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
+                      }`}
+                    title="Próxima página"
+                  >
+                    Próxima
+                    <svg className="w-4 h-4 inline ml-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z" />
+                    </svg>
+                  </button>
+
+                  {/* Última página */}
+                  <button
+                    onClick={goToLastPage}
+                    disabled={currentPage >= totalPages}
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage >= totalPages
+                      ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
+                      : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
+                      }`}
+                    title="Última página"
+                  >
+                    <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M5.59 7.41L10.18 12l-4.59 4.59L12 18l6-6-6-6-1.41 1.41z" />
+                    </svg>
+                    Última
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
@@ -630,7 +832,6 @@ const NewPage = () => {
             hasActiveFilters={Boolean(selectedGenre || selectedArtist || selectedDateRange || selectedVersion || selectedMonth || selectedPool)}
           />
         )}
-
       </div>
     </MainLayout>
   );

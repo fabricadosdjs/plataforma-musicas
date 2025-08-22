@@ -21,6 +21,7 @@ import { GlobalToastManager } from '@/components/layout/GlobalToastManager';
 import { ToastProvider } from '@/context/ToastContext';
 import { TrackingProvider } from '@/context/TrackingContext';
 import BrowserExtensionHandler from '@/components/layout/BrowserExtensionHandler';
+import { GlobalImageErrorInterceptor } from '@/components/ui/ImageErrorBoundary';
 
 // Configura a fonte Inter como a fonte principal
 const inter = Inter({
@@ -137,6 +138,7 @@ export default function RootLayout({
                     <MusicRouteHandler />
                     <ExtensionDetector />
                     <GlobalToastManager />
+                    <GlobalImageErrorInterceptor />
                     <DynamicGradientBackground />
                     <PageTransitionLoading>
                       {children}
@@ -174,6 +176,62 @@ export default function RootLayout({
                 }
                 if (document.readyState === 'complete') { loadTawk(); }
                 else { window.addEventListener('load', loadTawk, { once:true }); }
+              })();
+            `
+          }}
+        />
+
+        {/* Script de proteção de imagens - executa antes do React */}
+        <script
+          type="text/javascript"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                'use strict';
+                
+                // Proteger imagens imediatamente (modo não-agressivo)
+                function protectImages() {
+                  try {
+                    const images = document.querySelectorAll('img');
+                    images.forEach(function(img) {
+                      // Marcar como protegida para extensões
+                      img.setAttribute('data-protected', 'true');
+                      img.setAttribute('data-no-process', 'true');
+                      
+                      // Se já está quebrada E tem src, marcar para extensões
+                      if (img.complete && img.naturalWidth === 0 && img.src && img.src !== '') {
+                        img.setAttribute('data-error', 'true');
+                        img.setAttribute('data-cleaned', 'true');
+                        // NÃO esconder a imagem - deixar o fallback funcionar
+                      }
+                      
+                      // Adicionar listener de erro (apenas para extensões)
+                      img.addEventListener('error', function() {
+                        // Marcar para extensões não processarem
+                        this.setAttribute('data-error', 'true');
+                        this.setAttribute('data-cleaned', 'true');
+                        // NÃO esconder - deixar o fallback funcionar
+                      });
+                    });
+                    
+                    console.log('[Image Protection] Proteção ativada para', images.length, 'imagens (modo não-agressivo)');
+                  } catch (e) {
+                    console.warn('[Image Protection] Erro ao proteger imagens:', e);
+                  }
+                }
+                
+                // Executar proteção imediatamente
+                if (document.readyState === 'loading') {
+                  document.addEventListener('DOMContentLoaded', protectImages);
+                } else {
+                  protectImages();
+                }
+                
+                // Executar novamente após um delay para pegar imagens carregadas dinamicamente
+                setTimeout(protectImages, 100);
+                setTimeout(protectImages, 500);
+                setTimeout(protectImages, 1000);
+                
               })();
             `
           }}
