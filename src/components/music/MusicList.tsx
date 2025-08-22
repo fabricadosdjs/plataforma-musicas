@@ -186,7 +186,8 @@ export const MusicList = React.memo(({
                 }
             }
 
-            await playTrack(track);
+            // Passar a lista de músicas atual para permitir navegação
+            await playTrack(track, undefined, tracks);
         } catch (error) {
             console.error('Erro ao tocar música:', error);
 
@@ -744,7 +745,12 @@ export const MusicList = React.memo(({
                                                         <h3 className="text-white font-bold text-xs sm:text-sm truncate tracking-wide font-sans">
                                                             {track.songName}
                                                         </h3>
-                                                        {/* Removido: palavra 'Tocando' quando está tocando */}
+                                                        {/* Indicador sutil de "tocando" */}
+                                                        {currentTrack?.id === track.id && isPlaying && (
+                                                            <span className="text-red-400 text-xs font-medium opacity-80">
+                                                                (tocando)
+                                                            </span>
+                                                        )}
                                                     </div>
 
                                                     <div className="text-gray-300 text-xs sm:text-sm font-medium mb-0.5 font-sans">
