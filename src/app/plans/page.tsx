@@ -1,9 +1,13 @@
 "use client";
 
+// Força renderização dinâmica para evitar erro de pré-renderização
+export const dynamic = 'force-dynamic';
+
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Check, Crown, Star, Zap, Music, Download, Users, Headphones, Database, Gift, CreditCard, User, MessageSquare, Hand, Calendar, Clock, Calculator, ArrowUp, ArrowDown, DollarSign, Upload, Info } from 'lucide-react';
-import NewFooter from '@/components/layout/NewFooter';
+import MainLayout from '@/components/layout/MainLayout';
+import FooterSpacer from '@/components/layout/FooterSpacer';
 import Link from 'next/link';
 import Header from '@/components/layout/Header';
 
@@ -554,44 +558,42 @@ export default function PlansPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen z-0" style={{ backgroundColor: '#1B1C1D', zIndex: 0 }}>
-                <Header />
-                <div className="flex items-center justify-center min-h-screen z-0" style={{ zIndex: 0 }}>
-                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+            <MainLayout>
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#1db954]"></div>
                 </div>
-            </div>
+            </MainLayout>
         );
     }
 
     return (
-        <div className="min-h-screen z-0" style={{ backgroundColor: '#1B1C1D', zIndex: 0 }}>
+        <MainLayout>
             <style dangerouslySetInnerHTML={{ __html: customStyles }} />
-            <Header />
-            <main className="container mx-auto px-4 py-4 sm:py-8 pt-16 sm:pt-20">
+            <main className="px-4 py-4 sm:py-8 pt-16 sm:pt-20">
 
                 {/* Hero Section */}
                 <div className="text-center mb-8 sm:mb-16">
                     <div className="mb-6 sm:mb-8">
                         {/* Animated background particles */}
                         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                            <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[#202A3C]/20 rounded-full blur-3xl animate-pulse"></div>
-                            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-[#26222D]/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-                            <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-[#202A3C]/15 rounded-full blur-3xl animate-pulse delay-2000"></div>
+                            <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[#1db954]/10 rounded-full blur-3xl animate-pulse"></div>
+                            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-[#1ed760]/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+                            <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-[#1db954]/8 rounded-full blur-3xl animate-pulse delay-2000"></div>
                         </div>
 
                         <div className="relative z-10">
                             <div className="flex items-center justify-center gap-4 mb-6">
                                 <div className="relative animate-float">
-                                    <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-2xl animate-glow">
+                                    <div className="w-20 h-20 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-2xl flex items-center justify-center shadow-2xl animate-glow">
                                         <Crown className="h-10 w-10 text-white" />
                                     </div>
-                                    <div className="absolute -inset-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl blur opacity-30 animate-pulse"></div>
+                                    <div className="absolute -inset-2 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-2xl blur opacity-30 animate-pulse"></div>
                                 </div>
                                 <div>
-                                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent drop-shadow-lg mb-4">
+                                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-[#1db954] via-[#1ed760] to-[#1db954] bg-clip-text text-transparent drop-shadow-lg mb-4">
                                         PLANOS VIP
                                     </h1>
-                                    <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed px-4">
+                                    <p className="text-lg sm:text-xl md:text-2xl text-[#b3b3b3] max-w-4xl mx-auto leading-relaxed px-4">
                                         Escolha o plano ideal para suas necessidades. Todos os planos incluem acesso completo à plataforma.
                                     </p>
                                 </div>
@@ -602,29 +604,29 @@ export default function PlansPage() {
 
                 {/* Current Plan Info */}
                 {userPlan && (
-                    <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-2xl p-4 sm:p-6 md:p-8 border border-blue-500/30 mb-6 sm:mb-8">
+                    <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
                         <div className="text-center mb-4 sm:mb-6">
                             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">Seu Plano Atual</h2>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-3 sm:mb-4">
                                 <div className="text-3xl sm:text-4xl">{userPlan.icon}</div>
                                 <div className="text-center sm:text-left">
                                     <h3 className="text-xl sm:text-2xl font-bold text-white">{userPlan.name}</h3>
-                                    <p className="text-gray-400">R$ {userPlan.basePrice}/mês</p>
+                                    <p className="text-[#b3b3b3]">R$ {userPlan.basePrice}/mês</p>
 
                                     {/* Mostrar add-ons ativos */}
                                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
                                         {(session?.user as any)?.deemix && (
-                                            <span className="bg-purple-600/20 border border-purple-500/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-purple-300">
+                                            <span className="bg-[#1db954]/20 border border-[#1db954]/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-[#1db954]">
                                                 🎵 Deemix Ativo
                                             </span>
                                         )}
                                         {(session?.user as any)?.deezerPremium && (
-                                            <span className="bg-orange-600/20 border border-orange-500/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-orange-300">
+                                            <span className="bg-[#1ed760]/20 border border-[#1ed760]/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-[#1ed760]">
                                                 🎁 Deezer Premium
                                             </span>
                                         )}
                                         {(session?.user as any)?.isUploader && (
-                                            <span className="bg-green-600/20 border border-green-500/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-green-300">
+                                            <span className="bg-[#1db954]/20 border border-[#1db954]/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-[#1db954]">
                                                 📤 Uploader
                                             </span>
                                         )}
@@ -632,7 +634,7 @@ export default function PlansPage() {
 
                                     {/* Mostrar valor total se diferente do base */}
                                     {session?.user?.valor && Number(session.user.valor) !== userPlan.basePrice && (
-                                        <p className="text-xs text-gray-500 mt-1">
+                                        <p className="text-xs text-[#535353] mt-1">
                                             Total com add-ons: R$ {session.user.valor}/mês
                                         </p>
                                     )}
@@ -643,15 +645,15 @@ export default function PlansPage() {
                 )}
 
                 {/* Period Selection */}
-                <div className="bg-gradient-to-r from-gray-900/30 to-gray-800/20 rounded-2xl p-4 sm:p-6 md:p-8 border border-gray-700/50 mb-6 sm:mb-8 backdrop-blur-sm">
+                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
                     <div className="text-center mb-4 sm:mb-6">
                         <div className="flex items-center justify-center gap-3 mb-4">
-                            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full">
+                            <div className="p-3 bg-gradient-to-r from-[#1db954] to-[#1ed760] rounded-full">
                                 <Calendar className="h-6 w-6 text-white" />
                             </div>
                             <div>
                                 <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Período de Assinatura</h3>
-                                <p className="text-gray-400 text-sm sm:text-base">Escolha o período que melhor se adapta a você</p>
+                                <p className="text-[#b3b3b3] text-sm sm:text-base">Escolha o período que melhor se adapta a você</p>
                             </div>
                         </div>
                     </div>
@@ -662,29 +664,29 @@ export default function PlansPage() {
                                 key={periodKey}
                                 onClick={() => setSelectedPeriod(periodKey as keyof typeof SUBSCRIPTION_PERIODS)}
                                 className={`group p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 text-xs sm:text-sm hover:scale-105 ${selectedPeriod === periodKey
-                                    ? 'border-blue-500 bg-gradient-to-br from-blue-500/20 to-purple-500/20 text-blue-400 shadow-lg shadow-blue-500/25'
-                                    : 'border-gray-600 bg-gray-700/20 text-gray-300 hover:border-gray-500 hover:bg-gray-600/30'
+                                    ? 'border-[#1db954] bg-[#1db954]/20 text-[#1db954] shadow-lg shadow-[#1db954]/25'
+                                    : 'border-[#282828] bg-[#282828]/20 text-[#b3b3b3] hover:border-[#535353] hover:bg-[#535353]/30'
                                     }`}
                             >
                                 <div className="flex items-center justify-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                                    <Calendar className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform group-hover:scale-110 ${selectedPeriod === periodKey ? 'text-blue-400' : 'text-gray-400'}`} />
+                                    <Calendar className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform group-hover:scale-110 ${selectedPeriod === periodKey ? 'text-[#1db954]' : 'text-[#535353]'}`} />
                                     <span className="font-semibold">{period.name}</span>
                                 </div>
                                 <div className="text-xs">
                                     {period.months} {period.months === 1 ? 'mês' : 'meses'}
                                 </div>
                                 {period.discount > 0 && (
-                                    <div className="text-xs text-green-400 mt-1 font-semibold">
+                                    <div className="text-xs text-[#1db954] mt-1 font-semibold">
                                         🎉 {period.discount * 100}% OFF
                                     </div>
                                 )}
                                 {period.deemixFree && (
-                                    <div className="text-xs text-purple-400 mt-1 font-semibold">
+                                    <div className="text-xs text-[#1ed760] mt-1 font-semibold">
                                         🎁 Deemix Grátis
                                     </div>
                                 )}
                                 {period.deemixDiscount > 0 && !period.deemixFree && (
-                                    <div className="text-xs text-purple-400 mt-1 font-semibold">
+                                    <div className="text-xs text-[#1ed760] mt-1 font-semibold">
                                         💰 Deemix {period.deemixDiscount * 100}% OFF
                                     </div>
                                 )}
@@ -695,14 +697,14 @@ export default function PlansPage() {
                     {/* Deemix Toggle */}
                     <div className="flex items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                         <div className="flex items-center gap-2">
-                            <Music className="w-4 h-4 text-gray-400" />
-                            <span className="text-xs sm:text-sm text-gray-400">Sem Deemix</span>
+                            <Music className="w-4 h-4 text-[#535353]" />
+                            <span className="text-xs sm:text-sm text-[#535353]">Sem Deemix</span>
                         </div>
                         <button
                             onClick={() => setIncludeDeemix(!includeDeemix)}
                             className={`relative inline-flex h-8 w-16 sm:h-10 sm:w-20 items-center rounded-full transition-all duration-300 shadow-lg ${includeDeemix
-                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-purple-500/25'
-                                : 'bg-gradient-to-r from-gray-600 to-gray-700 shadow-gray-600/25'
+                                ? 'bg-gradient-to-r from-[#1db954] to-[#1ed760] shadow-[#1db954]/25'
+                                : 'bg-gradient-to-r from-[#535353] to-[#282828] shadow-[#535353]/25'
                                 }`}
                         >
                             <span
@@ -713,8 +715,8 @@ export default function PlansPage() {
                             />
                         </button>
                         <div className="flex items-center gap-2">
-                            <span className="text-xs sm:text-sm text-gray-400">Com Deemix</span>
-                            <div className="w-4 h-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full animate-pulse"></div>
+                            <span className="text-xs sm:text-sm text-[#535353]">Com Deemix</span>
+                            <div className="w-4 h-4 bg-gradient-to-r from-[#1db954] to-[#1ed760] rounded-full animate-pulse"></div>
                         </div>
                     </div>
                 </div>
@@ -751,14 +753,14 @@ export default function PlansPage() {
                             <div
                                 key={planKey}
                                 className={`group relative rounded-2xl p-4 sm:p-6 md:p-8 transition-all duration-500 hover:scale-105 hover-lift ${isActuallyCurrentPlan
-                                    ? 'bg-gradient-to-br from-yellow-900/30 to-orange-900/20 border-2 border-yellow-500/50 shadow-2xl shadow-yellow-500/20'
-                                    : 'bg-gradient-to-br from-gray-900/30 to-gray-800/20 border border-gray-700/50 hover:border-gray-600/50 hover:shadow-xl backdrop-blur-sm'
+                                    ? 'bg-[#1db954]/10 border-2 border-[#1db954]/50 shadow-2xl shadow-[#1db954]/20'
+                                    : 'bg-[#181818] border border-[#282828] hover:border-[#535353] hover:shadow-xl'
                                     }`}
                             >
                                 {/* Current Plan Badge */}
                                 {isActuallyCurrentPlan && (
                                     <div className="absolute -top-3 sm:-top-4 left-1/2 transform -translate-x-1/2">
-                                        <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 sm:px-6 py-1 sm:py-2 rounded-full font-bold text-xs sm:text-sm shadow-lg">
+                                        <div className="bg-gradient-to-r from-[#1db954] to-[#1ed760] text-white px-4 sm:px-6 py-1 sm:py-2 rounded-full font-bold text-xs sm:text-sm shadow-lg">
                                             PLANO ATUAL
                                         </div>
                                     </div>
@@ -770,10 +772,10 @@ export default function PlansPage() {
                                         <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">{plan.icon}</div>
                                         <div className="absolute inset-0 text-4xl sm:text-5xl opacity-20 blur-sm group-hover:blur-md transition-all duration-300">{plan.icon}</div>
                                     </div>
-                                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r from-blue-400 to-purple-400 transition-all duration-300">{plan.name}</h3>
+                                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r from-[#1db954] to-[#1ed760] transition-all duration-300">{plan.name}</h3>
 
                                     {/* Period Badge */}
-                                    <div className="inline-flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold mb-3 sm:mb-4 border border-blue-500/30 shadow-lg shadow-blue-500/10 group-hover:shadow-blue-500/20 transition-all duration-300">
+                                    <div className="inline-flex items-center gap-1 sm:gap-2 bg-[#1db954]/20 text-[#1db954] px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold mb-3 sm:mb-4 border border-[#1db954]/30 shadow-lg shadow-[#1db954]/10 group-hover:shadow-[#1db954]/20 transition-all duration-300">
                                         <Clock className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
                                         {periodConfig.name}
                                     </div>
@@ -781,9 +783,9 @@ export default function PlansPage() {
                                     {/* Price Display */}
                                     <div className="mb-3 sm:mb-4">
                                         <div className="relative">
-                                            <div className="text-2xl sm:text-3xl font-bold text-white mb-1 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r from-green-400 to-blue-400 transition-all duration-300">
+                                            <div className="text-2xl sm:text-3xl font-bold text-white mb-1 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r from-[#1db954] to-[#1ed760] transition-all duration-300">
                                                 R$ {currentPrice.toFixed(2).replace('.', ',')}
-                                                <span className="text-sm sm:text-lg text-gray-400 font-normal">/{periodConfig.name.toLowerCase()}</span>
+                                                <span className="text-sm sm:text-lg text-[#b3b3b3] font-normal">/{periodConfig.name.toLowerCase()}</span>
                                             </div>
                                             <div className="absolute inset-0 text-2xl sm:text-3xl font-bold opacity-20 blur-sm group-hover:blur-md transition-all duration-300">
                                                 R$ {currentPrice.toFixed(2).replace('.', ',')}
@@ -792,12 +794,12 @@ export default function PlansPage() {
 
                                         {/* Price Breakdown */}
                                         {includeDeemix && !deemixFree && (
-                                            <div className="text-xs text-gray-400 space-y-1">
+                                            <div className="text-xs text-[#b3b3b3] space-y-1">
                                                 <div>Plano: R$ {(basePrice * periodConfig.months).toFixed(2).replace('.', ',')}</div>
                                                 <div>Deemix: R$ {(deemixPrice * periodConfig.months).toFixed(2).replace('.', ',')}</div>
-                                                <div className="text-blue-400">Deezer Premium: GRÁTIS</div>
+                                                <div className="text-[#1db954]">Deezer Premium: GRÁTIS</div>
                                                 {periodConfig.deemixDiscount > 0 && (
-                                                    <div className="text-green-400 font-semibold">
+                                                    <div className="text-[#1db954] font-semibold">
                                                         Desconto Deemix: {periodConfig.deemixDiscount * 100}%
                                                     </div>
                                                 )}
@@ -805,14 +807,14 @@ export default function PlansPage() {
                                         )}
 
                                         {!includeDeemix && (
-                                            <div className="text-xs text-gray-400 space-y-1">
+                                            <div className="text-xs text-[#b3b3b3] space-y-1">
                                                 <div>Plano: R$ {(basePrice * periodConfig.months).toFixed(2).replace('.', ',')}</div>
-                                                <div className="text-blue-400">Deezer Premium: R$ {(DEEZER_PREMIUM_PRICING.STANDALONE * periodConfig.months).toFixed(2).replace('.', ',')}</div>
+                                                <div className="text-[#1db954]">Deezer Premium: R$ {(DEEZER_PREMIUM_PRICING.STANDALONE * periodConfig.months).toFixed(2).replace('.', ',')}</div>
                                             </div>
                                         )}
 
                                         {deemixFree && includeDeemix && (
-                                            <div className="text-xs text-purple-400 font-semibold">
+                                            <div className="text-xs text-[#1ed760] font-semibold">
                                                 🎁 Deemix + Deezer Premium Grátis no período!
                                             </div>
                                         )}
@@ -831,14 +833,14 @@ export default function PlansPage() {
                                             <div
                                                 key={benefitKey}
                                                 className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-300 hover:scale-105 group/benefit ${isHighlighted
-                                                    ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 shadow-lg shadow-purple-500/10'
-                                                    : 'bg-gray-800/50 border border-gray-700/30 hover:border-gray-600/50 hover:bg-gray-700/50'
+                                                    ? 'bg-[#1db954]/20 border border-[#1db954]/30 shadow-lg shadow-[#1db954]/10'
+                                                    : 'bg-[#282828] border border-[#282828] hover:border-[#535353] hover:bg-[#535353]'
                                                     }`}
                                                 style={{ animationDelay: `${index * 100}ms` }}
                                             >
                                                 <div className={`flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all duration-300 group-hover/benefit:scale-110 ${isHighlighted
-                                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
-                                                    : 'bg-gray-600 text-gray-400 group-hover/benefit:bg-gray-500'
+                                                    ? 'bg-gradient-to-r from-[#1db954] to-[#1ed760] text-white shadow-lg shadow-[#1db954]/25'
+                                                    : 'bg-[#535353] text-[#b3b3b3] group-hover/benefit:bg-[#1db954]'
                                                     }`}
                                                 >
                                                     {isFree ? (
@@ -848,10 +850,10 @@ export default function PlansPage() {
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="text-xs sm:text-sm font-medium text-white truncate group-hover/benefit:text-transparent group-hover/benefit:bg-clip-text group-hover/benefit:bg-gradient-to-r group-hover/benefit:from-blue-400 group-hover/benefit:to-purple-400 transition-all duration-300">
+                                                    <div className="text-xs sm:text-sm font-medium text-white truncate group-hover/benefit:text-transparent group-hover/benefit:bg-clip-text group-hover/benefit:bg-gradient-to-r group-hover/benefit:from-[#1db954] group-hover/benefit:to-[#1ed760] transition-all duration-300">
                                                         {BENEFIT_LABELS[benefitKey as keyof typeof BENEFIT_LABELS]}
                                                     </div>
-                                                    <div className="text-xs text-gray-400 truncate group-hover/benefit:text-gray-300 transition-all duration-300">
+                                                    <div className="text-xs text-[#b3b3b3] truncate group-hover/benefit:text-white transition-all duration-300">
                                                         {benefit.description}
                                                     </div>
                                                 </div>
@@ -865,15 +867,15 @@ export default function PlansPage() {
                                     onClick={() => handleSubscribe(planKey, selectedPeriod, includeDeemix)}
                                     disabled={isActuallyCurrentPlan || isHigherPlan}
                                     className={`group/btn w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-lg transition-all duration-500 relative overflow-hidden ${isActuallyCurrentPlan
-                                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                        ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
                                         : isHigherPlan
                                             ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40'
-                                            : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105'
+                                            : 'bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white shadow-lg shadow-[#1db954]/25 hover:shadow-[#1db954]/40 hover:scale-105'
                                         }`}
                                 >
                                     {/* Animated background */}
                                     {!isActuallyCurrentPlan && !isHigherPlan && (
-                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover/btn:opacity-20 transition-opacity duration-500"></div>
+                                        <div className="absolute inset-0 bg-gradient-to-r from-[#1db954] to-[#1ed760] opacity-0 group-hover/btn:opacity-20 transition-opacity duration-500"></div>
                                     )}
 
                                     <span className="relative z-10 flex items-center justify-center gap-2">
@@ -898,38 +900,38 @@ export default function PlansPage() {
                 </div>
 
                 {/* Deemix Avulso Section */}
-                <div className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 rounded-2xl p-4 sm:p-6 md:p-8 border border-purple-500/30 mb-6 sm:mb-8">
+                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
                     <div className="text-center mb-4 sm:mb-6">
                         <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">🎵 Deemix Avulso</h3>
-                        <p className="text-gray-300 text-sm sm:text-base">Apenas o Deemix para download direto do Deezer</p>
+                        <p className="text-[#b3b3b3] text-sm sm:text-base">Apenas o Deemix para download direto do Deezer</p>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
                         {/* Box Esquerda - Para Não-VIP */}
-                        <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-xl p-4 sm:p-6 border border-purple-500/20">
+                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20">
                             <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Music className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
+                                <Music className="w-4 h-4 sm:w-5 sm:h-5 text-[#1db954]" />
                                 Para Não-VIP
                             </h4>
-                            <div className="text-2xl sm:text-3xl font-bold text-purple-400 mb-3 sm:mb-4">
-                                R$ 38,00<span className="text-sm sm:text-lg text-gray-400 font-normal">/mês</span>
+                            <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-3 sm:mb-4">
+                                R$ 38,00<span className="text-sm sm:text-lg text-[#b3b3b3] font-normal">/mês</span>
                             </div>
 
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-300 mb-4 sm:mb-6">
+                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-4 sm:mb-6">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Download direto do Deezer</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Qualidade FLAC/MP3</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Interface web moderna</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>ARL Premium incluído</span>
                                 </div>
                             </div>
@@ -940,46 +942,46 @@ export default function PlansPage() {
                                     const whatsappUrl = `https://wa.me/5551935052274?text=${encodeURIComponent(message)}`;
                                     window.open(whatsappUrl, '_blank');
                                 }}
-                                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
+                                className="w-full bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
                             >
                                 Assinar Deemix Avulso
                             </button>
                         </div>
 
                         {/* Box Direita - Descontos VIP */}
-                        <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-xl p-4 sm:p-6 border border-green-500/20">
+                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20">
                             <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                                <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-[#1ed760]" />
                                 Descontos VIP
                             </h4>
 
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-300 mb-3 sm:mb-4">
+                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-3 sm:mb-4">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span><strong className="text-blue-400">VIP Básico:</strong> 38% OFF</span>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <span><strong className="text-[#1db954]">VIP Básico:</strong> 38% OFF</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span><strong className="text-green-400">VIP Padrão:</strong> 42% OFF</span>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <span><strong className="text-[#1ed760]">VIP Padrão:</strong> 42% OFF</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span><strong className="text-purple-400">VIP Completo:</strong> 60% OFF</span>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <span><strong className="text-[#1db954]">VIP Completo:</strong> 60% OFF</span>
                                 </div>
                             </div>
 
-                            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
-                                <h5 className="text-xs sm:text-sm font-bold text-yellow-400 mb-1 sm:mb-2">💰 Descontos Especiais</h5>
-                                <div className="text-xs text-gray-300 space-y-1">
+                            <div className="bg-[#1db954]/10 border border-[#1db954]/20 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                                <h5 className="text-xs sm:text-sm font-bold text-[#1db954] mb-1 sm:mb-2">💰 Descontos Especiais</h5>
+                                <div className="text-xs text-[#b3b3b3] space-y-1">
                                     <div>• <strong>Trimestral:</strong> Deemix 8% OFF</div>
                                     <div>• <strong>Semestral:</strong> Deemix 50% OFF</div>
                                     <div>• <strong>Anual:</strong> Deemix GRÁTIS</div>
                                 </div>
                             </div>
 
-                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 sm:p-3">
-                                <div className="text-xs text-gray-300">
-                                    <strong className="text-blue-400">💡 Dica:</strong> Seja VIP e aproveite descontos proporcionais ao valor do seu plano!
+                            <div className="bg-[#1ed760]/10 border border-[#1ed760]/20 rounded-lg p-2 sm:p-3">
+                                <div className="text-xs text-[#b3b3b3]">
+                                    <strong className="text-[#1ed760]">💡 Dica:</strong> Seja VIP e aproveite descontos proporcionais ao valor do seu plano!
                                 </div>
                             </div>
                         </div>
@@ -987,64 +989,64 @@ export default function PlansPage() {
                 </div>
 
                 {/* Allavsoft Section */}
-                <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 rounded-2xl p-4 sm:p-6 md:p-8 border border-orange-500/30 mb-6 sm:mb-8">
+                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
                     <div className="text-center mb-4 sm:mb-6">
                         <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">🌐 Allavsoft - Download Universal</h3>
-                        <p className="text-gray-300 text-sm sm:text-base">Baixe de qualquer plataforma de música e vídeo</p>
+                        <p className="text-[#b3b3b3] text-sm sm:text-base">Baixe de qualquer plataforma de música e vídeo</p>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-                        <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 rounded-xl p-4 sm:p-6 border border-orange-500/20">
+                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20">
                             <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Download className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
+                                <Download className="w-4 h-4 sm:w-5 sm:h-5 text-[#1db954]" />
                                 Recursos Principais
                             </h4>
 
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-300">
+                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3]">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>YouTube, Spotify, Apple Music</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>SoundCloud, Bandcamp, Beatport</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Qualidade original preservada</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Download em lote</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Conversão automática</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Interface intuitiva</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-gray-800/30 to-gray-700/20 rounded-xl p-4 sm:p-6 border border-gray-600/30">
+                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#535353]">
                             <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-[#535353]" />
                                 Informações
                             </h4>
 
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-300 mb-4 sm:mb-6">
+                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-4 sm:mb-6">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-gray-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Software desktop para Windows/Mac</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-gray-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Suporte para centenas de sites</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-gray-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Atualizações regulares</span>
                                 </div>
                             </div>
@@ -1055,7 +1057,7 @@ export default function PlansPage() {
                                     const whatsappUrl = `https://wa.me/5551935052274?text=${encodeURIComponent(message)}`;
                                     window.open(whatsappUrl, '_blank');
                                 }}
-                                className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
+                                className="w-full bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
                             >
                                 Saiba Mais
                             </button>
@@ -1064,74 +1066,74 @@ export default function PlansPage() {
                 </div>
 
                 {/* Deezer Premium Avulso Section */}
-                <div className="bg-gradient-to-r from-orange-900/20 to-yellow-900/20 rounded-2xl p-4 sm:p-6 md:p-8 border border-orange-500/30 mb-6 sm:mb-8">
+                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
                     <div className="text-center mb-4 sm:mb-6">
                         <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">🎁 Deezer Premium Avulso</h3>
-                        <p className="text-gray-300 text-sm sm:text-base">Streaming premium sem anúncios</p>
+                        <p className="text-[#b3b3b3] text-sm sm:text-base">Streaming premium sem anúncios</p>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-                        <div className="bg-gradient-to-br from-orange-500/10 to-yellow-500/10 rounded-xl p-4 sm:p-6 border border-orange-500/20">
+                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20">
                             <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Headphones className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
+                                <Headphones className="w-4 h-4 sm:w-5 sm:h-5 text-[#1ed760]" />
                                 Recursos Premium
                             </h4>
-                            <div className="text-2xl sm:text-3xl font-bold text-orange-400 mb-3 sm:mb-4">
-                                R$ 9,75<span className="text-sm sm:text-lg text-gray-400 font-normal">/mês</span>
+                            <div className="text-2xl sm:text-3xl font-bold text-[#1ed760] mb-3 sm:mb-4">
+                                R$ 9,75<span className="text-sm sm:text-lg text-[#b3b3b3] font-normal">/mês</span>
                             </div>
 
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-300">
+                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3]">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Sem anúncios</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Qualidade HiFi</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Download offline</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Pulos ilimitados</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>90 milhões de músicas</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Playlists personalizadas</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-gray-800/30 to-gray-700/20 rounded-xl p-4 sm:p-6 border border-gray-600/30">
+                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#535353]">
                             <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#535353]" />
                                 Informações
                             </h4>
 
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-300 mb-4 sm:mb-6">
+                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-4 sm:mb-6">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-gray-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Conta premium compartilhada</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-gray-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Acesso via app ou web</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-gray-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Renovação automática</span>
                                 </div>
                             </div>
 
                             <button
                                 onClick={() => handleSubscribe('DEEZER_PREMIUM', 'MONTHLY', false)}
-                                className="w-full bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
+                                className="w-full bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
                             >
                                 Assinar Deezer Premium
                             </button>
@@ -1140,72 +1142,72 @@ export default function PlansPage() {
                 </div>
 
                 {/* Por que escolher nossos planos? */}
-                <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-2xl p-4 sm:p-6 md:p-8 border border-blue-500/30 mb-6 sm:mb-8 backdrop-blur-sm">
+                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
                     <div className="text-center mb-4 sm:mb-6">
                         <div className="flex items-center justify-center gap-3 mb-4">
-                            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full">
+                            <div className="p-3 bg-gradient-to-r from-[#1db954] to-[#1ed760] rounded-full">
                                 <Star className="h-6 w-6 text-white" />
                             </div>
                             <div>
                                 <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">❓ Por que escolher nossos planos?</h3>
-                                <p className="text-gray-300 text-sm sm:text-base">Os melhores benefícios para DJs e amantes da música eletrônica</p>
+                                <p className="text-[#b3b3b3] text-sm sm:text-base">Os melhores benefícios para DJs e amantes da música eletrônica</p>
                             </div>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-                        <div className="group bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-xl p-4 sm:p-6 border border-blue-500/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 hover-lift">
+                        <div className="group bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#1db954]/20 hover-lift">
                             <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">🎵</div>
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-purple-400 transition-all duration-300">Acervo Completo</h4>
-                            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-300">
+                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#1db954] group-hover:to-[#1ed760] transition-all duration-300">Acervo Completo</h4>
+                            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-[#b3b3b3]">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Milhares de músicas eletrônicas</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Qualidade profissional</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Atualizações semanais</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="group bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-xl p-4 sm:p-6 border border-green-500/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/20">
+                        <div className="group bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#1ed760]/20">
                             <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">⬇️</div>
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-green-400 group-hover:to-blue-400 transition-all duration-300">Downloads Ilimitados</h4>
-                            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-300">
+                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#1ed760] group-hover:to-[#1db954] transition-all duration-300">Downloads Ilimitados</h4>
+                            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-[#b3b3b3]">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Sem limite de downloads</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Download instantâneo</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-green-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Múltiplos formatos</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="group bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-xl p-4 sm:p-6 border border-purple-500/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20">
+                        <div className="group bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#1db954]/20">
                             <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">👥</div>
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-pink-400 transition-all duration-300">Comunidade Ativa</h4>
-                            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-300">
+                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#1db954] group-hover:to-[#1ed760] transition-all duration-300">Comunidade Ativa</h4>
+                            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-[#b3b3b3]">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>DJs de todo o Brasil</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Troca de experiências</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
                                     <span>Suporte especializado</span>
                                 </div>
                             </div>
@@ -1214,25 +1216,25 @@ export default function PlansPage() {
                 </div>
 
                 {/* Uploader Option Section */}
-                <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 rounded-2xl p-4 sm:p-6 md:p-8 border border-orange-500/30 mb-6 sm:mb-8">
+                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
                     <div className="text-center mb-4 sm:mb-6">
                         <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">📤 Opção Uploader</h3>
-                        <p className="text-gray-300 text-sm sm:text-base">Adicione a funcionalidade de upload de músicas ao seu plano</p>
+                        <p className="text-[#b3b3b3] text-sm sm:text-base">Adicione a funcionalidade de upload de músicas ao seu plano</p>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-                        <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 rounded-xl p-4 sm:p-6 border border-orange-500/20">
+                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20">
                             <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
+                                <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-[#1db954]" />
                                 {UPLOADER_OPTION.name}
                             </h4>
-                            <p className="text-gray-300 text-sm sm:text-base mb-3 sm:mb-4">{UPLOADER_OPTION.description}</p>
+                            <p className="text-[#b3b3b3] text-sm sm:text-base mb-3 sm:mb-4">{UPLOADER_OPTION.description}</p>
 
                             <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
                                 {UPLOADER_OPTION.features.map((feature, index) => (
                                     <div key={index} className="flex items-center gap-2">
-                                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
-                                        <span className="text-xs sm:text-sm text-gray-300">{feature}</span>
+                                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-[#1db954]" />
+                                        <span className="text-xs sm:text-sm text-[#b3b3b3]">{feature}</span>
                                     </div>
                                 ))}
                             </div>
@@ -1241,43 +1243,43 @@ export default function PlansPage() {
                                 <div className="text-xl sm:text-2xl font-bold text-white mb-1 sm:mb-2">
                                     R$ {UPLOADER_OPTION.monthlyPrice.toFixed(2).replace('.', ',')}/mês
                                 </div>
-                                <p className="text-xs text-gray-400 mb-3 sm:mb-4">
+                                <p className="text-xs text-[#535353] mb-3 sm:mb-4">
                                     Adicionado ao valor do seu plano VIP
                                 </p>
-                                <button className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base">
+                                <button className="bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base">
                                     Adicionar Uploader
                                 </button>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 sm:p-6 border border-blue-500/20">
+                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20">
                             <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+                                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#1ed760]" />
                                 Como Funciona
                             </h4>
 
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-300">
+                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3]">
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Você mantém todos os benefícios do seu plano VIP</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Adiciona a capacidade de fazer upload de até 10 músicas por mês</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Recebe um badge especial de Uploader</span>
                                 </div>
                                 <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                                     <span>Acesso à comunidade exclusiva de uploaders</span>
                                 </div>
                             </div>
 
-                            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                                <h5 className="text-xs sm:text-sm font-bold text-yellow-400 mb-1 sm:mb-2">💡 Descontos Especiais</h5>
-                                <div className="text-xs text-gray-300 space-y-1">
+                            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-[#1db954]/10 border border-[#1db954]/20 rounded-lg">
+                                <h5 className="text-xs sm:text-sm font-bold text-[#1db954] mb-1 sm:mb-2">💡 Descontos Especiais</h5>
+                                <div className="text-xs text-[#b3b3b3] space-y-1">
                                     <div>• <strong>Trimestral:</strong> 5% de desconto no uploader</div>
                                     <div>• <strong>Semestral/Anual:</strong> Uploader de graça!</div>
                                 </div>
@@ -1288,9 +1290,9 @@ export default function PlansPage() {
 
                 {/* Back to Home */}
                 <div className="text-center">
-                    <Link href="/" className="group inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-500 text-sm sm:text-base shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105 relative overflow-hidden">
+                    <Link href="/" className="group inline-flex items-center gap-3 bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-500 text-sm sm:text-base shadow-lg shadow-[#1db954]/25 hover:shadow-[#1db954]/40 hover:scale-105 relative overflow-hidden">
                         {/* Animated background */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#1db954] to-[#1ed760] opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
 
                         <span className="relative z-10 flex items-center gap-2">
                             <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 group-hover:animate-bounce transition-all duration-300" />
@@ -1300,8 +1302,7 @@ export default function PlansPage() {
                 </div>
             </main>
 
-            {/* Novo Footer */}
-            <NewFooter />
-        </div>
+            <FooterSpacer />
+        </MainLayout>
     );
 } 

@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+// Força renderização dinâmica para evitar erro de pré-renderização
+export const dynamic = 'force-dynamic';
+
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { MusicList } from '@/components/music/MusicList';
