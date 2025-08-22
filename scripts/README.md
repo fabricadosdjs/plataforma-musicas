@@ -1,278 +1,232 @@
-# 🎵 Extrator de Músicas Contabo - Script Local
+# 🎵 Scripts de Correção de Artistas Desconhecidos
 
-Script Node.js para baixar e organizar automaticamente músicas do Contabo Storage em pastas por estilo, diretamente no seu PC.
+Este conjunto de scripts corrige automaticamente registros com "Artista Desconhecido" no banco de dados da plataforma de músicas.
 
-## ✨ Funcionalidades
+## 📋 Arquivos Incluídos
 
-- 🔐 **Autenticação VIP/Admin**: Apenas usuários VIP ou Admin podem usar o script
-- 📁 **Organização Automática**: Cria pastas por estilo automaticamente
-- 🎯 **Nomes Limpos**: Pastas com nomes em maiúscula, sem ícones
-- ⏭️ **Download Inteligente**: Pula arquivos já baixados automaticamente
-- 📦 **Downloads em Lote**: Processa músicas em lotes para melhor performance
-- 🎛️ **Pasta Personalizada**: Escolha onde salvar suas músicas
-- 💾 **Sessão Persistente**: Login válido por 24 horas
-- 🚀 **Executável .exe**: Pode ser convertido para programa standalone
+### 1. `backup-before-fix.js`
+- **Função**: Cria backup de segurança antes das correções
+- **Segurança**: Salva todos os dados que serão modificados
+- **Relatório**: Gera estatísticas detalhadas do backup
 
-## 🚀 Instalação
+### 2. `fix-unknown-artists.js`
+- **Função**: Executa as correções nos artistas
+- **Inteligência**: Extrai nomes de artistas dos nomes das músicas
+- **Relatório**: Gera relatório completo das correções
+
+### 3. `run-artist-fix.js`
+- **Função**: Script principal com menu interativo
+- **Coordenação**: Gerencia todo o processo de correção
+- **Interface**: Menu amigável para todas as operações
+
+## 🚀 Como Usar
 
 ### Pré-requisitos
-- Node.js 18+ instalado
-- Acesso VIP ou Admin na plataforma
-- Plataforma web rodando em `http://localhost:3000`
+```bash
+# Certifique-se de que o Prisma está configurado
+npm install
+npx prisma generate
 
-### Opção 1: Instalação Rápida (Recomendada)
+# Verifique se o banco está acessível
+npx prisma db pull
+```
+
+### Execução Simples
 ```bash
 # Navegar para a pasta scripts
 cd scripts
 
-# Executar o instalador automático
-install-dependencies.bat
+# Executar script principal (recomendado)
+node run-artist-fix.js
+
+# Ou executar scripts individuais
+node backup-before-fix.js
+node fix-unknown-artists.js
 ```
 
-### Opção 2: Instalação Manual
+## 🎯 Funcionalidades
+
+### 🔍 Detecção Inteligente
+O script identifica automaticamente:
+- `Artista Desconhecido`
+- `Unknown Artist`
+- `N/A`
+- `NULL` ou campos vazios
+- Outros valores inválidos
+
+### 🧠 Extração de Nomes
+Usa padrões inteligentes para extrair nomes de artistas:
+- `ARTISTA - Nome da Música`
+- `ARTISTA ft. FEATURED - Nome da Música`
+- `ARTISTA feat. FEATURED - Nome da Música`
+- `ARTISTA & FEATURED - Nome da Música`
+- `ARTISTA x FEATURED - Nome da Música`
+- `ARTISTA vs FEATURED - Nome da Música`
+- `ARTISTA (feat. FEATURED) - Nome da Música`
+- `ARTISTA [feat. FEATURED] - Nome da Música`
+
+### 💾 Backup Automático
+- Cria backup antes de qualquer modificação
+- Salva em `scripts/backups/`
+- Inclui script de restauração automático
+- Timestamp único para cada backup
+
+### 📊 Relatórios Detalhados
+- Estatísticas antes e depois
+- Lista de todas as correções
+- Detalhes de falhas (se houver)
+- Arquivo JSON para análise posterior
+
+## 🛡️ Segurança
+
+### ✅ Medidas de Proteção
+1. **Backup obrigatório** antes de qualquer modificação
+2. **Validação de dados** antes de salvar
+3. **Transações seguras** no banco de dados
+4. **Script de restauração** automático
+5. **Relatórios detalhados** de todas as operações
+
+### ⚠️ Recomendações
+- **SEMPRE** faça backup antes de executar
+- Teste em ambiente de desenvolvimento primeiro
+- Monitore os logs durante a execução
+- Mantenha os backups em local seguro
+
+## 📖 Exemplo de Uso
+
+### 1. Executar Script Principal
 ```bash
-# Navegar para a pasta scripts
-cd scripts
-
-# Instalar dependências
-npm install
-
-# Ou instalar globalmente
-npm install -g axios fs-extra
+node run-artist-fix.js
 ```
 
-## 🎯 Como Usar
+### 2. Escolher Opção
+```
+🎵 MENU PRINCIPAL - CORREÇÃO DE ARTISTAS
+==================================================
+1. 💾 Criar backup de segurança
+2. 🔧 Executar correção completa
+3. 📊 Ver estatísticas do banco
+4. 🔄 Restaurar de backup
+5. ❌ Sair
 
-### Opção A: Script ES6 (Recomendado)
+Escolha uma opção (1-5): 2
+```
+
+### 3. Acompanhar Progresso
+```
+🚀 EXECUTANDO CORREÇÃO COMPLETA...
+
+📋 PASSO 1: Criando backup de segurança...
+💾 CRIANDO BACKUP DE SEGURANÇA...
+
+🔍 Buscando músicas que serão corrigidas...
+📊 Encontradas 45 músicas para backup
+
+✅ BACKUP CRIADO COM SUCESSO!
+📁 Arquivo: scripts/backups/backup-artists-before-fix-2024-01-15T10-30-00-000Z.json
+
+📋 PASSO 2: Executando correções...
+🎵 Iniciando correção de artistas desconhecidos...
+
+🔍 Buscando músicas com artistas inválidos...
+📊 Encontradas 45 músicas com artistas inválidos
+
+🔄 Processando músicas...
+
+🎵 Processando: "MC KEVINHO - BAILE DE FAVELA" (ID: 123)
+   ✅ Corrigido: "Artista Desconhecido" → "MC KEVINHO"
+
+🎵 Processando: "DJ ALVARO - FUNK DO MOMENTO" (ID: 124)
+   ✅ Corrigido: "Unknown Artist" → "DJ ALVARO"
+
+📋 RELATÓRIO DE CORREÇÕES
+==================================================
+✅ Músicas corrigidas: 45
+❌ Falhas: 0
+📊 Total processado: 45
+```
+
+## 🔧 Personalização
+
+### Adicionar Novos Padrões
+Edite `fix-unknown-artists.js` e adicione novos padrões regex:
+
+```javascript
+const artistPatterns = [
+    // Seus padrões existentes...
+    
+    // Novo padrão personalizado
+    /^([^-]+)\s+com\s+([^-]+)\s*-\s*(.+)$/i,
+];
+```
+
+### Adicionar Novos Valores Inválidos
+```javascript
+const invalidArtistValues = [
+    // Valores existentes...
+    'Seu Valor Inválido',
+    'Outro Valor Problemático'
+];
+```
+
+## 📁 Estrutura de Arquivos
+
+```
+scripts/
+├── README.md                    # Este arquivo
+├── run-artist-fix.js           # Script principal
+├── backup-before-fix.js        # Script de backup
+├── fix-unknown-artists.js      # Script de correção
+└── backups/                    # Pasta de backups
+    ├── backup-artists-before-fix-2024-01-15T10-30-00-000Z.json
+    ├── restore-2024-01-15T10-30-00-000Z.js
+    └── ...
+```
+
+## 🚨 Solução de Problemas
+
+### Erro de Conexão com Banco
 ```bash
-node contabo-downloader.js
+# Verificar se o Prisma está configurado
+npx prisma generate
+
+# Verificar conexão
+npx prisma db pull
 ```
 
-### Opção B: Script CommonJS (Para compatibilidade)
+### Erro de Permissões
 ```bash
-node contabo-downloader.cjs
+# Dar permissão de execução
+chmod +x run-artist-fix.js
+
+# Ou executar com Node
+node run-artist-fix.js
 ```
 
-### Opção C: Executável .exe (Standalone)
-```bash
-# Primeiro, construir o .exe
-build-exe.bat
-# ou
-.\build-exe.ps1
-
-# Depois executar
-dist\contabo-downloader.exe
-```
-
-## 📋 Opções Disponíveis
-
-### 1. Baixar Músicas de um Estilo Específico
-- Lista todos os estilos disponíveis
-- Escolha por número
-- Baixa para pasta padrão: `Downloads/MusicasContabo`
-
-### 2. Baixar Todos os Estilos
-- **Opção 1**: Pasta padrão (`Downloads/MusicasContabo`)
-- **Opção 2**: Pasta personalizada (você escolhe o caminho)
-
-### 3. Sair
-- Encerra o script
-
-## 📁 Estrutura de Pastas
-
-```
-Downloads/
-└── MusicasContabo/
-    ├── ROCK/
-    │   ├── Musica 1 - Artista 1.mp3
-    │   ├── Musica 2 - Artista 2.mp3
-    │   └── ...
-    ├── POP/
-    │   ├── Musica 3 - Artista 3.mp3
-    │   └── ...
-    └── JAZZ/
-        ├── Musica 4 - Artista 4.mp3
-        └── ...
-```
-
-## ⚙️ Configurações
-
-### Arquivo de Configuração
-```json
-{
-  "apiUrl": "http://localhost:3000/api",
-  "downloadDir": "Downloads/MusicasContabo",
-  "batchSize": 5,
-  "delayBetweenBatches": 2000,
-  "timeout": 30000,
-  "maxRetries": 3
-}
-```
-
-### Variáveis de Ambiente
-- `USERPROFILE` (Windows) ou `HOME` (Linux/Mac): Pasta do usuário
-- Pasta padrão: `{USERPROFILE}/Downloads/MusicasContabo`
-
-## 🔐 Sistema de Autenticação
-
-### Verificação de Sessão
-- O script verifica se você já está logado
-- Sessão válida por 24 horas
-- Arquivo salvo em: `user-session.json`
-
-### Login Manual
-Se não houver sessão válida:
-1. Digite seu email
-2. Digite sua senha
-3. O script verifica se você é VIP ou Admin
-4. Sessão é salva automaticamente
-
-### Requisitos de Acesso
-- ✅ Usuário VIP
-- ✅ Usuário Admin
-- ❌ Usuário comum (acesso negado)
-
-## 📦 Sistema de Downloads
-
-### Downloads em Lote
-- **Tamanho do lote**: 5 músicas por vez
-- **Delay entre lotes**: 2 segundos
-- **Delay entre estilos**: 3 segundos
-
-### Verificação de Arquivos
-- Verifica se o arquivo já existe
-- Pula arquivos maiores que 1KB
-- Evita downloads duplicados
-
-### Tratamento de Erros
-- Timeout configurável (30 segundos)
-- Máximo de 3 tentativas
-- Logs detalhados de erros
-
-## 🛠️ Construindo o Executável .exe
-
-### Pré-requisitos
-- Node.js instalado
-- npm funcionando
-
-### Passo a Passo
-1. **Navegar para a pasta scripts**
-   ```bash
-   cd scripts
-   ```
-
-2. **Executar o script de build**
-   ```bash
-   # Windows (CMD)
-   build-exe.bat
-   
-   # Windows (PowerShell)
-   .\build-exe.ps1
-   ```
-
-3. **Verificar o resultado**
-   - Arquivo criado em: `dist/contabo-downloader.exe`
-   - Tamanho: ~50-100MB (dependendo das dependências)
-
-### Scripts de Build Disponíveis
-- `build-exe.bat` - Script CMD para Windows
-- `build-exe.ps1` - Script PowerShell para Windows
-- `package.json` - Configuração do pkg
-
-## 🔧 Solução de Problemas
-
-### Erro: "Cannot find module"
-```bash
-# Reinstalar dependências
-npm install
-
-# Ou instalar globalmente
-npm install -g axios fs-extra
-```
-
-### Erro: "ECONNREFUSED"
-- Verifique se a plataforma web está rodando
-- Confirme a URL: `http://localhost:3000`
-- Verifique firewall/antivírus
-
-### Erro: "Acesso negado"
-- Verifique se você é VIP ou Admin
-- Faça login na plataforma web primeiro
-- Verifique suas credenciais
-
-### Erro: "Pasta não pode ser criada"
-- Verifique permissões da pasta
-- Use caminho absoluto
-- Execute como administrador se necessário
-
-## 📝 Logs e Debug
-
-### Níveis de Log
-- ✅ Sucesso: Downloads completados
-- ⏭️ Pulado: Arquivo já existe
-- ❌ Erro: Falhas no download
-- 🔐 Autenticação: Status de login
-- 📁 Sistema: Criação de pastas
-
-### Arquivo de Sessão
-```json
-{
-  "user": {
-    "id": 123,
-    "email": "user@example.com",
-    "name": "Nome do Usuário",
-    "isVip": true,
-    "isAdmin": false
-  },
-  "expiresAt": 1703123456789
-}
-```
-
-## 🚀 Recursos Avançados
-
-### Personalização
-- Tamanho do lote configurável
-- Delays personalizáveis
-- Timeout ajustável
-- Pasta de destino customizável
-
-### Performance
-- Downloads paralelos por lote
-- Verificação inteligente de arquivos
-- Sessão persistente
-- Cache de estilos disponíveis
-
-### Segurança
-- Verificação de autenticação
-- Validação de permissões
-- Sessão com expiração
-- Logs de auditoria
+### Backup Não Encontrado
+- Verifique se a pasta `backups/` existe
+- Execute primeiro o script de backup
+- Verifique permissões de escrita
 
 ## 📞 Suporte
 
-### Verificações Comuns
-1. **Node.js instalado**: `node --version`
-2. **npm funcionando**: `npm --version`
-3. **Plataforma rodando**: Acesse `http://localhost:3000`
-4. **Permissões**: Execute como administrador se necessário
+Se encontrar problemas:
+1. Verifique os logs de erro
+2. Confirme se o banco está acessível
+3. Verifique se o Prisma está configurado
+4. Execute o backup primeiro
+5. Teste com poucos registros
 
-### Arquivos Importantes
-- `contabo-downloader.js` - Script principal (ES6)
-- `contabo-downloader.cjs` - Script alternativo (CommonJS)
-- `contabo-config.json` - Configurações
-- `user-session.json` - Sessão do usuário (criado automaticamente)
+## 🎉 Resultado Esperado
 
-## 🎉 Benefícios
-
-- 🎵 **Organização Automática**: Músicas organizadas por estilo
-- 🚀 **Downloads Rápidos**: Sistema de lotes otimizado
-- 💾 **Sem Duplicatas**: Verifica arquivos existentes
-- 🔐 **Seguro**: Apenas usuários autorizados
-- 📱 **Portátil**: Funciona em qualquer PC com Node.js
-- 🎯 **Executável**: Pode ser convertido para .exe standalone
-- 🎨 **Interface Limpa**: Nomes de pasta organizados
-- ⚡ **Performance**: Downloads inteligentes e eficientes
+Após a execução bem-sucedida:
+- ✅ Todos os "Artista Desconhecido" serão corrigidos
+- ✅ Nomes de artistas extraídos automaticamente
+- ✅ Backup de segurança criado
+- ✅ Relatórios detalhados gerados
+- ✅ Script de restauração disponível
+- ✅ Banco de dados limpo e consistente
 
 ---
 
-**Desenvolvido para a Plataforma de Músicas** 🎵
+**⚠️ IMPORTANTE**: Sempre faça backup antes de executar correções em produção!

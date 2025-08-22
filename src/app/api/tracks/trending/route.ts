@@ -79,24 +79,34 @@ export async function GET(request: NextRequest) {
             });
 
             // Sort tracks by download count and add week information
-            const tracksWithDownloadCount = tracks.map(track => {
-                const downloadCount = track.downloads.length;
-                const likeCount = track.likes.length;
-                return {
-                    id: track.id,
-                    songName: track.songName,
-                    artist: track.artist,
-                    imageUrl: track.imageUrl,
-                    style: track.style,
-                    downloadCount,
-                    likeCount,
-                    downloadUrl: track.downloadUrl,
-                    isCommunity: track.isCommunity || false,
-                    uploadedBy: track.uploadedBy || null,
-                    weekNumber: week.weekNumber,
-                    weekStart: week.start.toISOString()
-                };
-            }).sort((a, b) => b.downloadCount - a.downloadCount);
+            const tracksWithDownloadCount = tracks
+                .filter(track =>
+                    track.artist &&
+                    track.artist.trim() !== '' &&
+                    track.artist !== 'Artista Desconhecido' &&
+                    track.artist !== 'Artista Desconhecido' &&
+                    track.artist !== 'Unknown Artist' &&
+                    track.artist !== 'N/A'
+                )
+                .map(track => {
+                    const downloadCount = track.downloads.length;
+                    const likeCount = track.likes.length;
+                    return {
+                        id: track.id,
+                        songName: track.songName,
+                        artist: track.artist,
+                        imageUrl: track.imageUrl,
+                        style: track.style,
+                        downloadCount,
+                        likeCount,
+                        downloadUrl: track.downloadUrl,
+                        isCommunity: track.isCommunity || false,
+                        uploadedBy: track.uploadedBy || null,
+                        weekNumber: week.weekNumber,
+                        weekStart: week.start.toISOString()
+                    };
+                })
+                .sort((a, b) => b.downloadCount - a.downloadCount);
 
             trendingTracks.push(...tracksWithDownloadCount);
         }
