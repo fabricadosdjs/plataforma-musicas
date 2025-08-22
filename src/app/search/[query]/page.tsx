@@ -1,5 +1,8 @@
 "use client";
 
+// Força renderização dinâmica para evitar erro de pré-renderização
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams } from 'next/navigation';
@@ -206,8 +209,8 @@ const SearchPage = () => {
                         <button
                             onClick={() => setShowFiltersModal(true)}
                             className={`w-full sm:w-auto px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 ${hasActiveFilters
-                                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-2xl shadow-purple-500/25'
-                                    : 'bg-gray-800/60 text-gray-300 border border-gray-700/50 hover:bg-gray-700/60 hover:text-white'
+                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-2xl shadow-purple-500/25'
+                                : 'bg-gray-800/60 text-gray-300 border border-gray-700/50 hover:bg-gray-700/60 hover:text-white'
                                 }`}
                         >
                             <Filter className="h-4 w-4" />

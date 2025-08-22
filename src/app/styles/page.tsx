@@ -1,5 +1,8 @@
 "use client";
 
+// Força renderização dinâmica para evitar erro de pré-renderização
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Music, Download, Users } from "lucide-react";
@@ -171,8 +174,8 @@ export default function StylesPage() {
                                                 <div
                                                     key={i}
                                                     className={`w-2 h-2 rounded-full transition-all duration-300 ${i < Math.min(5, Math.ceil((style.downloadCount / Math.max(...styles.map(s => s.downloadCount))) * 5))
-                                                            ? 'bg-[#1db954]'
-                                                            : 'bg-[#535353]'
+                                                        ? 'bg-[#1db954]'
+                                                        : 'bg-[#535353]'
                                                         }`}
                                                 />
                                             ))}

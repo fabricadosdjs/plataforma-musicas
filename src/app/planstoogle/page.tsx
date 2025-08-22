@@ -1,5 +1,8 @@
 "use client";
 
+// Força renderização dinâmica para evitar erro de pré-renderização
+export const dynamic = 'force-dynamic';
+
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { Check, Crown, Star, Zap, Music, Download, Users, Headphones, Database, Gift, CreditCard, User, MessageSquare, Hand, Calendar, Clock, Calculator, ArrowUp, ArrowDown, DollarSign } from 'lucide-react';
