@@ -19,40 +19,54 @@ export async function GET(request: NextRequest) {
 
         // Construir condições de filtro
         const whereConditions: any = {
-            // Filtrar apenas músicas da comunidade
-            OR: [
-                { isCommunity: true },
-                { uploadedBy: { not: null } }
+            // Filtrar apenas músicas da comunidade - SEMPRE deve ser aplicado
+            AND: [
+                {
+                    OR: [
+                        { isCommunity: true },
+                        { uploadedBy: { not: null } }
+                    ]
+                }
             ]
         };
 
         // Filtro de busca
         if (search) {
-            whereConditions.OR = [
-                { songName: { contains: search, mode: 'insensitive' } },
-                { artist: { contains: search, mode: 'insensitive' } },
-                { style: { contains: search, mode: 'insensitive' } }
-            ];
+            whereConditions.AND.push({
+                OR: [
+                    { songName: { contains: search, mode: 'insensitive' } },
+                    { artist: { contains: search, mode: 'insensitive' } },
+                    { style: { contains: search, mode: 'insensitive' } }
+                ]
+            });
         }
 
         // Filtro por gênero
         if (genre && genre !== 'all') {
-            whereConditions.style = { contains: genre, mode: 'insensitive' };
+            whereConditions.AND.push({
+                style: { contains: genre, mode: 'insensitive' }
+            });
         }
 
         // Filtro por artista
         if (artist && artist !== 'all') {
-            whereConditions.artist = { contains: artist, mode: 'insensitive' };
+            whereConditions.AND.push({
+                artist: { contains: artist, mode: 'insensitive' }
+            });
         }
 
         // Filtro por versão
         if (version && version !== 'all') {
-            whereConditions.version = { contains: version, mode: 'insensitive' };
+            whereConditions.AND.push({
+                version: { contains: version, mode: 'insensitive' }
+            });
         }
 
         // Filtro por pool
         if (pool && pool !== 'all') {
-            whereConditions.pool = { contains: pool, mode: 'insensitive' };
+            whereConditions.AND.push({
+                pool: { contains: pool, mode: 'insensitive' }
+            });
         }
 
         // Filtro por mês
@@ -61,10 +75,12 @@ export async function GET(request: NextRequest) {
             const startDate = new Date(parseInt(year), parseInt(monthNum) - 1, 1);
             const endDate = new Date(parseInt(year), parseInt(monthNum), 0);
 
-            whereConditions.releaseDate = {
-                gte: startDate,
-                lte: endDate
-            };
+            whereConditions.AND.push({
+                releaseDate: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            });
         }
 
         // Filtro por período de data
@@ -89,31 +105,17 @@ export async function GET(request: NextRequest) {
                     startDate = new Date(0);
             }
 
-            whereConditions.releaseDate = {
-                gte: startDate,
-                lte: today
-            };
+            whereConditions.AND.push({
+                releaseDate: {
+                    gte: startDate,
+                    lte: today
+                }
+            });
         }
 
         // Buscar músicas da comunidade
         const tracks = await prisma.track.findMany({
             where: whereConditions,
-            include: {
-                uploader: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true
-                    }
-                },
-                _count: {
-                    select: {
-                        downloads: true,
-                        likes: true,
-                        plays: true
-                    }
-                }
-            },
             orderBy: [
                 { releaseDate: 'desc' },
                 { createdAt: 'desc' }
@@ -122,10 +124,22 @@ export async function GET(request: NextRequest) {
             take: limit
         });
 
+        // Log para debug
+        console.log('Community API - whereConditions:', JSON.stringify(whereConditions, null, 2));
+        console.log('Community API - tracks found:', tracks.length);
+        console.log('Community API - first track sample:', tracks[0] ? {
+            id: tracks[0].id,
+            songName: tracks[0].songName,
+            isCommunity: tracks[0].isCommunity,
+            uploadedBy: tracks[0].uploadedBy
+        } : 'No tracks');
+
         // Contar total de músicas da comunidade
         const totalCount = await prisma.track.count({
             where: whereConditions
         });
+
+        console.log('Community API - total count:', totalCount);
 
         // Agrupar músicas por data
         const tracksByDate: { [date: string]: any[] } = {};
@@ -141,10 +155,10 @@ export async function GET(request: NextRequest) {
 
             tracksByDate[releaseDate].push({
                 ...track,
-                downloadCount: track._count.downloads,
-                likeCount: track._count.likes,
-                playCount: track._count.plays,
-                uploadedBy: track.uploader
+                downloadCount: (track as any).downloadCount || 0,
+                likeCount: (track as any).likeCount || 0,
+                playCount: 0, // Campo não disponível no modelo atual
+                uploadedBy: track.uploadedBy
             });
         });
 
@@ -154,10 +168,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             tracks: tracks.map(track => ({
                 ...track,
-                downloadCount: track._count.downloads,
-                likeCount: track._count.likes,
-                playCount: track._count.plays,
-                uploadedBy: track.uploader
+                downloadCount: (track as any).downloadCount || 0,
+                likeCount: (track as any).likeCount || 0,
+                playCount: 0, // Campo não disponível no modelo atual
+                uploadedBy: track.uploadedBy
             })),
             tracksByDate,
             sortedDates,

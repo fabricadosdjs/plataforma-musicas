@@ -1,110 +1,65 @@
-// src/app/community/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { Search, Filter, Music, Loader2, Sparkles, Clock, Star, CheckCircle, Waves, ShoppingCart, Package, X, Crown, Play, Download, Heart, Users, Upload, TrendingUp } from 'lucide-react';
-
+import { Search, Filter, Users, TrendingUp, Heart, Download, Play, Upload, Star, X, Crown, ChevronLeft, ChevronRight, Music } from 'lucide-react';
 import { Track } from '@/types/track';
-
-// Tipo para o progresso do ZIP
-type ZipProgressState = {
-    isActive: boolean;
-    progress: number;
-    current: number;
-    total: number;
-    trackName: string;
-    elapsedTime: number;
-    remainingTime: number;
-    isGenerating: boolean;
-};
-
+import MainLayout from '@/components/layout/MainLayout';
 import { MusicList } from '@/components/music/MusicList';
-import { useSEO } from '@/hooks/useSEO';
-import SEOHead from '@/components/seo/SEOHead';
-import MusicStructuredData from '@/components/seo/MusicStructuredData';
-import Header from '@/components/layout/Header';
-import NewFooter from '@/components/layout/NewFooter';
+import FooterSpacer from '@/components/layout/FooterSpacer';
 import FiltersModal from '@/components/music/FiltersModal';
-import { useAppContext } from '@/context/AppContext';
-import { useDownloadExtensionDetector } from '@/hooks/useDownloadExtensionDetector';
 import { useToastContext } from '@/context/ToastContext';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
-import { YouTubeSkeleton } from '@/components/ui/LoadingSkeleton';
-import Link from 'next/link';
-import {
-    getCurrentDateBrazil,
-    convertToBrazilTimezone,
-    getDateOnlyBrazil,
-    compareDatesOnly,
-    isTodayBrazil,
-    isYesterdayBrazil,
-    formatDateBrazil,
-    getDateKeyBrazil
-} from '@/utils/dateUtils';
+import Image from 'next/image';
 
-// Componente de Loading para a página
-const PageSkeleton = () => <YouTubeSkeleton />;
-
-// Função temporária para corrigir problema de timezone
-const getCorrectDateKey = (dateString: string): string => {
-    try {
-        // Extrair apenas a parte da data (YYYY-MM-DD) se vier com timestamp
-        const dateOnly = dateString.split('T')[0];
-
-        // Assumir que a data vem no formato YYYY-MM-DD
-        const trackDate = new Date(dateOnly + 'T00:00:00-03:00'); // Forçar timezone Brasil
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Zerar horas para comparação
-
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        const trackDateOnly = new Date(trackDate);
-        trackDateOnly.setHours(0, 0, 0, 0);
-
-        // Comparar timestamps
-        if (trackDateOnly.getTime() === today.getTime()) {
-            return 'today';
-        }
-        if (trackDateOnly.getTime() === yesterday.getTime()) {
-            return 'yesterday';
-        }
-        if (trackDateOnly.getTime() > today.getTime()) {
-            return 'future';
-        }
-
-        // Para outras datas, retornar a data original para que possamos formatá-la depois
-        return dateOnly;
-    } catch (error) {
-        console.error('Erro ao processar data:', dateString, error);
-        return 'no-date'; // Retornar uma chave válida em vez da string original
+// Função para obter informações sobre a comunidade baseada em dados reais
+const getCommunityInfo = (stats: any): string => {
+    if (!stats || stats.totalTracks === 0) {
+        return 'A comunidade ainda não possui músicas enviadas. Seja o primeiro a compartilhar sua produção!';
     }
+
+    const totalTracks = stats.totalTracks || 0;
+    const totalDownloads = stats.totalDownloads || 0;
+    const totalLikes = stats.totalLikes || 0;
+    const activeUsers = stats.activeUsers || 0;
+
+    let description = `Nossa comunidade é composta por ${activeUsers} usuários ativos que compartilharam ${totalTracks} música${totalTracks !== 1 ? 's' : ''} únicas. `;
+
+    if (totalDownloads > 0) {
+        description += `Essas músicas já foram baixadas ${totalDownloads} vez${totalDownloads !== 1 ? 'es' : ''}. `;
+    }
+
+    if (totalLikes > 0) {
+        description += `Receberam ${totalLikes} curtida${totalLikes !== 1 ? 's' : ''} dos membros. `;
+    }
+
+    description += `Cada música representa a criatividade e talento de nossos DJs e produtores.`;
+
+    return description;
 };
 
-// Componente principal da página
-function CommunityPageContent() {
+export default function CommunityPage() {
     const { data: session } = useSession();
     const { showToast } = useToastContext();
-    const router = useRouter();
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
+    const { playTrack, isPlaying, currentTrack } = useGlobalPlayer();
 
     const [tracks, setTracks] = useState<Track[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState(''); // Termo que o usuário está digitando
-    const [appliedSearchQuery, setAppliedSearchQuery] = useState(''); // Termo aplicado aos filtros
+    const [searchQuery, setSearchQuery] = useState('');
+    const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
     const [showFiltersModal, setShowFiltersModal] = useState(false);
     const [hasActiveFilters, setHasActiveFilters] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchResults, setSearchResults] = useState<Track[]>([]);
+    const [hasSearched, setHasSearched] = useState(false);
 
     // Estado para estatísticas da comunidade
     const [stats, setStats] = useState({
         totalDownloads: 0,
         totalLikes: 0,
-        activeUsers: 16, // Valor padrão baseado no que o usuário mencionou
-        communityScore: 0
+        activeUsers: 0,
+        communityScore: 0,
+        totalTracks: 0
     });
 
     // Estados para filtros
@@ -120,22 +75,8 @@ function CommunityPageContent() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
 
-
-
-    // Estados para fila de downloads (movidos da MusicTable)
-    const [downloadQueue, setDownloadQueue] = useState<Track[]>([]);
+    // Estados para fila de downloads
     const [downloadedTrackIds, setDownloadedTrackIds] = useState<number[]>([]);
-    const [isDownloadingQueue, setIsDownloadingQueue] = useState(false);
-    const [zipProgress, setZipProgress] = useState<ZipProgressState>({
-        isActive: false,
-        progress: 0,
-        current: 0,
-        total: 0,
-        trackName: '',
-        elapsedTime: 0,
-        remainingTime: 0,
-        isGenerating: false
-    });
 
     // Estados para filtros disponíveis
     const [genres, setGenres] = useState<string[]>([]);
@@ -143,27 +84,58 @@ function CommunityPageContent() {
     const [versions, setVersions] = useState<string[]>([]);
     const [pools, setPools] = useState<string[]>([]);
 
-    // Hook para SEO
-    const { seoData } = useSEO({
-        customTitle: 'Comunidade - Músicas dos DJs',
-        customDescription: 'Descubra as melhores músicas enviadas pelos DJs da comunidade. Novos lançamentos, diferentes estilos e artistas.',
-        customKeywords: 'comunidade, djs, músicas, novos lançamentos, estilos variados',
-        customImage: '/images/community-og.jpg'
-    });
+    // Estados para carrossel
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [isHovered, setIsHovered] = useState(false);
+
+    // Slides do carrossel
+    const slides = [
+        {
+            id: 1,
+            title: "Upload Comunitário",
+            artist: "DJs da Comunidade",
+            image: "https://i.ibb.co/Vm1xPqt/slide1.jpg",
+            link: "/community",
+            badge: "COMUNIDADE",
+        },
+        {
+            id: 2,
+            title: "Trending da Semana",
+            artist: "Músicas Mais Populares",
+            image: "https://i.ibb.co/ZfDzHn9/slide2.jpg",
+            link: "/community",
+            badge: "TRENDING",
+        },
+        {
+            id: 3,
+            title: "Curadoria Premium",
+            artist: "Seleção Especializada",
+            image: "https://i.ibb.co/4sfx2D4/slide3.jpg",
+            link: "/community",
+            badge: "PREMIUM",
+        },
+    ];
 
     // Carregar IDs das músicas baixadas do localStorage
     useEffect(() => {
-        const savedDownloadedTracks = localStorage.getItem('downloadedTracks');
-        if (savedDownloadedTracks) {
+        const saved = localStorage.getItem('downloadedTrackIds');
+        if (saved) {
             try {
-                const parsedTracks = JSON.parse(savedDownloadedTracks);
-                const trackIds = parsedTracks.map((track: any) => track.id);
-                setDownloadedTrackIds(trackIds);
+                setDownloadedTrackIds(JSON.parse(saved));
             } catch (error) {
                 console.error('Erro ao carregar músicas baixadas:', error);
             }
         }
     }, []);
+
+    // Autoplay do carrossel
+    useEffect(() => {
+        if (isHovered) return;
+        const interval = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % slides.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [slides.length, isHovered]);
 
     // Função para buscar músicas da comunidade
     const fetchCommunityTracks = useCallback(async (resetPage = false) => {
@@ -200,7 +172,8 @@ function CommunityPageContent() {
                     ...prevStats,
                     totalDownloads,
                     totalLikes,
-                    communityScore
+                    communityScore,
+                    totalTracks: data.tracks.length
                 }));
             }
         } catch (error) {
@@ -235,12 +208,11 @@ function CommunityPageContent() {
                 const data = await response.json();
                 setStats(prevStats => ({
                     ...prevStats,
-                    activeUsers: data.activeUsersToday
+                    activeUsers: data.activeUsersToday || 0
                 }));
             }
         } catch (error) {
             console.error('Error fetching active users:', error);
-            // Manter o valor padrão de 16 em caso de erro
         }
     };
 
@@ -248,8 +220,56 @@ function CommunityPageContent() {
     useEffect(() => {
         fetchFilters();
         fetchCommunityTracks();
-        fetchActiveUsers(); // Buscar usuários ativos do banco
-    }, [fetchFilters, fetchCommunityTracks]);
+        fetchActiveUsers();
+    }, []);
+
+    // Função para realizar busca
+    const performSearch = async (query: string) => {
+        if (!query.trim()) return;
+
+        try {
+            setSearchLoading(true);
+            const response = await fetch(`/api/tracks/search?q=${encodeURIComponent(query)}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                setSearchResults(data.tracks || []);
+                setAppliedSearchQuery(query);
+                setHasSearched(true);
+
+                // Atualizar URL com a pesquisa
+                const searchParams = new URLSearchParams(window.location.search);
+                searchParams.set('q', query);
+                const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
+                window.history.pushState({}, '', newUrl);
+            } else {
+                setSearchResults([]);
+                setAppliedSearchQuery(query);
+                setHasSearched(true);
+                showToast('Erro ao buscar músicas', 'error');
+            }
+        } catch (error) {
+            console.error('Erro na busca:', error);
+            setSearchResults([]);
+            setAppliedSearchQuery(query);
+            setHasSearched(true);
+            showToast('Erro ao buscar músicas', 'error');
+        } finally {
+            setSearchLoading(false);
+        }
+    };
+
+    // Função para limpar busca
+    const clearSearch = () => {
+        setSearchQuery('');
+        setSearchResults([]);
+        setAppliedSearchQuery('');
+        setHasSearched(false);
+
+        // Limpar URL da pesquisa
+        const newUrl = window.location.pathname;
+        window.history.pushState({}, '', newUrl);
+    };
 
     // Função para aplicar filtros
     const handleApplyFilters = () => {
@@ -272,94 +292,6 @@ function CommunityPageContent() {
         setCurrentPage(1);
         fetchCommunityTracks(true);
         showToast('🧹 Filtros e pesquisa limpos!', 'success');
-    };
-
-    // Função para buscar
-    const handleSearch = () => {
-        const trimmedQuery = searchQuery.trim();
-        setAppliedSearchQuery(trimmedQuery);
-        setCurrentPage(1);
-        fetchCommunityTracks(true);
-
-        if (trimmedQuery) {
-            showToast(`🔍 Buscando por: "${trimmedQuery}"`, 'info');
-        } else {
-            showToast('🧹 Pesquisa limpa!', 'info');
-        }
-    };
-
-    // Função para mudar página
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page);
-        fetchCommunityTracks();
-    };
-
-    // Função para adicionar/remover da fila de download
-    const onToggleQueue = (track: Track) => {
-        const isInQueue = downloadQueue.some((t: Track) => t.id === track.id);
-
-        if (!isInQueue) {
-            setDownloadQueue((prev: Track[]) => [...prev, track]);
-            showToast(`📦 "${track.songName}" adicionada à fila`, 'success');
-        } else {
-            setDownloadQueue(prev => prev.filter((t: Track) => t.id !== track.id));
-            showToast(`📦 "${track.songName}" removida da fila`, 'success');
-        }
-    };
-
-    // Função para gerar ZIP da fila de download
-    const handleDownloadQueue = async () => {
-        if (downloadQueue.length === 0) return;
-
-        try {
-            setIsDownloadingQueue(true);
-            setZipProgress(prev => ({
-                ...prev,
-                isActive: true,
-                total: downloadQueue.length,
-                current: 0,
-                progress: 0,
-                isGenerating: true
-            }));
-
-            // Simular progresso de geração do ZIP
-            for (let i = 0; i < downloadQueue.length; i++) {
-                const track = downloadQueue[i];
-                setZipProgress(prev => ({
-                    ...prev,
-                    current: i + 1,
-                    progress: Math.round(((i + 1) / downloadQueue.length) * 100),
-                    trackName: track.songName
-                }));
-
-                // Simular tempo de processamento
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
-
-            // Simular download do ZIP
-            setZipProgress(prev => ({ ...prev, isGenerating: false }));
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            showToast('✅ ZIP gerado com sucesso!', 'success');
-            setDownloadQueue([]);
-        } catch (error) {
-            showToast('❌ Erro ao gerar ZIP', 'error');
-        } finally {
-            setIsDownloadingQueue(false);
-            setZipProgress(prev => ({ ...prev, isActive: false }));
-        }
-    };
-
-    // Função para cancelar geração do ZIP
-    const handleCancelZipGeneration = () => {
-        setZipProgress(prev => ({ ...prev, isActive: false }));
-        setIsDownloadingQueue(false);
-    };
-
-    // Função para limpar fila de download
-    const handleClearQueue = () => {
-        setDownloadQueue([]);
-        showToast('🗑️ Fila de download limpa', 'info');
     };
 
     // Função para mudar filtros
@@ -393,578 +325,445 @@ function CommunityPageContent() {
         setHasActiveFilters(true);
     };
 
-    // Função para mudar busca
-    const handleSearchChange = (query: string) => {
-        setSearchQuery(query);
+    // Função para atualizar IDs de tracks baixados
+    const handleDownloadedTrackIdsChange = (newIds: number[] | ((prev: number[]) => number[])) => {
+        if (typeof newIds === 'function') {
+            setDownloadedTrackIds(newIds);
+        } else {
+            setDownloadedTrackIds(newIds);
+        }
+        localStorage.setItem('downloadedTrackIds', JSON.stringify(typeof newIds === 'function' ? newIds(downloadedTrackIds) : newIds));
     };
 
-    const handleSearchSubmit = () => {
-        if (searchQuery.trim()) {
-            handleSearch();
+    // Determinar quais músicas mostrar
+    const displayTracks = useMemo(() => {
+        if (hasSearched) {
+            return searchResults;
         }
-    };
+        return tracks;
+    }, [hasSearched, searchResults, tracks]);
 
-    const handleClearSearch = () => {
-        setSearchQuery('');
-        setAppliedSearchQuery('');
-        setHasActiveFilters(false);
-        fetchCommunityTracks(true);
-        showToast('🧹 Pesquisa limpa!', 'info');
-    };
-
-    // Função para obter label da data
-    const getDateLabel = (dateKey: string) => {
-        if (dateKey === 'today') return 'Hoje';
-        if (dateKey === 'yesterday') return 'Ontem';
-        if (dateKey === 'future') return 'Futuro';
-        if (dateKey === 'no-date') return 'Sem Data';
-
-        try {
-            const date = new Date(dateKey + 'T00:00:00-03:00');
-            return date.toLocaleDateString('pt-BR', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        } catch (error) {
-            return dateKey;
-        }
-    };
-
-    // Filtrar e ordenar tracks com base na pesquisa e filtros
-    const filteredTracks = useMemo(() => {
-        let filtered = [...tracks];
-
-        // Aplicar pesquisa
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase().trim();
-            filtered = filtered.filter(track =>
-                track.songName.toLowerCase().includes(query) ||
-                track.artist.toLowerCase().includes(query) ||
-                track.style.toLowerCase().includes(query) ||
-                (track.version && track.version.toLowerCase().includes(query)) ||
-                (track.pool && track.pool.toLowerCase().includes(query))
-            );
-        }
-
-        // Aplicar filtros
-        if (selectedGenre !== 'all') {
-            filtered = filtered.filter(track => track.style === selectedGenre);
-        }
-
-        if (selectedArtist !== 'all') {
-            filtered = filtered.filter(track => track.artist === selectedArtist);
-        }
-
-        if (selectedVersion !== 'all') {
-            filtered = filtered.filter(track => {
-                const trackVersion = track.version && track.version.trim() !== ''
-                    ? track.version.trim()
-                    : 'Original';
-                return trackVersion === selectedVersion;
-            });
-        }
-
-        if (selectedPool !== 'all') {
-            filtered = filtered.filter(track => track.pool === selectedPool);
-        }
-
-        if (selectedDateRange !== 'all') {
-            const currentDate = getCurrentDateBrazil();
-            filtered = filtered.filter(track => {
-                if (!track.releaseDate) return selectedDateRange === 'no-date';
-                const trackDate = convertToBrazilTimezone(track.releaseDate);
-
-                switch (selectedDateRange) {
-                    case 'today':
-                        return isTodayBrazil(trackDate);
-                    case 'yesterday':
-                        return isYesterdayBrazil(trackDate);
-                    case 'this-week':
-                        return (currentDate.getTime() - trackDate.getTime()) <= 7 * 24 * 60 * 60 * 1000;
-                    case 'this-month':
-                        return trackDate.getMonth() === currentDate.getMonth() &&
-                            trackDate.getFullYear() === currentDate.getFullYear();
-                    default:
-                        return true;
-                }
-            });
-        }
-
-        if (selectedMonth !== 'all') {
-            filtered = filtered.filter(track => {
-                if (!track.releaseDate) return false;
-                const trackDate = new Date(track.releaseDate);
-                const year = trackDate.getFullYear();
-                const month = trackDate.getMonth();
-                const monthYear = `${year}-${String(month + 1).padStart(2, '0')}`;
-                return monthYear === selectedMonth;
-            });
-        }
-
-        // Ordenar por data de lançamento (mais recentes primeiro)
-        filtered.sort((a, b) => {
-            if (!a.releaseDate && !b.releaseDate) return 0;
-            if (!a.releaseDate) return 1;
-            if (!b.releaseDate) return -1;
-
-            const dateA = new Date(a.releaseDate);
-            const dateB = new Date(b.releaseDate);
-            return dateB.getTime() - dateA.getTime();
-        });
-
-        return filtered;
-    }, [tracks, searchQuery, selectedGenre, selectedArtist, selectedVersion, selectedPool, selectedDateRange, selectedMonth]);
-
-    // Agrupar músicas por data de lançamento (mantido para compatibilidade)
-    const groupTracksByReleaseDate = useMemo(() => {
-        const grouped: { [key: string]: Track[] } = {};
-        const sortedKeys: string[] = [];
-
-        tracks.forEach(track => {
-            const dateKey = getCorrectDateKey(track.releaseDate || '');
-
-            if (!grouped[dateKey]) {
-                grouped[dateKey] = [];
-                sortedKeys.push(dateKey);
-            }
-
-            grouped[dateKey].push(track);
-        });
-
-        // Ordenar chaves de data
-        sortedKeys.sort((a, b) => {
-            if (a === 'today') return -1;
-            if (a === 'yesterday') return -2;
-            if (a === 'future') return 1;
-            if (b === 'today') return 1;
-            if (b === 'yesterday') return 2;
-            if (b === 'future') return -1;
-
-            try {
-                return new Date(b).getTime() - new Date(a).getTime();
-            } catch {
-                return 0;
-            }
-        });
-
-        return {
-            grouped,
-            sortedKeys,
-            totalPages: Math.ceil(sortedKeys.length / 7), // 7 dias por página
-            totalDays: sortedKeys.length
-        };
-    }, [tracks]);
-
-    // Renderização do componente
     return (
-        <div className="bg-[#121212] relative overflow-hidden z-0" style={{ zIndex: 0 }}>
-            {/* SEO Components */}
-            {seoData && (
-                <SEOHead
-                    title={seoData.title}
-                    description={seoData.description}
-                    keywords={seoData.keywords}
-                    image={seoData.image}
-                    url={seoData.url}
-                    type={seoData.type}
-                    musicData={seoData.musicData}
-                />
-            )}
-            {tracks.length > 0 && (
-                <MusicStructuredData
-                    track={{
-                        ...tracks[0],
-                        imageUrl: tracks[0].imageUrl ?? '',
-                    }}
-                    url={window.location.href}
-                />
-            )}
-
-            {/* Animated background particles */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[#202A3C]/20 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-[#26222D]/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-                <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-[#202A3C]/15 rounded-full blur-3xl animate-pulse delay-2000"></div>
-            </div>
-
-            <Header />
-            <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 pt-16 sm:pt-20 pb-4 relative z-10">
-                {/* Hero Section - Primeiro Slide */}
-                <div className="mb-8 sm:mb-12">
-                    {/* Header da página */}
-                    <div className="mb-6 sm:mb-8">
-
-                        {/* Indicadores de filtros ativos */}
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                            {appliedSearchQuery && (
-                                <div className="flex items-center space-x-2 bg-[#202A3C]/60 text-blue-400 px-3 py-1 rounded-full text-sm border border-[#26222D]/50">
-                                    <Search className="h-3 w-3" />
-                                    <span>Pesquisando: "{appliedSearchQuery}"</span>
-                                    <button
-                                        onClick={handleClearSearch}
-                                        className="hover:text-blue-300 transition-colors"
-                                    >
-                                        <X className="h-3 w-3" />
-                                    </button>
-                                </div>
-                            )}
-
-                            {hasActiveFilters && !appliedSearchQuery && (
-                                <div className="flex items-center space-x-2 text-orange-400">
-                                    <Filter className="h-4 w-4" />
-                                    <span className="text-sm">Filtros ativos</span>
-                                </div>
-                            )}
+        <MainLayout>
+            <div className="min-h-screen bg-[#121212] overflow-x-hidden">
+                {/* CARROUSEL "COMUNIDADE DOS VIPS" - Mobile First */}
+                <div className="w-full max-w-6xl mx-auto mt-4 sm:mt-8 mb-8 sm:mb-12 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24 transition-all duration-300">
+                    {/* Header do carrousel - Mobile First */}
+                    <div className="flex items-center justify-between mb-4 sm:mb-8">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-1 h-6 sm:h-8 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
+                            <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">
+                                COMUNIDADE DOS VIPS
+                            </h2>
                         </div>
 
-                        {!session && (
-                            <div className="w-full flex items-center justify-center py-3 px-4 mt-4 rounded-xl shadow-md bg-yellow-100 border border-yellow-400 text-yellow-900 font-semibold text-center text-sm">
-                                Atenção: Usuários sem plano não podem ouvir, baixar ou curtir músicas. Apenas a navegação no catálogo está disponível.
+                        {/* Controles de navegação - Mobile First */}
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <button
+                                onClick={() => setCurrentSlide(prev => prev === 0 ? slides.length - 1 : prev - 1)}
+                                className="p-2 sm:p-3 bg-[#181818]/80 hover:bg-[#282828]/90 rounded-lg sm:rounded-xl text-white transition-all duration-300 backdrop-blur-md border border-[#282828]/50 hover:border-[#3e3e3e]/70 hover:shadow-lg hover:shadow-[#1db954]/20 group"
+                                title="Slide anterior"
+                            >
+                                <ChevronLeft size={18} className="sm:w-[22px] sm:h-[22px] group-hover:scale-110 transition-transform duration-200" />
+                            </button>
+                            <button
+                                onClick={() => setCurrentSlide(prev => (prev + 1) % slides.length)}
+                                className="p-2 sm:p-3 bg-[#181818]/80 hover:bg-[#282828]/90 rounded-lg sm:rounded-xl text-white transition-all duration-300 backdrop-blur-md border border-[#282828]/50 hover:border-[#3e3e3e]/70 hover:shadow-lg hover:shadow-[#1db954]/20 group"
+                                title="Próximo slide"
+                            >
+                                <ChevronRight size={18} className="sm:w-[22px] sm:h-[22px] group-hover:scale-110 transition-transform duration-200" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Container do carrousel - Mobile First */}
+                    <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-[#181818] border border-[#282828] shadow-2xl">
+                        {/* Slides container */}
+                        <div
+                            className="flex transition-transform duration-700 ease-out"
+                            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                            onMouseEnter={() => setIsHovered(true)}
+                            onMouseLeave={() => setIsHovered(false)}
+                        >
+                            {slides.map((slide) => (
+                                <div key={slide.id} className="w-full flex-shrink-0">
+                                    {/* Mobile: Layout ultra-compacto sem overflow */}
+                                    <div className="block sm:hidden">
+                                        <div className="relative h-32 sm:h-40 overflow-hidden group">
+                                            {/* Background image com overlay */}
+                                            <div className="absolute inset-0">
+                                                <Image
+                                                    src={slide.image}
+                                                    alt={slide.title}
+                                                    fill
+                                                    className="object-cover opacity-60 group-hover:opacity-80 transition-all duration-500"
+                                                    priority={currentSlide === slide.id - 1}
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                                            </div>
+
+                                            {/* Conteúdo mobile ultra-compacto */}
+                                            <div className="relative z-10 h-full flex flex-col justify-end p-2 sm:p-3">
+                                                {/* Badge no topo */}
+                                                <div className="absolute top-2 right-2">
+                                                    <span className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-lg backdrop-blur-md border border-green-400/30">
+                                                        {slide.badge}
+                                                    </span>
+                                                </div>
+
+                                                {/* Informações da música */}
+                                                <div className="text-white">
+                                                    <h3 className="text-sm sm:text-base font-bold mb-1 line-clamp-1">
+                                                        {slide.title}
+                                                    </h3>
+                                                    <p className="text-xs sm:text-sm text-[#b3b3b3] line-clamp-1">
+                                                        {slide.artist}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Desktop: Layout completo */}
+                                    <div className="hidden sm:block">
+                                        <div className="relative h-48 sm:h-56 md:h-64 lg:h-72 overflow-hidden group">
+                                            {/* Background image com overlay */}
+                                            <div className="absolute inset-0">
+                                                <Image
+                                                    src={slide.image}
+                                                    alt={slide.title}
+                                                    fill
+                                                    className="object-cover opacity-60 group-hover:opacity-80 transition-all duration-500"
+                                                    priority={currentSlide === slide.id - 1}
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                                            </div>
+
+                                            {/* Conteúdo desktop */}
+                                            <div className="relative z-10 h-full flex flex-col justify-end p-4 sm:p-6 md:p-8">
+                                                {/* Badge no topo */}
+                                                <div className="absolute top-4 right-4">
+                                                    <span className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg backdrop-blur-md border border-green-400/30">
+                                                        {slide.badge}
+                                                    </span>
+                                                </div>
+
+                                                {/* Informações da música */}
+                                                <div className="text-white">
+                                                    <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">
+                                                        {slide.title}
+                                                    </h3>
+                                                    <p className="text-lg sm:text-xl text-[#b3b3b3] mb-4">
+                                                        {slide.artist}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Indicadores de slide */}
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                            {slides.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setCurrentSlide(index)}
+                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide ? 'bg-[#1db954] w-6' : 'bg-white/50 hover:bg-white/75'
+                                        }`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* SEÇÃO DE ESTATÍSTICAS DA COMUNIDADE - Mobile First */}
+                <div className="w-full max-w-6xl mx-auto mb-8 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
+                    <div className="bg-gradient-to-br from-[#1db954]/10 to-[#1ed760]/5 rounded-2xl p-6 sm:p-8 border border-[#1db954]/20 shadow-xl">
+                        {/* Header da seção */}
+                        <div className="text-center mb-6 sm:mb-8">
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                <div className="w-2 h-8 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
+                                <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
+                                    Estatísticas da Comunidade
+                                </h2>
+                                <div className="w-2 h-8 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
+                            </div>
+                            <p className="text-[#b3b3b3] text-sm sm:text-base max-w-2xl mx-auto">
+                                Números que mostram o crescimento e engajamento da nossa comunidade de DJs e produtores
+                            </p>
+                        </div>
+
+                        {/* Cards de estatísticas */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                            <div className="bg-[#181818]/80 backdrop-blur-sm rounded-xl p-4 border border-[#282828]/50 text-center group hover:scale-105 transition-all duration-300 hover:border-[#1db954]/30">
+                                <div className="w-12 h-12 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                                    <Users className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
+                                    {stats.totalTracks}
+                                </div>
+                                <div className="text-[#b3b3b3] text-xs sm:text-sm">
+                                    {stats.totalTracks === 1 ? 'Música' : 'Músicas'}
+                                </div>
+                            </div>
+
+                            <div className="bg-[#181818]/80 backdrop-blur-sm rounded-xl p-4 border border-[#282828]/50 text-center group hover:scale-105 transition-all duration-300 hover:border-[#1db954]/30">
+                                <div className="w-12 h-12 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                                    <Download className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
+                                    {stats.totalDownloads}
+                                </div>
+                                <div className="text-[#b3b3b3] text-xs sm:text-sm">Downloads</div>
+                            </div>
+
+                            <div className="bg-[#181818]/80 backdrop-blur-sm rounded-xl p-4 border border-[#282828]/50 text-center group hover:scale-105 transition-all duration-300 hover:border-[#1db954]/30">
+                                <div className="w-12 h-12 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                                    <Heart className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
+                                    {stats.totalLikes}
+                                </div>
+                                <div className="text-[#b3b3b3] text-xs sm:text-sm">Curtidas</div>
+                            </div>
+
+                            <div className="bg-[#181818]/80 backdrop-blur-sm rounded-xl p-4 border border-[#282828]/50 text-center group hover:scale-105 transition-all duration-300 hover:border-[#1db954]/30">
+                                <div className="w-12 h-12 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                                    <TrendingUp className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
+                                    {stats.activeUsers}
+                                </div>
+                                <div className="text-[#b3b3b3] text-xs sm:text-sm">Usuários Ativos</div>
+                            </div>
+                        </div>
+
+                        {/* Descrição da comunidade */}
+                        {getCommunityInfo(stats) && (
+                            <div className="mt-6 sm:mt-8 text-center">
+                                <div className="bg-[#181818]/60 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-[#282828]/40">
+                                    <div className="text-[#b3b3b3] text-sm sm:text-base leading-relaxed max-w-4xl mx-auto">
+                                        {getCommunityInfo(stats)}
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
+                </div>
 
-                    {/* Hero Section - COMUNIDADE DOS VIPS */}
-                    <div className="text-center mb-12">
-                        <div className="flex items-center justify-center gap-4 mb-6">
-                            <div className="relative">
-                                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-2xl">
-                                    <Music className="h-8 w-8 text-white" />
-                                </div>
-                                <div className="absolute -inset-2 bg-gradient-to-br from-purple-500 to-emerald-500 rounded-2xl blur opacity-30 animate-pulse"></div>
+                {/* BARRA DE PESQUISA E FILTROS - Mobile First */}
+                <div className="w-full max-w-6xl mx-auto mb-8 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
+                    <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg">
+                        {/* Barra de pesquisa */}
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
+                            <div className="flex-1 relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#b3b3b3]" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar músicas da comunidade..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && performSearch(searchQuery)}
+                                    className="w-full pl-10 pr-4 py-3 bg-[#282828] border border-[#3e3e3e] rounded-xl text-white placeholder-[#b3b3b3] focus:outline-none focus:ring-2 focus:ring-[#1db954]/50 focus:border-[#1db954]/50 transition-all duration-300"
+                                />
                             </div>
-                            <div>
-                                <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-purple-500 via-violet-500 to-emerald-500 bg-clip-text text-transparent drop-shadow-lg">
-                                    COMUNIDADE DOS VIPS
-                                </h1>
-                                <p className="text-gray-300 text-lg mt-2">Músicas Produzidas e Enviadas pela galera da comunidade</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm rounded-2xl border border-yellow-500/30 p-6 text-center group hover:scale-105 transition-all duration-300">
-                            <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                                <Download className="h-6 w-6 text-white" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">{stats.totalDownloads.toLocaleString()}</h3>
-                            <p className="text-yellow-300 text-sm">Downloads da Semana</p>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-pink-500/20 to-red-500/20 backdrop-blur-sm rounded-2xl border border-pink-500/30 p-6 text-center group hover:scale-105 transition-all duration-300">
-                            <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-red-500 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                                <Heart className="h-6 w-6 text-white" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">{stats.totalLikes.toLocaleString()}</h3>
-                            <p className="text-pink-300 text-sm">Likes da Semana</p>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-6 text-center group hover:scale-105 transition-all duration-300">
-                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                                <Users className="h-6 w-6 text-white" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">{stats.activeUsers.toLocaleString()}</h3>
-                            <p className="text-purple-300 text-sm">Usuários Ativos</p>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 backdrop-blur-sm rounded-2xl border border-emerald-500/30 p-6 text-center group hover:scale-105 transition-all duration-300">
-                            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                                <TrendingUp className="h-6 w-6 text-white" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">{stats.communityScore.toLocaleString()}</h3>
-                            <p className="text-emerald-300 text-sm">Score Comunidade</p>
-                        </div>
-                    </div>
-
-                    {/* Cards de Recursos da Comunidade */}
-                    <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="group bg-[#202A3C]/80 backdrop-blur-sm rounded-xl border border-[#26222D]/50 p-6 hover:scale-105 transition-all duration-300 hover:border-purple-500/50">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-purple-500/25 transition-all duration-300">
-                                    <Upload className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-white">Upload Comunitário</h3>
-                                    <p className="text-sm text-gray-400">DJs compartilham suas criações</p>
-                                </div>
-                            </div>
-                            <p className="text-gray-300 text-sm leading-relaxed">
-                                Nossa comunidade de DJs profissionais compartilha suas melhores produções,
-                                garantindo que você tenha acesso a músicas exclusivas e de alta qualidade.
-                            </p>
-                        </div>
-
-                        <div className="group bg-[#202A3C]/80 backdrop-blur-sm rounded-xl border border-[#26222D]/50 p-6 hover:scale-105 transition-all duration-300 hover:border-blue-500/50">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-blue-500/25 transition-all duration-300">
-                                    <TrendingUp className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-white">Trending da Semana</h3>
-                                    <p className="text-sm text-gray-400">Músicas mais populares</p>
-                                </div>
-                            </div>
-                            <p className="text-gray-300 text-sm leading-relaxed">
-                                Descubra quais músicas estão bombando na comunidade.
-                                Baseado em downloads, likes e feedback dos DJs.
-                            </p>
-                        </div>
-
-                        <div className="group bg-[#202A3C]/80 backdrop-blur-sm rounded-xl border border-[#26222D]/50 p-6 hover:scale-105 transition-all duration-300 hover:border-emerald-500/50">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-emerald-500/25 transition-all duration-300">
-                                    <Star className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-white">Curadoria Premium</h3>
-                                    <p className="text-sm text-gray-400">Seleção especializada</p>
-                                </div>
-                            </div>
-                            <p className="text-gray-300 text-sm leading-relaxed">
-                                Nossa equipe de curadores analisa cada música enviada,
-                                garantindo apenas o melhor da música eletrônica.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Barra de Pesquisa e Filtros */}
-                    <div className="mb-8">
-                        <div className="flex flex-col lg:flex-row gap-4">
-                            {/* Barra de Pesquisa */}
-                            <div className="flex-1 relative flex">
-                                <div className="flex-1 relative">
-                                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Buscar músicas da comunidade..."
-                                        value={searchQuery}
-                                        onChange={(e) => handleSearchChange(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && handleSearchSubmit()}
-                                        className="w-full pl-12 pr-12 py-4 bg-[#26222D]/60 backdrop-blur-xl border border-[#202A3C]/50 rounded-l-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
-                                    />
-
-                                    {/* Botão X para limpar pesquisa */}
-                                    {searchQuery && (
-                                        <button
-                                            onClick={handleClearSearch}
-                                            className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-white transition-colors"
-                                        >
-                                            <X className="h-5 w-5" />
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Botão de Pesquisa */}
-                                <button
-                                    onClick={handleSearchSubmit}
-                                    disabled={!searchQuery.trim()}
-                                    className={`px-6 py-4 text-white rounded-r-2xl font-semibold transition-all duration-300 shadow-lg flex items-center gap-2 ${searchQuery.trim()
-                                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-blue-500/25'
-                                        : 'bg-gray-600 cursor-not-allowed shadow-gray-600/25'
-                                        }`}
-                                >
-                                    <Search className="h-5 w-5" />
-                                    <span className="hidden sm:inline">Buscar</span>
-                                </button>
-                            </div>
-
-                            {/* Botão de Filtros */}
+                            <button
+                                onClick={() => performSearch(searchQuery)}
+                                disabled={!searchQuery.trim() || searchLoading}
+                                className="px-4 py-2 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition h-10 w-full sm:w-auto min-w-[120px] text-sm sm:text-base font-medium shadow-lg"
+                            >
+                                {searchLoading ? "Buscando..." : "Buscar"}
+                            </button>
                             <button
                                 onClick={() => setShowFiltersModal(true)}
-                                className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${hasActiveFilters
-                                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/25'
-                                    : 'bg-[#26222D]/60 backdrop-blur-xl border border-[#202A3C]/50 text-gray-300 hover:bg-[#26222D]/80 hover:border-[#202A3C]/70'
-                                    }`}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#282828] text-white rounded-lg hover:bg-[#3e3e3e] transition h-10 w-full sm:w-auto min-w-[120px] text-sm sm:text-base border border-[#3e3e3e]"
                             >
-                                <Filter className="h-5 w-5" />
-                                <span>Filtros</span>
-                                {hasActiveFilters && (
-                                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                                )}
+                                <Filter size={18} /> Filtros
                             </button>
+                        </div>
 
-                            {/* Botão de Limpar Filtros */}
-                            {hasActiveFilters && (
+                        {/* Indicador de resultados */}
+                        {hasSearched && (
+                            <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div className="text-[#b3b3b3] text-sm">
+                                    {searchLoading ? (
+                                        "Buscando..."
+                                    ) : searchResults.length > 0 ? (
+                                        `${searchResults.length} resultado${searchResults.length !== 1 ? 's' : ''} encontrado${searchResults.length !== 1 ? 's' : ''}`
+                                    ) : (
+                                        "Nenhum resultado encontrado"
+                                    )}
+                                </div>
                                 <button
-                                    onClick={handleClearFilters}
-                                    className="flex items-center gap-2 px-4 py-4 rounded-2xl font-semibold transition-all duration-300 bg-red-500/20 backdrop-blur-xl border border-red-500/30 text-red-400 hover:bg-red-500/30 hover:border-red-500/50 hover:text-red-300"
-                                    title="Limpar todos os filtros"
+                                    onClick={clearSearch}
+                                    className="text-sm text-[#1db954] hover:text-[#1ed760] transition-colors self-start sm:self-auto"
                                 >
-                                    <X className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Limpar</span>
+                                    Voltar à comunidade
                                 </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Mensagem de Aviso para Dispositivos Móveis */}
-                    <div className="mb-8">
-                        <div className="bg-[#202A3C]/60 backdrop-blur-sm rounded-xl border border-[#26222D]/50 p-4">
-                            <div className="flex items-start gap-3">
-                                <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="text-amber-400 font-semibold text-sm mb-2">💡 Dica para Melhor Experiência</h3>
-                                    <p className="text-gray-300 text-sm leading-relaxed text-justify">
-                                        <span className="lg:hidden">
-                                            Para uma experiência completa e melhor navegação, recomendamos que utilize este site em computadores ou dispositivos com tela maior.
-                                            Algumas funcionalidades podem ter melhor desempenho em telas maiores.
-                                        </span>
-                                        <span className="hidden lg:inline">
-                                            Você está utilizando a melhor experiência possível! Este site foi otimizado para oferecer a melhor navegação em telas maiores.
-                                            Aproveite todas as funcionalidades disponíveis.
-                                        </span>
-                                    </p>
-                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
+                </div>
 
-                    {/* Loading State */}
-                    {loading ? (
-                        <div className="flex items-center justify-center py-32">
+                {/* LISTA DE MÚSICAS - Mobile First */}
+                <div className="w-full max-w-6xl mx-auto pb-6 sm:pb-8 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
+                    {/* Estado de loading */}
+                    {(loading || searchLoading) && (
+                        <div className="flex items-center justify-center py-12 sm:py-16">
                             <div className="text-center">
-                                <div className="relative">
-                                    <div className="w-20 h-20 border-4 border-purple-600/30 border-t-purple-600 rounded-full animate-spin mx-auto mb-6"></div>
-                                    <Users className="h-8 w-8 text-purple-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-                                </div>
-                                <h3 className="text-xl font-semibold text-white mb-2">Carregando Músicas da Comunidade</h3>
-                                <p className="text-gray-400">Aguarde enquanto buscamos as faixas enviadas pelos DJs...</p>
+                                <div className="animate-spin w-10 h-10 sm:w-12 sm:h-12 border-4 border-[#1db954] border-t-transparent rounded-full mx-auto mb-4"></div>
+                                <p className="text-[#b3b3b3] text-base sm:text-lg">
+                                    {searchLoading ? "Buscando músicas..." : "Carregando comunidade..."}
+                                </p>
                             </div>
                         </div>
-                    ) : tracks.length === 0 ? (
-                        <div className="text-center py-32">
-                            <div className="p-6 bg-gray-800/50 rounded-2xl inline-block mb-6">
-                                <Users className="h-16 w-16 text-gray-400 mx-auto" />
+                    )}
+
+                    {/* Nenhum resultado encontrado */}
+                    {!loading && !searchLoading && hasSearched && searchResults.length === 0 && (
+                        <div className="text-center py-12 sm:py-16">
+                            <div className="bg-[#181818] rounded-2xl p-6 sm:p-8 max-w-md mx-auto border border-[#282828]">
+                                <div className="text-5xl sm:text-6xl mb-4">🔍</div>
+                                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+                                    Nenhum resultado encontrado
+                                </h3>
+                                <p className="text-[#b3b3b3] mb-6 text-sm sm:text-base">
+                                    Não encontramos nenhuma música para "{appliedSearchQuery}".
+                                </p>
+                                <div className="space-y-3">
+                                    <p className="text-sm text-[#535353] mb-4">Tente buscar por:</p>
+                                    <div className="flex flex-wrap gap-2 justify-center">
+                                        {["House", "Funk", "Deep House", "Techno", "Progressive"].map((suggestion) => (
+                                            <button
+                                                key={suggestion}
+                                                onClick={() => {
+                                                    setSearchQuery(suggestion);
+                                                    performSearch(suggestion);
+                                                }}
+                                                className="px-3 py-1 bg-[#1db954]/20 text-[#1db954] rounded-full text-sm hover:bg-[#1db954]/40 transition-colors border border-[#1db954]/30"
+                                            >
+                                                {suggestion}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <button
+                                        onClick={clearSearch}
+                                        className="mt-4 px-6 py-2 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] transition-colors text-sm sm:text-base font-medium shadow-lg"
+                                    >
+                                        Ver toda a comunidade
+                                    </button>
+                                </div>
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-4">Nenhuma música da comunidade encontrada</h3>
-                            <p className="text-gray-400 mb-8">
-                                Tente ajustar seus filtros ou fazer uma nova busca.
-                            </p>
-                            <button
-                                onClick={handleClearFilters}
-                                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-                            >
-                                Limpar Filtros
-                            </button>
                         </div>
-                    ) : (
-                        <>
+                    )}
 
+                    {/* Lista de músicas */}
+                    {!loading && !searchLoading && displayTracks.length > 0 && (
+                        <MusicList
+                            tracks={displayTracks}
+                            downloadedTrackIds={downloadedTrackIds}
+                            setDownloadedTrackIds={handleDownloadedTrackIdsChange}
+                            enableInfiniteScroll={false}
+                            hasMore={false}
+                            isLoading={loading || searchLoading}
+                            onLoadMore={() => { }}
+                        />
+                    )}
 
-                            {/* Lista Única de Músicas - Ordenadas por Data */}
-                            <div className="space-y-4">
-                                {/* Header da Lista */}
-                                <div className="flex items-center space-x-3 mb-6">
-                                    <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                                    <h2 className="text-2xl font-bold text-white">
-                                        Músicas da Comunidade
-                                    </h2>
-                                    <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">
-                                        {filteredTracks.length} {filteredTracks.length === 1 ? 'música' : 'músicas'}
-                                    </span>
-                                </div>
+                    {/* Paginação */}
+                    {!loading && !searchLoading && !hasSearched && totalPages > 1 && (
+                        <div className="mt-8 sm:mt-12">
+                            <div className="bg-[#121212] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg">
+                                {/* Controles de paginação */}
+                                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                                    {/* Primeira página */}
+                                    <button
+                                        onClick={() => setCurrentPage(1)}
+                                        disabled={currentPage === 1}
+                                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage === 1
+                                            ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
+                                            : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
+                                            }`}
+                                        title="Primeira página"
+                                    >
+                                        <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z" />
+                                        </svg>
+                                        Primeira
+                                    </button>
 
-                                {/* Lista única de músicas */}
-                                <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-                                    <MusicList
-                                        tracks={filteredTracks}
-                                        downloadedTrackIds={downloadedTrackIds}
-                                        setDownloadedTrackIds={setDownloadedTrackIds}
-                                    />
-                                </div>
-                            </div>
+                                    {/* Página anterior */}
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                        disabled={currentPage === 1}
+                                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage === 1
+                                            ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
+                                            : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
+                                            }`}
+                                        title="Página anterior"
+                                    >
+                                        <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                                        </svg>
+                                        Anterior
+                                    </button>
 
-                            {/* Componente de Paginação */}
-                            {groupTracksByReleaseDate.totalPages > 1 && (
-                                <div className="flex justify-center items-center space-x-4 mt-8 mb-8">
-                                    <div className="flex items-center space-x-2">
-                                        {/* Botão Anterior */}
-                                        <button
-                                            onClick={() => handlePageChange(currentPage - 1)}
-                                            disabled={currentPage === 1}
-                                            className={`px-4 py-2 rounded-lg font-medium transition-all ${currentPage === 1
-                                                ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                                                : 'bg-gray-700 text-white hover:bg-gray-600'
-                                                }`}
-                                        >
-                                            ← Anterior
-                                        </button>
-
-                                        {/* Números das páginas */}
-                                        <div className="flex space-x-1">
-                                            {[...Array(groupTracksByReleaseDate.totalPages)].map((_, index) => {
-                                                const pageNum = index + 1;
-                                                const isCurrentPage = pageNum === currentPage;
-
-                                                // Mostrar apenas algumas páginas próximas à atual
-                                                if (
-                                                    pageNum === 1 ||
-                                                    pageNum === groupTracksByReleaseDate.totalPages ||
-                                                    (pageNum >= currentPage - 2 && pageNum <= currentPage + 2)
-                                                ) {
-                                                    return (
-                                                        <button
-                                                            key={pageNum}
-                                                            onClick={() => handlePageChange(pageNum)}
-                                                            className={`px-3 py-2 rounded-lg font-medium transition-all ${isCurrentPage
-                                                                ? 'bg-purple-600 text-white'
-                                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                                                }`}
-                                                        >
-                                                            {pageNum}
-                                                        </button>
-                                                    );
-                                                } else if (
-                                                    pageNum === currentPage - 3 ||
-                                                    pageNum === currentPage + 3
-                                                ) {
-                                                    return (
-                                                        <span key={pageNum} className="px-2 py-2 text-gray-500">
-                                                            ...
-                                                        </span>
-                                                    );
-                                                }
-                                                return null;
-                                            })}
-                                        </div>
-
-                                        {/* Botão Próximo */}
-                                        <button
-                                            onClick={() => handlePageChange(currentPage + 1)}
-                                            disabled={currentPage === groupTracksByReleaseDate.totalPages}
-                                            className={`px-4 py-2 rounded-lg font-medium transition-all ${currentPage === groupTracksByReleaseDate.totalPages
-                                                ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                                                : 'bg-gray-700 text-white hover:bg-gray-600'
-                                                }`}
-                                        >
-                                            Próximo →
-                                        </button>
+                                    {/* Navegação rápida por páginas */}
+                                    <div className="flex flex-wrap items-center justify-center gap-2">
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                            <button
+                                                key={page}
+                                                onClick={() => setCurrentPage(page)}
+                                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${page === currentPage
+                                                    ? 'bg-[#1db954] text-white shadow-lg'
+                                                    : 'bg-[#282828] text-[#b3b3b3] hover:bg-[#3e3e3e] hover:text-white'
+                                                    }`}
+                                            >
+                                                {page.toString().padStart(2, '0')}
+                                            </button>
+                                        ))}
                                     </div>
 
-                                    {/* Informações da paginação */}
-                                    <div className="text-sm text-gray-400">
-                                        Página {currentPage} de {groupTracksByReleaseDate.totalPages}
-                                        <span className="ml-2">
-                                            ({groupTracksByReleaseDate.totalDays} dias total)
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
+                                    {/* Próxima página */}
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                        disabled={currentPage >= totalPages}
+                                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage >= totalPages
+                                            ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
+                                            : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
+                                            }`}
+                                        title="Próxima página"
+                                    >
+                                        Próxima
+                                        <svg className="w-4 h-4 inline ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z" />
+                                        </svg>
+                                    </button>
 
-                            {/* Footer atualizado */}
-                            <div className="mt-12">
-                                <NewFooter />
+                                    {/* Última página */}
+                                    <button
+                                        onClick={() => setCurrentPage(totalPages)}
+                                        disabled={currentPage >= totalPages}
+                                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage >= totalPages
+                                            ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
+                                            : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
+                                            }`}
+                                        title="Última página"
+                                    >
+                                        <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M5.59 7.41L10.18 12l-4.59 4.59L12 18l6-6-6-6-1.41 1.41z" />
+                                        </svg>
+                                        Última
+                                    </button>
+                                </div>
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
+
+                <FooterSpacer />
 
                 {/* Modal de Filtros */}
                 <FiltersModal
@@ -992,102 +791,7 @@ function CommunityPageContent() {
                     isLoading={loading}
                     hasActiveFilters={hasActiveFilters}
                 />
-
-                {/* Botão de Fila de Downloads */}
-                {downloadQueue.length > 0 && (
-                    <div className="fixed bottom-6 right-6 z-50">
-                        <button
-                            onClick={handleDownloadQueue}
-                            disabled={isDownloadingQueue || zipProgress.isActive}
-                            className="relative group"
-                            title={`Fila de Downloads (${downloadQueue.length}/20) - Máximo 20 músicas - Clique para gerar ZIP`}
-                        >
-                            {/* Ícone principal */}
-                            <div className="relative">
-                                <div className="download-queue-icon w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 group-hover:shadow-purple-500/50">
-                                    {isDownloadingQueue || zipProgress.isActive ? (
-                                        <Loader2 className="h-8 w-8 text-white animate-spin" />
-                                    ) : (
-                                        <ShoppingCart className="h-8 w-8 text-white" />
-                                    )}
-                                </div>
-
-                                {/* Contador */}
-                                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
-                                    {downloadQueue.length}
-                                </div>
-
-                                {/* Animação de pulso quando adiciona música */}
-                                <div className="absolute inset-0 bg-purple-400 rounded-full animate-ping opacity-20"></div>
-                            </div>
-
-                            {/* Tooltip */}
-                            <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                                {isDownloadingQueue || zipProgress.isActive ? (
-                                    <div className="flex items-center gap-2">
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                        {zipProgress.isGenerating ? 'Processando...' : 'Baixando...'}
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2">
-                                        <Package className="h-4 w-4" />
-                                        Gerar ZIP ({downloadQueue.length}/20 músicas)
-                                    </div>
-                                )}
-                            </div>
-                        </button>
-
-                        {/* Botão para limpar fila ou cancelar ZIP */}
-                        <button
-                            onClick={zipProgress.isActive ? handleCancelZipGeneration : handleClearQueue}
-                            disabled={isDownloadingQueue && !zipProgress.isActive}
-                            className="absolute -top-2 -left-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={zipProgress.isActive ? "Cancelar geração do ZIP" : "Limpar fila"}
-                        >
-                            <X className="h-3 w-3" />
-                        </button>
-                    </div>
-                )}
-
-                {/* Progress Bar Flutuante */}
-                {zipProgress.isActive && (
-                    <div className="fixed bottom-24 right-6 z-50 w-80 bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-xl p-4 shadow-2xl">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-white font-medium">
-                                    {zipProgress.trackName}
-                                </span>
-                                <button
-                                    onClick={handleCancelZipGeneration}
-                                    className="w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200"
-                                    title="Cancelar geração do ZIP"
-                                >
-                                    <X className="h-3 w-3" />
-                                </button>
-                            </div>
-                            <span className="text-sm text-gray-300">
-                                {zipProgress.current}/{zipProgress.total} ({zipProgress.progress}%)
-                            </span>
-                        </div>
-                        <div className="w-full bg-gray-700 rounded-full h-2">
-                            <div
-                                className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${zipProgress.progress}%` }}
-                            ></div>
-                        </div>
-                    </div>
-                )}
-
-            </main>
-        </div>
-    );
-}
-
-// Componente principal com Suspense
-export default function CommunityPage() {
-    return (
-        <Suspense fallback={<PageSkeleton />}>
-            <CommunityPageContent />
-        </Suspense>
+            </div>
+        </MainLayout>
     );
 } 
