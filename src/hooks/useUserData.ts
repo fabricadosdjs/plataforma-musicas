@@ -73,19 +73,30 @@ export const useUserData = (): UseUserDataReturn => {
 
     // Atualizar track curtida localmente
     const updateLikedTrack = useCallback((trackId: number, isLiked: boolean) => {
+        console.log('🔍 updateLikedTrack chamado:', { trackId, isLiked });
+        console.log('🔍 Estado anterior:', userData);
+        
         setUserData(prev => {
-            if (!prev) return prev;
+            if (!prev) {
+                console.log('❌ updateLikedTrack: userData é null');
+                return prev;
+            }
 
             const newLikedTrackIds = isLiked
                 ? [...prev.likedTrackIds, trackId]
                 : prev.likedTrackIds.filter(id => id !== trackId);
 
-            return {
+            console.log('🔍 Novos likedTrackIds:', newLikedTrackIds);
+            
+            const newState = {
                 ...prev,
                 likedTrackIds: newLikedTrackIds
             };
+            
+            console.log('🔍 Novo estado:', newState);
+            return newState;
         });
-    }, []);
+    }, [userData]);
 
     // Atualizar track baixada localmente
     const updateDownloadedTrack = useCallback((trackId: number) => {

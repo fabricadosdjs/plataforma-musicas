@@ -179,7 +179,7 @@ const Top100MobileCard = ({
                         <button
                             onClick={() => onLike(track.id)}
                             className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${isLiked
-                                ? 'bg-pink-600 text-white'
+                                ? 'bg-blue-600 text-white'
                                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 }`}
                         >

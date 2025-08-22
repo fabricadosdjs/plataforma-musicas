@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
 
         if (action === 'like') {
             console.log('🔍 API /tracks/like: Ação LIKE para track:', trackId);
+            console.log('🔍 API /tracks/like: User ID:', user.id);
 
             // Verificar se já curtiu
             const existingLike = await prisma.like.findFirst({
@@ -63,6 +64,8 @@ export async function POST(request: NextRequest) {
                 }
             });
 
+            console.log('🔍 API /tracks/like: Like existente:', existingLike);
+
             if (existingLike) {
                 console.log('❌ API /tracks/like: Música já curtida');
                 return NextResponse.json({ error: 'Música já curtida' }, { status: 400 });
@@ -70,18 +73,19 @@ export async function POST(request: NextRequest) {
 
             // Criar like
             console.log('✅ API /tracks/like: Criando like...');
-            await prisma.like.create({
+            const newLike = await prisma.like.create({
                 data: {
                     userId: user.id,
                     trackId: parseInt(trackId)
                 }
             });
 
-            console.log('✅ API /tracks/like: Like criado com sucesso');
+            console.log('✅ API /tracks/like: Like criado com sucesso:', newLike);
             return NextResponse.json({ success: true, action: 'liked' });
 
         } else if (action === 'unlike') {
             console.log('🔍 API /tracks/like: Ação UNLIKE para track:', trackId);
+            console.log('🔍 API /tracks/like: User ID:', user.id);
 
             // Remover like
             const existingLike = await prisma.like.findFirst({
@@ -91,19 +95,21 @@ export async function POST(request: NextRequest) {
                 }
             });
 
+            console.log('🔍 API /tracks/like: Like existente para remoção:', existingLike);
+
             if (!existingLike) {
                 console.log('❌ API /tracks/like: Like não encontrado');
                 return NextResponse.json({ error: 'Like não encontrado' }, { status: 400 });
             }
 
             console.log('✅ API /tracks/like: Removendo like...');
-            await prisma.like.delete({
+            const deletedLike = await prisma.like.delete({
                 where: {
                     id: existingLike.id
                 }
             });
 
-            console.log('✅ API /tracks/like: Like removido com sucesso');
+            console.log('✅ API /tracks/like: Like removido com sucesso:', deletedLike);
             return NextResponse.json({ success: true, action: 'unliked' });
 
         } else {

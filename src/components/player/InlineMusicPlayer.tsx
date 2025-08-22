@@ -438,12 +438,12 @@ const InlineMusicPlayer: React.FC<InlineMusicPlayerProps> = ({
                             disabled={!session?.user?.is_vip && session?.user?.email !== 'edersonleonardo@nexorrecords.com.br'}
                             className={`inline-flex items-center justify-center p-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer tracking-wide shadow-lg
                                 ${likedTracksSet.has(track.id)
-                                    ? 'bg-pink-600 text-white border border-pink-500 shadow-pink-500/25'
-                                    : 'bg-gray-700 text-gray-200 hover:bg-pink-700 border border-gray-500 shadow-gray-500/25'
+                                    ? 'bg-blue-600 text-white border border-blue-500 shadow-blue-500/25'
+                                    : 'bg-gray-700 text-gray-200 hover:bg-blue-700 border border-gray-500 shadow-gray-500/25'
                                 }`}
                             title={likedTracksSet.has(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                         >
-                            <Heart size={16} className={likedTracksSet.has(track.id) ? 'fill-pink-400 text-pink-200' : 'text-gray-300'} />
+                            <Heart size={16} className={likedTracksSet.has(track.id) ? 'fill-blue-400 text-blue-200' : 'text-gray-300'} />
                             <span className="ml-1">{likedTracksSet.has(track.id) ? 'Curtido' : 'Curtir'}</span>
                         </button>
 

@@ -51,6 +51,8 @@ export async function GET(request: NextRequest) {
 
         // Buscar IDs das tracks curtidas
         const likedTrackIds = user.likes.map(l => l.trackId);
+        console.log('🔍 API /user-data: Likes encontrados:', user.likes);
+        console.log('🔍 API /user-data: likedTrackIds:', likedTrackIds);
 
         // Calcular limite de downloads baseado no valor do usuário
         const getDailyDownloadLimit = (valor: number | null, isVip: boolean) => {

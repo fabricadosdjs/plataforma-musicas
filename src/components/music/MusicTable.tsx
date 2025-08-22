@@ -121,7 +121,7 @@ const TrackRow = React.memo(({
                     >
                         {isInQueue ? <Minus size={12} strokeWidth={2.5} className="sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" /> : <Plus size={12} strokeWidth={2.5} className="sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" />}
                     </button>
-                    <button onClick={() => onLike(track.id)} disabled={isLiking} title={isLiked ? "Descurtir" : "Curtir"} className={clsx("h-8 w-8 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg", isLiked ? 'bg-pink-600 text-white fill-white' : 'bg-gray-600 text-gray-300 hover:bg-gray-500 hover:text-white')}>
+                    <button onClick={() => onLike(track.id)} disabled={isLiking} title={isLiked ? "Descurtir" : "Curtir"} className={clsx("h-8 w-8 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg", isLiked ? 'bg-blue-600 text-white fill-white' : 'bg-gray-600 text-gray-300 hover:bg-gray-500 hover:text-white')}>
                         {isLiking ? <Loader2 size={12} strokeWidth={2} className="animate-spin sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" /> : <Heart size={12} strokeWidth={2} className="sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" />}
                     </button>
                     {isAdmin && <button onClick={() => onDelete(track)} disabled={isDeleting} title="Excluir Música" className="h-8 w-8 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-lg bg-red-600 hover:bg-red-700 text-white">{isDeleting ? <Loader2 size={12} strokeWidth={2} className="animate-spin sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" /> : <Trash2 size={12} strokeWidth={2} className="sm:w-[16px] sm:h-[16px] lg:w-[18px] lg:h-[18px]" />}</button>}
@@ -163,7 +163,7 @@ const TrackCard = React.memo(({
                     {hasDownloaded ? <CheckCircle size={18} strokeWidth={2} /> : <Download size={18} strokeWidth={2} />}
                     <span className="whitespace-nowrap">{hasDownloaded ? 'BAIXADO' : canDownloadResult.timeLeft || 'DOWNLOAD'}</span>
                 </button>
-                <button onClick={() => onLike(track.id)} disabled={isLiking} title={isLiked ? "Descurtir" : "Curtir"} className={clsx("flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all text-xs active:scale-95 shadow-lg", isLiked ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-pink-500/25" : "bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500 text-white shadow-zinc-500/25")}>
+                <button onClick={() => onLike(track.id)} disabled={isLiking} title={isLiked ? "Descurtir" : "Curtir"} className={clsx("flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all text-xs active:scale-95 shadow-lg", isLiked ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/25" : "bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500 text-white shadow-zinc-500/25")}>
                     {isLiking ? <Loader2 size={18} strokeWidth={2} className="animate-spin" /> : <Heart size={18} strokeWidth={2} className={clsx({ "fill-current": isLiked })} />}
                     {isLiked ? 'CURTIDO' : 'CURTIR'}
                 </button>
@@ -385,6 +385,10 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
         }
     };
     const handleLikeClick = async (trackId: number) => {
+        console.log('🔍 handleLikeClick chamado para trackId:', trackId);
+        console.log('🔍 Session:', session?.user?.email);
+        console.log('🔍 userData:', userData);
+        
         if (!session?.user) {
             showToast('👤 Faça login para curtir músicas', 'warning');
             return;
@@ -396,24 +400,38 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
             // Verificar se já curtiu
             const isCurrentlyLiked = userData?.likedTrackIds?.includes(trackId) || false;
             const action = isCurrentlyLiked ? 'unlike' : 'like';
+            
+            console.log('🔍 Estado atual do like:', isCurrentlyLiked);
+            console.log('🔍 Ação a ser executada:', action);
+
+            const requestBody = {
+                trackId: trackId,
+                action: action
+            };
+            console.log('🔍 Request body:', requestBody);
 
             const response = await fetch('/api/tracks/like', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    trackId: trackId,
-                    action: action
-                })
+                body: JSON.stringify(requestBody)
             });
+
+            console.log('🔍 Response status:', response.status);
+            console.log('🔍 Response ok:', response.ok);
 
             if (response.ok) {
                 const result = await response.json();
+                console.log('🔍 Response result:', result);
 
                 if (result.success) {
                     // Atualizar estado local
+                    console.log('🔍 Atualizando estado local...');
                     updateLikedTrack(trackId, action === 'like');
+                    
+                    // Verificar se o estado foi atualizado
+                    console.log('🔍 Estado após atualização:', userData?.likedTrackIds);
 
                     const track = tracks?.find(t => t.id === trackId);
                     const trackName = track?.songName || 'Música';
@@ -424,14 +442,16 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                         showToast(`💔 "${trackName}" removida dos favoritos`, 'success');
                     }
                 } else {
+                    console.error('❌ API retornou success: false:', result);
                     showToast('❌ Erro ao processar curtida', 'error');
                 }
             } else {
                 const errorData = await response.json();
+                console.error('❌ Response não ok:', errorData);
                 showToast(`❌ ${errorData.error || 'Erro ao processar curtida'}`, 'error');
             }
         } catch (error) {
-            console.error('Erro ao curtir música:', error);
+            console.error('❌ Erro ao curtir música:', error);
             showToast('❌ Erro ao processar curtida', 'error');
         } finally {
             setLiking(null);

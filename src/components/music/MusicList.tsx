@@ -271,28 +271,45 @@ export const MusicList = React.memo(({
     const handleLike = async (track: Track) => {
         try {
             const isCurrentlyLiked = finalLikedTrackIds.includes(track.id);
-            const method = isCurrentlyLiked ? 'DELETE' : 'POST';
+            const action = isCurrentlyLiked ? 'unlike' : 'like';
 
-            const response = await fetch(`/api/tracks/${track.id}/like`, {
-                method,
+            console.log('🔍 MusicList handleLike:', { trackId: track.id, action, isCurrentlyLiked });
+
+            const response = await fetch('/api/tracks/like', {
+                method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${session?.user?.id || ''}`,
+                    'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({
+                    trackId: track.id,
+                    action: action
+                })
             });
 
             if (!response.ok) {
-                throw new Error('Falha ao curtir/descurtir música');
+                const errorData = await response.json();
+                console.error('❌ Response não ok:', errorData);
+                throw new Error(errorData.error || 'Falha ao curtir/descurtir música');
             }
 
-            if (isCurrentlyLiked) {
-                downloadsCache.markAsUnliked(track.id);
-                showToast('💔 Removido dos favoritos', 'info');
+            const result = await response.json();
+            console.log('🔍 Response result:', result);
+
+            if (result.success) {
+                if (isCurrentlyLiked) {
+                    downloadsCache.markAsUnliked(track.id);
+                    showToast('💔 Removido dos favoritos', 'info');
+                } else {
+                    downloadsCache.markAsLiked(track.id);
+                    showToast('❤️ Adicionado aos favoritos!', 'success');
+                }
+
+                // O downloadsCache já gerencia o estado dos likes automaticamente
             } else {
-                downloadsCache.markAsLiked(track.id);
-                showToast('❤️ Adicionado aos favoritos!', 'success');
+                throw new Error('API retornou success: false');
             }
         } catch (error) {
-            console.error('Erro ao curtir música:', error);
+            console.error('❌ Erro ao curtir música:', error);
             showToast('❌ Erro ao curtir música', 'error');
         }
     };
