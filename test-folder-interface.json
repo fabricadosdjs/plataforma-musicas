@@ -1,0 +1,38 @@
+[
+  {
+    "songName": "Summer Vibes Test",
+    "artist": "DJ Test Master",
+    "style": "House",
+    "version": "Original Mix",
+    "pool": "Test Records",
+    "folder": "Summer Test Album 2024",
+    "previewUrl": "https://test.com/preview1.mp3",
+    "downloadUrl": "https://test.com/download1.mp3",
+    "releaseDate": "2024-07-27T10:00:00Z",
+    "bitrate": 320
+  },
+  {
+    "songName": "Beach Sunset Test",
+    "artist": "DJ Test Master",
+    "style": "Deep House",
+    "version": "Extended Mix",
+    "pool": "Test Records",
+    "folder": "Summer Test Album 2024",
+    "previewUrl": "https://test.com/preview2.mp3",
+    "downloadUrl": "https://test.com/download2.mp3",
+    "releaseDate": "2024-07-27T10:00:00Z",
+    "bitrate": 320
+  },
+  {
+    "songName": "Night Groove Test",
+    "artist": "DJ Test Master",
+    "style": "Tech House",
+    "version": "Club Mix",
+    "pool": "Test Records",
+    "folder": "Night Test Sessions",
+    "previewUrl": "https://test.com/preview3.mp3",
+    "downloadUrl": "https://test.com/download3.mp3",
+    "releaseDate": "2024-07-27T10:00:00Z",
+    "bitrate": 320
+  }
+]

@@ -1,6 +1,11 @@
 /**
  * Utilitários para proteger imagens de extensões do navegador
  * que tentam processar imagens quebradas
+ * 
+ * ✅ CORRIGIDO: Problema de "Cannot redefine property: src"
+ * ✅ MELHORADO: Verificação de propriedades já definidas
+ * ✅ ADICIONADO: Função para desabilitar proteção
+ * ✅ ADICIONADO: Prevenção de duplicação de interceptação
  */
 
 // Atributos para marcar imagens como protegidas
@@ -68,8 +73,16 @@ export const markImageAsBroken = (img: HTMLImageElement): void => {
 export const interceptImageLoading = (): void => {
     if (typeof window === 'undefined') return;
 
-    // Interceptar criação de elementos img
+    // Verificar se já foi interceptado para evitar duplicação
+    if ((document.createElement as any).__imageProtectionIntercepted) {
+        return;
+    }
+
+    // Salvar a função original
     const originalCreateElement = document.createElement;
+    (document.createElement as any).__originalCreateElement = originalCreateElement;
+
+    // Interceptar criação de elementos img
     document.createElement = function (tagName: string): HTMLElement {
         const element = originalCreateElement.call(this, tagName);
 
@@ -95,23 +108,36 @@ export const interceptImageLoading = (): void => {
             };
 
             // Interceptar mudanças diretas na propriedade src
-            Object.defineProperty(img, 'src', {
-                set: function (value: string) {
-                    if (value && !isValidImageUrl(value)) {
-                        console.warn('Tentativa de definir src inválido:', value);
-                        markImageAsBroken(img);
-                        return;
-                    }
-                    img.setAttribute('src', value);
-                },
-                get: function () {
-                    return img.getAttribute('src') || '';
+            try {
+                // Verificar se a propriedade src já foi definida
+                const descriptor = Object.getOwnPropertyDescriptor(img, 'src');
+                if (!descriptor || descriptor.configurable) {
+                    Object.defineProperty(img, 'src', {
+                        set: function (value: string) {
+                            if (value && !isValidImageUrl(value)) {
+                                console.warn('Tentativa de definir src inválido:', value);
+                                markImageAsBroken(img);
+                                return;
+                            }
+                            img.setAttribute('src', value);
+                        },
+                        get: function () {
+                            return img.getAttribute('src') || '';
+                        },
+                        configurable: true
+                    });
                 }
-            });
+            } catch (error) {
+                // Se não conseguir redefinir a propriedade, usar apenas o setAttribute
+                console.warn('Não foi possível redefinir a propriedade src, usando setAttribute:', error);
+            }
         }
 
         return element;
     };
+
+    // Marcar como interceptado para evitar duplicação
+    (document.createElement as any).__imageProtectionIntercepted = true;
 };
 
 // Função para verificar se uma URL de imagem é válida
@@ -240,4 +266,28 @@ export const initializeImageProtection = (): (() => void) => {
         disconnectObserver();
         console.log('Proteção de imagens desativada');
     };
+};
+
+// Função para desabilitar a proteção de imagem e restaurar o comportamento original
+export const disableImageProtection = (): void => {
+    if (typeof window === 'undefined') return;
+
+    try {
+        // Restaurar a função original de createElement
+        const originalCreateElement = (document.createElement as any).__originalCreateElement;
+        if (originalCreateElement) {
+            document.createElement = originalCreateElement;
+            delete (document.createElement as any).__imageProtectionIntercepted;
+            delete (document.createElement as any).__originalCreateElement;
+            console.log('✅ Proteção de imagem desabilitada');
+        }
+    } catch (error) {
+        console.warn('Erro ao desabilitar proteção de imagem:', error);
+    }
+};
+
+// Função para verificar se a proteção está ativa
+export const isImageProtectionActive = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    return !!(document.createElement as any).__imageProtectionIntercepted;
 };

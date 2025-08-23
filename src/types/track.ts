@@ -6,6 +6,7 @@ export interface Track {
     style: string;
     version?: string;
     pool?: string;
+    folder?: string; // Nova coluna para organizar músicas por pasta/álbum
     previewUrl: string;
     downloadUrl: string;
     releaseDate: string; // ou Date, dependendo de como você formata

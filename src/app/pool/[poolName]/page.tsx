@@ -5,9 +5,8 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import MainLayout from '@/components/layout/MainLayout';
+import Header from '@/components/layout/Header';
 import { MusicList } from '@/components/music/MusicList';
-import FooterSpacer from '@/components/layout/FooterSpacer';
 import InlineDownloadProgress from '@/components/music/InlineDownloadProgress';
 import { Track } from '@/types/track';
 import { Download, Heart, Play, TrendingUp, Users, Music, X, RefreshCw, ArrowLeft } from 'lucide-react';
@@ -60,6 +59,7 @@ export default function PoolPage() {
     const [loading, setLoading] = useState(true);
     const [downloadedTrackIds, setDownloadedTrackIds] = useState<number[]>([]);
     const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+    const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
     const [stats, setStats] = useState({
         totalDownloads: 0,
         totalLikes: 0,
@@ -479,15 +479,26 @@ export default function PoolPage() {
         }
     }, []);
 
-    // Filtrar tracks baseado no gênero selecionado
+    // Obter estilos únicos disponíveis
+    const availableStyles = useMemo(() => {
+        if (!tracks.length) return [];
+        return Array.from(new Set(tracks.map(track => track.style).filter(Boolean))).sort();
+    }, [tracks]);
+
+    // Filtrar tracks baseado no gênero ou estilo selecionado
     useEffect(() => {
+        let filtered = tracks;
+
         if (selectedGenre) {
-            const filtered = tracks.filter(track => track.style === selectedGenre);
-            setFilteredTracks(filtered);
-        } else {
-            setFilteredTracks(tracks);
+            filtered = filtered.filter(track => track.style === selectedGenre);
         }
-    }, [selectedGenre, tracks]);
+
+        if (selectedStyle) {
+            filtered = filtered.filter(track => track.style === selectedStyle);
+        }
+
+        setFilteredTracks(filtered);
+    }, [selectedGenre, selectedStyle, tracks]);
 
     // Verificar se o usuário é VIP (simples)
     const isVip = true; // Por enquanto, sempre true para teste
@@ -512,11 +523,15 @@ export default function PoolPage() {
     }
 
     return (
-        <MainLayout>
-            <div className="min-h-screen bg-[#121212]">
+        <div className="min-h-screen bg-[#121212] overflow-x-hidden">
+            {/* Header Fixo */}
+            <Header />
+
+            {/* Conteúdo Principal - Tela Cheia */}
+            <div className="pt-12 lg:pt-16">
                 {/* Header do Pool */}
                 <div className="w-full bg-gradient-to-b from-[#1db954]/20 to-transparent">
-                    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8 sm:py-12">
+                    <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8 sm:py-12">
                         {/* Botão Voltar */}
                         <button
                             onClick={goBack}
@@ -545,30 +560,35 @@ export default function PoolPage() {
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-2xl mx-auto">
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
-                                        {tracks.length}
+                                        {filteredTracks.length}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">
-                                        {tracks.length === 1 ? 'Música' : 'Músicas'}
+                                        {filteredTracks.length === 1 ? 'Música' : 'Músicas'}
+                                        {selectedStyle && (
+                                            <div className="text-xs text-[#1db954] mt-1">
+                                                de {selectedStyle}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
-                                        {stats.totalDownloads}
+                                        {filteredTracks.reduce((sum: number, track: Track) => sum + (track.downloadCount || 0), 0)}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Downloads</div>
                                 </div>
 
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
-                                        {stats.totalLikes}
+                                        {filteredTracks.reduce((sum: number, track: Track) => sum + (track.likeCount || 0), 0)}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Curtidas</div>
                                 </div>
 
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
-                                        {stats.uniqueArtists}
+                                        {new Set(filteredTracks.map((t: Track) => t.artist)).size}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Artistas</div>
                                 </div>
@@ -577,24 +597,24 @@ export default function PoolPage() {
                             {/* Botões de Download */}
                             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
                                 <button
-                                    onClick={() => downloadTracksInBatches(tracks)}
-                                    disabled={isBatchDownloading || tracks.length === 0}
+                                    onClick={() => downloadTracksInBatches(filteredTracks)}
+                                    disabled={isBatchDownloading || filteredTracks.length === 0}
                                     className="flex items-center justify-center gap-3 px-8 py-3 bg-[#1db954] text-white rounded-xl hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
                                 >
                                     <Download className="w-5 h-5" />
-                                    Baixar Todas ({tracks.length})
+                                    Baixar Todas ({filteredTracks.length})
                                 </button>
 
                                 <button
                                     onClick={() => {
-                                        const newTracks = tracks.filter(track => !downloadedTrackIds.includes(track.id));
+                                        const newTracks = filteredTracks.filter(track => !downloadedTrackIds.includes(track.id));
                                         if (newTracks.length > 0) {
                                             downloadTracksInBatches(newTracks);
                                         } else {
                                             showToast('Todas as músicas já foram baixadas!', 'info');
                                         }
                                     }}
-                                    disabled={isBatchDownloading || tracks.length === 0}
+                                    disabled={isBatchDownloading || filteredTracks.length === 0}
                                     className="flex items-center justify-center gap-3 px-8 py-3 bg-[#282828] text-white rounded-xl hover:bg-[#3e3e3e] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg border border-[#3e3e3e] shadow-lg hover:shadow-xl"
                                 >
                                     <RefreshCw className="w-5 h-5" />
@@ -678,8 +698,42 @@ export default function PoolPage() {
                     </div>
                 </div>
 
+                {/* Filtros por Estilo */}
+                {availableStyles.length > 0 && (
+                    <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-4">
+                        <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                            <div className="flex items-center gap-3 mb-4">
+                                <span className="text-white font-semibold">🎵 Filtrar por Estilo:</span>
+                                <button
+                                    onClick={() => setSelectedStyle(null)}
+                                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${selectedStyle === null
+                                            ? 'bg-[#1db954] text-white'
+                                            : 'bg-[#282828] text-[#b3b3b3] hover:bg-[#3e3e3e] hover:text-white'
+                                        }`}
+                                >
+                                    Todos ({tracks.length})
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {availableStyles.map((style) => (
+                                    <button
+                                        key={style}
+                                        onClick={() => setSelectedStyle(style)}
+                                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${selectedStyle === style
+                                                ? 'bg-[#1db954] text-white'
+                                                : 'bg-[#282828] text-[#b3b3b3] hover:bg-[#3e3e3e] hover:text-white'
+                                            }`}
+                                    >
+                                        {style} ({tracks.filter(t => t.style === style).length})
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Lista de Músicas */}
-                <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8">
+                <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8">
                     {loading ? (
                         <div className="flex items-center justify-center py-16">
                             <div className="text-center">
@@ -689,7 +743,7 @@ export default function PoolPage() {
                                 </p>
                             </div>
                         </div>
-                    ) : tracks.length === 0 ? (
+                    ) : filteredTracks.length === 0 ? (
                         <div className="text-center py-16">
                             <div className="bg-[#181818] rounded-2xl p-8 max-w-md mx-auto border border-[#282828]">
                                 <div className="text-6xl mb-4">🎵</div>
@@ -697,7 +751,10 @@ export default function PoolPage() {
                                     Nenhuma música encontrada
                                 </h3>
                                 <p className="text-[#b3b3b3] mb-6">
-                                    Não encontramos músicas para o pool "{decodedPoolName}".
+                                    {selectedStyle
+                                        ? `Não encontramos músicas do estilo "${selectedStyle}" no pool "${decodedPoolName}".`
+                                        : `Não encontramos músicas para o pool "${decodedPoolName}".`
+                                    }
                                 </p>
                                 <button
                                     onClick={goBack}
@@ -709,7 +766,7 @@ export default function PoolPage() {
                         </div>
                     ) : (
                         <MusicList
-                            tracks={tracks}
+                            tracks={filteredTracks}
                             downloadedTrackIds={downloadedTrackIds}
                             setDownloadedTrackIds={handleDownloadedTrackIdsChange}
                             showDate={true}
@@ -718,8 +775,7 @@ export default function PoolPage() {
                     )}
                 </div>
 
-                <FooterSpacer />
             </div>
-        </MainLayout>
+        </div>
     );
 }

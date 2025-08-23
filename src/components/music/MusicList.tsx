@@ -693,6 +693,21 @@ export const MusicList = React.memo(({
                                                             {renderArtists(track.artist)}
                                                         </div>
 
+                                                        {/* Informações adicionais - Mobile */}
+                                                        <button
+                                                            onClick={() => {
+                                                                const folderName = track.folder || formatDateBrazil(track.updatedAt || track.createdAt);
+                                                                router.push(`/folder/${encodeURIComponent(folderName)}`);
+                                                            }}
+                                                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 mb-2 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer"
+                                                            title={`Ver todas as músicas do folder: ${track.folder || formatDateBrazil(track.updatedAt || track.createdAt)}`}
+                                                        >
+                                                            <span className="text-purple-400 text-xs">📁</span>
+                                                            <span className="text-gray-200 text-xs font-medium">
+                                                                {track.folder || formatDateBrazil(track.updatedAt || track.createdAt)}
+                                                            </span>
+                                                        </button>
+
                                                         {/* Botões de ação - Mobile */}
                                                         <div className="flex flex-col gap-2 mt-3">
                                                             {/* Botão Play/Pause */}
@@ -840,7 +855,7 @@ export const MusicList = React.memo(({
                                                         {renderArtists(track.artist)}
                                                     </div>
 
-                                                    {/* Estilo, Pool e Bitrate - Responsivos */}
+                                                    {/* Estilo, Pool e Folder - Responsivos */}
                                                     <div className="hidden sm:flex items-center gap-1 lg:gap-1.5">
                                                         <button
                                                             onClick={() => handleStyleClick(track.style)}
@@ -872,17 +887,22 @@ export const MusicList = React.memo(({
                                                             </span>
                                                         </button>
 
-                                                        <div className={`flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 ${track.bitrate
-                                                            ? 'bg-blue-500/20 border border-blue-500/30'
-                                                            : 'bg-blue-500/20 border border-blue-500/30'
-                                                            }`}
-                                                            title={track.bitrate ? `Bitrate: ${track.bitrate} kbps` : 'Bitrate: 320 kbps'}
+                                                        {/* Nova coluna Folder */}
+                                                        <button
+                                                            onClick={() => {
+                                                                const folderName = track.folder || formatDateBrazil(track.updatedAt || track.createdAt);
+                                                                router.push(`/folder/${encodeURIComponent(folderName)}`);
+                                                            }}
+                                                            className="flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer"
+                                                            title={`Ver todas as músicas do folder: ${track.folder || formatDateBrazil(track.updatedAt || track.createdAt)}`}
                                                         >
-                                                            <span className="text-blue-400 text-xs">🔊</span>
+                                                            <span className="text-purple-400 text-xs">📁</span>
                                                             <span className="text-gray-200 text-xs font-medium">
-                                                                {track.bitrate || '320'}
+                                                                {track.folder || formatDateBrazil(track.updatedAt || track.createdAt)}
                                                             </span>
-                                                        </div>
+                                                        </button>
+
+
                                                     </div>
                                                 </div>
 

@@ -1,0 +1,537 @@
+"use client";
+
+// Força renderização dinâmica para evitar erro de pré-renderização
+export const dynamic = 'force-dynamic';
+
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useParams } from 'next/navigation';
+import Header from '@/components/layout/Header';
+import { MusicList } from '@/components/music/MusicList';
+import { Track } from '@/types/track';
+import { Download, Heart, Play, TrendingUp, Users, Calendar, X, RefreshCw, ArrowLeft, Folder } from 'lucide-react';
+import { useToastContext } from '@/context/ToastContext';
+import { useRouter } from 'next/navigation';
+
+// Função para obter informações sobre o folder baseada em dados reais
+const getFolderInfo = (folderName: string, tracks: Track[], selectedStyle: string | null): string => {
+    // Se não há tracks, mostrar mensagem padrão
+    if (!tracks || tracks.length === 0) {
+        return 'Não obtivemos informações detalhadas sobre este folder.';
+    }
+
+    // Gerar informações baseadas nos dados reais
+    const totalTracks = tracks.length;
+    const totalDownloads = tracks.reduce((sum: number, track: Track) => sum + (track.downloadCount || 0), 0);
+    const totalLikes = tracks.reduce((sum: number, track: Track) => sum + (track.likeCount || 0), 0);
+    const uniqueArtists = new Set(tracks.map((t: Track) => t.artist)).size;
+
+    // Criar descrição baseada nos dados reais
+    let description = `${folderName} é um folder com ${totalTracks} música${totalTracks !== 1 ? 's' : ''} em nossa plataforma. `;
+
+    if (selectedStyle) {
+        description = `${folderName} contém ${totalTracks} música${totalTracks !== 1 ? 's' : ''} do estilo ${selectedStyle}. `;
+    }
+
+    if (totalDownloads > 0) {
+        description += `As músicas deste folder já foram baixadas ${totalDownloads} vez${totalDownloads !== 1 ? 'es' : ''}. `;
+    }
+
+    if (totalLikes > 0) {
+        description += `Recebeu ${totalLikes} curtida${totalLikes !== 1 ? 's' : ''} dos usuários. `;
+    }
+
+    if (uniqueArtists > 0) {
+        description += `Contém músicas de ${uniqueArtists} artista${uniqueArtists !== 1 ? 's' : ''} diferente${uniqueArtists !== 1 ? 's' : ''}.`;
+    }
+
+    return description;
+};
+
+export default function FolderPage() {
+    const params = useParams();
+    const folderName = decodeURIComponent(params.folderName as string);
+    const { showToast } = useToastContext();
+
+    const [tracks, setTracks] = useState<Track[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [downloadedTrackIds, setDownloadedTrackIds] = useState<number[]>([]);
+    const [stats, setStats] = useState({
+        totalDownloads: 0,
+        totalLikes: 0,
+        totalPlays: 0,
+        uniqueArtists: 0,
+        uniquePools: 0,
+        latestRelease: null as Date | null,
+        totalTracks: 0
+    });
+
+    // Estado para filtros
+    const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+    const [filteredTracks, setFilteredTracks] = useState<Track[]>([]);
+
+    // Estado para download em lote
+    const [isBatchDownloading, setIsBatchDownloading] = useState(false);
+    const [batchProgress, setBatchProgress] = useState({
+        total: 0,
+        downloaded: 0,
+        failed: 0,
+        skipped: 0,
+        currentTrack: '',
+        failedDetails: [] as Array<{ trackName: string, reason: string }>
+    });
+
+    // Verificar se o usuário é VIP (simples)
+    const isVip = true; // Por enquanto, sempre true para teste
+
+    // Obter estilos únicos disponíveis
+    const availableStyles = useMemo(() => {
+        if (!tracks.length) return [];
+        return Array.from(new Set(tracks.map(track => track.style).filter(Boolean))).sort();
+    }, [tracks]);
+
+    // Filtrar tracks baseado no estilo selecionado
+    useEffect(() => {
+        if (selectedStyle) {
+            const filtered = tracks.filter(track => track.style === selectedStyle);
+            setFilteredTracks(filtered);
+        } else {
+            setFilteredTracks(tracks);
+        }
+    }, [selectedStyle, tracks]);
+
+    // Calcular quantas músicas estão disponíveis para download
+    const getAvailableTracksCount = () => {
+        if (!filteredTracks.length) return 0;
+
+        return filteredTracks.filter(track => {
+            // Verificar se não foi baixada no localStorage (antigos)
+            const notInLocalStorage = !downloadedTrackIds.includes(track.id);
+            // Por enquanto, considerar todas como disponíveis
+            return notInLocalStorage;
+        }).length;
+    };
+
+    useEffect(() => {
+        const saved = localStorage.getItem('downloadedTrackIds');
+        if (saved) {
+            try { setDownloadedTrackIds(JSON.parse(saved)); } catch { }
+        }
+    }, []);
+
+    const handleDownloadedTrackIdsChange = (newIds: number[] | ((prev: number[]) => number[])) => {
+        if (typeof newIds === 'function') {
+            setDownloadedTrackIds(newIds);
+        } else {
+            setDownloadedTrackIds(newIds);
+        }
+        localStorage.setItem('downloadedTrackIds', JSON.stringify(typeof newIds === 'function' ? newIds(downloadedTrackIds) : newIds));
+    };
+
+    useEffect(() => {
+        const fetchFolderTracks = async () => {
+            try {
+                setLoading(true);
+
+                const response = await fetch(`/api/tracks/by-folder?folder=${encodeURIComponent(folderName)}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const tracks = Array.isArray(data.tracks) ? data.tracks : [];
+                    setTracks(tracks);
+                    setFilteredTracks(tracks);
+
+                    // Calcular estatísticas básicas
+                    const totalDownloads = tracks.reduce((sum: number, track: Track) => sum + (track.downloadCount || 0), 0);
+                    const totalLikes = tracks.reduce((sum: number, track: Track) => sum + (track.likeCount || 0), 0);
+                    const uniqueArtists = new Set(tracks.map((t: Track) => t.artist)).size;
+                    const uniquePools = new Set(tracks.map((t: Track) => t.pool).filter(Boolean)).size;
+                    const latestRelease = tracks.length > 0 ? new Date(Math.max(...tracks.map((t: Track) => new Date(t.releaseDate || t.createdAt).getTime()))) : null;
+
+                    setStats({
+                        totalDownloads,
+                        totalLikes,
+                        totalPlays: 0, // Não temos esse dado ainda
+                        uniqueArtists,
+                        uniquePools,
+                        latestRelease,
+                        totalTracks: tracks.length
+                    });
+                } else {
+                    setTracks([]);
+                    setStats(prev => ({ ...prev, totalTracks: 0 }));
+                }
+            } catch (e) {
+                console.error('Erro ao buscar dados do folder:', e);
+                setTracks([]);
+                setStats(prev => ({ ...prev, totalTracks: 0 }));
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (folderName) fetchFolderTracks();
+    }, [folderName]);
+
+    // Função para baixar músicas em lote (simplificada)
+    const downloadTracksInBatches = async (tracksToDownload: Track[]) => {
+        if (!isVip) {
+            showToast('👑 Apenas usuários VIP podem baixar músicas em lote', 'warning');
+            return;
+        }
+
+        // Filtrar apenas músicas não baixadas
+        const availableTracks = tracksToDownload.filter(track =>
+            !downloadedTrackIds.includes(track.id)
+        );
+
+        if (availableTracks.length === 0) {
+            showToast('✅ Todas as músicas já foram baixadas!', 'info');
+            return;
+        }
+
+        setIsBatchDownloading(true);
+        setBatchProgress({
+            total: availableTracks.length,
+            downloaded: 0,
+            failed: 0,
+            skipped: 0,
+            currentTrack: '',
+            failedDetails: []
+        });
+
+        try {
+            for (let i = 0; i < availableTracks.length; i++) {
+                const track = availableTracks[i];
+
+                setBatchProgress(prev => ({
+                    ...prev,
+                    currentTrack: `${track.artist} - ${track.songName}`
+                }));
+
+                try {
+                    const response = await fetch('/api/download', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ trackId: track.id }),
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.downloadUrl) {
+                            // Simular download
+                            await new Promise(resolve => setTimeout(resolve, 500));
+
+                            setDownloadedTrackIds(prev => [...prev, track.id]);
+                            setBatchProgress(prev => ({
+                                ...prev,
+                                downloaded: prev.downloaded + 1
+                            }));
+                        }
+                    } else {
+                        setBatchProgress(prev => ({
+                            ...prev,
+                            failed: prev.failed + 1
+                        }));
+                    }
+                } catch (error) {
+                    setBatchProgress(prev => ({
+                        ...prev,
+                        failed: prev.failed + 1
+                    }));
+                }
+
+                // Pequena pausa entre downloads
+                if (i < availableTracks.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+            }
+
+            showToast(`✅ Download em lote concluído! ${batchProgress.downloaded} baixadas, ${batchProgress.failed} falharam`, 'success');
+        } catch (error) {
+            showToast('❌ Erro durante download em lote', 'error');
+        } finally {
+            setIsBatchDownloading(false);
+            setBatchProgress({ total: 0, downloaded: 0, failed: 0, skipped: 0, currentTrack: '', failedDetails: [] });
+        }
+    };
+
+    const goBack = () => {
+        window.history.back();
+    };
+
+    return (
+        <div className="min-h-screen bg-[#121212] overflow-x-hidden">
+            {/* Header Fixo */}
+            <Header />
+
+            {/* Conteúdo Principal - Tela Cheia */}
+            <div className="pt-12 lg:pt-16">
+                {/* Header do Folder */}
+                <div className="w-full bg-gradient-to-b from-[#8b5cf6]/20 to-transparent">
+                    <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8 sm:py-12">
+                        {/* Botão Voltar */}
+                        <button
+                            onClick={goBack}
+                            className="flex items-center gap-2 text-[#b3b3b3] hover:text-white transition-colors mb-6"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                            Voltar
+                        </button>
+
+                        {/* Informações do Folder */}
+                        <div className="text-center">
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                {/* Capa da Pasta ou Ícone Padrão */}
+                                {(() => {
+                                    // Buscar a primeira imagem disponível das músicas do folder
+                                    const folderCover = filteredTracks.find(track => track.imageUrl)?.imageUrl;
+
+                                    if (folderCover) {
+                                        return (
+                                            <div className="relative">
+                                                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 border-[#8b5cf6]/30 shadow-lg">
+                                                    <img
+                                                        src={folderCover}
+                                                        alt={`Capa do folder ${folderName}`}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            // Fallback para ícone se a imagem falhar
+                                                            const target = e.currentTarget as HTMLImageElement;
+                                                            const fallback = target.nextElementSibling as HTMLElement;
+                                                            if (target && fallback) {
+                                                                target.style.display = 'none';
+                                                                fallback.style.display = 'flex';
+                                                            }
+                                                        }}
+                                                    />
+                                                    {/* Fallback ícone (inicialmente oculto) */}
+                                                    <div className="hidden w-full h-full bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 rounded-xl items-center justify-center">
+                                                        <Folder className="w-8 h-8 sm:w-10 sm:h-10 text-[#8b5cf6]" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    } else {
+                                        // Ícone padrão se não houver imagem
+                                        return (
+                                            <div className="p-3 bg-[#8b5cf6]/20 border border-[#8b5cf6]/30 rounded-xl">
+                                                <Folder className="w-8 h-8 sm:w-10 sm:h-10 text-[#8b5cf6]" />
+                                            </div>
+                                        );
+                                    }
+                                })()}
+                                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white">
+                                    {folderName}
+                                </h1>
+                            </div>
+
+                            {/* Informações Adicionais do Folder */}
+                            <div className="max-w-3xl mx-auto mb-8">
+                                <div className="bg-[#181818] rounded-xl p-6 border border-[#282828] mb-6">
+                                    <div className="text-[#b3b3b3] text-sm leading-relaxed">
+                                        {getFolderInfo(folderName, filteredTracks, selectedStyle)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Estatísticas */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-2xl mx-auto">
+                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#8b5cf6] mb-1">
+                                        {filteredTracks.length}
+                                    </div>
+                                    <div className="text-[#b3b3b3] text-sm">
+                                        {filteredTracks.length === 1 ? 'Música' : 'Músicas'}
+                                        {selectedStyle && (
+                                            <div className="text-xs text-[#8b5cf6] mt-1">
+                                                de {selectedStyle}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#8b5cf6] mb-1">
+                                        {filteredTracks.reduce((sum: number, track: Track) => sum + (track.downloadCount || 0), 0)}
+                                    </div>
+                                    <div className="text-[#b3b3b3] text-sm">Downloads</div>
+                                </div>
+
+                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#8b5cf6] mb-1">
+                                        {filteredTracks.reduce((sum: number, track: Track) => sum + (track.likeCount || 0), 0)}
+                                    </div>
+                                    <div className="text-[#b3b3b3] text-sm">Curtidas</div>
+                                </div>
+
+                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#8b5cf6] mb-1">
+                                        {new Set(filteredTracks.map((t: Track) => t.artist)).size}
+                                    </div>
+                                    <div className="text-[#b3b3b3] text-sm">Artistas</div>
+                                </div>
+                            </div>
+
+                            {/* Botões de Download */}
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                                <button
+                                    onClick={() => downloadTracksInBatches(filteredTracks)}
+                                    disabled={isBatchDownloading || filteredTracks.length === 0}
+                                    className="flex items-center justify-center gap-3 px-8 py-3 bg-[#8b5cf6] text-white rounded-xl hover:bg-[#9333ea] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
+                                >
+                                    <Download className="w-5 h-5" />
+                                    Baixar Todas ({filteredTracks.length})
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        const newTracks = filteredTracks.filter(track => !downloadedTrackIds.includes(track.id));
+                                        if (newTracks.length > 0) {
+                                            downloadTracksInBatches(newTracks);
+                                        } else {
+                                            showToast('Todas as músicas já foram baixadas!', 'info');
+                                        }
+                                    }}
+                                    disabled={isBatchDownloading || filteredTracks.length === 0}
+                                    className="flex items-center justify-center gap-3 px-8 py-3 bg-[#282828] text-white rounded-xl hover:bg-[#3e3e3e] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg border border-[#3e3e3e] shadow-lg hover:shadow-xl"
+                                >
+                                    <RefreshCw className="w-5 h-5" />
+                                    Baixar Novas ({getAvailableTracksCount()})
+                                </button>
+                            </div>
+
+                            {/* Indicador de Progresso do Download */}
+                            {isBatchDownloading && (
+                                <div className="mt-6 max-w-md mx-auto">
+                                    <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="text-[#b3b3b3] text-sm font-medium">
+                                                Baixando músicas...
+                                            </span>
+                                            <span className="text-[#8b5cf6] text-sm font-bold">
+                                                {batchProgress.downloaded}/{batchProgress.total}
+                                            </span>
+                                        </div>
+
+                                        {/* Barra de Progresso */}
+                                        <div className="w-full bg-[#282828] rounded-full h-2 mb-3">
+                                            <div
+                                                className="bg-[#8b5cf6] h-2 rounded-full transition-all duration-300"
+                                                style={{
+                                                    width: `${batchProgress.total > 0 ? (batchProgress.downloaded / batchProgress.total) * 100 : 0}%`
+                                                }}
+                                            ></div>
+                                        </div>
+
+                                        {/* Música Atual */}
+                                        {batchProgress.currentTrack && (
+                                            <p className="text-[#b3b3b3] text-xs text-center mb-3">
+                                                {batchProgress.currentTrack}
+                                            </p>
+                                        )}
+
+                                        {/* Estatísticas do Download */}
+                                        <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
+                                            <div className="text-center">
+                                                <div className="text-[#8b5cf6] font-bold">{batchProgress.downloaded}</div>
+                                                <div className="text-[#b3b3b3]">Baixadas</div>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-yellow-500 font-bold">{batchProgress.failed}</div>
+                                                <div className="text-[#b3b3b3]">Falharam</div>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-[#535353] font-bold">{batchProgress.skipped}</div>
+                                                <div className="text-[#b3b3b3]">Puladas</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Filtros por Estilo */}
+                {availableStyles.length > 0 && (
+                    <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-4">
+                        <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                            <div className="flex items-center gap-3 mb-4">
+                                <span className="text-white font-semibold">🎵 Filtrar por Estilo:</span>
+                                <button
+                                    onClick={() => setSelectedStyle(null)}
+                                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${selectedStyle === null
+                                        ? 'bg-[#8b5cf6] text-white'
+                                        : 'bg-[#282828] text-[#b3b3b3] hover:bg-[#3e3e3e] hover:text-white'
+                                        }`}
+                                >
+                                    Todos ({tracks.length})
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {availableStyles.map((style) => (
+                                    <button
+                                        key={style}
+                                        onClick={() => setSelectedStyle(style)}
+                                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${selectedStyle === style
+                                            ? 'bg-[#8b5cf6] text-white'
+                                            : 'bg-[#282828] text-[#b3b3b3] hover:bg-[#3e3e3e] hover:text-white'
+                                            }`}
+                                    >
+                                        {style} ({tracks.filter(t => t.style === style).length})
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Lista de Músicas */}
+                <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-16">
+                            <div className="text-center">
+                                <div className="animate-spin w-12 h-12 border-4 border-[#8b5cf6] border-t-transparent rounded-full mx-auto mb-4"></div>
+                                <p className="text-[#b3b3b3] text-lg">
+                                    Carregando músicas do folder {folderName}...
+                                </p>
+                            </div>
+                        </div>
+                    ) : filteredTracks.length === 0 ? (
+                        <div className="text-center py-16">
+                            <div className="bg-[#181818] rounded-2xl p-8 max-w-md mx-auto border border-[#282828]">
+                                <div className="text-6xl mb-4">📁</div>
+                                <h3 className="text-xl font-bold text-white mb-2">
+                                    Nenhuma música encontrada
+                                </h3>
+                                <p className="text-[#b3b3b3] mb-6">
+                                    {selectedStyle
+                                        ? `Não encontramos músicas do estilo "${selectedStyle}" no folder "${folderName}".`
+                                        : `Não encontramos músicas para o folder "${folderName}".`
+                                    }
+                                </p>
+                                <button
+                                    onClick={goBack}
+                                    className="px-6 py-2 bg-[#8b5cf6] text-white rounded-lg hover:bg-[#9333ea] transition-colors font-medium"
+                                >
+                                    Voltar
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <MusicList
+                            tracks={filteredTracks}
+                            downloadedTrackIds={downloadedTrackIds}
+                            setDownloadedTrackIds={handleDownloadedTrackIdsChange}
+                            showDate={true}
+                            enableInfiniteScroll={false}
+                        />
+                    )}
+                </div>
+
+            </div>
+        </div>
+    );
+}

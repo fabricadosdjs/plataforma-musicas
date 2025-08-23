@@ -50,6 +50,7 @@ model Track {
   style       String?
   version     String?
   pool        String?
+  folder      String?    // Nova coluna para organizar músicas por pasta/álbum
   imageUrl    String?
   previewUrl  String?
   downloadUrl String?

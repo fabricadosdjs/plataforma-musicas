@@ -1,0 +1,315 @@
+{
+  "timestamp": "2025-08-23T17:02:00.377Z",
+  "folder": "Ibiza Sessions 2025",
+  "removedTracks": [
+    {
+      "id": 3193,
+      "songName": "I KNOW YOU DO (EXTENDED MIX)",
+      "artist": "FRANK HURMAN & PEDRO MIRAS",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3194,
+      "songName": "FUNK MACHINE (CLUB MIX)",
+      "artist": "SANNY X",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3195,
+      "songName": "WANNA FUNK (EXTENDED MIX)",
+      "artist": "FLOOR 54",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3196,
+      "songName": "SUPERDISCO (CLUB MIX)",
+      "artist": "DISCOMATIX",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3197,
+      "songName": "BANG BANG (EXTENDED MIX)",
+      "artist": "THUNDERFUNK & DISCOMATIX",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3198,
+      "songName": "DANCE WITH ME AGAIN (EXTENDED MIX)",
+      "artist": "MANFROP & JESSIE WAGNER",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3199,
+      "songName": "CIRANDEIRA (EXTENDED MIX)",
+      "artist": "KANETTE",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3200,
+      "songName": "PERFECT PLAN (EXTENDED MIX)",
+      "artist": "FRASER",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3201,
+      "songName": "DANCER (CLUB MIX)",
+      "artist": "DISCO OR DIE!",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3202,
+      "songName": "BE MY LOVE (EXTENDED MIX)",
+      "artist": "DEUSEXMASCHINE",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3203,
+      "songName": "STRAIGHT OUT (CLUB MIX)",
+      "artist": "MANFROP",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3204,
+      "songName": "DISCO DUST (EXTENDED MIX)",
+      "artist": "FLOOR 54",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3205,
+      "songName": "GRAPEVINE (CLUB MIX)",
+      "artist": "THUNDERFUNK & DISCOMATIX",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3206,
+      "songName": "LIFT ME UP (EXTENDED MIX)",
+      "artist": "WALT J",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3207,
+      "songName": "SIANS REVENGE (CLUB MIX)",
+      "artist": "SEXPAYS",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3208,
+      "songName": "DANCE WITH ME AGAIN (SANNY X REMIX)",
+      "artist": "MANFROP & JESSIE WAGNER",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3209,
+      "songName": "SURE SHOT (CLUB MIX)",
+      "artist": "SIMON HARRIS",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3210,
+      "songName": "LET THE MUSIC GROOVE (CLUB MIX)",
+      "artist": "PAUL DAKEYNE & STU MOUNTAIN",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3211,
+      "songName": "REAL LUV (EXTENDED MIX)",
+      "artist": "MAGGIAVELI",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3212,
+      "songName": "IMAGINATION (CLUB MIX)",
+      "artist": "LOUIS LO",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3213,
+      "songName": "IN MY SOUL (CLUB MIX)",
+      "artist": "MARTIN FRITZON",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3214,
+      "songName": "EVERY TIME I'M WITH YOU (CLUB MIX)",
+      "artist": "HMPHRY!",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3215,
+      "songName": "MAKE U MINE (VIP EXTENDED MIX)",
+      "artist": "FRASER",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3216,
+      "songName": "BABY (CLUB MIX)",
+      "artist": "LOUIS LO",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3217,
+      "songName": "SOMETIMES (EXTENDED MIX)",
+      "artist": "DEUSEXMASCHINE & NICOLAS LACAILLE",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3218,
+      "songName": "WASTING MY TIME WITH YOU (EXTENDED MIX)",
+      "artist": "ED WILMAN",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3219,
+      "songName": "BODY & SOUL (CLUB MIX)",
+      "artist": "MAGGIAVELI",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3220,
+      "songName": "MUZEEQ (EXTENDED MIX)",
+      "artist": "DISCOMATIX",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3221,
+      "songName": "GHOSTS ON THE DANCEFLOOR (CLUB MIX)",
+      "artist": "DISCO OR DIE!",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3222,
+      "songName": "FEELING GOOD (EXTENDED MIX)",
+      "artist": "SANNY X",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3223,
+      "songName": "SLIDE ON THE RHYTHM (CLUB MIX)",
+      "artist": "DISCO OR DIE!",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3224,
+      "songName": "OUT OF CONTROL (STEFAN MAKEPEACE REMIX)",
+      "artist": "SANNY X & TONY POSTIGO",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3225,
+      "songName": "SEPARATION (EXTENDED MIX)",
+      "artist": "NISHANT BARDOLOI",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3226,
+      "songName": "NEVER LET IT GO (EXTENDED MIX)",
+      "artist": "ANAMSTYLE",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3227,
+      "songName": "STREET LYFE (CLUB MIX)",
+      "artist": "MAGGIAVELI",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3228,
+      "songName": "GET DOWN (EXTENDED MIX)",
+      "artist": "JOHN TEKI & DISCOMATIX",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3229,
+      "songName": "GIVE IT ALL TO HIM (CLUB MIX)",
+      "artist": "ANDREW RUSSET",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3230,
+      "songName": "MUST B LUV (EXTENDED MIX)",
+      "artist": "MAGGIAVELI",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3231,
+      "songName": "LOOK BACK (CLUB MIX)",
+      "artist": "THUNDERFUNK",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3232,
+      "songName": "COME AND GET IT (EXTENDED MIX)",
+      "artist": "HMPHRY!",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3233,
+      "songName": "TO THE GROOVE (CLUB MIX)",
+      "artist": "AUDIOFUNKTION",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3234,
+      "songName": "SKATE DANCER (CLUB MIX)",
+      "artist": "THUNDERFUNK",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3235,
+      "songName": "PLUS SODA MUSIC IBIZA SESSIONS 2025 (CONTINUOUS MIX 1 BY FRANK HURMAN & PEDRO MIRAS)",
+      "artist": "VARIOUS ARTISTS",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    },
+    {
+      "id": 3236,
+      "songName": "PLUS SODA MUSIC IBIZA SESSIONS 2025 (CONTINUOUS MIX 2 BY FRANK HURMAN & PEDRO MIRAS)",
+      "artist": "VARIOUS ARTISTS",
+      "folder": "Ibiza Sessions 2025",
+      "createdAt": "2025-08-23T16:31:03.881Z"
+    }
+  ],
+  "totalCount": 44
+}

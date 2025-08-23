@@ -30,6 +30,7 @@ export async function GET() {
                 style: true,
                 pool: true,
                 version: true,
+                folder: true, // Adicionando o campo folder
                 releaseDate: true,
                 createdAt: true,
                 duration: true,

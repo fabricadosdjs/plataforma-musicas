@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
                 style: true,
                 pool: true,
                 version: true,
+                folder: true, // Adicionando o campo folder
                 releaseDate: true,
                 createdAt: true,
                 imageUrl: true,

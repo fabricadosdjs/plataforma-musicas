@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
                 artist: true,
                 style: true,
                 pool: true,
+                folder: true, // Adicionando o campo folder
                 imageUrl: true,
                 downloadUrl: true,
                 releaseDate: true,

@@ -139,6 +139,19 @@ export default function AddMusicPage() {
         <div className="p-8 max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">Adicionar Músicas em Lote</h1>
 
+          {/* Informações sobre o novo campo folder */}
+          <div className="bg-blue-900/30 border border-blue-700/50 rounded-xl p-6 mb-6">
+            <h3 className="text-lg font-semibold text-blue-200 mb-3 flex items-center gap-2">
+              📁 Nova Funcionalidade: Campo Folder
+            </h3>
+            <div className="text-blue-100 text-sm space-y-2">
+              <p>• <strong>Campo opcional:</strong> Adicione o campo <code className="bg-blue-800/50 px-2 py-1 rounded">folder</code> no seu JSON</p>
+              <p>• <strong>Organização:</strong> As músicas serão organizadas por pasta no servidor</p>
+              <p>• <strong>Formato:</strong> Use valores como "Album Name", "EP", "Single", etc.</p>
+              <p>• <strong>Exemplo:</strong> <code className="bg-blue-800/50 px-2 py-1 rounded">"folder": "Summer Vibes 2024"</code></p>
+            </div>
+          </div>
+
           {message && (
             <div className={`p-4 rounded-lg mb-6 flex items-center gap-2 ${isSuccess ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'}`}>
               {isSuccess ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
@@ -317,6 +330,7 @@ export default function AddMusicPage() {
                       <ul className="text-gray-300 space-y-1 ml-4">
                         <li>• <code className="bg-gray-800 px-1 rounded">version</code> - Versão (Original Mix, Extended, etc.) - pode ser <code>null</code></li>
                         <li>• <code className="bg-gray-800 px-1 rounded">pool</code> - Nome do pool/gravadora</li>
+                        <li>• <code className="bg-gray-800 px-1 rounded">folder</code> - <strong>Pasta/Álbum</strong> (ex: "Summer Vibes 2024", "EP Collection") - <span className="text-purple-400">📁 Novo Campo</span></li>
                         <li>• <code className="bg-gray-800 px-1 rounded">bitrate</code> - <strong>Bitrate em kbps</strong> (ex: 320, 256, 192) - <span className="text-green-400">✅ Suportado</span></li>
                       </ul>
                     </div>
@@ -331,6 +345,7 @@ export default function AddMusicPage() {
     "style": "Pop",
     "version": "Original Mix",
     "pool": "Republic Records",
+    "folder": "After Hours Album",
     "bitrate": 320,
     "imageUrl": "https://example.com/cover1.jpg",
     "previewUrl": "https://example.com/preview1.mp3",
@@ -343,6 +358,7 @@ export default function AddMusicPage() {
     "style": "Pop Rock",
     "version": "Radio Edit",
     "pool": "Geffen Records",
+    "folder": "SOUR Deluxe Edition",
     "bitrate": 256,
     "imageUrl": "https://example.com/cover2.jpg",
     "previewUrl": "https://example.com/preview2.mp3",
@@ -379,6 +395,7 @@ export default function AddMusicPage() {
                         <li>• Use preferencialmente <strong>files.catbox.moe</strong> para downloads</li>
                         <li>• Campo <code className="bg-gray-800 px-1 rounded">version</code> pode ser <code>null</code> se não houver versão específica</li>
                         <li>• Campo <code className="bg-gray-800 px-1 rounded">pool</code> é opcional e representa a gravadora/pool</li>
+                        <li>• Campo <code className="bg-gray-800 px-1 rounded">folder</code> é opcional e organiza músicas por pasta/álbum - <span className="text-purple-400">📁 Novo campo disponível</span></li>
                         <li>• Campo <code className="bg-gray-800 px-1 rounded">bitrate</code> é opcional e representa a qualidade do áudio em kbps - <span className="text-green-400">✅ Totalmente suportado</span></li>
                         <li>• Você pode adicionar múltiplas músicas de uma vez</li>
                         <li>• Verifique o arquivo <code className="bg-gray-800 px-1 rounded">exemplo-musicas.json</code> na raiz do projeto</li>

@@ -1,0 +1,62 @@
+[
+    {
+        "songName": "Summer Vibes",
+        "artist": "DJ Pool Master",
+        "style": "House",
+        "version": "Original Mix",
+        "pool": "Nexor Records",
+        "folder": "Summer Vibes 2024",
+        "previewUrl": "https://example.com/preview1.mp3",
+        "downloadUrl": "https://example.com/download1.mp3",
+        "releaseDate": "2024-07-27T10:00:00Z",
+        "bitrate": 320
+    },
+    {
+        "songName": "Beach Sunset",
+        "artist": "DJ Pool Master",
+        "style": "Deep House",
+        "version": "Extended Mix",
+        "pool": "Nexor Records",
+        "folder": "Summer Vibes 2024",
+        "previewUrl": "https://example.com/preview2.mp3",
+        "downloadUrl": "https://example.com/download2.mp3",
+        "releaseDate": "2024-07-27T10:00:00Z",
+        "bitrate": 320
+    },
+    {
+        "songName": "Ocean Waves",
+        "artist": "DJ Pool Master",
+        "style": "Progressive House",
+        "version": "Club Mix",
+        "pool": "Nexor Records",
+        "folder": "Summer Vibes 2024",
+        "previewUrl": "https://example.com/preview3.mp3",
+        "downloadUrl": "https://example.com/download3.mp3",
+        "releaseDate": "2024-07-27T10:00:00Z",
+        "bitrate": 320
+    },
+    {
+        "songName": "Midnight Groove",
+        "artist": "DJ Pool Master",
+        "style": "Tech House",
+        "version": "Original Mix",
+        "pool": "Nexor Records",
+        "folder": "Night Sessions EP",
+        "previewUrl": "https://example.com/preview4.mp3",
+        "downloadUrl": "https://example.com/download4.mp3",
+        "releaseDate": "2024-07-27T10:00:00Z",
+        "bitrate": 320
+    },
+    {
+        "songName": "Urban Rhythm",
+        "artist": "DJ Pool Master",
+        "style": "Minimal",
+        "version": "Extended Mix",
+        "pool": "Nexor Records",
+        "folder": "Night Sessions EP",
+        "previewUrl": "https://example.com/preview5.mp3",
+        "downloadUrl": "https://example.com/download5.mp3",
+        "releaseDate": "2024-07-27T10:00:00Z",
+        "bitrate": 320
+    }
+]

@@ -75,6 +75,7 @@ export async function POST(req: Request) {
           style: track.style,
           version: track.version || null,
           pool: track.pool || 'Nexor Records',
+          folder: track.folder || null, // Nova coluna para organizar por pasta/álbum
           bitrate: track.bitrate || null,
           imageUrl: track.imageUrl || `https://placehold.co/300x300/1f2937/ffffff?text=${encodeURIComponent((track.artist || 'A').substring(0, 2))}`,
           releaseDate: releaseDate,
