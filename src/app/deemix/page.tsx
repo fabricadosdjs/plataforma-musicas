@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import Header from "@/components/layout/Header"
-import NewFooter from "@/components/layout/NewFooter"
+
 import {
     ArrowLeft, Music, Download, Check, ExternalLink, Settings, Zap, Shield, Globe, Headphones, Clock,
     Server, User, ArrowRight, HelpCircle, AudioLines, FolderKanban, WifiOff, ListMusic, Computer,
@@ -87,7 +87,7 @@ export default function Deemix() {
                     </div>
                 </div>
 
-                <div className="container mx-auto px-6 relative">
+                <div className="max-w-[95%] mx-auto px-6 relative">
                     <div className="max-w-4xl mx-auto text-center">
                         <motion.div
                             initial={{ opacity: 0, y: 30, scale: 0.9 }}
@@ -155,7 +155,7 @@ export default function Deemix() {
             <main className="space-y-12">
                 {/* Server Architecture Section */}
                 <section className="py-12 bg-gray-900/20">
-                    <div className="container mx-auto px-6">
+                    <div className="max-w-[95%] mx-auto px-6">
                         <div className="text-center mb-12">
                             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full text-green-400 text-sm font-bold mb-4">
                                 <Server className="w-4 h-4" />
@@ -258,7 +258,7 @@ export default function Deemix() {
 
                 {/* Features Section */}
                 <section className="py-12">
-                    <div className="container mx-auto px-6">
+                    <div className="max-w-[95%] mx-auto px-6">
                         <div className="text-center mb-12">
                             <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full text-purple-400 text-sm font-bold mb-4">
                                 <Sparkles className="w-4 h-4" />
@@ -296,7 +296,7 @@ export default function Deemix() {
 
                 {/* CTA Section */}
                 <section className="py-12 bg-gray-900/20">
-                    <div className="container mx-auto px-6">
+                    <div className="max-w-[95%] mx-auto px-6">
                         <div className="max-w-4xl mx-auto text-center">
                             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full text-green-400 text-sm font-bold mb-6">
                                 <Check className="w-4 h-4" />
@@ -515,7 +515,7 @@ export default function Deemix() {
 
             {/* Seção extra de cards interativos e informações premium */}
             <section className="py-12 bg-gradient-to-br from-purple-900/10 to-green-900/10">
-                <div className="container mx-auto px-6">
+                <div className="max-w-[95%] mx-auto px-6">
                     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <Card className="bg-gray-900/60 border border-purple-700/30 backdrop-blur-sm p-8 hover:scale-105 transition-all duration-300">
                             <CardHeader>
@@ -545,8 +545,71 @@ export default function Deemix() {
                 </div>
             </section>
 
-            {/* NewFooter Component */}
-            <NewFooter />
+            {/* Footer Simples */}
+            <footer className="bg-black border-t border-gray-800 mt-20">
+                <div className="max-w-[95%] mx-auto px-6 py-12">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="text-center">
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                                    <Music className="w-7 h-7 text-white" />
+                                </div>
+                                <span className="text-2xl font-bold text-white">
+                                    Nexor Records Pools
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-6">
+                            <a href="/new" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Novidades
+                            </a>
+                            <a href="/trending" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Trending
+                            </a>
+                            <a href="/plans" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Planos
+                            </a>
+                            <a href="/debridlink" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Debrid-Link
+                            </a>
+                            <a href="/allavsoft" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Allavsoft
+                            </a>
+                            <a href="/deemix" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Deemix
+                            </a>
+                            <a href="/privacidade" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Privacidade
+                            </a>
+                            <a href="/termos" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Termos
+                            </a>
+                        </div>
+                        <div className="flex gap-4">
+                            <a href="https://twitter.com/plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.665 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                                </svg>
+                            </a>
+                            <a href="https://instagram.com/plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-pink-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.418-3.323c.875-.807 2.026-1.297 3.323-1.297s2.448.49 3.323 1.297c.928.875 1.418 2.026 1.418 3.323s-.49 2.448-1.418 3.323c-.875.807-2.026 1.297-3.323 1.297zm7.718-1.297c-.875.807-2.026 1.297-3.323 1.297s-2.448-.49-3.323-1.297c-.928-.875-1.418-2.026-1.418-3.323s.49-2.448 1.418-3.323c.875-.807 2.026-1.297 3.323-1.297s2.448.49 3.323 1.297c.928.875 1.418 2.026 1.418 3.323s-.49 2.448-1.418 3.323z" />
+                                </svg>
+                            </a>
+                            <a href="https://youtube.com/@plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-red-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                </svg>
+                            </a>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-gray-400 text-sm">
+                                © 2025 Nexor Records Pools. Todos os direitos reservados.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 }

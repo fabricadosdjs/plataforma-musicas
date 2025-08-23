@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Track } from '@/types/track';
 import { useToastContext } from '@/context/ToastContext';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { useSession } from 'next-auth/react';
+import { useNotificationContext } from '@/context/NotificationContext';
 import { Play, Pause, Download, Heart, Plus, Calendar } from 'lucide-react';
 import { formatDateBrazil, formatDateExtendedBrazil, getDateKeyBrazil, isTodayBrazil, isYesterdayBrazil } from '@/utils/dateUtils';
 import { useRouter } from 'next/navigation';
@@ -52,14 +53,40 @@ export const MusicList = React.memo(({
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [testingAudio, setTestingAudio] = useState<Set<number>>(new Set());
+    const [stableTracks, setStableTracks] = useState<Track[]>([]);
+    const [isStable, setIsStable] = useState(false);
     const { showToast } = useToastContext();
     const { playTrack, currentTrack, isPlaying } = useGlobalPlayer();
     const { data: session } = useSession();
+    const { addDownloadNotification } = useNotificationContext();
     const router = useRouter();
     const { isMobile, hasUserInteracted, canPlayAudio, requestAudioPermission } = useMobileAudio();
 
     // Hook para cache de downloads
     const downloadsCache = useDownloadsCache();
+
+    // Estabilizar tracks para evitar piscamentos - Solução mais robusta
+    useEffect(() => {
+        if (tracks && tracks.length > 0) {
+            // Só atualiza se realmente mudou significativamente
+            const currentIds = tracks.map(t => t.id).sort().join(',');
+            const stableIds = stableTracks.map(t => t.id).sort().join(',');
+
+            if (currentIds !== stableIds) {
+                setIsStable(false);
+                // Delay para estabilizar visualmente
+                const timer = setTimeout(() => {
+                    setStableTracks([...tracks]);
+                    setIsStable(true);
+                }, 100);
+                return () => clearTimeout(timer);
+            }
+        } else if (tracks.length === 0 && stableTracks.length > 0) {
+            setIsStable(false);
+            setStableTracks([]);
+            setIsStable(true);
+        }
+    }, [tracks]);
 
     // Usar cache se disponível, senão usar props
     const finalDownloadedTrackIds = downloadsCache.downloadedTrackIds.length > 0
@@ -76,11 +103,13 @@ export const MusicList = React.memo(({
         rootMargin: '0px 0px 300px 0px'
     });
 
-    // Agrupar músicas por data de postagem
+    // Agrupar músicas por data de postagem - Otimizado para evitar re-renderizações
     const groupedTracks = useMemo(() => {
+        if (!stableTracks || stableTracks.length === 0) return {};
+
         const groups: GroupedTracks = {};
 
-        tracks.forEach(track => {
+        stableTracks.forEach(track => {
             const trackDate = track.releaseDate || track.createdAt;
             if (!trackDate) return;
 
@@ -126,11 +155,13 @@ export const MusicList = React.memo(({
             });
 
         return sortedGroups;
-    }, [tracks]);
+    }, [stableTracks]);
 
-    // Paginação dos grupos - modificada para infinite scroll
+    // Paginação dos grupos - Otimizada para evitar re-renderizações
     const paginatedGroups = useMemo(() => {
         const groupKeys = Object.keys(groupedTracks);
+
+        if (groupKeys.length === 0) return {};
 
         if (enableInfiniteScroll) {
             // Para infinite scroll, mostrar todos os grupos até a página atual
@@ -257,6 +288,14 @@ export const MusicList = React.memo(({
 
             downloadsCache.markAsDownloaded(track.id);
             showToast('✅ Download concluído!', 'success');
+
+            // Adicionar notificação de download
+            addDownloadNotification(
+                'Download Concluído',
+                `"${track.songName}" de ${track.artist} foi baixada com sucesso!`,
+                '/downloads',
+                'Ver Downloads'
+            );
         } catch (error) {
             console.error('Erro no download:', error);
         } finally {
@@ -287,9 +326,23 @@ export const MusicList = React.memo(({
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                console.error('❌ Response não ok:', errorData);
-                throw new Error(errorData.error || 'Falha ao curtir/descurtir música');
+                let errorMessage = 'Falha ao curtir/descurtir música';
+                try {
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorMessage;
+                    } else {
+                        const textError = await response.text();
+                        errorMessage = textError || errorMessage;
+                    }
+                } catch (parseError) {
+                    console.error('❌ Erro ao fazer parse da resposta:', parseError);
+                    errorMessage = 'Falha ao processar resposta da API';
+                }
+
+                console.error('❌ Response não ok:', { error: errorMessage });
+                throw new Error(errorMessage);
             }
 
             const result = await response.json();
@@ -495,6 +548,19 @@ export const MusicList = React.memo(({
     const downloadAllTracks = async (tracksToDownload: Track[]) => {
         await downloadTracksInBatches(tracksToDownload, true);
     };
+
+    // Mostrar skeleton durante transições para evitar piscamentos
+    if (!isStable || stableTracks.length === 0) {
+        return (
+            <div className="space-y-0 w-full overflow-x-hidden">
+                <div className="animate-pulse">
+                    <div className="h-32 bg-gray-800 rounded-lg mb-4"></div>
+                    <div className="h-32 bg-gray-800 rounded-lg mb-4"></div>
+                    <div className="h-32 bg-gray-800 rounded-lg mb-4"></div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-0 w-full overflow-x-hidden">
@@ -985,3 +1051,5 @@ export const MusicList = React.memo(({
         </div>
     );
 });
+
+

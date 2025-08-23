@@ -6,6 +6,7 @@ import forceDownload from '@/utils/downloadUtils';
 import { useSession } from 'next-auth/react';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import Alert from '@/components/ui/Alert';
+import { NotificationProvider } from './NotificationContext';
 
 interface AppContextType {
   // ... (outras propriedades do contexto permanecem iguais)
@@ -209,14 +210,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AppContext.Provider value={contextValue}>
-      {children}
-      {alertMessage && (
-        <Alert
-          message={alertMessage}
-          type={alertType}
-          onClose={closeAlert}
-        />
-      )}
+      <NotificationProvider>
+        {children}
+        {alertMessage && (
+          <Alert
+            message={alertMessage}
+            type={alertType}
+            onClose={closeAlert}
+          />
+        )}
+      </NotificationProvider>
     </AppContext.Provider>
   );
 };

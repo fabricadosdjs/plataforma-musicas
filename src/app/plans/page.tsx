@@ -6,10 +6,10 @@ export const dynamic = 'force-dynamic';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Check, Crown, Star, Zap, Music, Download, Users, Headphones, Database, Gift, CreditCard, User, MessageSquare, Hand, Calendar, Clock, Calculator, ArrowUp, ArrowDown, DollarSign, Upload, Info } from 'lucide-react';
-import MainLayout from '@/components/layout/MainLayout';
-import FooterSpacer from '@/components/layout/FooterSpacer';
+
 import Link from 'next/link';
 import Header from '@/components/layout/Header';
+import { useNotificationContext } from '@/context/NotificationContext';
 
 // Estilos CSS personalizados para animações
 const customStyles = `
@@ -347,6 +347,7 @@ const getUserPlan = (valor: number | null, hasDeemix?: boolean, hasDeezerPremium
 
 export default function PlansPage() {
     const { data: session } = useSession();
+    const { addFeatureNotification, addPlanNotification } = useNotificationContext();
     const [userPlan, setUserPlan] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [selectedPeriod, setSelectedPeriod] = useState<keyof typeof SUBSCRIPTION_PERIODS>('MONTHLY');
@@ -365,9 +366,34 @@ export default function PlansPage() {
 
             // Automaticamente ativar o toggle de Deemix se o usuário já tem
             setIncludeDeemix(hasDeemix);
+
+            // Mostrar notificações relevantes baseadas no plano atual
+            if (!session.user.is_vip) {
+                // Usuário não VIP - mostrar notificação sobre recursos premium
+                setTimeout(() => {
+                    addFeatureNotification(
+                        'Recursos Premium Disponíveis',
+                        'Descubra downloads ilimitados, qualidade FLAC e muito mais com nossos planos VIP!',
+                        '/plans',
+                        'Ver Planos'
+                    );
+                }, 2000);
+            } else {
+                // Usuário VIP - verificar se tem Deemix
+                if (!hasDeemix) {
+                    setTimeout(() => {
+                        addFeatureNotification(
+                            'Deemix Premium Disponível',
+                            'Adicione o Deemix Premium ao seu plano para downloads ilimitados do Deezer!',
+                            '/deemix',
+                            'Ver Deemix'
+                        );
+                    }, 2000);
+                }
+            }
         }
         setLoading(false);
-    }, [session]);
+    }, [session, addFeatureNotification]);
 
     const getPlanPrice = (planKey: string, period: keyof typeof SUBSCRIPTION_PERIODS, includeDeemix: boolean) => {
         // Verificar se é um plano VIP
@@ -558,751 +584,816 @@ export default function PlansPage() {
 
     if (loading) {
         return (
-            <MainLayout>
-                <div className="flex items-center justify-center min-h-screen">
-                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#1db954]"></div>
+            <div className="min-h-screen bg-[#121212] relative overflow-hidden">
+                <Header />
+                <div className="pt-12 lg:pt-16">
+                    <div className="flex items-center justify-center min-h-screen">
+                        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#1db954]"></div>
+                    </div>
                 </div>
-            </MainLayout>
+            </div>
         );
     }
 
     return (
-        <MainLayout>
+        <div className="min-h-screen bg-[#121212] relative overflow-hidden">
             <style dangerouslySetInnerHTML={{ __html: customStyles }} />
-            <main className="px-4 py-4 sm:py-8 pt-16 sm:pt-20">
 
-                {/* Hero Section */}
-                <div className="text-center mb-8 sm:mb-16">
-                    <div className="mb-6 sm:mb-8">
-                        {/* Animated background particles */}
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                            <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[#1db954]/10 rounded-full blur-3xl animate-pulse"></div>
-                            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-[#1ed760]/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-                            <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-[#1db954]/8 rounded-full blur-3xl animate-pulse delay-2000"></div>
-                        </div>
+            {/* Header Fixo */}
+            <Header />
 
-                        <div className="relative z-10">
-                            <div className="flex items-center justify-center gap-4 mb-6">
-                                <div className="relative animate-float">
-                                    <div className="w-20 h-20 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-2xl flex items-center justify-center shadow-2xl animate-glow">
-                                        <Crown className="h-10 w-10 text-white" />
+            {/* Conteúdo Principal - Tela Cheia */}
+            <div className="pt-12 lg:pt-16">
+                <main className="max-w-[95%] mx-auto px-4 py-4 sm:py-8">
+
+                    {/* Hero Section */}
+                    <div className="text-center mb-8 sm:mb-16">
+                        <div className="mb-6 sm:mb-8">
+                            {/* Animated background particles */}
+                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                                <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[#1db954]/10 rounded-full blur-3xl animate-pulse"></div>
+                                <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-[#1ed760]/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+                                <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-[#1db954]/8 rounded-full blur-3xl animate-pulse delay-2000"></div>
+                            </div>
+
+                            <div className="relative z-10">
+                                <div className="flex items-center justify-center gap-4 mb-6">
+                                    <div className="relative animate-float">
+                                        <div className="w-20 h-20 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-2xl flex items-center justify-center shadow-2xl animate-glow">
+                                            <Crown className="h-10 w-10 text-white" />
+                                        </div>
+                                        <div className="absolute -inset-2 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-2xl blur opacity-30 animate-pulse"></div>
                                     </div>
-                                    <div className="absolute -inset-2 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-2xl blur opacity-30 animate-pulse"></div>
-                                </div>
-                                <div>
-                                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-[#1db954] via-[#1ed760] to-[#1db954] bg-clip-text text-transparent drop-shadow-lg mb-4">
-                                        PLANOS VIP
-                                    </h1>
-                                    <p className="text-lg sm:text-xl md:text-2xl text-[#b3b3b3] max-w-4xl mx-auto leading-relaxed px-4">
-                                        Escolha o plano ideal para suas necessidades. Todos os planos incluem acesso completo à plataforma.
-                                    </p>
+                                    <div>
+                                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-[#1db954] via-[#1ed760] to-[#1db954] bg-clip-text text-transparent drop-shadow-lg mb-4">
+                                            PLANOS VIP
+                                        </h1>
+                                        <p className="text-lg sm:text-xl md:text-2xl text-[#b3b3b3] max-w-4xl mx-auto leading-relaxed px-4">
+                                            Escolha o plano ideal para suas necessidades. Todos os planos incluem acesso completo à plataforma.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Current Plan Info */}
-                {userPlan && (
+                    {/* Current Plan Info */}
+                    {userPlan && (
+                        <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
+                            <div className="text-center mb-4 sm:mb-6">
+                                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">Seu Plano Atual</h2>
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                                    <div className="text-3xl sm:text-4xl">{userPlan.icon}</div>
+                                    <div className="text-center sm:text-left">
+                                        <h3 className="text-xl sm:text-2xl font-bold text-white">{userPlan.name}</h3>
+                                        <p className="text-[#b3b3b3]">R$ {userPlan.basePrice}/mês</p>
+
+                                        {/* Mostrar add-ons ativos */}
+                                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
+                                            {(session?.user as any)?.deemix && (
+                                                <span className="bg-[#1db954]/20 border border-[#1db954]/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-[#1db954]">
+                                                    🎵 Deemix Ativo
+                                                </span>
+                                            )}
+                                            {(session?.user as any)?.deezerPremium && (
+                                                <span className="bg-[#1ed760]/20 border border-[#1ed760]/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-[#1ed760]">
+                                                    🎁 Deezer Premium
+                                                </span>
+                                            )}
+                                            {(session?.user as any)?.isUploader && (
+                                                <span className="bg-[#1db954]/20 border border-[#1db954]/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-[#1db954]">
+                                                    📤 Uploader
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Mostrar valor total se diferente do base */}
+                                        {session?.user?.valor && Number(session.user.valor) !== userPlan.basePrice && (
+                                            <p className="text-xs text-[#535353] mt-1">
+                                                Total com add-ons: R$ {session.user.valor}/mês
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Period Selection */}
                     <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
                         <div className="text-center mb-4 sm:mb-6">
-                            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">Seu Plano Atual</h2>
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                                <div className="text-3xl sm:text-4xl">{userPlan.icon}</div>
-                                <div className="text-center sm:text-left">
-                                    <h3 className="text-xl sm:text-2xl font-bold text-white">{userPlan.name}</h3>
-                                    <p className="text-[#b3b3b3]">R$ {userPlan.basePrice}/mês</p>
-
-                                    {/* Mostrar add-ons ativos */}
-                                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
-                                        {(session?.user as any)?.deemix && (
-                                            <span className="bg-[#1db954]/20 border border-[#1db954]/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-[#1db954]">
-                                                🎵 Deemix Ativo
-                                            </span>
-                                        )}
-                                        {(session?.user as any)?.deezerPremium && (
-                                            <span className="bg-[#1ed760]/20 border border-[#1ed760]/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-[#1ed760]">
-                                                🎁 Deezer Premium
-                                            </span>
-                                        )}
-                                        {(session?.user as any)?.isUploader && (
-                                            <span className="bg-[#1db954]/20 border border-[#1db954]/30 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm text-[#1db954]">
-                                                📤 Uploader
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Mostrar valor total se diferente do base */}
-                                    {session?.user?.valor && Number(session.user.valor) !== userPlan.basePrice && (
-                                        <p className="text-xs text-[#535353] mt-1">
-                                            Total com add-ons: R$ {session.user.valor}/mês
-                                        </p>
-                                    )}
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                <div className="p-3 bg-gradient-to-r from-[#1db954] to-[#1ed760] rounded-full">
+                                    <Calendar className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Período de Assinatura</h3>
+                                    <p className="text-[#b3b3b3] text-sm sm:text-base">Escolha o período que melhor se adapta a você</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
 
-                {/* Period Selection */}
-                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
-                    <div className="text-center mb-4 sm:mb-6">
-                        <div className="flex items-center justify-center gap-3 mb-4">
-                            <div className="p-3 bg-gradient-to-r from-[#1db954] to-[#1ed760] rounded-full">
-                                <Calendar className="h-6 w-6 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Período de Assinatura</h3>
-                                <p className="text-[#b3b3b3] text-sm sm:text-base">Escolha o período que melhor se adapta a você</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                        {Object.entries(SUBSCRIPTION_PERIODS).map(([periodKey, period]) => (
-                            <button
-                                key={periodKey}
-                                onClick={() => setSelectedPeriod(periodKey as keyof typeof SUBSCRIPTION_PERIODS)}
-                                className={`group p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 text-xs sm:text-sm hover:scale-105 ${selectedPeriod === periodKey
-                                    ? 'border-[#1db954] bg-[#1db954]/20 text-[#1db954] shadow-lg shadow-[#1db954]/25'
-                                    : 'border-[#282828] bg-[#282828]/20 text-[#b3b3b3] hover:border-[#535353] hover:bg-[#535353]/30'
-                                    }`}
-                            >
-                                <div className="flex items-center justify-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                                    <Calendar className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform group-hover:scale-110 ${selectedPeriod === periodKey ? 'text-[#1db954]' : 'text-[#535353]'}`} />
-                                    <span className="font-semibold">{period.name}</span>
-                                </div>
-                                <div className="text-xs">
-                                    {period.months} {period.months === 1 ? 'mês' : 'meses'}
-                                </div>
-                                {period.discount > 0 && (
-                                    <div className="text-xs text-[#1db954] mt-1 font-semibold">
-                                        🎉 {period.discount * 100}% OFF
-                                    </div>
-                                )}
-                                {period.deemixFree && (
-                                    <div className="text-xs text-[#1ed760] mt-1 font-semibold">
-                                        🎁 Deemix Grátis
-                                    </div>
-                                )}
-                                {period.deemixDiscount > 0 && !period.deemixFree && (
-                                    <div className="text-xs text-[#1ed760] mt-1 font-semibold">
-                                        💰 Deemix {period.deemixDiscount * 100}% OFF
-                                    </div>
-                                )}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Deemix Toggle */}
-                    <div className="flex items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-                        <div className="flex items-center gap-2">
-                            <Music className="w-4 h-4 text-[#535353]" />
-                            <span className="text-xs sm:text-sm text-[#535353]">Sem Deemix</span>
-                        </div>
-                        <button
-                            onClick={() => setIncludeDeemix(!includeDeemix)}
-                            className={`relative inline-flex h-8 w-16 sm:h-10 sm:w-20 items-center rounded-full transition-all duration-300 shadow-lg ${includeDeemix
-                                ? 'bg-gradient-to-r from-[#1db954] to-[#1ed760] shadow-[#1db954]/25'
-                                : 'bg-gradient-to-r from-[#535353] to-[#282828] shadow-[#535353]/25'
-                                }`}
-                        >
-                            <span
-                                className={`inline-block h-6 w-6 sm:h-7 sm:w-7 transform rounded-full bg-white transition-all duration-300 shadow-md ${includeDeemix
-                                    ? 'translate-x-10 sm:translate-x-12'
-                                    : 'translate-x-1'
-                                    }`}
-                            />
-                        </button>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs sm:text-sm text-[#535353]">Com Deemix</span>
-                            <div className="w-4 h-4 bg-gradient-to-r from-[#1db954] to-[#1ed760] rounded-full animate-pulse"></div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* VIP Plans Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-12 sm:mb-16">
-                    {Object.entries(VIP_PLANS).map(([planKey, plan]) => {
-                        const isCurrentPlan = userPlan?.name === plan.name;
-                        const isHigherPlan =
-                            (planKey === 'PADRAO' && userPlan?.name === 'COMPLETO') ||
-                            (planKey === 'BASICO' && (userPlan?.name === 'PADRAO' || userPlan?.name === 'COMPLETO'));
-
-                        const periodConfig = SUBSCRIPTION_PERIODS[selectedPeriod];
-                        const currentPrice = getPlanPrice(planKey, selectedPeriod, includeDeemix);
-                        const basePrice = plan.basePrice * (1 - periodConfig.discount);
-                        const deemixPricing = DEEMIX_PRICING[planKey as keyof typeof DEEMIX_PRICING];
-                        const deemixPrice = typeof deemixPricing === 'object' && 'finalPrice' in deemixPricing
-                            ? deemixPricing.finalPrice
-                            : typeof deemixPricing === 'number'
-                                ? deemixPricing
-                                : 0;
-                        const deemixFree = periodConfig.deemixFree;
-
-                        // Verificar se é realmente o plano atual considerando add-ons
-                        const hasDeemix = (session?.user as any)?.deemix || false;
-                        const hasDeezerPremium = (session?.user as any)?.deezerPremium || false;
-                        const currentPlanTotalPrice = session?.user?.valor || 0;
-                        const selectedPlanTotalPrice = getPlanPrice(planKey, selectedPeriod, includeDeemix);
-                        const isActuallyCurrentPlan = userPlan?.name === plan.name &&
-                            Math.abs(selectedPlanTotalPrice - currentPlanTotalPrice) < 0.01 &&
-                            includeDeemix === hasDeemix;
-
-                        return (
-                            <div
-                                key={planKey}
-                                className={`group relative rounded-2xl p-4 sm:p-6 md:p-8 transition-all duration-500 hover:scale-105 hover-lift ${isActuallyCurrentPlan
-                                    ? 'bg-[#1db954]/10 border-2 border-[#1db954]/50 shadow-2xl shadow-[#1db954]/20'
-                                    : 'bg-[#181818] border border-[#282828] hover:border-[#535353] hover:shadow-xl'
-                                    }`}
-                            >
-                                {/* Current Plan Badge */}
-                                {isActuallyCurrentPlan && (
-                                    <div className="absolute -top-3 sm:-top-4 left-1/2 transform -translate-x-1/2">
-                                        <div className="bg-gradient-to-r from-[#1db954] to-[#1ed760] text-white px-4 sm:px-6 py-1 sm:py-2 rounded-full font-bold text-xs sm:text-sm shadow-lg">
-                                            PLANO ATUAL
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Plan Header */}
-                                <div className="text-center mb-6 sm:mb-8">
-                                    <div className="relative mb-4">
-                                        <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">{plan.icon}</div>
-                                        <div className="absolute inset-0 text-4xl sm:text-5xl opacity-20 blur-sm group-hover:blur-md transition-all duration-300">{plan.icon}</div>
-                                    </div>
-                                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r from-[#1db954] to-[#1ed760] transition-all duration-300">{plan.name}</h3>
-
-                                    {/* Period Badge */}
-                                    <div className="inline-flex items-center gap-1 sm:gap-2 bg-[#1db954]/20 text-[#1db954] px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold mb-3 sm:mb-4 border border-[#1db954]/30 shadow-lg shadow-[#1db954]/10 group-hover:shadow-[#1db954]/20 transition-all duration-300">
-                                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
-                                        {periodConfig.name}
-                                    </div>
-
-                                    {/* Price Display */}
-                                    <div className="mb-3 sm:mb-4">
-                                        <div className="relative">
-                                            <div className="text-2xl sm:text-3xl font-bold text-white mb-1 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r from-[#1db954] to-[#1ed760] transition-all duration-300">
-                                                R$ {currentPrice.toFixed(2).replace('.', ',')}
-                                                <span className="text-sm sm:text-lg text-[#b3b3b3] font-normal">/{periodConfig.name.toLowerCase()}</span>
-                                            </div>
-                                            <div className="absolute inset-0 text-2xl sm:text-3xl font-bold opacity-20 blur-sm group-hover:blur-md transition-all duration-300">
-                                                R$ {currentPrice.toFixed(2).replace('.', ',')}
-                                            </div>
-                                        </div>
-
-                                        {/* Price Breakdown */}
-                                        {includeDeemix && !deemixFree && (
-                                            <div className="text-xs text-[#b3b3b3] space-y-1">
-                                                <div>Plano: R$ {(basePrice * periodConfig.months).toFixed(2).replace('.', ',')}</div>
-                                                <div>Deemix: R$ {(deemixPrice * periodConfig.months).toFixed(2).replace('.', ',')}</div>
-                                                <div className="text-[#1db954]">Deezer Premium: GRÁTIS</div>
-                                                {periodConfig.deemixDiscount > 0 && (
-                                                    <div className="text-[#1db954] font-semibold">
-                                                        Desconto Deemix: {periodConfig.deemixDiscount * 100}%
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {!includeDeemix && (
-                                            <div className="text-xs text-[#b3b3b3] space-y-1">
-                                                <div>Plano: R$ {(basePrice * periodConfig.months).toFixed(2).replace('.', ',')}</div>
-                                                <div className="text-[#1db954]">Deezer Premium: R$ {(DEEZER_PREMIUM_PRICING.STANDALONE * periodConfig.months).toFixed(2).replace('.', ',')}</div>
-                                            </div>
-                                        )}
-
-                                        {deemixFree && includeDeemix && (
-                                            <div className="text-xs text-[#1ed760] font-semibold">
-                                                🎁 Deemix + Deezer Premium Grátis no período!
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Benefits List */}
-                                <div className="space-y-2 sm:space-y-4 mb-6 sm:mb-8">
-                                    {Object.entries(plan.benefits).map(([benefitKey, benefit], index) => {
-                                        // Highlight Deemix benefit when selected
-                                        const isDeemixBenefit = benefitKey === 'deemixAccess';
-                                        const isHighlighted = includeDeemix && isDeemixBenefit;
-                                        const isFree = deemixFree && isDeemixBenefit;
-
-                                        return (
-                                            <div
-                                                key={benefitKey}
-                                                className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-300 hover:scale-105 group/benefit ${isHighlighted
-                                                    ? 'bg-[#1db954]/20 border border-[#1db954]/30 shadow-lg shadow-[#1db954]/10'
-                                                    : 'bg-[#282828] border border-[#282828] hover:border-[#535353] hover:bg-[#535353]'
-                                                    }`}
-                                                style={{ animationDelay: `${index * 100}ms` }}
-                                            >
-                                                <div className={`flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all duration-300 group-hover/benefit:scale-110 ${isHighlighted
-                                                    ? 'bg-gradient-to-r from-[#1db954] to-[#1ed760] text-white shadow-lg shadow-[#1db954]/25'
-                                                    : 'bg-[#535353] text-[#b3b3b3] group-hover/benefit:bg-[#1db954]'
-                                                    }`}
-                                                >
-                                                    {isFree ? (
-                                                        <Gift className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                    ) : (
-                                                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                    )}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-xs sm:text-sm font-medium text-white truncate group-hover/benefit:text-transparent group-hover/benefit:bg-clip-text group-hover/benefit:bg-gradient-to-r group-hover/benefit:from-[#1db954] group-hover/benefit:to-[#1ed760] transition-all duration-300">
-                                                        {BENEFIT_LABELS[benefitKey as keyof typeof BENEFIT_LABELS]}
-                                                    </div>
-                                                    <div className="text-xs text-[#b3b3b3] truncate group-hover/benefit:text-white transition-all duration-300">
-                                                        {benefit.description}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Subscribe Button */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                            {Object.entries(SUBSCRIPTION_PERIODS).map(([periodKey, period]) => (
                                 <button
-                                    onClick={() => handleSubscribe(planKey, selectedPeriod, includeDeemix)}
-                                    disabled={isActuallyCurrentPlan || isHigherPlan}
-                                    className={`group/btn w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-lg transition-all duration-500 relative overflow-hidden ${isActuallyCurrentPlan
-                                        ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
-                                        : isHigherPlan
-                                            ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40'
-                                            : 'bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white shadow-lg shadow-[#1db954]/25 hover:shadow-[#1db954]/40 hover:scale-105'
+                                    key={periodKey}
+                                    onClick={() => setSelectedPeriod(periodKey as keyof typeof SUBSCRIPTION_PERIODS)}
+                                    className={`group p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 text-xs sm:text-sm hover:scale-105 ${selectedPeriod === periodKey
+                                        ? 'border-[#1db954] bg-[#1db954]/20 text-[#1db954] shadow-lg shadow-[#1db954]/25'
+                                        : 'border-[#282828] bg-[#282828]/20 text-[#b3b3b3] hover:border-[#535353] hover:bg-[#535353]/30'
                                         }`}
                                 >
-                                    {/* Animated background */}
-                                    {!isActuallyCurrentPlan && !isHigherPlan && (
-                                        <div className="absolute inset-0 bg-gradient-to-r from-[#1db954] to-[#1ed760] opacity-0 group-hover/btn:opacity-20 transition-opacity duration-500"></div>
+                                    <div className="flex items-center justify-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                                        <Calendar className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform group-hover:scale-110 ${selectedPeriod === periodKey ? 'text-[#1db954]' : 'text-[#535353]'}`} />
+                                        <span className="font-semibold">{period.name}</span>
+                                    </div>
+                                    <div className="text-xs">
+                                        {period.months} {period.months === 1 ? 'mês' : 'meses'}
+                                    </div>
+                                    {period.discount > 0 && (
+                                        <div className="text-xs text-[#1db954] mt-1 font-semibold">
+                                            🎉 {period.discount * 100}% OFF
+                                        </div>
+                                    )}
+                                    {period.deemixFree && (
+                                        <div className="text-xs text-[#1ed760] mt-1 font-semibold">
+                                            🎁 Deemix Grátis
+                                        </div>
+                                    )}
+                                    {period.deemixDiscount > 0 && !period.deemixFree && (
+                                        <div className="text-xs text-[#1ed760] mt-1 font-semibold">
+                                            💰 Deemix {period.deemixDiscount * 100}% OFF
+                                        </div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Deemix Toggle */}
+                        <div className="flex items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                            <div className="flex items-center gap-2">
+                                <Music className="w-4 h-4 text-[#535353]" />
+                                <span className="text-xs sm:text-sm text-[#535353]">Sem Deemix</span>
+                            </div>
+                            <button
+                                onClick={() => setIncludeDeemix(!includeDeemix)}
+                                className={`relative inline-flex h-8 w-16 sm:h-10 sm:w-20 items-center rounded-full transition-all duration-300 shadow-lg ${includeDeemix
+                                    ? 'bg-gradient-to-r from-[#1db954] to-[#1ed760] shadow-[#1db954]/25'
+                                    : 'bg-gradient-to-r from-[#535353] to-[#282828] shadow-[#535353]/25'
+                                    }`}
+                            >
+                                <span
+                                    className={`inline-block h-6 w-6 sm:h-7 sm:w-7 transform rounded-full bg-white transition-all duration-300 shadow-md ${includeDeemix
+                                        ? 'translate-x-10 sm:translate-x-12'
+                                        : 'translate-x-1'
+                                        }`}
+                                />
+                            </button>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs sm:text-sm text-[#535353]">Com Deemix</span>
+                                <div className="w-4 h-4 bg-gradient-to-r from-[#1db954] to-[#1ed760] rounded-full animate-pulse"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* VIP Plans Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-12 sm:mb-16">
+                        {Object.entries(VIP_PLANS).map(([planKey, plan]) => {
+                            const isCurrentPlan = userPlan?.name === plan.name;
+                            const isHigherPlan =
+                                (planKey === 'PADRAO' && userPlan?.name === 'COMPLETO') ||
+                                (planKey === 'BASICO' && (userPlan?.name === 'PADRAO' || userPlan?.name === 'COMPLETO'));
+
+                            const periodConfig = SUBSCRIPTION_PERIODS[selectedPeriod];
+                            const currentPrice = getPlanPrice(planKey, selectedPeriod, includeDeemix);
+                            const basePrice = plan.basePrice * (1 - periodConfig.discount);
+                            const deemixPricing = DEEMIX_PRICING[planKey as keyof typeof DEEMIX_PRICING];
+                            const deemixPrice = typeof deemixPricing === 'object' && 'finalPrice' in deemixPricing
+                                ? deemixPricing.finalPrice
+                                : typeof deemixPricing === 'number'
+                                    ? deemixPricing
+                                    : 0;
+                            const deemixFree = periodConfig.deemixFree;
+
+                            // Verificar se é realmente o plano atual considerando add-ons
+                            const hasDeemix = (session?.user as any)?.deemix || false;
+                            const hasDeezerPremium = (session?.user as any)?.deezerPremium || false;
+                            const currentPlanTotalPrice = session?.user?.valor || 0;
+                            const selectedPlanTotalPrice = getPlanPrice(planKey, selectedPeriod, includeDeemix);
+                            const isActuallyCurrentPlan = userPlan?.name === plan.name &&
+                                Math.abs(selectedPlanTotalPrice - currentPlanTotalPrice) < 0.01 &&
+                                includeDeemix === hasDeemix;
+
+                            return (
+                                <div
+                                    key={planKey}
+                                    className={`group relative rounded-2xl p-4 sm:p-6 md:p-8 transition-all duration-500 hover:scale-105 hover-lift ${isActuallyCurrentPlan
+                                        ? 'bg-[#1db954]/10 border-2 border-[#1db954]/50 shadow-2xl shadow-[#1db954]/20'
+                                        : 'bg-[#181818] border border-[#282828] hover:border-[#535353] hover:shadow-xl'
+                                        }`}
+                                >
+                                    {/* Current Plan Badge */}
+                                    {isActuallyCurrentPlan && (
+                                        <div className="absolute -top-3 sm:-top-4 left-1/2 transform -translate-x-1/2">
+                                            <div className="bg-gradient-to-r from-[#1db954] to-[#1ed760] text-white px-4 sm:px-6 py-1 sm:py-2 rounded-full font-bold text-xs sm:text-sm shadow-lg">
+                                                PLANO ATUAL
+                                            </div>
+                                        </div>
                                     )}
 
-                                    <span className="relative z-10 flex items-center justify-center gap-2">
-                                        {isActuallyCurrentPlan ? (
-                                            <Check className="w-4 h-4" />
-                                        ) : isHigherPlan ? (
-                                            <MessageSquare className="w-4 h-4" />
-                                        ) : (
-                                            <Zap className="w-4 h-4 group-hover/btn:animate-pulse" />
-                                        )}
-                                        {isActuallyCurrentPlan
-                                            ? 'Plano Atual'
-                                            : isHigherPlan
-                                                ? 'Downgrade via WhatsApp'
-                                                : 'Assinar Agora'
-                                        }
-                                    </span>
-                                </button>
-                            </div>
-                        );
-                    })}
-                </div>
+                                    {/* Plan Header */}
+                                    <div className="text-center mb-6 sm:mb-8">
+                                        <div className="relative mb-4">
+                                            <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">{plan.icon}</div>
+                                            <div className="absolute inset-0 text-4xl sm:text-5xl opacity-20 blur-sm group-hover:blur-md transition-all duration-300">{plan.icon}</div>
+                                        </div>
+                                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r from-[#1db954] to-[#1ed760] transition-all duration-300">{plan.name}</h3>
 
-                {/* Deemix Avulso Section */}
-                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
-                    <div className="text-center mb-4 sm:mb-6">
-                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">🎵 Deemix Avulso</h3>
-                        <p className="text-[#b3b3b3] text-sm sm:text-base">Apenas o Deemix para download direto do Deezer</p>
-                    </div>
+                                        {/* Period Badge */}
+                                        <div className="inline-flex items-center gap-1 sm:gap-2 bg-[#1db954]/20 text-[#1db954] px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold mb-3 sm:mb-4 border border-[#1db954]/30 shadow-lg shadow-[#1db954]/10 group-hover:shadow-[#1db954]/20 transition-all duration-300">
+                                            <Clock className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
+                                            {periodConfig.name}
+                                        </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-                        {/* Box Esquerda - Para Não-VIP */}
-                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20">
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Music className="w-4 h-4 sm:w-5 sm:h-5 text-[#1db954]" />
-                                Para Não-VIP
-                            </h4>
-                            <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-3 sm:mb-4">
-                                R$ 38,00<span className="text-sm sm:text-lg text-[#b3b3b3] font-normal">/mês</span>
-                            </div>
+                                        {/* Price Display */}
+                                        <div className="mb-3 sm:mb-4">
+                                            <div className="relative">
+                                                <div className="text-2xl sm:text-3xl font-bold text-white mb-1 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r from-[#1db954] to-[#1ed760] transition-all duration-300">
+                                                    R$ {currentPrice.toFixed(2).replace('.', ',')}
+                                                    <span className="text-sm sm:text-lg text-[#b3b3b3] font-normal">/{periodConfig.name.toLowerCase()}</span>
+                                                </div>
+                                                <div className="absolute inset-0 text-2xl sm:text-3xl font-bold opacity-20 blur-sm group-hover:blur-md transition-all duration-300">
+                                                    R$ {currentPrice.toFixed(2).replace('.', ',')}
+                                                </div>
+                                            </div>
 
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-4 sm:mb-6">
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Download direto do Deezer</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Qualidade FLAC/MP3</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Interface web moderna</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>ARL Premium incluído</span>
-                                </div>
-                            </div>
+                                            {/* Price Breakdown */}
+                                            {includeDeemix && !deemixFree && (
+                                                <div className="text-xs text-[#b3b3b3] space-y-1">
+                                                    <div>Plano: R$ {(basePrice * periodConfig.months).toFixed(2).replace('.', ',')}</div>
+                                                    <div>Deemix: R$ {(deemixPrice * periodConfig.months).toFixed(2).replace('.', ',')}</div>
+                                                    <div className="text-[#1db954]">Deezer Premium: GRÁTIS</div>
+                                                    {periodConfig.deemixDiscount > 0 && (
+                                                        <div className="text-[#1db954] font-semibold">
+                                                            Desconto Deemix: {periodConfig.deemixDiscount * 100}%
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
 
-                            <button
-                                onClick={() => {
-                                    const message = "Olá! Tenho interesse no Deemix Avulso por R$ 38,00/mês. Podem me ajudar?";
-                                    const whatsappUrl = `https://wa.me/5551935052274?text=${encodeURIComponent(message)}`;
-                                    window.open(whatsappUrl, '_blank');
-                                }}
-                                className="w-full bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
-                            >
-                                Assinar Deemix Avulso
-                            </button>
-                        </div>
+                                            {!includeDeemix && (
+                                                <div className="text-xs text-[#b3b3b3] space-y-1">
+                                                    <div>Plano: R$ {(basePrice * periodConfig.months).toFixed(2).replace('.', ',')}</div>
+                                                    <div className="text-[#1db954]">Deezer Premium: R$ {(DEEZER_PREMIUM_PRICING.STANDALONE * periodConfig.months).toFixed(2).replace('.', ',')}</div>
+                                                </div>
+                                            )}
 
-                        {/* Box Direita - Descontos VIP */}
-                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20">
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-[#1ed760]" />
-                                Descontos VIP
-                            </h4>
-
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-3 sm:mb-4">
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span><strong className="text-[#1db954]">VIP Básico:</strong> 38% OFF</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span><strong className="text-[#1ed760]">VIP Padrão:</strong> 42% OFF</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span><strong className="text-[#1db954]">VIP Completo:</strong> 60% OFF</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-[#1db954]/10 border border-[#1db954]/20 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
-                                <h5 className="text-xs sm:text-sm font-bold text-[#1db954] mb-1 sm:mb-2">💰 Descontos Especiais</h5>
-                                <div className="text-xs text-[#b3b3b3] space-y-1">
-                                    <div>• <strong>Trimestral:</strong> Deemix 8% OFF</div>
-                                    <div>• <strong>Semestral:</strong> Deemix 50% OFF</div>
-                                    <div>• <strong>Anual:</strong> Deemix GRÁTIS</div>
-                                </div>
-                            </div>
-
-                            <div className="bg-[#1ed760]/10 border border-[#1ed760]/20 rounded-lg p-2 sm:p-3">
-                                <div className="text-xs text-[#b3b3b3]">
-                                    <strong className="text-[#1ed760]">💡 Dica:</strong> Seja VIP e aproveite descontos proporcionais ao valor do seu plano!
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Allavsoft Section */}
-                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
-                    <div className="text-center mb-4 sm:mb-6">
-                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">🌐 Allavsoft - Download Universal</h3>
-                        <p className="text-[#b3b3b3] text-sm sm:text-base">Baixe de qualquer plataforma de música e vídeo</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20">
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Download className="w-4 h-4 sm:w-5 sm:h-5 text-[#1db954]" />
-                                Recursos Principais
-                            </h4>
-
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3]">
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>YouTube, Spotify, Apple Music</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>SoundCloud, Bandcamp, Beatport</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Qualidade original preservada</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Download em lote</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Conversão automática</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Interface intuitiva</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#535353]">
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-[#535353]" />
-                                Informações
-                            </h4>
-
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-4 sm:mb-6">
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Software desktop para Windows/Mac</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Suporte para centenas de sites</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Atualizações regulares</span>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={() => {
-                                    const message = "Olá! Tenho interesse no Allavsoft - Download Universal. Podem me ajudar com mais informações?";
-                                    const whatsappUrl = `https://wa.me/5551935052274?text=${encodeURIComponent(message)}`;
-                                    window.open(whatsappUrl, '_blank');
-                                }}
-                                className="w-full bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
-                            >
-                                Saiba Mais
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Deezer Premium Avulso Section */}
-                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
-                    <div className="text-center mb-4 sm:mb-6">
-                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">🎁 Deezer Premium Avulso</h3>
-                        <p className="text-[#b3b3b3] text-sm sm:text-base">Streaming premium sem anúncios</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20">
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Headphones className="w-4 h-4 sm:w-5 sm:h-5 text-[#1ed760]" />
-                                Recursos Premium
-                            </h4>
-                            <div className="text-2xl sm:text-3xl font-bold text-[#1ed760] mb-3 sm:mb-4">
-                                R$ 9,75<span className="text-sm sm:text-lg text-[#b3b3b3] font-normal">/mês</span>
-                            </div>
-
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3]">
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Sem anúncios</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Qualidade HiFi</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Download offline</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Pulos ilimitados</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>90 milhões de músicas</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Playlists personalizadas</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#535353]">
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#535353]" />
-                                Informações
-                            </h4>
-
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-4 sm:mb-6">
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Conta premium compartilhada</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Acesso via app ou web</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Renovação automática</span>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={() => handleSubscribe('DEEZER_PREMIUM', 'MONTHLY', false)}
-                                className="w-full bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
-                            >
-                                Assinar Deezer Premium
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Por que escolher nossos planos? */}
-                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
-                    <div className="text-center mb-4 sm:mb-6">
-                        <div className="flex items-center justify-center gap-3 mb-4">
-                            <div className="p-3 bg-gradient-to-r from-[#1db954] to-[#1ed760] rounded-full">
-                                <Star className="h-6 w-6 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">❓ Por que escolher nossos planos?</h3>
-                                <p className="text-[#b3b3b3] text-sm sm:text-base">Os melhores benefícios para DJs e amantes da música eletrônica</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-                        <div className="group bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#1db954]/20 hover-lift">
-                            <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">🎵</div>
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#1db954] group-hover:to-[#1ed760] transition-all duration-300">Acervo Completo</h4>
-                            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-[#b3b3b3]">
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
-                                    <span>Milhares de músicas eletrônicas</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
-                                    <span>Qualidade profissional</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
-                                    <span>Atualizações semanais</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="group bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#1ed760]/20">
-                            <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">⬇️</div>
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#1ed760] group-hover:to-[#1db954] transition-all duration-300">Downloads Ilimitados</h4>
-                            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-[#b3b3b3]">
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
-                                    <span>Sem limite de downloads</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
-                                    <span>Download instantâneo</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
-                                    <span>Múltiplos formatos</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="group bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#1db954]/20">
-                            <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">👥</div>
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#1db954] group-hover:to-[#1ed760] transition-all duration-300">Comunidade Ativa</h4>
-                            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-[#b3b3b3]">
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
-                                    <span>DJs de todo o Brasil</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
-                                    <span>Troca de experiências</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
-                                    <span>Suporte especializado</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Uploader Option Section */}
-                <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
-                    <div className="text-center mb-4 sm:mb-6">
-                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">📤 Opção Uploader</h3>
-                        <p className="text-[#b3b3b3] text-sm sm:text-base">Adicione a funcionalidade de upload de músicas ao seu plano</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20">
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-[#1db954]" />
-                                {UPLOADER_OPTION.name}
-                            </h4>
-                            <p className="text-[#b3b3b3] text-sm sm:text-base mb-3 sm:mb-4">{UPLOADER_OPTION.description}</p>
-
-                            <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
-                                {UPLOADER_OPTION.features.map((feature, index) => (
-                                    <div key={index} className="flex items-center gap-2">
-                                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-[#1db954]" />
-                                        <span className="text-xs sm:text-sm text-[#b3b3b3]">{feature}</span>
+                                            {deemixFree && includeDeemix && (
+                                                <div className="text-xs text-[#1ed760] font-semibold">
+                                                    🎁 Deemix + Deezer Premium Grátis no período!
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
 
-                            <div className="text-center">
-                                <div className="text-xl sm:text-2xl font-bold text-white mb-1 sm:mb-2">
-                                    R$ {UPLOADER_OPTION.monthlyPrice.toFixed(2).replace('.', ',')}/mês
+                                    {/* Benefits List */}
+                                    <div className="space-y-2 sm:space-y-4 mb-6 sm:mb-8">
+                                        {Object.entries(plan.benefits).map(([benefitKey, benefit], index) => {
+                                            // Highlight Deemix benefit when selected
+                                            const isDeemixBenefit = benefitKey === 'deemixAccess';
+                                            const isHighlighted = includeDeemix && isDeemixBenefit;
+                                            const isFree = deemixFree && isDeemixBenefit;
+
+                                            return (
+                                                <div
+                                                    key={benefitKey}
+                                                    className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-300 hover:scale-105 group/benefit ${isHighlighted
+                                                        ? 'bg-[#1db954]/20 border border-[#1db954]/30 shadow-lg shadow-[#1db954]/10'
+                                                        : 'bg-[#282828] border border-[#282828] hover:border-[#535353] hover:bg-[#535353]'
+                                                        }`}
+                                                    style={{ animationDelay: `${index * 100}ms` }}
+                                                >
+                                                    <div className={`flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all duration-300 group-hover/benefit:scale-110 ${isHighlighted
+                                                        ? 'bg-gradient-to-r from-[#1db954] to-[#1ed760] text-white shadow-lg shadow-[#1db954]/25'
+                                                        : 'bg-[#535353] text-[#b3b3b3] group-hover/benefit:bg-[#1db954]'
+                                                        }`}
+                                                    >
+                                                        {isFree ? (
+                                                            <Gift className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                        ) : (
+                                                            <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-xs sm:text-sm font-medium text-white truncate group-hover/benefit:text-transparent group-hover/benefit:bg-clip-text group-hover/benefit:bg-gradient-to-r group-hover/benefit:from-[#1db954] group-hover/benefit:to-[#1ed760] transition-all duration-300">
+                                                            {BENEFIT_LABELS[benefitKey as keyof typeof BENEFIT_LABELS]}
+                                                        </div>
+                                                        <div className="text-xs text-[#b3b3b3] truncate group-hover/benefit:text-white transition-all duration-300">
+                                                            {benefit.description}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Subscribe Button */}
+                                    <button
+                                        onClick={() => handleSubscribe(planKey, selectedPeriod, includeDeemix)}
+                                        disabled={isActuallyCurrentPlan || isHigherPlan}
+                                        className={`group/btn w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-lg transition-all duration-500 relative overflow-hidden ${isActuallyCurrentPlan
+                                            ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
+                                            : isHigherPlan
+                                                ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40'
+                                                : 'bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white shadow-lg shadow-[#1db954]/25 hover:shadow-[#1db954]/40 hover:scale-105'
+                                            }`}
+                                    >
+                                        {/* Animated background */}
+                                        {!isActuallyCurrentPlan && !isHigherPlan && (
+                                            <div className="absolute inset-0 bg-gradient-to-r from-[#1db954] to-[#1ed760] opacity-0 group-hover/btn:opacity-20 transition-opacity duration-500"></div>
+                                        )}
+
+                                        <span className="relative z-10 flex items-center justify-center gap-2">
+                                            {isActuallyCurrentPlan ? (
+                                                <Check className="w-4 h-4" />
+                                            ) : isHigherPlan ? (
+                                                <MessageSquare className="w-4 h-4" />
+                                            ) : (
+                                                <Zap className="w-4 h-4 group-hover/btn:animate-pulse" />
+                                            )}
+                                            {isActuallyCurrentPlan
+                                                ? 'Plano Atual'
+                                                : isHigherPlan
+                                                    ? 'Downgrade via WhatsApp'
+                                                    : 'Assinar Agora'
+                                            }
+                                        </span>
+                                    </button>
                                 </div>
-                                <p className="text-xs text-[#535353] mb-3 sm:mb-4">
-                                    Adicionado ao valor do seu plano VIP
-                                </p>
-                                <button className="bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base">
-                                    Adicionar Uploader
-                                </button>
-                            </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Deemix Avulso Section */}
+                    <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
+                        <div className="text-center mb-4 sm:mb-6">
+                            <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">🎵 Deemix Avulso</h3>
+                            <p className="text-[#b3b3b3] text-sm sm:text-base">Apenas o Deemix para download direto do Deezer</p>
                         </div>
 
-                        <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20">
-                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#1ed760]" />
-                                Como Funciona
-                            </h4>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                            {/* Box Esquerda - Para Não-VIP */}
+                            <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20">
+                                <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                                    <Music className="w-4 h-4 sm:w-5 sm:h-5 text-[#1db954]" />
+                                    Para Não-VIP
+                                </h4>
+                                <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-3 sm:mb-4">
+                                    R$ 38,00<span className="text-sm sm:text-lg text-[#b3b3b3] font-normal">/mês</span>
+                                </div>
 
-                            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3]">
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Você mantém todos os benefícios do seu plano VIP</span>
+                                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-4 sm:mb-6">
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Download direto do Deezer</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Qualidade FLAC/MP3</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Interface web moderna</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>ARL Premium incluído</span>
+                                    </div>
                                 </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Adiciona a capacidade de fazer upload de até 10 músicas por mês</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Recebe um badge especial de Uploader</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
-                                    <span>Acesso à comunidade exclusiva de uploaders</span>
-                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        const message = "Olá! Tenho interesse no Deemix Avulso por R$ 38,00/mês. Podem me ajudar?";
+                                        const whatsappUrl = `https://wa.me/5551935052274?text=${encodeURIComponent(message)}`;
+                                        window.open(whatsappUrl, '_blank');
+                                    }}
+                                    className="w-full bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
+                                >
+                                    Assinar Deemix Avulso
+                                </button>
                             </div>
 
-                            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-[#1db954]/10 border border-[#1db954]/20 rounded-lg">
-                                <h5 className="text-xs sm:text-sm font-bold text-[#1db954] mb-1 sm:mb-2">💡 Descontos Especiais</h5>
-                                <div className="text-xs text-[#b3b3b3] space-y-1">
-                                    <div>• <strong>Trimestral:</strong> 5% de desconto no uploader</div>
-                                    <div>• <strong>Semestral/Anual:</strong> Uploader de graça!</div>
+                            {/* Box Direita - Descontos VIP */}
+                            <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20">
+                                <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                                    <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-[#1ed760]" />
+                                    Descontos VIP
+                                </h4>
+
+                                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-3 sm:mb-4">
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span><strong className="text-[#1db954]">VIP Básico:</strong> 38% OFF</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span><strong className="text-[#1ed760]">VIP Padrão:</strong> 42% OFF</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span><strong className="text-[#1db954]">VIP Completo:</strong> 60% OFF</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-[#1db954]/10 border border-[#1db954]/20 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                                    <h5 className="text-xs sm:text-sm font-bold text-[#1db954] mb-1 sm:mb-2">💰 Descontos Especiais</h5>
+                                    <div className="text-xs text-[#b3b3b3] space-y-1">
+                                        <div>• <strong>Trimestral:</strong> Deemix 8% OFF</div>
+                                        <div>• <strong>Semestral:</strong> Deemix 50% OFF</div>
+                                        <div>• <strong>Anual:</strong> Deemix GRÁTIS</div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-[#1ed760]/10 border border-[#1ed760]/20 rounded-lg p-2 sm:p-3">
+                                    <div className="text-xs text-[#b3b3b3]">
+                                        <strong className="text-[#1ed760]">💡 Dica:</strong> Seja VIP e aproveite descontos proporcionais ao valor do seu plano!
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Allavsoft Section */}
+                    <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
+                        <div className="text-center mb-4 sm:mb-6">
+                            <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">🌐 Allavsoft - Download Universal</h3>
+                            <p className="text-[#b3b3b3] text-sm sm:text-base">Baixe de qualquer plataforma de música e vídeo</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                            <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20">
+                                <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                                    <Download className="w-4 h-4 sm:w-5 sm:h-5 text-[#1db954]" />
+                                    Recursos Principais
+                                </h4>
+
+                                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3]">
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>YouTube, Spotify, Apple Music</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>SoundCloud, Bandcamp, Beatport</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Qualidade original preservada</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Download em lote</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Conversão automática</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Interface intuitiva</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#535353]">
+                                <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                                    <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-[#535353]" />
+                                    Informações
+                                </h4>
+
+                                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-4 sm:mb-6">
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Software desktop para Windows/Mac</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Suporte para centenas de sites</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Atualizações regulares</span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        const message = "Olá! Tenho interesse no Allavsoft - Download Universal. Podem me ajudar com mais informações?";
+                                        const whatsappUrl = `https://wa.me/5551935052274?text=${encodeURIComponent(message)}`;
+                                        window.open(whatsappUrl, '_blank');
+                                    }}
+                                    className="w-full bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
+                                >
+                                    Saiba Mais
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Deezer Premium Avulso Section */}
+                    <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
+                        <div className="text-center mb-4 sm:mb-6">
+                            <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">🎁 Deezer Premium Avulso</h3>
+                            <p className="text-[#b3b3b3] text-sm sm:text-base">Streaming premium sem anúncios</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                            <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20">
+                                <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                                    <Headphones className="w-4 h-4 sm:w-5 sm:h-5 text-[#1ed760]" />
+                                    Recursos Premium
+                                </h4>
+                                <div className="text-2xl sm:text-3xl font-bold text-[#1ed760] mb-3 sm:mb-4">
+                                    R$ 9,75<span className="text-sm sm:text-lg text-[#b3b3b3] font-normal">/mês</span>
+                                </div>
+
+                                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3]">
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Sem anúncios</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Qualidade HiFi</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Download offline</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Pulos ilimitados</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>90 milhões de músicas</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Playlists personalizadas</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#535353]">
+                                <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                                    <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#535353]" />
+                                    Informações
+                                </h4>
+
+                                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3] mb-4 sm:mb-6">
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Conta premium compartilhada</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Acesso via app ou web</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#535353] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Renovação automática</span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => handleSubscribe('DEEZER_PREMIUM', 'MONTHLY', false)}
+                                    className="w-full bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base"
+                                >
+                                    Assinar Deezer Premium
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Por que escolher nossos planos? */}
+                    <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
+                        <div className="text-center mb-4 sm:mb-6">
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                <div className="p-3 bg-gradient-to-r from-[#1db954] to-[#1ed760] rounded-full">
+                                    <Star className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">❓ Por que escolher nossos planos?</h3>
+                                    <p className="text-[#b3b3b3] text-sm sm:text-base">Os melhores benefícios para DJs e amantes da música eletrônica</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+                            <div className="group bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#1db954]/20 hover-lift">
+                                <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">🎵</div>
+                                <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#1db954] group-hover:to-[#1ed760] transition-all duration-300">Acervo Completo</h4>
+                                <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-[#b3b3b3]">
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                        <span>Milhares de músicas eletrônicas</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                        <span>Qualidade profissional</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                        <span>Atualizações semanais</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="group bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#1ed760]/20">
+                                <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">⬇️</div>
+                                <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#1ed760] group-hover:to-[#1db954] transition-all duration-300">Downloads Ilimitados</h4>
+                                <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-[#b3b3b3]">
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                        <span>Sem limite de downloads</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                        <span>Download instantâneo</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                        <span>Múltiplos formatos</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="group bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20 text-center hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#1db954]/20">
+                                <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">👥</div>
+                                <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#1db954] group-hover:to-[#1ed760] transition-all duration-300">Comunidade Ativa</h4>
+                                <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-[#b3b3b3]">
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                        <span>DJs de todo o Brasil</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                        <span>Troca de experiências</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1db954] rounded-full mt-1.5 sm:mt-2 flex-shrink-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                        <span>Suporte especializado</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Uploader Option Section */}
+                    <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 md:p-8 border border-[#282828] mb-6 sm:mb-8">
+                        <div className="text-center mb-4 sm:mb-6">
+                            <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">📤 Opção Uploader</h3>
+                            <p className="text-[#b3b3b3] text-sm sm:text-base">Adicione a funcionalidade de upload de músicas ao seu plano</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                            <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1db954]/20">
+                                <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                                    <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-[#1db954]" />
+                                    {UPLOADER_OPTION.name}
+                                </h4>
+                                <p className="text-[#b3b3b3] text-sm sm:text-base mb-3 sm:mb-4">{UPLOADER_OPTION.description}</p>
+
+                                <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
+                                    {UPLOADER_OPTION.features.map((feature, index) => (
+                                        <div key={index} className="flex items-center gap-2">
+                                            <Check className="w-3 h-3 sm:w-4 sm:h-4 text-[#1db954]" />
+                                            <span className="text-xs sm:text-sm text-[#b3b3b3]">{feature}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="text-center">
+                                    <div className="text-xl sm:text-2xl font-bold text-white mb-1 sm:mb-2">
+                                        R$ {UPLOADER_OPTION.monthlyPrice.toFixed(2).replace('.', ',')}/mês
+                                    </div>
+                                    <p className="text-xs text-[#535353] mb-3 sm:mb-4">
+                                        Adicionado ao valor do seu plano VIP
+                                    </p>
+                                    <button className="bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-sm sm:text-base">
+                                        Adicionar Uploader
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="bg-[#282828] rounded-xl p-4 sm:p-6 border border-[#1ed760]/20">
+                                <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                                    <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#1ed760]" />
+                                    Como Funciona
+                                </h4>
+
+                                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[#b3b3b3]">
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Você mantém todos os benefícios do seu plano VIP</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Adiciona a capacidade de fazer upload de até 10 músicas por mês</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Recebe um badge especial de Uploader</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <div className="w-2 h-2 bg-[#1ed760] rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                                        <span>Acesso à comunidade exclusiva de uploaders</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-[#1db954]/10 border border-[#1db954]/20 rounded-lg">
+                                    <h5 className="text-xs sm:text-sm font-bold text-[#1db954] mb-1 sm:mb-2">💡 Descontos Especiais</h5>
+                                    <div className="text-xs text-[#b3b3b3] space-y-1">
+                                        <div>• <strong>Trimestral:</strong> 5% de desconto no uploader</div>
+                                        <div>• <strong>Semestral/Anual:</strong> Uploader de graça!</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Back to Home */}
+                    <div className="text-center">
+                        <Link href="/" className="group inline-flex items-center gap-3 bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-500 text-sm sm:text-base shadow-lg shadow-[#1db954]/25 hover:shadow-[#1db954]/40 hover:scale-105 relative overflow-hidden">
+                            {/* Animated background */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#1db954] to-[#1ed760] opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
+
+                            <span className="relative z-10 flex items-center gap-2">
+                                <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 group-hover:animate-bounce transition-all duration-300" />
+                                Voltar para Home
+                            </span>
+                        </Link>
+                    </div>
+                </main>
+            </div>
+
+            {/* Footer Simples */}
+            <footer className="bg-black border-t border-gray-800 mt-20">
+                <div className="max-w-[95%] mx-auto px-6 py-12">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="text-center">
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                                    <Music className="w-7 h-7 text-white" />
+                                </div>
+                                <span className="text-2xl font-bold text-white">
+                                    Nexor Records Pools
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-6">
+                            <Link href="/new" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Novidades
+                            </Link>
+                            <Link href="/trending" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Trending
+                            </Link>
+                            <Link href="/plans" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Planos
+                            </Link>
+                            <Link href="/privacidade" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Privacidade
+                            </Link>
+                            <Link href="/termos" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                                Termos
+                            </Link>
+                        </div>
+                        <div className="flex gap-4">
+                            <a href="https://twitter.com/plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.665 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                                </svg>
+                            </a>
+                            <a href="https://instagram.com/plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-pink-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.418-3.323c.875-.807 2.026-1.297 3.323-1.297s2.448.49 3.323 1.297c.928.875 1.418 2.026 1.418 3.323s-.49 2.448-1.418 3.323c-.875.807-2.026 1.297-3.323 1.297zm7.718-1.297c-.875.807-2.026 1.297-3.323 1.297s-2.448-.49-3.323-1.297c-.928-.875-1.418-2.026-1.418-3.323s.49-2.448 1.418-3.323c.875-.807 2.026-1.297 3.323-1.297s2.448.49 3.323 1.297c.928.875 1.418 2.026 1.418 3.323s-.49 2.448-1.418 3.323z" />
+                                </svg>
+                            </a>
+                            <a href="https://youtube.com/@plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-red-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                </svg>
+                            </a>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-gray-400 text-sm">
+                                © 2025 Nexor Records Pools. Todos os direitos reservados.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-
-                {/* Back to Home */}
-                <div className="text-center">
-                    <Link href="/" className="group inline-flex items-center gap-3 bg-gradient-to-r from-[#1db954] to-[#1ed760] hover:from-[#1db954]/80 hover:to-[#1ed760]/80 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-500 text-sm sm:text-base shadow-lg shadow-[#1db954]/25 hover:shadow-[#1db954]/40 hover:scale-105 relative overflow-hidden">
-                        {/* Animated background */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#1db954] to-[#1ed760] opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
-
-                        <span className="relative z-10 flex items-center gap-2">
-                            <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 group-hover:animate-bounce transition-all duration-300" />
-                            Voltar para Home
-                        </span>
-                    </Link>
-                </div>
-            </main>
-
-            <FooterSpacer />
-        </MainLayout>
+            </footer>
+        </div>
     );
 } 

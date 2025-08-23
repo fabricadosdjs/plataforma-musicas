@@ -14,6 +14,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Filter } from 'lucide-react'; // Certifique-se de que Filter está importado aqui
 import { getSignInUrl } from '@/lib/utils';
+import { useNotifications } from '@/hooks/useNotifications';
+import { NotificationItem } from '@/components/ui/NotificationItem';
 
 interface HeaderProps {
 }
@@ -26,14 +28,15 @@ const Header = ({ }: HeaderProps) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [notifications, setNotifications] = useState<Array<{
-    id: string;
-    type: 'warning' | 'error' | 'info';
-    title: string;
-    message: string;
-    timestamp: Date;
-    read: boolean;
-  }>>([]);
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    clearAllNotifications,
+    removeNotification,
+    cleanOldNotifications
+  } = useNotifications();
+
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationsMenuRef = useRef<HTMLDivElement>(null);
   // Fecha os menus ao clicar fora
@@ -86,58 +89,11 @@ const Header = ({ }: HeaderProps) => {
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  // Verificar vencimento do usuário e atualizar notificações
-  useEffect(() => {
-    if (session?.user) {
-      const newNotifications: typeof notifications = [];
 
-      // Verificar vencimento VIP - REMOVIDO O ALERTA AUTOMÁTICO
-      if (
-        session.user.is_vip &&
-        session.user.vencimento &&
-        (typeof session.user.vencimento === 'string' ||
-          typeof session.user.vencimento === 'number' ||
-          isValidDate(session.user.vencimento))
-      ) {
-        const vencimentoDate = new Date(session.user.vencimento);
-        const now = new Date();
-        const diffTime = vencimentoDate.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays <= 3 && diffDays >= 0) {
-          newNotifications.push({
-            id: 'vip-expiring',
-            type: 'warning',
-            title: 'Plano VIP Vencendo',
-            message: `Seu plano VIP vence em ${diffDays} dias. Renove para manter seus benefícios!`,
-            timestamp: new Date(),
-            read: false
-          });
-        } else if (diffDays < 0) {
-          newNotifications.push({
-            id: 'vip-expired',
-            type: 'error',
-            title: 'Plano VIP Expirado',
-            message: `Seu plano VIP venceu em ${formatDate(vencimentoDate)}. Renove agora!`,
-            timestamp: new Date(),
-            read: false
-          });
-        }
-      }
 
-      setNotifications(newNotifications);
-    }
-  }, [session]);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
 
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true } : n));
-  };
-
-  const clearAllNotifications = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -431,16 +387,55 @@ const Header = ({ }: HeaderProps) => {
                     <div className="p-4 border-b border-gray-700 flex items-center justify-between">
                       <h3 className="font-bold text-white">Notificações</h3>
                       {notifications.length > 0 && (
-                        <button
-                          onClick={clearAllNotifications}
-                          className="text-xs text-gray-400 hover:text-white transition-colors"
-                        >
-                          Limpar Tudo
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              if (confirm('Limpar notificações antigas (mais de 30 dias)?')) {
+                                cleanOldNotifications();
+                                // Mostrar feedback visual
+                                const button = event?.target as HTMLButtonElement;
+                                if (button) {
+                                  const originalText = button.textContent;
+                                  button.textContent = '✓ Limpo!';
+                                  button.className = 'text-xs text-blue-400 transition-colors';
+                                  setTimeout(() => {
+                                    button.textContent = originalText;
+                                    button.className = 'text-xs text-gray-400 hover:text-white transition-colors';
+                                  }, 2000);
+                                }
+                              }
+                            }}
+                            className="text-xs text-gray-400 hover:text-blue-400 transition-colors"
+                            title="Limpar notificações antigas (mais de 30 dias)"
+                          >
+                            Limpar Antigas
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm('Tem certeza que deseja limpar todas as notificações? Esta ação não pode ser desfeita.')) {
+                                clearAllNotifications();
+                                // Mostrar feedback visual
+                                const button = event?.target as HTMLButtonElement;
+                                if (button) {
+                                  const originalText = button.textContent;
+                                  button.textContent = '✓ Limpo!';
+                                  button.className = 'text-xs text-green-400 transition-colors';
+                                  setTimeout(() => {
+                                    button.textContent = originalText;
+                                    button.className = 'text-xs text-gray-400 hover:text-white transition-colors';
+                                  }, 2000);
+                                }
+                              }
+                            }}
+                            className="text-xs text-gray-400 hover:text-white transition-colors"
+                          >
+                            Limpar Tudo
+                          </button>
+                        </div>
                       )}
                     </div>
 
-                    <div className="max-h-80 overflow-y-auto">
+                    <div className="max-h-80 overflow-y-auto group">
                       {notifications.length === 0 ? (
                         <div className="p-6 text-center text-gray-400">
                           <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -448,36 +443,12 @@ const Header = ({ }: HeaderProps) => {
                         </div>
                       ) : (
                         notifications.map((notification) => (
-                          <div
+                          <NotificationItem
                             key={notification.id}
-                            className={`p-4 border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors ${!notification.read ? 'bg-blue-500/5 border-l-4 border-l-blue-500' : ''
-                              }`}
-                            onClick={() => markAsRead(notification.id)}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className={`p-2 rounded-lg ${notification.type === 'error' ? 'bg-red-500/20 text-red-400' :
-                                notification.type === 'warning' ? 'bg-yellow-500/20 text-yellow-400' :
-                                  'bg-blue-500/20 text-blue-400'
-                                }`}>
-                                {notification.type === 'error' ? <X className="h-4 w-4" /> :
-                                  notification.type === 'warning' ? <AlertCircle className="h-4 w-4" /> :
-                                    <Bell className="h-4 w-4" />}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-white text-sm">{notification.title}</h4>
-                                <p className="text-gray-300 text-xs mt-1 leading-relaxed">{notification.message}</p>
-                                <p className="text-gray-500 text-xs mt-2">
-                                  {notification.timestamp.toLocaleTimeString('pt-BR', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </p>
-                              </div>
-                              {!notification.read && (
-                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
-                              )}
-                            </div>
-                          </div>
+                            notification={notification}
+                            onMarkAsRead={markAsRead}
+                            onRemove={removeNotification}
+                          />
                         ))
                       )}
                     </div>
