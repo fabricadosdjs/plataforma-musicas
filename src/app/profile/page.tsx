@@ -92,6 +92,7 @@ const ProfilePage = () => {
     const userEdit = useUserEdit();
     const [recentDownloads, setRecentDownloads] = useState<RecentActivity[]>([]);
     const [recentLikes, setRecentLikes] = useState<RecentActivity[]>([]);
+    const [downloadStats, setDownloadStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
 
@@ -144,12 +145,56 @@ const ProfilePage = () => {
 
     const vipStatus = getVipStatus();
 
+    // Função para formatar data e hora
+    const formatDateTime = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        return date.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    // Função para carregar dados de downloads
+    const loadDownloadsData = async () => {
+        if (!session?.user?.email) return;
+
+        try {
+            const response = await fetch('/api/profile/downloads');
+            if (response.ok) {
+                const data = await response.json();
+                setDownloadStats(data.stats);
+                setRecentDownloads(data.recentDownloads.map((download: any) => ({
+                    id: download.id,
+                    downloadedAt: download.downloadedAt,
+                    track: {
+                        id: download.track.id.toString(),
+                        songName: download.track.songName,
+                        artist: download.track.artist,
+                        imageUrl: download.track.imageUrl,
+                        style: download.track.style
+                    }
+                })));
+            }
+        } catch (error) {
+            console.error('Erro ao carregar dados de downloads:', error);
+        }
+    };
+
     useEffect(() => {
-        // Simular carregamento de dados
-        setTimeout(() => {
+        const loadData = async () => {
+            if (session?.user?.email) {
+                await loadDownloadsData();
+            }
             setLoading(false);
-        }, 1000);
-    }, []);
+        };
+
+        loadData();
+    }, [session?.user?.email]);
 
     if (loading) {
         return (
@@ -213,12 +258,12 @@ const ProfilePage = () => {
                         <div className="space-y-4">
                             {/* Downloads Hoje */}
                             <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
-                                <div className="absolute top-4 right-4 w-20 h-20 bg-gray-600/30 rounded-full flex items-center justify-center">
-                                    <Download className="h-10 w-10 text-gray-400/60" />
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center">
+                                    <Download className="h-10 w-10 text-purple-400/60" />
                                 </div>
                                 <div className="relative z-10">
                                     <h3 className="text-white font-bold text-xl mb-2">Downloads Hoje</h3>
-                                    <p className="text-white font-bold text-3xl mb-2">{downloadsCache?.dailyDownloadCount || 0}</p>
+                                    <p className="text-white font-bold text-3xl mb-2">{downloadStats?.downloadsToday || downloadsCache?.dailyDownloadCount || 0}</p>
                                     <p className="text-gray-300 text-sm font-medium">Downloads realizados hoje</p>
                                 </div>
                             </div>
@@ -575,8 +620,9 @@ const ProfilePage = () => {
                 );
 
             case 'downloads':
+
                 return (
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                         {/* Header da Seção */}
                         <div className="bg-gradient-to-r from-gray-900/50 to-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
                             <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
@@ -587,57 +633,50 @@ const ProfilePage = () => {
                         </div>
 
                         {/* Cards de Estatísticas de Download */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-4">
                             {/* Total de Downloads */}
-                            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-6 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 group hover:scale-[1.02]">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl flex items-center justify-center group-hover:from-purple-500/30 group-hover:to-pink-500/30 transition-all duration-300">
-                                        <Download className="h-6 w-6 text-purple-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-gray-400 text-sm font-medium">Total de Downloads</h3>
-                                        <p className="text-white font-bold text-3xl">1.870</p>
-                                    </div>
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center">
+                                    <Download className="h-10 w-10 text-purple-400/60" />
                                 </div>
-                                <div className="w-full bg-gray-700 rounded-full h-2">
-                                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">Total Downloads</h3>
+                                    <p className="text-white font-bold text-3xl mb-2">{downloadStats?.totalDownloads || 0}</p>
+                                    <p className="text-gray-300 text-sm font-medium">Músicas baixadas</p>
                                 </div>
                             </div>
 
                             {/* Downloads Hoje */}
-                            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-6 border border-gray-700/50 hover:border-green-500/30 transition-all duration-300 group hover:scale-[1.02]">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl flex items-center justify-center group-hover:from-green-500/30 group-hover:to-emerald-500/30 transition-all duration-300">
-                                        <Clock className="h-6 w-6 text-green-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-gray-400 text-sm font-medium">Downloads Hoje</h3>
-                                        <p className="text-white font-bold text-3xl">0</p>
-                                    </div>
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-green-600/20 rounded-full flex items-center justify-center">
+                                    <Clock className="h-10 w-10 text-green-400/60" />
                                 </div>
-                                <div className="w-full bg-gray-700 rounded-full h-2">
-                                    <div className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full" style={{ width: '0%' }}></div>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">Downloads Hoje</h3>
+                                    <p className="text-white font-bold text-3xl mb-2">{downloadStats?.downloadsToday || 0}</p>
+                                    <p className="text-gray-300 text-sm font-medium">
+                                        Limite: {downloadStats?.dailyLimit || 'Carregando...'}
+                                    </p>
                                 </div>
-                                <p className="text-green-400 text-xs font-medium mt-2">Limite: 100/dia</p>
                             </div>
 
                             {/* Último Download */}
-                            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-6 border border-gray-700/50 hover:border-blue-500/30 transition-all duration-300 group hover:scale-[1.02]">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl flex items-center justify-center group-hover:from-blue-500/30 group-hover:to-cyan-500/30 transition-all duration-300">
-                                        <Calendar className="h-6 w-6 text-blue-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-gray-400 text-sm font-medium">Último Download</h3>
-                                        <p className="text-white font-bold text-lg">22/08/2025</p>
-                                    </div>
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-blue-600/20 rounded-full flex items-center justify-center">
+                                    <Calendar className="h-10 w-10 text-blue-400/60" />
                                 </div>
-                                <p className="text-blue-400 text-xs font-medium">Reset diário às 00:00</p>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">Último Download</h3>
+                                    <p className="text-white font-bold text-lg mb-2">
+                                        {downloadStats?.lastDownload ? formatDate(downloadStats.lastDownload) : 'Nenhum'}
+                                    </p>
+                                    <p className="text-gray-300 text-sm font-medium">Data do último download</p>
+                                </div>
                             </div>
                         </div>
 
                         {/* Lista de Downloads Recentes */}
-                        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-6 border border-gray-700/50">
+                        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-xl p-6 border border-gray-700/50">
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl flex items-center justify-center">
                                     <ListMusic className="h-5 w-5 text-purple-400" />
@@ -645,11 +684,54 @@ const ProfilePage = () => {
                                 <h3 className="text-lg font-bold text-white">Downloads Recentes</h3>
                             </div>
 
-                            <div className="text-center py-12">
-                                <Download className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                                <p className="text-gray-400 mb-2">Nenhum download recente</p>
-                                <p className="text-gray-500 text-sm">Suas músicas baixadas aparecerão aqui</p>
-                            </div>
+                            {recentDownloads.length > 0 ? (
+                                <div className="space-y-4">
+                                    {recentDownloads.map((download) => (
+                                        <div key={download.id} className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-xl border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center overflow-hidden">
+                                                {download.track.imageUrl ? (
+                                                    <img
+                                                        src={download.track.imageUrl}
+                                                        alt={download.track.songName}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            const target = e.target as HTMLImageElement;
+                                                            target.style.display = 'none';
+                                                            target.parentElement!.innerHTML = '<Music className="h-6 w-6 text-gray-400" />';
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <Music className="h-6 w-6 text-gray-400" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="text-white font-semibold truncate">{download.track.songName}</h4>
+                                                <p className="text-gray-400 text-sm truncate">{download.track.artist}</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    {download.track.style && download.track.style.trim() !== '' && (
+                                                        <span className="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded-full border border-emerald-500/30">
+                                                            {download.track.style}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-gray-400 text-sm">{download.downloadedAt ? formatDateTime(download.downloadedAt) : 'Data não disponível'}</p>
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <Download className="h-4 w-4 text-purple-400" />
+                                                    <span className="text-purple-400 text-xs">Baixado</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <Download className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                                    <p className="text-gray-400 mb-2">Nenhum download recente</p>
+                                    <p className="text-gray-500 text-sm">Suas músicas baixadas aparecerão aqui</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );

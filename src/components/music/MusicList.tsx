@@ -841,7 +841,7 @@ export const MusicList = React.memo(({
                                                     </div>
 
                                                     {/* Estilo, Pool e Bitrate - Responsivos */}
-                                                    <div className="hidden sm:flex items-center gap-2 lg:gap-3">
+                                                    <div className="hidden sm:flex items-center gap-1 lg:gap-1.5">
                                                         <button
                                                             onClick={() => handleStyleClick(track.style)}
                                                             disabled={!track.style || track.style === 'N/A'}
@@ -878,9 +878,9 @@ export const MusicList = React.memo(({
                                                             }`}
                                                             title={track.bitrate ? `Bitrate: ${track.bitrate} kbps` : 'Bitrate: 320 kbps'}
                                                         >
-                                                            <span className="text-blue-400 text-xs">🎵</span>
+                                                            <span className="text-blue-400 text-xs">🔊</span>
                                                             <span className="text-gray-200 text-xs font-medium">
-                                                                {track.bitrate ? `${track.bitrate} kbps` : '320 kbps'}
+                                                                {track.bitrate || '320'}
                                                             </span>
                                                         </div>
                                                     </div>

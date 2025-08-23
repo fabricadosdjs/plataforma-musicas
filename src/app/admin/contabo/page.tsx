@@ -8,6 +8,7 @@ import {
     Calendar,
     CheckCircle,
     Cloud,
+    Database,
     Download,
     File,
     Folder,
@@ -111,7 +112,7 @@ export default function ContaboStoragePage() {
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState<'success' | 'error'>('success');
-    const [currentView, setCurrentView] = useState<'files' | 'import' | 'duplicates'>('files');
+    const [currentView, setCurrentView] = useState<'files' | 'import' | 'duplicates' | 'database-duplicates'>('files');
 
     // Estados de paginação para a aba de importação
     const [currentPage, setCurrentPage] = useState(0);
@@ -128,6 +129,13 @@ export default function ContaboStoragePage() {
     const [detectingDuplicates, setDetectingDuplicates] = useState(false);
     const [deletingDuplicates, setDeletingDuplicates] = useState(false);
     const [duplicateStats, setDuplicateStats] = useState<any>(null);
+
+    // Estados para detector de duplicatas do banco de dados
+    const [databaseDuplicates, setDatabaseDuplicates] = useState<any[]>([]);
+    const [selectedDatabaseDuplicates, setSelectedDatabaseDuplicates] = useState<string[]>([]);
+    const [detectingDatabaseDuplicates, setDetectingDatabaseDuplicates] = useState(false);
+    const [removingDatabaseDuplicates, setRemovingDatabaseDuplicates] = useState(false);
+    const [databaseDuplicateStats, setDatabaseDuplicateStats] = useState<any>(null);
 
     // Estados para arquivos existentes no banco de dados
     const [existingFiles, setExistingFiles] = useState<any[]>([]);
@@ -157,6 +165,17 @@ export default function ContaboStoragePage() {
         loadFiles();
         // Estilos agora são carregados do banco de dados via loadStylesFromDatabase()
     }, []);
+
+    // Verificar e limpar arrays de estilos sempre que mudarem
+    useEffect(() => {
+        if (styleOptions.length > 0) {
+            const cleanStyles = cleanStyleArray(styleOptions);
+            if (cleanStyles.length !== styleOptions.length) {
+                console.log('🧹 Limpando array de estilos:', { original: styleOptions, cleaned: cleanStyles });
+                setStyleOptions(cleanStyles);
+            }
+        }
+    }, [styleOptions]);
 
     // Carrega automaticamente os arquivos importáveis quando a página é acessada
     useEffect(() => {
@@ -521,7 +540,222 @@ export default function ContaboStoragePage() {
         }
     };
 
+    // Funções para detector de duplicatas do banco de dados
+    const detectDatabaseDuplicates = async () => {
+        setDetectingDatabaseDuplicates(true);
+        try {
+            const response = await fetch('/api/contabo/detect-database-duplicates', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    similarityThreshold: 0.8 // 80% de similaridade
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setDatabaseDuplicates(data.duplicates || []);
+                setDatabaseDuplicateStats(data.statistics);
+                showMessage(`Encontradas ${data.duplicatesFound} duplicatas no banco (${data.statistics.exactUrlMatches} URLs exatas, ${data.statistics.nameMatches} nomes, ${data.statistics.similarityMatches} similaridade)`, 'success');
+            } else {
+                showMessage(data.error || 'Erro ao detectar duplicatas do banco', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao detectar duplicatas do banco:', error);
+            showMessage('Erro ao detectar duplicatas do banco', 'error');
+        } finally {
+            setDetectingDatabaseDuplicates(false);
+        }
+    };
+
+    const toggleDatabaseDuplicateSelection = (fileKey: string) => {
+        setSelectedDatabaseDuplicates(prev =>
+            prev.includes(fileKey)
+                ? prev.filter(key => key !== fileKey)
+                : [...prev, fileKey]
+        );
+    };
+
+    const selectAllDatabaseDuplicates = () => {
+        const allKeys = databaseDuplicates.map(dup => dup.storageFile.key);
+        setSelectedDatabaseDuplicates(allKeys);
+    };
+
+    const selectDuplicatesByType = (matchType: 'url' | 'name' | 'similarity') => {
+        const filteredDuplicates = databaseDuplicates.filter(dup => dup.matchType === matchType);
+        const keys = filteredDuplicates.map(dup => dup.storageFile.key);
+        setSelectedDatabaseDuplicates(keys);
+
+        const count = keys.length;
+        const typeName = matchType === 'url' ? 'URLs exatas' :
+            matchType === 'name' ? 'nomes iguais' : 'similaridade';
+        showMessage(`Selecionadas ${count} duplicatas por ${typeName}`, 'success');
+    };
+
+    const selectDuplicatesBySize = () => {
+        // Selecionar os 50% maiores arquivos (mais espaço para economizar)
+        const sortedDuplicates = [...databaseDuplicates].sort((a, b) => b.storageFile.size - a.storageFile.size);
+        const halfCount = Math.ceil(sortedDuplicates.length / 2);
+        const largestDuplicates = sortedDuplicates.slice(0, halfCount);
+        const keys = largestDuplicates.map(dup => dup.storageFile.key);
+
+        setSelectedDatabaseDuplicates(keys);
+        showMessage(`Selecionados ${keys.length} arquivos maiores (mais espaço para economizar)`, 'success');
+    };
+
+    const selectDuplicatesByRecentDate = () => {
+        // Selecionar arquivos mais recentes (últimos 30 dias)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const recentDuplicates = databaseDuplicates.filter(dup => {
+            const fileDate = new Date(dup.storageFile.lastModified);
+            return fileDate > thirtyDaysAgo;
+        });
+
+        const keys = recentDuplicates.map(dup => dup.storageFile.key);
+        setSelectedDatabaseDuplicates(keys);
+        showMessage(`Selecionados ${keys.length} arquivos dos últimos 30 dias`, 'success');
+    };
+
+    // Funções auxiliares para estatísticas da seleção
+    const getSelectedDuplicatesSize = () => {
+        return selectedDatabaseDuplicates.reduce((total, key) => {
+            const duplicate = databaseDuplicates.find(dup => dup.storageFile.key === key);
+            return total + (duplicate?.storageFile.size || 0);
+        }, 0);
+    };
+
+    const getSelectedDuplicatesByType = (matchType: 'url' | 'name' | 'similarity') => {
+        return selectedDatabaseDuplicates.filter(key => {
+            const duplicate = databaseDuplicates.find(dup => dup.storageFile.key === key);
+            return duplicate?.matchType === matchType;
+        });
+    };
+
+    const selectDuplicatesSmart = () => {
+        // Seleção inteligente: URLs exatas + nomes iguais (mais seguras)
+        // Exclui similaridade para evitar falsos positivos
+        const safeDuplicates = databaseDuplicates.filter(dup =>
+            dup.matchType === 'url' || dup.matchType === 'name'
+        );
+
+        const keys = safeDuplicates.map(dup => dup.storageFile.key);
+        setSelectedDatabaseDuplicates(keys);
+
+        const urlCount = safeDuplicates.filter(dup => dup.matchType === 'url').length;
+        const nameCount = safeDuplicates.filter(dup => dup.matchType === 'name').length;
+
+        showMessage(`Seleção inteligente: ${urlCount} URLs exatas + ${nameCount} nomes iguais (${keys.length} total)`, 'success');
+    };
+
+    const clearDatabaseDuplicateSelection = () => {
+        setSelectedDatabaseDuplicates([]);
+    };
+
+    const removeDatabaseDuplicates = async () => {
+        if (selectedDatabaseDuplicates.length === 0) {
+            showMessage('Nenhuma duplicata selecionada', 'error');
+            return;
+        }
+
+        const selectedDuplicatesData = databaseDuplicates.filter(dup =>
+            selectedDatabaseDuplicates.includes(dup.storageFile.key)
+        );
+
+        if (!confirm(`Tem certeza que deseja remover ${selectedDatabaseDuplicates.length} arquivos duplicados do storage? Esta ação não pode ser desfeita.`)) {
+            return;
+        }
+
+        console.log('🗑️ Iniciando remoção de duplicatas do banco:', selectedDatabaseDuplicates);
+
+        setRemovingDatabaseDuplicates(true);
+        try {
+            const response = await fetch('/api/contabo/remove-database-duplicates', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    duplicates: selectedDuplicatesData,
+                    confirmRemoval: true
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage(`${data.message} - Espaço liberado: ${data.statistics.formattedSizeRemoved}`, 'success');
+                setSelectedDatabaseDuplicates([]);
+                // Recarregar duplicatas para atualizar a lista
+                await detectDatabaseDuplicates();
+            } else {
+                showMessage(data.error || 'Erro ao remover duplicatas', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao remover duplicatas:', error);
+            showMessage('Erro ao remover duplicatas', 'error');
+        } finally {
+            setRemovingDatabaseDuplicates(false);
+        }
+    };
+
     // Funções de IA e análise inteligente
+    // Função para limpar arrays de estilos
+    const cleanStyleArray = (styles: any[]): string[] => {
+        if (!Array.isArray(styles)) return [];
+
+        return styles
+            .filter(style => style !== null && style !== undefined)
+            .map(style => {
+                if (typeof style === 'string') {
+                    return style.trim();
+                } else if (typeof style === 'object' && style !== null) {
+                    // Se for um objeto, tentar extrair o nome
+                    if (style.name && typeof style.name === 'string') {
+                        return style.name.trim();
+                    } else if (style.style && typeof style.style === 'string') {
+                        return style.style.trim();
+                    }
+                }
+                return null;
+            })
+            .filter(style => style !== null && style !== '') as string[];
+    };
+
+    // Função para validar dados da análise
+    const validateAnalysisData = (data: any) => {
+        if (!data || typeof data !== 'object') return false;
+
+        // Verificar propriedades obrigatórias
+        const requiredProps = ['totalFiles', 'audioFiles', 'genreDistribution', 'topGenres', 'bpmRange', 'averageQuality', 'averageEnergy'];
+        for (const prop of requiredProps) {
+            if (data[prop] === undefined) {
+                console.warn(`⚠️ Propriedade ${prop} não encontrada na análise`);
+                return false;
+            }
+        }
+
+        // Verificar se topGenres é um array válido
+        if (!Array.isArray(data.topGenres)) {
+            console.warn('⚠️ topGenres não é um array válido');
+            return false;
+        }
+
+        // Verificar se cada item de topGenres tem a estrutura correta
+        for (const genre of data.topGenres) {
+            if (!genre || typeof genre !== 'object' || !genre.genre || !genre.count) {
+                console.warn('⚠️ Item de topGenres com estrutura inválida:', genre);
+                return false;
+            }
+        }
+
+        return true;
+    };
+
     const runSmartAnalysis = async () => {
         setIsSmartAnalyzing(true);
         try {
@@ -537,11 +771,41 @@ export default function ContaboStoragePage() {
             });
 
             const data = await response.json();
+            console.log('🧠 Dados retornados pela API:', data);
+
             if (data.success) {
-                setSmartAnalysis(data.analysis);
-                setSmartRecommendations(data.recommendations);
-                setShowSmartDashboard(true);
-                showMessage('Análise inteligente concluída!', 'success');
+                console.log('🧠 Análise:', data.analysis);
+                console.log('🧠 Recomendações:', data.recommendations);
+
+                // Verificar estrutura dos dados antes de definir
+                if (data.analysis && typeof data.analysis === 'object') {
+                    console.log('🧠 Estrutura da análise:', {
+                        totalFiles: data.analysis.totalFiles,
+                        audioFiles: data.analysis.audioFiles,
+                        genreDistribution: data.analysis.genreDistribution,
+                        topGenres: data.analysis.topGenres,
+                        bpmRange: data.analysis.bpmRange,
+                        averageQuality: data.analysis.averageQuality,
+                        averageEnergy: data.analysis.averageEnergy
+                    });
+
+                    // Verificar se topGenres é um array válido
+                    if (data.analysis.topGenres) {
+                        console.log('🧠 topGenres é array?', Array.isArray(data.analysis.topGenres));
+                        console.log('🧠 topGenres conteúdo:', data.analysis.topGenres);
+                    }
+                }
+
+                // Validar dados antes de definir
+                if (validateAnalysisData(data.analysis)) {
+                    setSmartAnalysis(data.analysis);
+                    setSmartRecommendations(data.recommendations);
+                    setShowSmartDashboard(true);
+                    showMessage('Análise inteligente concluída!', 'success');
+                } else {
+                    console.error('❌ Dados da análise inválidos, não exibindo dashboard');
+                    showMessage('Erro: dados da análise inválidos', 'error');
+                }
             } else {
                 showMessage('Erro na análise inteligente', 'error');
             }
@@ -631,9 +895,14 @@ export default function ContaboStoragePage() {
                 // Aplica automaticamente o estilo detectado ao campo
                 const fileIndex = importableFiles.findIndex(item => item.file.key === fileKey);
                 if (fileIndex !== -1 && detection.style) {
-                    // Adiciona o estilo às opções se não existir (com deduplicação)
-                    if (!styleOptions.includes(detection.style)) {
-                        setStyleOptions(prev => Array.from(new Set([...prev, detection.style])));
+                    // Validar se detection.style é uma string válida
+                    if (typeof detection.style === 'string' && detection.style.trim() !== '') {
+                        // Adiciona o estilo às opções se não existir (com deduplicação)
+                        if (!styleOptions.includes(detection.style)) {
+                            setStyleOptions(prev => Array.from(new Set([...prev, detection.style])));
+                        }
+                    } else {
+                        console.warn('⚠️ detection.style não é uma string válida:', detection.style);
                     }
 
                     // Atualiza o campo de estilo automaticamente
@@ -802,7 +1071,7 @@ export default function ContaboStoragePage() {
 
                 if (fileIndex !== -1) {
                     // Adiciona o estilo às opções se não existir (com deduplicação)
-                    if (detection.style && !styleOptions.includes(detection.style)) {
+                    if (detection.style && typeof detection.style === 'string' && detection.style.trim() !== '' && !styleOptions.includes(detection.style)) {
                         setStyleOptions(prevStyles => Array.from(new Set([...prevStyles, detection.style])));
                     }
 
@@ -969,7 +1238,7 @@ export default function ContaboStoragePage() {
 
     // Handler to add a new style to the dropdown
     const handleAddNewStyle = (newStyle: string) => {
-        if (newStyle && !styleOptions.includes(newStyle)) {
+        if (newStyle && typeof newStyle === 'string' && newStyle.trim() !== '' && !styleOptions.includes(newStyle)) {
             setStyleOptions((prev) => Array.from(new Set([...prev, newStyle])));
             // Recarrega estilos do banco para manter sincronizado
             setTimeout(() => loadStylesFromDatabase(), 1000);
@@ -989,35 +1258,49 @@ export default function ContaboStoragePage() {
             const response = await fetch('/api/tracks/styles');
             if (response.ok) {
                 const data = await response.json();
-                if (data.success) {
-                    setStyleOptions(data.styles);
-                    console.log(`🎵 ${data.styles.length} estilos carregados do banco de dados`);
+                console.log('🎵 Dados recebidos da API de estilos:', data);
+
+                if (data.success && data.styles) {
+                    // Usar função de limpeza para garantir que styles seja um array de strings válidas
+                    const cleanStyles = cleanStyleArray(data.styles);
+
+                    console.log('🎵 Estilos originais:', data.styles);
+                    console.log('🎵 Estilos limpos:', cleanStyles);
+
+                    setStyleOptions(cleanStyles);
+                    console.log(`🎵 ${cleanStyles.length} estilos válidos carregados do banco de dados`);
+                } else {
+                    console.error('❌ Resposta da API inválida:', data);
+                    setStyleOptions([]);
                 }
             }
         } catch (error) {
             console.error('Erro ao carregar estilos do banco:', error);
+            setStyleOptions([]);
         }
     };
 
     return (
-        <div className="min-h-screen bg-[#202124] text-white">
+        <div className="min-h-screen bg-black text-white">
             <div className="container mx-auto px-6 py-8">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-800 rounded-xl flex items-center justify-center">
-                            <Cloud className="w-6 h-6 text-white" />
+                <div className="flex items-center justify-between mb-12">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-purple-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/25">
+                            <Cloud className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-white">Contabo Object Storage</h1>
-                            <p className="text-gray-400 mt-1">Gerencie arquivos de música no cloud</p>
+                            <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+                                Contabo Object Storage
+                            </h1>
+                            <p className="text-gray-400 mt-2 text-lg">Gerencie arquivos de música no cloud com IA</p>
                         </div>
                     </div>
                     <Link
                         href="/admin"
-                        className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                        className="px-6 py-3 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white rounded-xl transition-all duration-300 font-medium border border-gray-600/50 hover:border-gray-500/50 shadow-lg"
                     >
-                        Voltar ao Admin
+                        ← Voltar ao Admin
                     </Link>
                 </div>
 
@@ -1037,61 +1320,65 @@ export default function ContaboStoragePage() {
                 )}
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                    <div className="bg-gray-800 rounded-xl p-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-blue-600/20 rounded-lg">
-                                <HardDrive className="w-6 h-6 text-blue-400" />
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 hover:scale-105 group">
+                        <div className="flex items-center gap-4">
+                            <div className="p-4 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                <HardDrive className="w-7 h-7 text-blue-400" />
                             </div>
                             <div>
-                                <p className="text-sm text-gray-400">Total de Arquivos</p>
-                                <p className="text-2xl font-bold text-white">{files.length}</p>
+                                <p className="text-sm text-gray-400 font-medium">Total de Arquivos</p>
+                                <p className="text-3xl font-bold text-white group-hover:text-blue-400 transition-colors duration-300">{files.length}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-gray-800 rounded-xl p-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-purple-600/20 rounded-lg">
-                                <Volume2 className="w-6 h-6 text-purple-400" />
+                    <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 hover:scale-105 group">
+                        <div className="flex items-center gap-4">
+                            <div className="p-4 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                <Volume2 className="w-7 h-7 text-purple-400" />
                             </div>
                             <div>
-                                <p className="text-sm text-gray-400">Arquivos de Áudio</p>
-                                <p className="text-2xl font-bold text-purple-400">{audioFiles.length}</p>
+                                <p className="text-sm text-gray-400 font-medium">Arquivos de Áudio</p>
+                                <p className="text-3xl font-bold text-purple-400">{audioFiles.length}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-gray-800 rounded-xl p-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-green-600/20 rounded-lg">
-                                <ImageIcon className="w-6 h-6 text-green-400" />
+                    <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 hover:scale-105 group">
+                        <div className="flex items-center gap-4">
+                            <div className="p-4 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                <ImageIcon className="w-7 h-7 text-green-400" />
                             </div>
                             <div>
-                                <p className="text-sm text-gray-400">Outros Arquivos</p>
-                                <p className="text-2xl font-bold text-green-400">{otherFiles.length}</p>
+                                <p className="text-sm text-gray-400 font-medium">Outros Arquivos</p>
+                                <p className="text-3xl font-bold text-green-400">{otherFiles.length}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-gray-800 rounded-xl p-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-orange-600/20 rounded-lg">
-                                <Import className="w-6 h-6 text-orange-400" />
+                    <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 hover:scale-105 group">
+                        <div className="flex items-center gap-4">
+                            <div className="p-4 bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                <Import className="w-7 h-7 text-orange-400" />
                             </div>
                             <div>
-                                <p className="text-sm text-gray-400">Prontos p/ Importação</p>
-                                <p className="text-2xl font-bold text-orange-400">{importableFiles.length}</p>
+                                <p className="text-sm text-gray-400 font-medium">Prontos p/ Importação</p>
+                                <p className="text-3xl font-bold text-orange-400">{importableFiles.length}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Actions Bar */}
-                <div className="bg-gray-800/50 rounded-xl p-6 mb-6">
+                <div className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-gray-700/50">
+                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                        <Zap className="w-6 h-6 text-yellow-400" />
+                        Ações Rápidas
+                    </h3>
                     <div className="flex flex-wrap items-center gap-4">
                         {/* Upload */}
-                        <div className="relative">
+                        <div className="relative group">
                             <input
                                 type="file"
                                 id="file-upload"
@@ -1102,15 +1389,15 @@ export default function ContaboStoragePage() {
                             />
                             <label
                                 htmlFor="file-upload"
-                                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors ${uploading
+                                className={`inline-flex items-center gap-3 px-6 py-3 rounded-xl cursor-pointer transition-all duration-300 font-medium ${uploading
                                     ? 'bg-gray-600 cursor-not-allowed'
-                                    : 'bg-blue-600 hover:bg-blue-700'
+                                    : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105'
                                     } text-white`}
                             >
                                 {uploading ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <Loader2 className="w-5 h-5 animate-spin" />
                                 ) : (
-                                    <Upload className="w-4 h-4" />
+                                    <Upload className="w-5 h-5" />
                                 )}
                                 {uploading ? 'Enviando...' : 'Upload Arquivo'}
                             </label>
@@ -1120,19 +1407,19 @@ export default function ContaboStoragePage() {
                         <button
                             onClick={loadFiles}
                             disabled={loading}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white rounded-xl transition-all duration-300 font-medium shadow-lg shadow-gray-500/25 hover:shadow-xl hover:shadow-gray-500/40 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50"
                         >
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                             Atualizar
                         </button>
 
                         {/* View Toggle */}
-                        <div className="flex bg-gray-700 rounded-lg p-1">
+                        <div className="flex bg-gray-800/50 rounded-xl p-2 border border-gray-700/50">
                             <button
                                 onClick={() => setCurrentView('files')}
-                                className={`px-4 py-2 rounded-md transition-colors ${currentView === 'files'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-gray-300 hover:text-white'
+                                className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${currentView === 'files'
+                                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/25'
+                                    : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
                                     }`}
                             >
                                 <File className="w-4 h-4 inline mr-2" />
@@ -1146,9 +1433,9 @@ export default function ContaboStoragePage() {
                                         loadImportableFiles();
                                     }
                                 }}
-                                className={`px-4 py-2 rounded-md transition-colors ${currentView === 'import'
-                                    ? 'bg-purple-600 text-white'
-                                    : 'text-gray-300 hover:text-white'
+                                className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${currentView === 'import'
+                                    ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-500/25'
+                                    : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
                                     }`}
                             >
                                 <Import className="w-4 h-4 inline mr-2" />
@@ -1161,27 +1448,42 @@ export default function ContaboStoragePage() {
                                         detectDuplicates();
                                     }
                                 }}
-                                className={`px-4 py-2 rounded-md transition-colors ${currentView === 'duplicates'
-                                    ? 'bg-red-600 text-white'
-                                    : 'text-gray-300 hover:text-white'
+                                className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${currentView === 'duplicates'
+                                    ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25'
+                                    : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
                                     }`}
                             >
                                 <Trash2 className="w-4 h-4 inline mr-2" />
                                 Duplicatas ({duplicateGroups.length})
                             </button>
+                            <button
+                                onClick={() => {
+                                    setCurrentView('database-duplicates');
+                                    if (databaseDuplicates.length === 0) {
+                                        detectDatabaseDuplicates();
+                                    }
+                                }}
+                                className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${currentView === 'database-duplicates'
+                                    ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-500/25'
+                                    : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+                                    }`}
+                            >
+                                <Database className="w-4 h-4 inline mr-2" />
+                                DB Duplicatas ({databaseDuplicates.length})
+                            </button>
                         </div>
 
                         {/* AI Features */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                             <button
                                 onClick={runSmartAnalysis}
                                 disabled={isSmartAnalyzing}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all disabled:opacity-50"
+                                className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl transition-all duration-300 font-medium shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50"
                             >
                                 {isSmartAnalyzing ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <Loader2 className="w-5 h-5 animate-spin" />
                                 ) : (
-                                    <Brain className="w-4 h-4" />
+                                    <Brain className="w-5 h-5" />
                                 )}
                                 {isSmartAnalyzing ? 'Analisando...' : 'IA Smart Analysis'}
                             </button>
@@ -1189,12 +1491,12 @@ export default function ContaboStoragePage() {
                             <button
                                 onClick={autoOrganizeFiles}
                                 disabled={autoOrganizing}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg transition-all disabled:opacity-50"
+                                className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl transition-all duration-300 font-medium shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50"
                             >
                                 {autoOrganizing ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <Loader2 className="w-5 h-5 animate-spin" />
                                 ) : (
-                                    <Wand2 className="w-4 h-4" />
+                                    <Wand2 className="w-5 h-5" />
                                 )}
                                 {autoOrganizing ? 'Organizando...' : 'Auto Organizar'}
                             </button>
@@ -1204,12 +1506,12 @@ export default function ContaboStoragePage() {
                                     <button
                                         onClick={detectStyleAndLabelBatch}
                                         disabled={detectingStylesAndLabels}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg transition-all disabled:opacity-50"
+                                        className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl transition-all duration-300 font-medium shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/40 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50"
                                     >
                                         {detectingStylesAndLabels ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <Loader2 className="w-5 h-5 animate-spin" />
                                         ) : (
-                                            <Globe className="w-4 h-4" />
+                                            <Globe className="w-5 h-5" />
                                         )}
                                         {detectingStylesAndLabels ? 'Detectando...' : 'Detectar Estilos IA'}
                                     </button>
@@ -1217,9 +1519,9 @@ export default function ContaboStoragePage() {
                                     {Object.keys(detectedStyles).length > 0 && (
                                         <button
                                             onClick={applyAllDetectedStyles}
-                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg transition-all"
+                                            className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl transition-all duration-300 font-medium shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105"
                                         >
-                                            <Sparkles className="w-4 h-4" />
+                                            <Sparkles className="w-5 h-5" />
                                             Aplicar Todos ({Object.keys(detectedStyles).length})
                                         </button>
                                     )}
@@ -1229,128 +1531,163 @@ export default function ContaboStoragePage() {
 
                         {/* Search */}
                         <div className="relative flex-1 max-w-md ml-auto">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                             <input
                                 type="text"
                                 placeholder="Buscar arquivos..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full pl-12 pr-6 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 backdrop-blur-sm"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* Smart Analysis Dashboard */}
-                {showSmartDashboard && smartAnalysis && (
-                    <div className="bg-gray-800 rounded-xl p-6 mb-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl">
-                                    <Brain className="w-6 h-6 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">Smart Analysis Dashboard</h2>
-                                    <p className="text-gray-400">Análise inteligente da sua biblioteca de música</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setShowSmartDashboard(false)}
-                                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                            <div className="bg-gray-700/50 rounded-xl p-4">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <BarChart3 className="w-5 h-5 text-blue-400" />
-                                    <h3 className="font-semibold text-white">Análise Geral</h3>
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-400">Total de Arquivos:</span>
-                                        <span className="text-white font-semibold">{smartAnalysis.totalFiles}</span>
+                {showSmartDashboard && smartAnalysis && typeof smartAnalysis === 'object' &&
+                    smartAnalysis.totalFiles !== undefined && smartAnalysis.audioFiles !== undefined && (
+                        <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-gray-700/50 shadow-2xl">
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-4 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-lg shadow-purple-500/25">
+                                        <Brain className="w-8 h-8 text-white" />
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-400">Gêneros Únicos:</span>
-                                        <span className="text-white font-semibold">{smartAnalysis.uniqueGenres}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-400">BPM Médio:</span>
-                                        <span className="text-white font-semibold">{smartAnalysis.averageBPM}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-400">Qualidade Média:</span>
-                                        <span className="text-white font-semibold">{smartAnalysis.averageQuality}/10</span>
+                                    <div>
+                                        <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
+                                            Smart Analysis Dashboard
+                                        </h2>
+                                        <p className="text-gray-400 text-lg">Análise inteligente da sua biblioteca de música</p>
                                     </div>
                                 </div>
+                                <button
+                                    onClick={() => setShowSmartDashboard(false)}
+                                    className="p-3 hover:bg-gray-700/50 rounded-xl transition-all duration-300 hover:scale-110 text-gray-400 hover:text-white"
+                                >
+                                    ✕
+                                </button>
                             </div>
 
-                            <div className="bg-gray-700/50 rounded-xl p-4">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <Target className="w-5 h-5 text-green-400" />
-                                    <h3 className="font-semibold text-white">Top Gêneros</h3>
-                                </div>
-                                <div className="space-y-2">
-                                    {smartAnalysis.topGenres?.slice(0, 5).map((genre: any, index: number) => (
-                                        <div key={index} className="flex justify-between">
-                                            <span className="text-gray-400">{genre.genre}:</span>
-                                            <span className="text-white font-semibold">{genre.count}</span>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-600/50 hover:border-gray-500/50 transition-all duration-300 group">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="p-3 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                            <BarChart3 className="w-6 h-6 text-blue-400" />
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="bg-gray-700/50 rounded-xl p-4">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <Sparkles className="w-5 h-5 text-purple-400" />
-                                    <h3 className="font-semibold text-white">Recomendações</h3>
-                                </div>
-                                <div className="space-y-2">
-                                    {smartRecommendations.slice(0, 3).map((rec, index) => (
-                                        <div key={index} className="bg-gray-600/50 rounded-lg p-3">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <div className={`w-2 h-2 rounded-full ${rec.priority === 'high' ? 'bg-red-400' :
-                                                    rec.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
-                                                    }`} />
-                                                <span className="text-sm font-semibold text-white">{rec.title}</span>
-                                            </div>
-                                            <p className="text-xs text-gray-400">{rec.description}</p>
+                                        <h3 className="font-bold text-white text-lg">Análise Geral</h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center p-3 bg-gray-700/30 rounded-lg">
+                                            <span className="text-gray-300 font-medium">Total de Arquivos:</span>
+                                            <span className="text-white font-bold text-lg">{typeof smartAnalysis?.totalFiles === 'number' ? smartAnalysis.totalFiles : 0}</span>
                                         </div>
-                                    ))}
+                                        <div className="flex justify-between items-center p-3 bg-gray-700/30 rounded-lg">
+                                            <span className="text-gray-300 font-medium">Gêneros Únicos:</span>
+                                            <span className="text-white font-bold text-lg">{smartAnalysis?.genreDistribution && typeof smartAnalysis.genreDistribution === 'object' ? Object.keys(smartAnalysis.genreDistribution).length : 0}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-3 bg-gray-700/30 rounded-lg">
+                                            <span className="text-gray-300 font-medium">BPM Médio:</span>
+                                            <span className="text-white font-bold text-lg">{smartAnalysis?.bpmRange?.avg && typeof smartAnalysis.bpmRange.avg === 'number' ? smartAnalysis.bpmRange.avg : 0}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-3 bg-gray-700/30 rounded-lg">
+                                            <span className="text-gray-400 font-medium">Qualidade Média:</span>
+                                            <span className="text-white font-bold text-lg">{typeof smartAnalysis?.averageQuality === 'number' ? smartAnalysis.averageQuality : 0}/10</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-600/50 hover:border-gray-500/50 transition-all duration-300 group">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="p-3 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                            <Target className="w-6 h-6 text-green-400" />
+                                        </div>
+                                        <h3 className="font-bold text-white text-lg">Top Gêneros</h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {smartAnalysis?.topGenres && Array.isArray(smartAnalysis.topGenres) && smartAnalysis.topGenres.length > 0 ? (
+                                            smartAnalysis.topGenres.slice(0, 5).map((genre: any, index: number) => {
+                                                // Verificar se o genre é um objeto válido
+                                                if (!genre || typeof genre !== 'object' || !genre.genre || !genre.count) {
+                                                    return null;
+                                                }
+                                                return (
+                                                    <div key={`${genre.genre}-${index}`} className="flex justify-between items-center p-3 bg-gray-700/30 rounded-lg hover:bg-gray-600/30 transition-colors duration-200">
+                                                        <span className="text-gray-300 font-medium">{String(genre.genre)}:</span>
+                                                        <span className="text-white font-bold text-lg">{String(genre.count)}</span>
+                                                    </div>
+                                                );
+                                            }).filter(Boolean)
+                                        ) : (
+                                            <div className="text-gray-500 text-sm p-3 bg-gray-700/30 rounded-lg">Nenhum gênero detectado</div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-600/50 hover:border-gray-500/50 transition-all duration-300 group">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="p-3 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                            <Sparkles className="w-6 h-6 text-purple-400" />
+                                        </div>
+                                        <h3 className="font-bold text-white text-lg">Recomendações</h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {smartRecommendations && Array.isArray(smartRecommendations) && smartRecommendations.length > 0 ? (
+                                            smartRecommendations.slice(0, 3).map((rec, index) => {
+                                                // Verificar se rec é um objeto válido
+                                                if (!rec || typeof rec !== 'object' || !rec.title || !rec.description || !rec.priority) {
+                                                    return null;
+                                                }
+                                                return (
+                                                    <div key={`${rec.type}-${rec.title}-${index}`} className="bg-gradient-to-r from-gray-700/50 to-gray-600/50 rounded-xl p-4 hover:from-gray-600/50 hover:to-gray-500/50 transition-all duration-300 border border-gray-600/30">
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <div className={`w-3 h-3 rounded-full ${rec.priority === 'high' ? 'bg-red-400' :
+                                                                rec.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
+                                                                }`} />
+                                                            <span className="text-sm font-bold text-white">{String(rec.title)}</span>
+                                                        </div>
+                                                        <p className="text-xs text-gray-300 leading-relaxed">{String(rec.description)}</p>
+                                                    </div>
+                                                );
+                                            }).filter(Boolean)
+                                        ) : (
+                                            <div className="text-gray-500 text-sm p-3 bg-gray-700/30 rounded-lg">Nenhuma recomendação disponível</div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
                 {/* Content */}
                 {(() => {
                     if (currentView === 'files') {
                         return (
                             /* Files View */
-                            <div className="bg-gray-800 rounded-xl overflow-hidden">
-                                <div className="px-6 py-4 bg-gray-700 border-b border-gray-600">
-                                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                        <Folder className="w-5 h-5 text-blue-300" />
+                            <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-700/50 shadow-xl">
+                                <div className="px-8 py-6 bg-gradient-to-r from-gray-800/80 to-gray-700/80 border-b border-gray-600/50">
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                                        <div className="p-2 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg">
+                                            <Folder className="w-6 h-6 text-blue-400" />
+                                        </div>
                                         Arquivos no Storage ({filteredFiles.length})
                                     </h3>
                                 </div>
 
                                 {loading ? (
-                                    <div className="p-8 text-center">
-                                        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-400" />
-                                        <p className="text-gray-400">Carregando arquivos...</p>
+                                    <div className="p-12 text-center">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                            <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+                                        </div>
+                                        <p className="text-gray-300 text-lg font-medium">Carregando arquivos...</p>
                                     </div>
                                 ) : filteredFiles.length === 0 ? (
-                                    <div className="p-8 text-center">
-                                        <Cloud className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                                        <h3 className="text-xl font-semibold text-gray-300 mb-2">
+                                    <div className="p-12 text-center">
+                                        <div className="w-20 h-20 bg-gradient-to-br from-gray-600/20 to-gray-700/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                            <Cloud className="w-10 h-10 text-gray-500" />
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-gray-300 mb-3">
                                             {files.length === 0 ? 'Nenhum arquivo encontrado' : 'Nenhum resultado'}
                                         </h3>
-                                        <p className="text-gray-500">
+                                        <p className="text-gray-400 text-lg">
                                             {files.length === 0
                                                 ? 'Faça upload de alguns arquivos para começar'
                                                 : 'Tente ajustar sua busca'
@@ -1358,29 +1695,32 @@ export default function ContaboStoragePage() {
                                         </p>
                                     </div>
                                 ) : (
-                                    <div className="divide-y divide-gray-700">
+                                    <div className="divide-y divide-gray-700/50">
                                         {filteredFiles.map((file) => (
-                                            <div key={file.key} className="p-4 hover:bg-gray-700/50 transition-colors">
+                                            <div key={file.key} className="p-6 hover:bg-gray-800/50 transition-all duration-300 group">
                                                 <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3 flex-1">
-                                                        <div className={`p-2 rounded-lg ${file.isAudio
-                                                            ? 'bg-purple-600/20 text-purple-400'
-                                                            : 'bg-gray-600/20 text-gray-400'
+                                                    <div className="flex items-center gap-4 flex-1">
+                                                        <div className={`p-3 rounded-xl transition-all duration-300 group-hover:scale-110 ${file.isAudio
+                                                            ? 'bg-gradient-to-br from-purple-500/20 to-purple-600/20 text-purple-400'
+                                                            : 'bg-gradient-to-br from-gray-500/20 to-gray-600/20 text-gray-400'
                                                             }`}>
                                                             {file.isAudio ? (
-                                                                <Volume2 className="w-5 h-5" />
+                                                                <Volume2 className="w-6 h-6" />
                                                             ) : (
-                                                                <File className="w-5 h-5" />
+                                                                <File className="w-6 h-6" />
                                                             )}
                                                         </div>
 
                                                         <div className="flex-1 min-w-0">
-                                                            <h4 className="font-medium text-white truncate">
+                                                            <h4 className="font-bold text-white truncate text-lg group-hover:text-blue-400 transition-colors duration-300">
                                                                 {file.filename}
                                                             </h4>
-                                                            <div className="flex items-center gap-4 text-sm text-gray-400 mt-1">
-                                                                <span>{formatFileSize(file.size)}</span>
-                                                                <span className="flex items-center gap-1">
+                                                            <div className="flex items-center gap-6 text-sm text-gray-300 mt-2">
+                                                                <span className="flex items-center gap-2 bg-gray-700/30 px-3 py-1 rounded-lg">
+                                                                    <HardDrive className="w-4 h-4" />
+                                                                    {formatFileSize(file.size)}
+                                                                </span>
+                                                                <span className="flex items-center gap-2 bg-gray-700/30 px-3 py-1 rounded-lg">
                                                                     <Calendar className="w-4 h-4" />
                                                                     {new Date(file.lastModified).toLocaleDateString('pt-BR')}
                                                                 </span>
@@ -1388,31 +1728,31 @@ export default function ContaboStoragePage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-3">
                                                         {file.isAudio && (
                                                             <button
                                                                 onClick={() => window.open(file.url, '_blank')}
-                                                                className="p-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-lg transition-colors"
+                                                                className="p-3 bg-gradient-to-r from-green-500/20 to-green-600/20 hover:from-green-400/20 hover:to-green-500/20 text-green-400 rounded-xl transition-all duration-300 hover:scale-110 shadow-lg"
                                                                 title="Ouvir prévia"
                                                             >
-                                                                <Volume2 className="w-4 h-4" />
+                                                                <Volume2 className="w-5 h-5" />
                                                             </button>
                                                         )}
 
                                                         <button
                                                             onClick={() => window.open(file.url, '_blank')}
-                                                            className="p-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors"
+                                                            className="p-3 bg-gradient-to-r from-blue-500/20 to-blue-600/20 hover:from-blue-400/20 hover:to-blue-500/20 text-blue-400 rounded-xl transition-all duration-300 hover:scale-110 shadow-lg"
                                                             title="Download"
                                                         >
-                                                            <Download className="w-4 h-4" />
+                                                            <Download className="w-5 h-5" />
                                                         </button>
 
                                                         <button
                                                             onClick={() => deleteFile(file.key)}
-                                                            className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
+                                                            className="p-3 bg-gradient-to-r from-red-500/20 to-red-600/20 hover:from-red-400/20 hover:to-red-500/20 text-red-400 rounded-xl transition-all duration-300 hover:scale-110 shadow-lg"
                                                             title="Deletar"
                                                         >
-                                                            <Trash2 className="w-4 h-4" />
+                                                            <Trash2 className="w-5 h-5" />
                                                         </button>
                                                     </div>
                                                 </div>
@@ -2550,6 +2890,264 @@ export default function ContaboStoragePage() {
                                         </div>
                                     )}
                                 </div>
+                            </div>
+                        );
+                    } else if (currentView === 'database-duplicates') {
+                        return (
+                            /* Database Duplicates View */
+                            <div className="bg-gray-800 rounded-xl overflow-hidden">
+                                <div className="px-6 py-4 bg-gradient-to-r from-orange-800/50 to-red-800/50 border-b border-gray-600 flex items-center justify-between">
+                                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                        <Database className="w-5 h-5 text-orange-300" />
+                                        Detector de Duplicatas do Banco de Dados
+                                    </h3>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={detectDatabaseDuplicates}
+                                            disabled={detectingDatabaseDuplicates}
+                                            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-800 text-white rounded-lg transition-colors flex items-center gap-2"
+                                        >
+                                            {detectingDatabaseDuplicates ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <RefreshCw className="w-4 h-4" />
+                                            )}
+                                            {detectingDatabaseDuplicates ? 'Detectando...' : 'Detectar Duplicatas'}
+                                        </button>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <button
+                                                onClick={selectAllDatabaseDuplicates}
+                                                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                                            >
+                                                ✅ Selecionar Todos
+                                            </button>
+                                            <button
+                                                onClick={() => selectDuplicatesByType('url')}
+                                                className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm"
+                                                title="Selecionar apenas URLs exatas (mais seguras)"
+                                            >
+                                                🔗 URLs Exatas
+                                            </button>
+                                            <button
+                                                onClick={() => selectDuplicatesByType('name')}
+                                                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                                                title="Selecionar apenas nomes iguais"
+                                            >
+                                                📝 Nomes Iguais
+                                            </button>
+                                            <button
+                                                onClick={() => selectDuplicatesByType('similarity')}
+                                                className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors text-sm"
+                                                title="Selecionar apenas por similaridade (revisar antes)"
+                                            >
+                                                🔍 Similaridade
+                                            </button>
+                                            <button
+                                                onClick={selectDuplicatesBySize}
+                                                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
+                                                title="Selecionar arquivos maiores (mais espaço)"
+                                            >
+                                                💾 Maiores
+                                            </button>
+                                            <button
+                                                onClick={selectDuplicatesByRecentDate}
+                                                className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm"
+                                                title="Selecionar arquivos mais recentes"
+                                            >
+                                                📅 Mais Recentes
+                                            </button>
+                                            <button
+                                                onClick={selectDuplicatesSmart}
+                                                className="px-3 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white rounded-lg transition-colors text-sm"
+                                                title="Seleção inteligente (URLs exatas + nomes iguais)"
+                                            >
+                                                🧠 Seleção Inteligente
+                                            </button>
+                                        </div>
+
+                                        {selectedDatabaseDuplicates.length > 0 && (
+                                            <div className="flex items-center gap-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg px-4 py-2">
+                                                <div className="flex items-center gap-2 text-yellow-300">
+                                                    <span className="font-semibold">📊 Selecionados:</span>
+                                                    <span className="text-lg font-bold">{selectedDatabaseDuplicates.length}</span>
+                                                    <span>de {databaseDuplicates.length}</span>
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={clearDatabaseDuplicateSelection}
+                                                        className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm"
+                                                    >
+                                                        ❌ Limpar Seleção
+                                                    </button>
+                                                    <button
+                                                        onClick={removeDatabaseDuplicates}
+                                                        disabled={removingDatabaseDuplicates}
+                                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors flex items-center gap-2"
+                                                    >
+                                                        {removingDatabaseDuplicates ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <Trash2 className="w-4 h-4" />
+                                                        )}
+                                                        {removingDatabaseDuplicates ? 'Removendo...' : `🗑️ Remover (${selectedDatabaseDuplicates.length})`}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {databaseDuplicateStats && (
+                                    <div className="px-6 py-4 bg-gray-700/50 border-b border-gray-600">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div className="bg-gray-800/50 rounded-lg p-3">
+                                                <div className="text-sm text-gray-400">URLs Exatas</div>
+                                                <div className="text-xl font-bold text-green-400">{databaseDuplicateStats.exactUrlMatches}</div>
+                                            </div>
+                                            <div className="bg-gray-800/50 rounded-lg p-3">
+                                                <div className="text-sm text-gray-400">Nomes Iguais</div>
+                                                <div className="text-xl font-bold text-blue-400">{databaseDuplicateStats.nameMatches}</div>
+                                            </div>
+                                            <div className="bg-gray-800/50 rounded-lg p-3">
+                                                <div className="text-sm text-gray-400">Similaridade</div>
+                                                <div className="text-xl font-bold text-yellow-400">{databaseDuplicateStats.similarityMatches}</div>
+                                            </div>
+                                            <div className="bg-gray-800/50 rounded-lg p-3">
+                                                <div className="text-sm text-gray-400">Espaço Total</div>
+                                                <div className="text-xl font-bold text-red-400">{formatFileSize(databaseDuplicateStats.totalSize)}</div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 text-center">
+                                            <span className="text-sm text-gray-400">
+                                                Similaridade Média: {(databaseDuplicateStats.averageSimilarity * 100).toFixed(1)}%
+                                            </span>
+                                        </div>
+
+                                        {/* Estatísticas da Seleção Atual */}
+                                        {selectedDatabaseDuplicates.length > 0 && (
+                                            <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                                                <div className="text-center text-yellow-300 font-semibold mb-2">
+                                                    📊 Estatísticas da Seleção Atual
+                                                </div>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                                    <div className="text-center">
+                                                        <div className="text-yellow-400 font-bold">
+                                                            {selectedDatabaseDuplicates.length}
+                                                        </div>
+                                                        <div className="text-gray-400">Selecionados</div>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <div className="text-green-400 font-bold">
+                                                            {formatFileSize(getSelectedDuplicatesSize())}
+                                                        </div>
+                                                        <div className="text-gray-400">Espaço</div>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <div className="text-blue-400 font-bold">
+                                                            {getSelectedDuplicatesByType('url').length}
+                                                        </div>
+                                                        <div className="text-gray-400">URLs Exatas</div>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <div className="text-yellow-400 font-bold">
+                                                            {getSelectedDuplicatesByType('similarity').length}
+                                                        </div>
+                                                        <div className="text-gray-400">Similaridade</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {detectingDatabaseDuplicates ? (
+                                    <div className="p-8 text-center">
+                                        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-400" />
+                                        <p className="text-gray-400">Comparando arquivos do storage com o banco de dados...</p>
+                                    </div>
+                                ) : databaseDuplicates.length === 0 ? (
+                                    <div className="p-8 text-center">
+                                        <Database className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                                        <h3 className="text-xl font-semibold text-gray-300 mb-2">
+                                            Nenhuma duplicata encontrada
+                                        </h3>
+                                        <p className="text-gray-500">
+                                            Clique em "Detectar Duplicatas" para comparar arquivos do storage com o banco de dados
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-gray-700">
+                                        {databaseDuplicates.map((duplicate, index) => (
+                                            <div key={duplicate.storageFile.key} className="p-4">
+                                                <div className="flex items-start gap-4">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedDatabaseDuplicates.includes(duplicate.storageFile.key)}
+                                                        onChange={() => toggleDatabaseDuplicateSelection(duplicate.storageFile.key)}
+                                                        className="mt-2 w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500"
+                                                    />
+
+                                                    <div className="flex-1 space-y-3">
+                                                        {/* Arquivo no Storage */}
+                                                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
+                                                                        <Cloud className="w-4 h-4 text-red-400" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="font-semibold text-white">
+                                                                            {duplicate.storageFile.filename}
+                                                                        </div>
+                                                                        <div className="text-sm text-gray-400">
+                                                                            Storage • {formatFileSize(duplicate.storageFile.size)} • {new Date(duplicate.storageFile.lastModified).toLocaleDateString('pt-BR')}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => window.open(duplicate.storageFile.url, '_blank')}
+                                                                    className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
+                                                                    title="Download do Storage"
+                                                                >
+                                                                    <Download className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Seta indicando duplicata */}
+                                                        <div className="flex items-center justify-center">
+                                                            <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/20 rounded-full border border-yellow-500/30">
+                                                                <span className="text-yellow-400 text-sm font-medium">
+                                                                    {duplicate.matchType === 'url' ? '🔗 URL Exata' :
+                                                                        duplicate.matchType === 'name' ? '📝 Nome Igual' :
+                                                                            `🔍 ${(duplicate.similarity * 100).toFixed(1)}% Similar`}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Track no Banco de Dados */}
+                                                        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                                                                    <Database className="w-4 h-4 text-green-400" />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-semibold text-white">
+                                                                        {duplicate.databaseTrack.artist} - {duplicate.databaseTrack.songName}
+                                                                    </div>
+                                                                    <div className="text-sm text-gray-400">
+                                                                        Banco de Dados • ID: {duplicate.databaseTrack.id}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         );
                     }

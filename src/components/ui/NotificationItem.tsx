@@ -28,26 +28,26 @@ const getIconForType = (type: Notification['type'], category: Notification['cate
 const getTypeStyles = (type: Notification['type']) => {
     switch (type) {
         case 'error':
-            return 'bg-green-500/20 text-green-400 border-green-500/30';
+            return 'bg-red-500/20 text-red-400 border-red-500/30';
         case 'warning':
-            return 'bg-green-500/20 text-green-400 border-green-500/30';
+            return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
         case 'success':
             return 'bg-green-500/20 text-green-400 border-green-500/30';
         case 'info':
-            return 'bg-green-500/20 text-green-400 border-green-500/30';
+            return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
         default:
-            return 'bg-green-500/20 text-green-400 border-green-500/30';
+            return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
 };
 
 const getCategoryColor = (category: Notification['category']) => {
     switch (category) {
-        case 'plan': return 'border-l-green-500 bg-green-500/5';
-        case 'security': return 'border-l-green-500 bg-green-500/5';
+        case 'plan': return 'border-l-yellow-500 bg-yellow-500/5';
+        case 'security': return 'border-l-red-500 bg-red-500/5';
         case 'download': return 'border-l-green-500 bg-green-500/5';
-        case 'feature': return 'border-l-green-500 bg-green-500/5';
-        case 'system': return 'border-l-green-500 bg-green-500/5';
-        default: return 'border-l-green-500 bg-green-500/5';
+        case 'feature': return 'border-l-purple-500 bg-purple-500/5';
+        case 'system': return 'border-l-blue-500 bg-blue-500/5';
+        default: return 'border-l-gray-500 bg-gray-500/5';
     }
 };
 
@@ -98,8 +98,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     return (
         <div
             className={`p-4 border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-all duration-200 ${!notification.read
-                ? `border-l-4 ${getCategoryColor(notification.category)}`
-                : 'border-l-4 border-l-transparent'
+                    ? `border-l-4 ${getCategoryColor(notification.category)}`
+                    : 'border-l-4 border-l-transparent'
                 }`}
             onClick={handleMarkAsRead}
         >
@@ -118,7 +118,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                                 {getCategoryLabel(notification.category)}
                             </span>
                             {!notification.read && (
-                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                             )}
                         </div>
                         <span className="text-xs text-gray-500">
@@ -138,7 +138,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                     {notification.actionUrl && notification.actionText && (
                         <Link
                             href={notification.actionUrl}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600/20 hover:bg-green-600/30 text-green-400 text-xs font-medium rounded-lg border border-green-500/30 transition-all duration-200 hover:scale-105"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-medium rounded-lg border border-blue-500/30 transition-all duration-200 hover:scale-105"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {notification.actionText}

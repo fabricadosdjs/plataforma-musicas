@@ -143,10 +143,17 @@ function compileAggregatedAnalysis(results: any[], audioFiles: any[]) {
         ? energyScores.reduce((a, b) => a + b, 0) / energyScores.length
         : 0;
 
+    // Calcula top gêneros para exibição
+    const topGenres = Object.entries(genreDistribution)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 10)
+        .map(([genre, count]) => ({ genre, count }));
+
     return {
         totalFiles,
         audioFiles: audioFilesCount,
         genreDistribution,
+        topGenres,
         bpmRange,
         averageQuality,
         averageEnergy,
@@ -165,9 +172,14 @@ function generateSmartRecommendations(analysis: any, results: any[]) {
     if (Object.keys(analysis.genreDistribution).length > 3) {
         recommendations.push({
             type: 'organization',
-            confidence: 0.9,
-            suggestion: 'Organizar biblioteca por gêneros',
-            reason: `Detectados ${Object.keys(analysis.genreDistribution).length} gêneros diferentes - organização melhoraria a navegação`
+            title: 'Organizar biblioteca por gêneros',
+            description: `Detectados ${Object.keys(analysis.genreDistribution).length} gêneros diferentes - organização melhoraria a navegação`,
+            priority: 'high',
+            actionable: true,
+            details: {
+                confidence: 0.9,
+                genreCount: Object.keys(analysis.genreDistribution).length
+            }
         });
     }
 
@@ -175,36 +187,56 @@ function generateSmartRecommendations(analysis: any, results: any[]) {
     if (analysis.lowQualityFiles.length > 0) {
         recommendations.push({
             type: 'quality',
-            confidence: 0.85,
-            suggestion: `Melhorar qualidade de ${analysis.lowQualityFiles.length} arquivos`,
-            reason: 'Arquivos com baixa qualidade podem afetar a experiência de audição'
+            title: `Melhorar qualidade de ${analysis.lowQualityFiles.length} arquivos`,
+            description: 'Arquivos com baixa qualidade podem afetar a experiência de audição',
+            priority: 'medium',
+            actionable: true,
+            details: {
+                confidence: 0.85,
+                lowQualityCount: analysis.lowQualityFiles.length
+            }
         });
     }
 
     // Recomendação de BPM
     if (analysis.bpmRange.max - analysis.bpmRange.min > 50) {
         recommendations.push({
-            type: 'bpm',
-            confidence: 0.8,
-            suggestion: 'Criar playlists por faixas de BPM',
-            reason: `Grande variação de BPM (${analysis.bpmRange.min}-${analysis.bpmRange.max}) ideal para diferentes momentos`
+            type: 'optimization',
+            title: 'Criar playlists por faixas de BPM',
+            description: `Grande variação de BPM (${analysis.bpmRange.min}-${analysis.bpmRange.max}) ideal para diferentes momentos`,
+            priority: 'medium',
+            actionable: true,
+            details: {
+                confidence: 0.8,
+                bpmRange: analysis.bpmRange
+            }
         });
     }
 
     // Recomendação de energia
     if (analysis.averageEnergy > 0.8) {
         recommendations.push({
-            type: 'energy',
-            confidence: 0.9,
-            suggestion: 'Biblioteca ideal para peak time',
-            reason: 'Alta energia média detectada - perfeito para momentos de clímax'
+            type: 'optimization',
+            title: 'Biblioteca ideal para peak time',
+            description: 'Alta energia média detectada - perfeito para momentos de clímax',
+            priority: 'low',
+            actionable: false,
+            details: {
+                confidence: 0.9,
+                averageEnergy: analysis.averageEnergy
+            }
         });
     } else if (analysis.averageEnergy < 0.6) {
         recommendations.push({
-            type: 'energy',
-            confidence: 0.85,
-            suggestion: 'Adicionar tracks de alta energia',
-            reason: 'Energia média baixa - considere adicionar tracks mais energéticos'
+            type: 'optimization',
+            title: 'Adicionar tracks de alta energia',
+            description: 'Energia média baixa - considere adicionar tracks mais energéticos',
+            priority: 'medium',
+            actionable: true,
+            details: {
+                confidence: 0.85,
+                averageEnergy: analysis.averageEnergy
+            }
         });
     }
 
@@ -214,10 +246,16 @@ function generateSmartRecommendations(analysis: any, results: any[]) {
 
     if (topGenre && (topGenre[1] as number) > analysis.audioFiles * 0.7) {
         recommendations.push({
-            type: 'diversity',
-            confidence: 0.75,
-            suggestion: 'Adicionar mais variedade de gêneros',
-            reason: `${topGenre[0]} representa ${Math.round(((topGenre[1] as number) / analysis.audioFiles) * 100)}% da biblioteca`
+            type: 'cleanup',
+            title: 'Adicionar mais variedade de gêneros',
+            description: `${topGenre[0]} representa ${Math.round(((topGenre[1] as number) / analysis.audioFiles) * 100)}% da biblioteca`,
+            priority: 'high',
+            actionable: true,
+            details: {
+                confidence: 0.75,
+                topGenre: topGenre[0],
+                percentage: Math.round(((topGenre[1] as number) / analysis.audioFiles) * 100)
+            }
         });
     }
 

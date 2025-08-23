@@ -34,9 +34,12 @@ export const useNotifications = () => {
 
     // Função para adicionar notificação
     const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+        console.log('➕ Tentando adicionar notificação:', notification);
+
         // Verificar se esta notificação já foi excluída
         const notificationKey = `${notification.category}-${notification.title}-${notification.message}`;
         if (excludedNotifications.has(notificationKey)) {
+            console.log('🚫 Notificação excluída, não adicionando:', notificationKey);
             return; // Não adicionar notificação excluída
         }
 
@@ -47,10 +50,13 @@ export const useNotifications = () => {
             read: false,
         };
 
+        console.log('➕ Nova notificação criada:', newNotification);
+
         setNotifications(prev => {
             // Limitar a 10 notificações, removendo as mais antigas
             const updated = [newNotification, ...prev];
             if (updated.length > 10) {
+                console.log('➕ Limitando a 10 notificações, removendo as mais antigas');
                 return updated.slice(0, 10);
             }
             return updated;
@@ -61,6 +67,7 @@ export const useNotifications = () => {
         stored.unshift(newNotification);
         // Manter apenas 10 notificações no localStorage
         localStorage.setItem('notifications', JSON.stringify(stored.slice(0, 10)));
+        console.log('➕ Notificação salva no localStorage');
     }, [excludedNotifications]);
 
     // Função para marcar como lida
@@ -79,16 +86,28 @@ export const useNotifications = () => {
 
     // Função para limpar todas as notificações
     const clearAllNotifications = useCallback(() => {
+        console.log('🧹 clearAllNotifications chamado');
+        console.log('🧹 Estado atual das notificações:', notifications);
+
         // Limpar todas as notificações do estado
         setNotifications([]);
+        console.log('🧹 Estado limpo, notifications agora é array vazio');
 
         // Limpar completamente do localStorage
         localStorage.removeItem('notifications');
+        console.log('🧹 localStorage "notifications" removido');
 
         // Limpar também as notificações excluídas
         setExcludedNotifications(new Set());
         localStorage.removeItem('excludedNotifications');
-    }, []);
+        console.log('🧹 localStorage "excludedNotifications" removido');
+
+        // Adicionar um flag para evitar recriação imediata
+        localStorage.setItem('notificationsCleared', Date.now().toString());
+        console.log('🧹 Flag de limpeza adicionada ao localStorage');
+
+        console.log('🧹 Limpeza completa finalizada');
+    }, [notifications]);
 
     // Função para remover notificação
     const removeNotification = useCallback((notificationId: string) => {
@@ -118,7 +137,22 @@ export const useNotifications = () => {
     const checkVipExpiration = useCallback(() => {
         if (!session?.user) return;
 
+        // Verificar se as notificações foram limpas recentemente
+        const notificationsCleared = localStorage.getItem('notificationsCleared');
+        if (notificationsCleared) {
+            const clearedTime = parseInt(notificationsCleared);
+            const now = Date.now();
+            const timeSinceCleared = now - clearedTime;
+
+            // Se foi limpo há menos de 1 minuto, não criar novas notificações
+            if (timeSinceCleared < 60000) {
+                console.log('👑 Notificações foram limpas recentemente, aguardando antes de criar novas');
+                return;
+            }
+        }
+
         const user = session.user as any;
+        console.log('👑 Verificando vencimento VIP para usuário:', user.id);
 
         if (user.is_vip && user.vencimento) {
             const vencimentoDate = new Date(user.vencimento);
@@ -126,24 +160,32 @@ export const useNotifications = () => {
             const diffTime = vencimentoDate.getTime() - now.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
+            console.log('👑 Vencimento em:', diffDays, 'dias');
+
             // Verificar se já existe notificação de vencimento usando localStorage
             const stored = localStorage.getItem('notifications');
             let hasExpirationNotification = false;
 
             if (stored) {
                 const parsed = JSON.parse(stored);
-                hasExpirationNotification = parsed.some((n: any) =>
+                hasExpirationNotification = parsed.some((n: { category: string; id: string }) =>
                     n.category === 'plan' && (n.id.includes('vip-expiring') || n.id.includes('vip-expired'))
                 );
+                console.log('👑 Já existe notificação de vencimento?', hasExpirationNotification);
             }
 
             // Remover notificações antigas de vencimento do estado local
-            setNotifications(prev => prev.filter(n =>
-                !(n.category === 'plan' && (n.id.includes('vip-expiring') || n.id.includes('vip-expired')))
-            ));
+            setNotifications(prev => {
+                const filtered = prev.filter(n =>
+                    !(n.category === 'plan' && (n.id.includes('vip-expiring') || n.id.includes('vip-expired')))
+                );
+                console.log('👑 Notificações de vencimento removidas do estado local');
+                return filtered;
+            });
 
             if (!hasExpirationNotification) {
                 if (diffDays <= 7 && diffDays >= 0) {
+                    console.log('👑 Criando notificação de vencimento em', diffDays, 'dias');
                     addNotification({
                         type: 'warning',
                         title: 'Plano VIP Vencendo',
@@ -153,6 +195,7 @@ export const useNotifications = () => {
                         actionText: 'Renovar Plano'
                     });
                 } else if (diffDays < 0) {
+                    console.log('👑 Criando notificação de plano expirado');
                     addNotification({
                         type: 'error',
                         title: 'Plano VIP Expirado',
@@ -163,11 +206,27 @@ export const useNotifications = () => {
                     });
                 }
             }
+        } else {
+            console.log('👑 Usuário não é VIP ou não tem data de vencimento');
         }
     }, [session, addNotification]);
 
     // Verificar notificações do sistema
     const checkSystemNotifications = useCallback(() => {
+        // Verificar se as notificações foram limpas recentemente
+        const notificationsCleared = localStorage.getItem('notificationsCleared');
+        if (notificationsCleared) {
+            const clearedTime = parseInt(notificationsCleared);
+            const now = Date.now();
+            const timeSinceCleared = now - clearedTime;
+
+            // Se foi limpo há menos de 1 minuto, não criar novas notificações
+            if (timeSinceCleared < 60000) {
+                console.log('⚡ Notificações foram limpas recentemente, aguardando antes de criar novas');
+                return;
+            }
+        }
+
         // Notificação de bem-vindo para novos usuários
         if (session?.user && !hasCheckedRef.current.system) {
             hasCheckedRef.current.system = true;
@@ -180,7 +239,7 @@ export const useNotifications = () => {
                 const stored = localStorage.getItem('notifications');
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    const hasWelcomeNotification = parsed.some((n: any) =>
+                    const hasWelcomeNotification = parsed.some((n: { category: string; id: string }) =>
                         n.category === 'system' && n.id.includes('welcome')
                     );
 
@@ -211,6 +270,20 @@ export const useNotifications = () => {
 
     // Verificar notificações de segurança
     const checkSecurityNotifications = useCallback(() => {
+        // Verificar se as notificações foram limpas recentemente
+        const notificationsCleared = localStorage.getItem('notificationsCleared');
+        if (notificationsCleared) {
+            const clearedTime = parseInt(notificationsCleared);
+            const now = Date.now();
+            const timeSinceCleared = now - clearedTime;
+
+            // Se foi limpo há menos de 1 minuto, não criar novas notificações
+            if (timeSinceCleared < 60000) {
+                console.log('🛡️ Notificações foram limpas recentemente, aguardando antes de criar novas');
+                return;
+            }
+        }
+
         if (session?.user && !hasCheckedRef.current.security) {
             hasCheckedRef.current.security = true;
             const user = session.user as any;
@@ -221,7 +294,7 @@ export const useNotifications = () => {
                 const stored = localStorage.getItem('notifications');
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    const hasPasswordNotification = parsed.some((n: any) =>
+                    const hasPasswordNotification = parsed.some((n: { category: string; id: string }) =>
                         n.category === 'security' && n.id.includes('weak-password')
                     );
 
@@ -252,6 +325,20 @@ export const useNotifications = () => {
 
     // Verificar notificações de recursos
     const checkFeatureNotifications = useCallback(() => {
+        // Verificar se as notificações foram limpas recentemente
+        const notificationsCleared = localStorage.getItem('notificationsCleared');
+        if (notificationsCleared) {
+            const clearedTime = parseInt(notificationsCleared);
+            const now = Date.now();
+            const timeSinceCleared = now - clearedTime;
+
+            // Se foi limpo há menos de 1 minuto, não criar novas notificações
+            if (timeSinceCleared < 60000) {
+                console.log('⭐ Notificações foram limpas recentemente, aguardando antes de criar novas');
+                return;
+            }
+        }
+
         if (session?.user && !hasCheckedRef.current.feature) {
             hasCheckedRef.current.feature = true;
             const user = session.user as any;
@@ -262,7 +349,7 @@ export const useNotifications = () => {
                 const stored = localStorage.getItem('notifications');
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    const hasFeatureNotification = parsed.some((n: any) =>
+                    const hasFeatureNotification = parsed.some((n: { category: string; id: string }) =>
                         n.category === 'feature' && n.id.includes('vip-features')
                     );
 
@@ -311,18 +398,38 @@ export const useNotifications = () => {
     // Carregar notificações do localStorage
     useEffect(() => {
         try {
+            console.log('📱 Carregando notificações do localStorage...');
+
+            // Verificar se as notificações foram limpas recentemente
+            const notificationsCleared = localStorage.getItem('notificationsCleared');
+            if (notificationsCleared) {
+                const clearedTime = parseInt(notificationsCleared);
+                const now = Date.now();
+                const timeSinceCleared = now - clearedTime;
+
+                // Se foi limpo há menos de 1 minuto, não carregar notificações
+                if (timeSinceCleared < 60000) {
+                    console.log('📱 Notificações foram limpas recentemente, não carregando do localStorage');
+                    setNotifications([]);
+                    return;
+                }
+            }
+
             // Carregar notificações excluídas
             const excludedStored = localStorage.getItem('excludedNotifications');
             if (excludedStored) {
                 const excludedArray = JSON.parse(excludedStored);
                 setExcludedNotifications(new Set(excludedArray));
+                console.log('📱 Notificações excluídas carregadas:', excludedArray);
             }
 
             const stored = localStorage.getItem('notifications');
             if (stored) {
                 const parsed = JSON.parse(stored);
+                console.log('📱 Notificações encontradas no localStorage:', parsed);
+
                 // Converter timestamps de volta para Date objects
-                const withDates = parsed.map((n: any) => ({
+                const withDates = parsed.map((n: { timestamp: string | number | Date }) => ({
                     ...n,
                     timestamp: new Date(n.timestamp)
                 }));
@@ -330,25 +437,32 @@ export const useNotifications = () => {
                 // Filtrar notificações antigas ao carregar
                 const thirtyDaysAgo = new Date();
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                const filtered = withDates.filter(n => n.timestamp > thirtyDaysAgo);
+                const filtered = withDates.filter((n: { timestamp: Date }) => n.timestamp > thirtyDaysAgo);
+                console.log('📱 Notificações após filtro de 30 dias:', filtered);
 
                 // Limitar a 10 notificações
                 const limited = filtered.slice(0, 10);
                 setNotifications(limited);
+                console.log('📱 Notificações finais carregadas:', limited);
 
                 // Atualizar localStorage se houve filtragem ou limitação
                 if (limited.length !== withDates.length) {
                     localStorage.setItem('notifications', JSON.stringify(limited));
+                    console.log('📱 localStorage atualizado após filtragem');
                 }
+            } else {
+                console.log('📱 Nenhuma notificação encontrada no localStorage');
             }
         } catch (error) {
-            console.error('Erro ao carregar notificações:', error);
+            console.error('❌ Erro ao carregar notificações:', error);
         }
     }, []);
 
     // Verificar notificações periodicamente
     useEffect(() => {
         if (session?.user) {
+            console.log('⏰ Iniciando verificações periódicas de notificações para usuário:', session.user.id);
+
             // Resetar verificações quando a sessão mudar
             hasCheckedRef.current = {
                 system: false,
@@ -366,12 +480,16 @@ export const useNotifications = () => {
 
             // Verificar a cada 5 minutos
             const interval = setInterval(() => {
+                console.log('⏰ Executando verificações periódicas...');
                 checkVipExpiration();
                 cleanOldNotifications(); // Limpar notificações antigas periodicamente
                 setLastCheck(new Date());
             }, 5 * 60 * 1000);
 
-            return () => clearInterval(interval);
+            return () => {
+                console.log('⏰ Limpando intervalo de verificações periódicas');
+                clearInterval(interval);
+            };
         }
     }, [session, checkVipExpiration, checkSystemNotifications, checkSecurityNotifications, checkFeatureNotifications, cleanOldNotifications]);
 

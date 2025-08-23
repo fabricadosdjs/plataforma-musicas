@@ -431,6 +431,18 @@ const Header = ({ }: HeaderProps) => {
                           >
                             Limpar Tudo
                           </button>
+                          <button
+                            onClick={() => {
+                              console.log('🧪 Teste: Estado atual das notificações:', notifications);
+                              console.log('🧪 Teste: localStorage notifications:', localStorage.getItem('notifications'));
+                              console.log('🧪 Teste: localStorage excludedNotifications:', localStorage.getItem('excludedNotifications'));
+                              console.log('🧪 Teste: localStorage notificationsCleared:', localStorage.getItem('notificationsCleared'));
+                            }}
+                            className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                            title="Testar sistema de notificações"
+                          >
+                            🧪 Teste
+                          </button>
                         </div>
                       )}
                     </div>
@@ -488,15 +500,36 @@ const Header = ({ }: HeaderProps) => {
                         </div>
                       </div>
 
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${session.user.is_vip
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${(() => {
+                        // Lógica para determinar status VIP real
+                        const isVipByField = session.user.is_vip;
+                        const vencimento = (session.user as any).vencimento;
+                        const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
+                        const isVipReal = isVipByField || hasValidVencimento;
+                        return isVipReal;
+                      })()
                         ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
                         : 'bg-red-500/20 text-red-300 border border-red-500/30'
                         }`}>
-                        {session.user.is_vip ? (
-                          <><Crown className="h-4 w-4" /> VIP</>
-                        ) : (
-                          <><AlertCircle className="h-4 w-4" /> Free</>
-                        )}
+                        {(() => {
+                          // Lógica para determinar status VIP real
+                          const isVipByField = session.user.is_vip;
+                          const vencimento = (session.user as any).vencimento;
+                          const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
+                          const isVipReal = isVipByField || hasValidVencimento;
+
+                          if (isVipReal) {
+                            if ((session.user as any).plan) {
+                              return <><Crown className="h-4 w-4" /> {(session.user as any).plan}</>;
+                            } else if (hasValidVencimento) {
+                              return <><Crown className="h-4 w-4" /> BÁSICO</>;
+                            } else {
+                              return <><Crown className="h-4 w-4" /> VIP</>;
+                            }
+                          } else {
+                            return <><AlertCircle className="h-4 w-4" /> Free</>;
+                          }
+                        })()}
                       </div>
 
                       {session.user.vencimento && (typeof session.user.vencimento === 'string' || isValidDate(session.user.vencimento)) && (
