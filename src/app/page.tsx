@@ -1,12 +1,12 @@
 // src/app/page.tsx
 "use client";
 
-import MainLayout from '@/components/layout/MainLayout';
+import Header from '@/components/layout/Header';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import AdminMessagesDisplay from '@/components/ui/AdminMessagesDisplay';
 import CreditDashboard from '@/components/credit/CreditDashboard';
-import NewFooter from '@/components/layout/NewFooter';
+
 import {
   Heart, Music, TrendingUp, Database, Upload, AlertTriangle, CheckCircle, Clock, Star, Zap, Play, Download, Users, Award, Globe, Headphones, Crown, Sparkles, Target, ArrowRight, ChevronRight, Shuffle, Volume2, Disc3, Mic2, Radio, Disc, Disc2, Archive, Activity, FolderOpen, Search, ShoppingCart
 } from 'lucide-react';
@@ -58,8 +58,12 @@ function HomePageContent() {
   }, []);
 
   return (
-    <MainLayout>
-      <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Header Fixo */}
+      <Header />
+
+      {/* Conteúdo Principal - Tela Cheia */}
+      <div className="pt-12 lg:pt-16">
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-48 sm:w-56 md:w-64 lg:w-72 h-48 sm:h-56 md:h-64 lg:h-72 bg-purple-500/5 rounded-full blur-3xl animate-pulse"></div>
@@ -67,7 +71,7 @@ function HomePageContent() {
           <div className="absolute bottom-20 left-1/4 w-56 sm:w-64 md:w-80 h-56 sm:h-64 md:h-80 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
         </div>
 
-        <main className="max-w-5xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 py-6 sm:py-8 md:py-12 relative z-10">
+        <main className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-6 sm:py-8 md:py-12 relative z-10">
 
           {/* Hero Section */}
           <div className={`text-center mb-12 sm:mb-16 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -181,280 +185,7 @@ function HomePageContent() {
             </Link>
           </div>
 
-          {/* SEÇÃO - ESTATÍSTICAS IMPRESSIONANTES */}
 
-          {/* NOVA SEÇÃO: Cards de Estatísticas e Funcionalidades Rápidas (versão aprimorada) */}
-          <div className="mb-6 sm:mb-8 md:mb-12">
-            {/* Header da seção */}
-            <div className="text-center mb-4 sm:mb-6 md:mb-8">
-              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-500 to-green-400 tracking-wider mb-2 sm:mb-3">
-                📊 ESTATÍSTICAS & FUNCIONALIDADES
-              </h2>
-              <p className="text-gray-400 text-xs sm:text-sm max-w-xl lg:max-w-2xl mx-auto px-2 sm:px-4">
-                Visualize métricas em tempo real e acesse funcionalidades rápidas para otimizar sua experiência
-              </p>
-            </div>
-
-            {/* Grid de Cards - Estatísticas */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
-              {/* Card 1: Total de Músicas */}
-              <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 card-statistics stat-card card-shine-effect">
-                {/* Background com gradiente animado */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-600 to-cyan-500 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
-
-                {/* Efeito de brilho no hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
-
-                {/* Conteúdo */}
-                <div className="relative z-10 p-3 sm:p-4 md:p-6 text-center">
-                  <div className="flex justify-center mb-2 sm:mb-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 stat-icon">
-                      <Music className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" />
-                    </div>
-                  </div>
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">
-                    {tracks.length.toLocaleString('pt-BR')}
-                  </h3>
-                  <p className="text-white/90 text-xs sm:text-sm font-medium mb-2 sm:mb-3">
-                    Total de Músicas
-                  </p>
-                  <div className="text-white/70 text-[10px] sm:text-xs">
-                    <span className="inline-flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse status-indicator green"></div>
-                      <span className="hidden sm:inline">Atualizado em tempo real</span>
-                      <span className="sm:hidden">Tempo real</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2: Músicas na Fila */}
-              <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 card-statistics stat-card card-shine-effect">
-                {/* Background com gradiente animado */}
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-600 to-green-500 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
-
-                {/* Efeito de brilho no hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
-
-                {/* Conteúdo */}
-                <div className="relative z-10 p-3 sm:p-4 md:p-6 text-center">
-                  <div className="flex justify-center mb-2 sm:mb-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 stat-icon">
-                      <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" />
-                    </div>
-                  </div>
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">
-                    {downloadQueue.length}
-                  </h3>
-                  <p className="text-white/90 text-xs sm:text-sm font-medium mb-2 sm:mb-3">
-                    Na Fila de Download
-                  </p>
-                  <div className="text-white/70 text-[10px] sm:text-xs">
-                    <span className="inline-flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full animate-pulse status-indicator blue"></div>
-                      <span className="hidden sm:inline">Pronto para baixar</span>
-                      <span className="sm:hidden">Pronto</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: Estilos Disponíveis */}
-              <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 card-statistics stat-card card-shine-effect">
-                {/* Background com gradiente animado */}
-                <div className="absolute inset-0 bg-gradient-to-br from-rose-500 via-pink-600 to-red-500 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
-
-                {/* Efeito de brilho no hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
-
-                {/* Conteúdo */}
-                <div className="relative z-10 p-3 sm:p-4 md:p-6 text-center">
-                  <div className="flex justify-center mb-2 sm:mb-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 stat-icon">
-                      <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" />
-                    </div>
-                  </div>
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">
-                    {genres.length}
-                  </h3>
-                  <p className="text-white/90 text-xs sm:text-sm font-medium mb-2 sm:mb-3">
-                    Estilos Musicais
-                  </p>
-                  <div className="text-white/70 text-[10px] sm:text-xs">
-                    <span className="inline-flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-pink-400 rounded-full animate-pulse status-indicator pink"></div>
-                      <span className="hidden sm:inline">Gêneros únicos</span>
-                      <span className="sm:hidden">Gêneros</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 4: Músicas Baixadas */}
-              <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 card-statistics stat-card card-shine-effect">
-                {/* Background com gradiente animado */}
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-orange-600 to-yellow-500 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
-
-                {/* Efeito de brilho no hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
-
-                {/* Conteúdo */}
-                <div className="relative z-10 p-3 sm:p-4 md:p-6 text-center">
-                  <div className="flex justify-center mb-2 sm:mb-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 stat-icon">
-                      <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" />
-                    </div>
-                  </div>
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">
-                    {downloadedTrackIds.length}
-                  </h3>
-                  <p className="text-white/90 text-xs sm:text-sm font-medium mb-2 sm:mb-3">
-                    Músicas Baixadas
-                  </p>
-                  <div className="text-white/70 text-[10px] sm:text-xs">
-                    <span className="inline-flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-400 rounded-full animate-pulse status-indicator orange"></div>
-                      <span className="hidden sm:inline">Biblioteca local</span>
-                      <span className="sm:hidden">Local</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Grid de Cards - Funcionalidades Rápidas */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {/* Card: Download em Massa */}
-              <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 cursor-pointer card-functionality card-shine-effect"
-                onClick={() => {
-                  if (filteredTracks.length > 0) {
-                    const newTracks = filteredTracks.filter(track => !downloadedTrackIds.includes(track.id));
-                    // Aqui você pode implementar a lógica de download em massa
-                    showToast(`Baixando ${newTracks.length} músicas novas!`, 'success');
-                  } else {
-                    showToast('Nenhuma música nova para baixar!', 'info');
-                  }
-                }}>
-                {/* Background com gradiente */}
-                <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-emerald-700 to-teal-600 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
-
-                {/* Efeito de brilho no hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
-
-                {/* Conteúdo */}
-                <div className="relative z-10 p-4 sm:p-5 md:p-6 text-center">
-                  <div className="flex justify-center mb-3 sm:mb-4">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 card-icon">
-                      <Clock className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
-                    </div>
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 card-title-glow">
-                    📅 Organizar por Data
-                  </h3>
-                  <p className="text-white/90 text-xs sm:text-sm leading-relaxed mb-3 sm:mb-4">
-                    <span className="hidden sm:inline">Visualize e organize suas músicas por data de lançamento</span>
-                    <span className="sm:hidden">Organize músicas por data</span>
-                  </p>
-                  <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/20 rounded-xl text-white/90 text-xs sm:text-sm font-medium">
-                    <span>{Object.keys(groupTracksByReleaseDate.grouped).length} datas</span>
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-400 rounded-full animate-pulse status-indicator blue"></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card: Estatísticas Avançadas */}
-              <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-105 cursor-pointer card-functionality card-shine-effect"
-                onClick={() => {
-                  const stats = {
-                    totalTracks: tracks.length,
-                    downloadedTracks: downloadedTrackIds.length,
-                    queueTracks: downloadQueue.length,
-                    uniqueGenres: genres.length,
-                    uniqueArtists: artists.length
-                  };
-                  showToast(`📊 Estatísticas: ${stats.totalTracks} total, ${stats.downloadedTracks} baixadas, ${stats.queueTracks} na fila`, 'info');
-                }}>
-                {/* Background com gradiente */}
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-600 via-blue-700 to-indigo-600 opacity-90 group-hover:opacity-100 transition-opacity duration-500 gradient-animate"></div>
-
-                {/* Efeito de brilho no hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 -translate-x-full group-hover:translate-x-full"></div>
-
-                {/* Conteúdo */}
-                <div className="relative z-10 p-4 sm:p-5 md:p-6 text-center">
-                  <div className="flex justify-center mb-3 sm:mb-4">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 card-icon">
-                      <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
-                    </div>
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 card-title-glow">
-                    📊 Estatísticas Avançadas
-                  </h3>
-                  <p className="text-white/90 text-xs sm:text-sm leading-relaxed mb-3 sm:mb-4">
-                    <span className="hidden sm:inline">Visualize métricas detalhadas sobre sua biblioteca musical</span>
-                    <span className="sm:hidden">Métricas da biblioteca</span>
-                  </p>
-                  <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/20 rounded-xl text-white/90 text-xs sm:text-sm font-medium">
-                    <span>Clique para ver</span>
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-cyan-400 rounded-full animate-pulse status-indicator blue"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Seção de Insights e Dicas */}
-            <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-r from-[#1a1a2e]/60 via-[#16213e]/60 to-[#0f3460]/60 backdrop-blur-xl rounded-2xl border border-white/10">
-              <div className="text-center mb-4 sm:mb-6">
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
-                  💡 Dicas e Insights
-                </h3>
-                <p className="text-gray-400 text-xs sm:text-sm">
-                  <span className="hidden sm:inline">Aproveite ao máximo a plataforma com estas dicas úteis</span>
-                  <span className="sm:hidden">Dicas para usar a plataforma</span>
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-                <div className="text-center p-3 sm:p-4 bg-white/5 rounded-xl border border-white/10 insight-card">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 insight-icon">
-                    <Search className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
-                  <h4 className="text-white font-semibold text-xs sm:text-sm mb-2">Busca Inteligente</h4>
-                  <p className="text-gray-400 text-[10px] sm:text-xs">
-                    <span className="hidden sm:inline">Use filtros combinados para encontrar exatamente o que procura</span>
-                    <span className="sm:hidden">Filtros combinados para busca</span>
-                  </p>
-                </div>
-
-                <div className="text-center p-3 sm:p-4 bg-white/5 rounded-xl border border-white/10 insight-card">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 insight-icon">
-                    <Download className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
-                  <h4 className="text-white font-semibold text-xs sm:text-sm mb-2">Downloads em Lote</h4>
-                  <p className="text-gray-400 text-[10px] sm:text-xs">
-                    <span className="hidden sm:inline">Adicione várias músicas à fila e baixe tudo de uma vez</span>
-                    <span className="sm:hidden">Downloads em massa</span>
-                  </p>
-                </div>
-
-                <div className="text-center p-3 sm:p-4 bg-white/5 rounded-xl border border-white/10 insight-card">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 insight-icon">
-                    <Star className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
-                  <h4 className="text-white font-semibold text-xs sm:text-sm mb-2">Favoritos</h4>
-                  <p className="text-gray-400 text-[10px] sm:text-xs">
-                    <span className="hidden sm:inline">Marque suas músicas favoritas para acesso rápido</span>
-                    <span className="sm:hidden">Músicas favoritas</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* SEÇÃO - RECADOS DA ADM */}
-          <div className="mb-20">
-            <AdminMessagesDisplay showAdminControls={false} />
-          </div>
 
           {/* SEÇÃO - PLANOS PARA USUÁRIOS NÃO LOGADOS */}
           {!session?.user && (
@@ -662,17 +393,17 @@ function HomePageContent() {
             </div>
           </div>
 
-          {/* BOX DESTAQUE - DOWNLOAD EM ZIP */}
+          {/* BOX DESTAQUE - DOWNLOAD EM LOTE */}
           <div className="bg-gradient-to-br from-cyan-900/30 via-blue-900/30 to-cyan-900/30 rounded-3xl p-10 mb-20 border border-cyan-500/30 backdrop-blur-sm">
             <div className="text-center mb-10">
               <div className="flex items-center justify-center mb-6">
                 <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 rounded-full mr-4 shadow-lg">
                   <Archive className="h-10 w-10 text-white" />
                 </div>
-                <h2 className="text-4xl font-bold text-white">Download em ZIP Personalizado</h2>
+                <h2 className="text-4xl font-bold text-white">Download em Lote</h2>
               </div>
               <p className="text-gray-300 max-w-4xl mx-auto text-xl mb-8">
-                Escolha suas músicas favoritas, filtre por artista, estilo e muito mais, e baixe tudo de uma vez só em um arquivo ZIP. Praticidade máxima para DJs profissionais!
+                Baixe músicas em lotes de 10 em 10 para máxima organização! Escolha entre: novidades da semana, por artista específico, por estilo musical ou por gravadora. Ideal para DJs que querem manter suas bibliotecas organizadas e atualizadas!
               </p>
 
               {/* Cards de Benefícios */}
@@ -681,33 +412,33 @@ function HomePageContent() {
                   <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
                     <Database className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Filtros Inteligentes</h3>
-                  <p className="text-gray-300 text-base">Filtre por artista, gênero, BPM, tonalidade e muito mais para criar sua seleção perfeita</p>
+                  <h3 className="text-2xl font-bold text-white mb-4">Como Funciona</h3>
+                  <p className="text-gray-300 text-base">1. Escolha o tipo de lote: novidades, por artista, estilo ou gravadora 2. O sistema mostra 10 músicas por vez 3. Baixe o lote atual e navegue para o próximo</p>
                 </div>
 
                 <div className="group bg-gradient-to-br from-blue-900/30 to-indigo-900/30 rounded-2xl p-8 text-center border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 transform hover:scale-105">
                   <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
                     <Download className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Download em Lote</h3>
-                  <p className="text-gray-300 text-base">Baixe centenas de músicas de uma vez só em um arquivo ZIP organizado e compactado</p>
+                  <h3 className="text-2xl font-bold text-white mb-4">Sistema de Lotes</h3>
+                  <p className="text-gray-300 text-base">Downloads organizados em grupos de 10 músicas por vez. Navegue entre lotes facilmente e mantenha sua biblioteca sempre atualizada com as melhores faixas</p>
                 </div>
 
                 <div className="group bg-gradient-to-br from-indigo-900/30 to-purple-900/30 rounded-2xl p-8 text-center border border-indigo-500/30 hover:border-indigo-400/50 transition-all duration-300 transform hover:scale-105">
                   <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
                     <Zap className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Velocidade Máxima</h3>
-                  <p className="text-gray-300 text-base">Downloads ultra-rápidos com nossa infraestrutura otimizada para grandes arquivos</p>
+                  <h3 className="text-2xl font-bold text-white mb-4">Navegação Inteligente</h3>
+                  <p className="text-gray-300 text-base">Navegue facilmente entre lotes com botões de próximo/anterior. Cada lote de 10 músicas é organizado automaticamente por categoria</p>
                 </div>
               </div>
 
               {/* Botão de Ação */}
               <div className="text-center">
-                <Link href="/playlist">
+                <Link href="/new">
                   <button className="group bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold py-4 px-10 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 mx-auto shadow-lg hover:shadow-xl transform hover:scale-105">
                     <Archive className="h-6 w-6 group-hover:animate-pulse" />
-                    Criar Playlist Personalizada
+                    COMECE A OUVIR E BAIXAR
                     <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </Link>
@@ -819,100 +550,7 @@ function HomePageContent() {
             </div>
           </div>
 
-          {/* SEÇÃO - RECURSOS AVANÇADOS */}
-          <div className="mb-20">
-            <div className="bg-gradient-to-br from-violet-900/30 via-purple-900/30 to-fuchsia-900/30 rounded-3xl p-10 border border-violet-500/30 backdrop-blur-sm relative overflow-hidden">
-              {/* Background Pattern */}
-              <div className="absolute inset-0 opacity-5">
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-violet-400 via-purple-400 to-fuchsia-400"></div>
-              </div>
 
-              <div className="text-center mb-12 relative z-10">
-                <div className="flex items-center justify-center mb-6">
-                  <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 p-4 rounded-full mr-4 shadow-lg">
-                    <Zap className="h-10 w-10 text-white" />
-                  </div>
-                  <h2 className="text-4xl font-bold text-white">RECURSOS AVANÇADOS</h2>
-                </div>
-                <p className="text-gray-300 max-w-4xl mx-auto text-xl">
-                  Ferramentas profissionais que elevam sua experiência de DJ ao próximo nível
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10 relative z-10">
-                {/* Análise de BPM */}
-                <div className="group bg-gradient-to-br from-violet-900/30 to-purple-900/30 rounded-2xl p-8 text-center border border-violet-500/30 hover:border-violet-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                  <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                    <Activity className="h-10 w-10 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-violet-300 transition-colors duration-300">Análise de BPM</h3>
-                  <p className="text-gray-300 text-base">Detecção automática de BPM para transições perfeitas</p>
-                  <div className="mt-4 flex justify-center">
-                    <div className="flex space-x-1">
-                      {[120, 128, 140].map((bpm, i) => (
-                        <div key={i} className="w-2 h-8 bg-gradient-to-t from-violet-400 to-purple-400 rounded-full animate-pulse" style={{ animationDelay: `${i * 0.2}s` }}></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Detecção de Tonalidade */}
-                <div className="group bg-gradient-to-br from-purple-900/30 to-fuchsia-900/30 rounded-2xl p-8 text-center border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                  <div className="bg-gradient-to-r from-purple-600 to-fuchsia-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                    <Music className="h-10 w-10 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-purple-300 transition-colors duration-300">Detecção de Tonalidade</h3>
-                  <p className="text-gray-300 text-base">Identificação automática de chaves musicais para harmonias perfeitas</p>
-                  <div className="mt-4 text-center">
-                    <div className="inline-flex items-center gap-2 bg-purple-600/20 px-3 py-1 rounded-full">
-                      <span className="text-purple-300 font-mono text-sm">C Major</span>
-                      <span className="text-purple-400">→</span>
-                      <span className="text-purple-300 font-mono text-sm">G Major</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Organização Inteligente */}
-                <div className="group bg-gradient-to-br from-fuchsia-900/30 to-violet-900/30 rounded-2xl p-8 text-center border border-fuchsia-500/30 hover:border-fuchsia-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-fuchsia-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                  <div className="bg-gradient-to-r from-fuchsia-600 to-violet-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                    <FolderOpen className="h-10 w-10 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-fuchsia-300 transition-colors duration-300">Organização Inteligente</h3>
-                  <p className="text-gray-300 text-base">Sistema automático de tags e categorização por gênero</p>
-                  <div className="mt-4 flex flex-wrap justify-center gap-2">
-                    {['House', 'Techno', 'Trance', 'DnB'].map((genre, i) => (
-                      <span key={genre} className="px-2 py-1 bg-fuchsia-600/20 text-fuchsia-300 text-xs rounded-full border border-fuchsia-500/30">
-                        {genre}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Barra de recursos */}
-              <div className="text-center relative z-10">
-                <div className="inline-flex items-center gap-4 bg-black/20 rounded-full px-6 py-3 border border-violet-500/30">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-green-300 text-sm">BPM Detection</span>
-                  </div>
-                  <div className="w-px h-4 bg-violet-500/30"></div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-                    <span className="text-blue-300 text-sm">Key Detection</span>
-                  </div>
-                  <div className="w-px h-4 bg-violet-500/30"></div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
-                    <span className="text-purple-300 text-sm">Auto-Organization</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* SEÇÃO - AVISO IMPORTANTE SOBRE O ACERVO */}
           {session?.user?.is_vip && (
@@ -1175,6 +813,48 @@ function HomePageContent() {
             </div>
           </div>
 
+          {/* Call to Action */}
+          <div className="text-center py-12 relative">
+            {/* Elementos flutuantes de fundo */}
+            <div className="absolute top-10 left-10 w-6 h-6 bg-purple-400 rounded-full animate-bounce opacity-20"></div>
+            <div className="absolute top-20 right-20 w-4 h-4 bg-pink-400 rounded-full animate-bounce opacity-20" style={{ animationDelay: '0.5s' }}></div>
+            <div className="absolute bottom-20 left-1/4 w-5 h-5 bg-blue-400 rounded-full animate-bounce opacity-20" style={{ animationDelay: '1s' }}></div>
+
+            <h2 className="text-5xl font-bold text-white mb-8 relative z-10">Pronto para dominar as pistas?</h2>
+            <p className="text-2xl text-gray-300 mb-12 max-w-4xl mx-auto relative z-10">
+              Junte-se a milhares de DJs que já descobriram o futuro da música eletrônica.
+              Comece sua jornada hoje mesmo.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center relative z-10">
+              <Link href="/new">
+                <button className="group bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-bold py-5 px-10 rounded-2xl text-xl transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 flex items-center justify-center gap-4 transform hover:scale-105 relative overflow-hidden">
+                  {/* Efeito de brilho */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                  {/* Partículas flutuantes */}
+                  <div className="absolute top-2 left-2 w-1 h-1 bg-blue-300 rounded-full animate-ping opacity-60"></div>
+                  <div className="absolute bottom-2 right-2 w-1 h-1 bg-purple-300 rounded-full animate-ping opacity-60" style={{ animationDelay: '0.5s' }}></div>
+
+                  <Play className="h-7 w-7 group-hover:animate-pulse relative z-10" />
+                  <span className="relative z-10">Começar Agora</span>
+                  <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform relative z-10" />
+                </button>
+              </Link>
+              <Link href="/trending">
+                <button className="group bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 hover:from-purple-700 hover:via-pink-700 hover:to-red-700 text-white font-bold py-5 px-10 rounded-2xl text-xl transition-all duration-300 shadow-2xl hover:shadow-purple-500/25 flex items-center justify-center gap-4 transform hover:scale-105 relative overflow-hidden">
+                  {/* Efeito de brilho */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                  {/* Partículas flutuantes */}
+                  <div className="absolute top-2 left-2 w-1 h-1 bg-purple-300 rounded-full animate-ping opacity-60"></div>
+                  <div className="absolute bottom-2 right-2 w-1 h-1 bg-pink-300 rounded-full animate-ping opacity-60" style={{ animationDelay: '0.5s' }}></div>
+
+                  <TrendingUp className="h-7 w-7 group-hover:animate-pulse relative z-10" />
+                  <span className="relative z-10">Ver Trending</span>
+                  <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform relative z-10" />
+                </button>
+              </Link>
+            </div>
+          </div>
+
           {/* Depoimentos de Usuários */}
           <div className="mb-20">
             <div className="bg-gradient-to-br from-emerald-900/30 via-teal-900/30 to-cyan-900/30 rounded-3xl p-10 border border-emerald-500/30 backdrop-blur-sm">
@@ -1353,171 +1033,76 @@ function HomePageContent() {
               </div>
             </div>
           </div>
+        </main>
 
-          {/* SEÇÃO - ESTATÍSTICAS IMPRESSIONANTES */}
-          <div className="mb-20">
-            <div className="bg-gradient-to-br from-slate-900/40 via-gray-900/40 to-slate-900/40 rounded-3xl p-10 border border-slate-500/30 backdrop-blur-sm relative overflow-hidden">
-              {/* Background Pattern */}
-              <div className="absolute inset-0 opacity-5">
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400"></div>
+        {/* Footer Simples */}
+        <footer className="bg-black border-t border-gray-800 mt-20">
+          <div className="max-w-[95%] mx-auto px-6 py-12">
+
+            {/* Conteúdo Principal */}
+            <div className="flex flex-col items-center gap-4">
+
+              {/* Logo e Nome */}
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                    <Music className="w-7 h-7 text-white" />
+                  </div>
+                  <span className="text-2xl font-bold text-white">
+                    Nexor Records Pools
+                  </span>
+                </div>
               </div>
 
-              <div className="text-center mb-12 relative z-10">
-                <div className="flex items-center justify-center mb-6">
-                  <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-4 rounded-full mr-4 shadow-lg">
-                    <TrendingUp className="h-10 w-10 text-white" />
-                  </div>
-                  <h2 className="text-4xl font-bold text-white">NÚMEROS QUE IMPRESSIONAM</h2>
-                </div>
-                <p className="text-gray-300 max-w-4xl mx-auto text-xl">
-                  Nossa plataforma em números: crescimento constante e sucesso comprovado
+              {/* Links */}
+              <div className="flex flex-wrap justify-center gap-6">
+                <Link href="/new" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }} onClick={() => console.log('Link Novidades clicado')}>
+                  Novidades
+                </Link>
+                <Link href="/trending" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                  Trending
+                </Link>
+                <Link href="/plans" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                  Planos
+                </Link>
+                <Link href="/privacidade" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                  Privacidade
+                </Link>
+                <Link href="/termos" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                  Termos
+                </Link>
+              </div>
+
+              {/* Redes Sociais */}
+              <div className="flex gap-4">
+                <a href="https://twitter.com/plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806.026-1.566.247-2.229.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
+                  </svg>
+                </a>
+                <a href="https://instagram.com/plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-pink-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.746-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24.009c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.017 12.017.017z" />
+                  </svg>
+                </a>
+                <a href="https://youtube.com/@plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-red-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  </svg>
+                </a>
+              </div>
+
+              {/* Copyright */}
+              <div className="text-center">
+                <p className="text-gray-400 text-sm">
+                  © 2025 Nexor Records Pools. Todos os direitos reservados.
                 </p>
               </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 relative z-10">
-                {/* Total de Usuários */}
-                <div className="text-center group">
-                  <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-2xl p-6 border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 transform hover:scale-105">
-                    <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:animate-pulse">
-                      <Users className="h-8 w-8 text-white" />
-                    </div>
-                    <div className="text-3xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors duration-300">
-                      <span className="text-blue-400">+</span>2.5K
-                    </div>
-                    <p className="text-gray-400 text-sm">Usuários Ativos</p>
-                    <div className="mt-3 flex justify-center">
-                      <div className="w-full bg-gray-700 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full animate-pulse" style={{ width: '85%' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Downloads Totais */}
-                <div className="text-center group">
-                  <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-2xl p-6 border border-green-500/30 hover:border-green-400/50 transition-all duration-300 transform hover:scale-105">
-                    <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:animate-pulse">
-                      <Download className="h-8 w-8 text-white" />
-                    </div>
-                    <div className="text-3xl font-bold text-white mb-2 group-hover:text-green-300 transition-colors duration-300">
-                      <span className="text-green-400">+</span>50K
-                    </div>
-                    <p className="text-gray-400 text-sm">Downloads</p>
-                    <div className="mt-3 flex justify-center">
-                      <div className="w-full bg-gray-700 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full animate-pulse" style={{ width: '92%' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Músicas no Acervo */}
-                <div className="text-center group">
-                  <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 rounded-2xl p-6 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 transform hover:scale-105">
-                    <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:animate-pulse">
-                      <Music className="h-8 w-8 text-white" />
-                    </div>
-                    <div className="text-3xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors duration-300">
-                      <span className="text-purple-400">+</span>15K
-                    </div>
-                    <p className="text-gray-400 text-sm">Músicas</p>
-                    <div className="mt-3 flex justify-center">
-                      <div className="w-full bg-gray-700 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full animate-pulse" style={{ width: '78%' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Satisfação */}
-                <div className="text-center group">
-                  <div className="bg-gradient-to-br from-amber-900/30 to-orange-900/30 rounded-2xl p-6 border border-amber-500/30 hover:border-amber-400/50 transition-all duration-300 transform hover:scale-105">
-                    <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:animate-pulse">
-                      <Star className="h-8 w-8 text-white" />
-                    </div>
-                    <div className="text-3xl font-bold text-white mb-2 group-hover:text-amber-300 transition-colors duration-300">
-                      <span className="text-amber-400">98</span>%
-                    </div>
-                    <p className="text-gray-400 text-sm">Satisfação</p>
-                    <div className="mt-3 flex justify-center">
-                      <div className="w-full bg-gray-700 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full animate-pulse" style={{ width: '98%' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Barra de status */}
-              <div className="text-center relative z-10">
-                <div className="inline-flex items-center gap-4 bg-black/20 rounded-full px-6 py-3 border border-slate-500/30">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-green-300 text-sm">Sistema Online</span>
-                  </div>
-                  <div className="w-px h-4 bg-slate-500/30"></div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-                    <span className="text-blue-300 text-sm">24/7 Ativo</span>
-                  </div>
-                  <div className="w-px h-4 bg-slate-500/30"></div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
-                    <span className="text-purple-300 text-sm">Suporte Premium</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
-
-          {/* Call to Action */}
-          <div className="text-center py-20 relative">
-            {/* Elementos flutuantes de fundo */}
-            <div className="absolute top-10 left-10 w-6 h-6 bg-purple-400 rounded-full animate-bounce opacity-20"></div>
-            <div className="absolute top-20 right-20 w-4 h-4 bg-pink-400 rounded-full animate-bounce opacity-20" style={{ animationDelay: '0.5s' }}></div>
-            <div className="absolute bottom-20 left-1/4 w-5 h-5 bg-blue-400 rounded-full animate-bounce opacity-20" style={{ animationDelay: '1s' }}></div>
-
-            <h2 className="text-5xl font-bold text-white mb-8 relative z-10">Pronto para dominar as pistas?</h2>
-            <p className="text-2xl text-gray-300 mb-12 max-w-4xl mx-auto relative z-10">
-              Junte-se a milhares de DJs que já descobriram o futuro da música eletrônica.
-              Comece sua jornada hoje mesmo.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center relative z-10">
-              <Link href="/new">
-                <button className="group bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-bold py-5 px-10 rounded-2xl text-xl transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 flex items-center justify-center gap-4 transform hover:scale-105 relative overflow-hidden">
-                  {/* Efeito de brilho */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                  {/* Partículas flutuantes */}
-                  <div className="absolute top-2 left-2 w-1 h-1 bg-blue-300 rounded-full animate-ping opacity-60"></div>
-                  <div className="absolute bottom-2 right-2 w-1 h-1 bg-purple-300 rounded-full animate-ping opacity-60" style={{ animationDelay: '0.5s' }}></div>
-
-                  <Play className="h-7 w-7 group-hover:animate-pulse relative z-10" />
-                  <span className="relative z-10">Começar Agora</span>
-                  <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform relative z-10" />
-                </button>
-              </Link>
-              <Link href="/trending">
-                <button className="group bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 hover:from-purple-700 hover:via-pink-700 hover:to-red-700 text-white font-bold py-5 px-10 rounded-2xl text-xl transition-all duration-300 shadow-2xl hover:shadow-purple-500/25 flex items-center justify-center gap-4 transform hover:scale-105 relative overflow-hidden">
-                  {/* Efeito de brilho */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                  {/* Partículas flutuantes */}
-                  <div className="absolute top-2 left-2 w-1 h-1 bg-purple-300 rounded-full animate-ping opacity-60"></div>
-                  <div className="absolute bottom-2 right-2 w-1 h-1 bg-pink-300 rounded-full animate-ping opacity-60" style={{ animationDelay: '0.5s' }}></div>
-
-                  <TrendingUp className="h-7 w-7 group-hover:animate-pulse relative z-10" />
-                  <span className="relative z-10">Ver Trending</span>
-                  <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform relative z-10" />
-                </button>
-              </Link>
-            </div>
-          </div>
-
-          {/* Novo Footer */}
-          <NewFooter />
-
-        </main>
+        </footer>
       </div>
-    </MainLayout>
+    </div>
   );
 }
 

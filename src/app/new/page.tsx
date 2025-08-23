@@ -12,9 +12,11 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  Music,
 } from "lucide-react";
 import Image from "next/image";
-import MainLayout from "@/components/layout/MainLayout";
+import Link from "next/link";
+import Header from "@/components/layout/Header";
 import FiltersModal from "@/components/music/FiltersModal";
 import { MusicList } from "@/components/music/MusicList";
 
@@ -96,7 +98,7 @@ const NewPage = () => {
         console.log('📊 Dados recebidos da API:', data);
         if (data.success && data.styles.length > 0) {
           console.log('✅ Estilos carregados com sucesso:', data.styles.length);
-          setStyles(data.styles.slice(0, 8)); // Top 8 estilos
+          setStyles(data.styles.slice(0, 9)); // Top 9 estilos para tela cheia
         } else {
           console.log('⚠️ API não retornou estilos válidos, usando fallback');
           // Fallback: usar dados das tracks carregadas
@@ -281,7 +283,7 @@ const NewPage = () => {
       id: 1,
       title: "Upload Comunitário",
       artist: "DJs da Comunidade",
-      image: "https://i.ibb.co/Vm1xPqt/slide1.jpg",
+      image: "https://i.ibb.co/QFxLcxhj/20250822-1324-M-sica-Eletr-nica-Vibrante-remix-01k399bwmxebctfdn0yec14eph.png",
       link: "/community",
       badge: "COMUNIDADE",
     },
@@ -297,7 +299,7 @@ const NewPage = () => {
       id: 3,
       title: "Curadoria Premium",
       artist: "Seleção Especializada",
-      image: "https://i.ibb.co/4sfx2D4/slide3.jpg",
+      image: "https://i.ibb.co/VpVHbQ76/20250822-1329-Curadoria-de-M-sica-Eletr-nica-remix-01k399nd3qekzrz8d96pa16zkq.png",
       link: "/community",
       badge: "PREMIUM",
     },
@@ -408,15 +410,19 @@ const NewPage = () => {
 
 
   return (
-    <MainLayout>
-      <div className="min-h-screen bg-[#121212] overflow-x-hidden">
+    <div className="min-h-screen bg-[#121212] overflow-x-hidden">
+      {/* Header Fixo */}
+      <Header />
+
+      {/* Conteúdo Principal - Tela Cheia */}
+      <div className="pt-12 lg:pt-16">
         {/* CARROUSEL "COMUNIDADE DOS VIPS" - Mobile First */}
-        <div className="w-full max-w-6xl mx-auto mt-4 sm:mt-8 mb-8 sm:mb-12 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24 transition-all duration-300">
+        <div className="w-full max-w-[95%] mx-auto mt-2 sm:mt-4 mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 transition-all duration-300">
           {/* Header do carrousel - Mobile First */}
-          <div className="flex items-center justify-between mb-4 sm:mb-8">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-1 h-6 sm:h-8 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
-              <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">
+          <div className="flex items-center justify-between mb-3 sm:mb-6">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="w-1 h-4 sm:h-5 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
+              <h2 className="text-white text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight">
                 O QUE TÁ ROLANDO
               </h2>
             </div>
@@ -543,15 +549,15 @@ const NewPage = () => {
         </div>
 
         {/* CARDS DOS ESTILOS MAIS BAIXADOS - Mobile First */}
-        <div className="w-full max-w-6xl mx-auto mb-8 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
+        <div className="w-full max-w-[95%] mx-auto mb-6 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
           {/* Header da seção */}
-          <div className="text-center mb-6 sm:mb-8">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-2 h-8 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
-              <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
+          <div className="text-center mb-4 sm:mb-6">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="w-1.5 h-6 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
+              <h2 className="text-white text-lg sm:text-xl md:text-2xl font-bold tracking-tight">
                 Estilos Mais Baixados
               </h2>
-              <div className="w-2 h-8 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
+              <div className="w-1.5 h-6 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
             </div>
             <p className="text-[#b3b3b3] text-sm sm:text-base max-w-2xl mx-auto">
               Descubra os estilos musicais mais populares baseado em downloads reais
@@ -559,28 +565,28 @@ const NewPage = () => {
           </div>
 
           {/* Cards dos estilos */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-9 gap-2 sm:gap-3">
             {stylesLoading ? (
               // Loading skeleton
-              [...Array(6)].map((_, index) => (
-                <div key={index} className="bg-[#181818] rounded-xl p-3 sm:p-4 border border-[#282828] animate-pulse">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#282828] rounded-lg mx-auto mb-3"></div>
+              [...Array(9)].map((_, index) => (
+                <div key={index} className="bg-[#181818] rounded-xl p-2 sm:p-3 border border-[#282828] animate-pulse">
+                  <div className="w-7 h-7 sm:w-9 sm:h-9 bg-[#282828] rounded-lg mx-auto mb-2"></div>
                   <div className="h-3 bg-[#282828] rounded mb-2"></div>
                   <div className="h-2 bg-[#282828] rounded mb-1"></div>
                   <div className="h-2 bg-[#282828] rounded"></div>
                 </div>
               ))
             ) : styles.length > 0 ? (
-              styles.slice(0, 6).map((style, index) => (
+              styles.slice(0, 9).map((style, index) => (
                 <div
                   key={style.name}
-                  className={`group relative bg-gradient-to-br from-[#181818] to-[#282828] rounded-xl p-3 sm:p-4 border border-[#282828] hover:border-[#1db954]/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#1db954]/20 cursor-pointer ${index < 6 ? 'ring-2 ring-[#1db954]/30' : ''
+                  className={`group relative bg-gradient-to-br from-[#181818] to-[#282828] rounded-xl p-2 sm:p-3 border border-[#282828] hover:border-[#1db954]/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#1db954]/20 cursor-pointer ${index < 9 ? 'ring-2 ring-[#1db954]/30' : ''
                     }`}
                   onClick={() => router.push(`/genre/${encodeURIComponent(style.name)}`)}
                   title={`${style.name} - ${style.trackCount} músicas, ${style.downloadCount} downloads`}
                 >
-                  {/* Badge de posição para top 6 */}
-                  {index < 6 && (
+                  {/* Badge de posição para top 9 */}
+                  {index < 9 && (
                     <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-full flex items-center justify-center shadow-lg">
                       <span className="text-white text-xs font-bold">
                         {index + 1}
@@ -589,7 +595,7 @@ const NewPage = () => {
                   )}
 
                   {/* Ícone do estilo */}
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-7 h-7 sm:w-9 sm:h-9 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300">
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
@@ -649,20 +655,20 @@ const NewPage = () => {
         </div>
 
         {/* BARRA DE BUSCA E FILTROS - Mobile First */}
-        <div className="w-full max-w-6xl mx-auto mb-6 sm:mb-8 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
+        <div className="w-full max-w-[95%] mx-auto mb-4 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
           <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg">
             {/* Título principal - Mobile First */}
-            <div className="mb-4 sm:mb-6">
-              <h1 className="flex items-center gap-2 sm:gap-3">
-                <div className="w-1 h-6 sm:h-8 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
-                <span className="text-white text-2xl sm:text-3xl font-bold tracking-tight">
+            <div className="mb-3 sm:mb-4">
+              <h1 className="flex items-center gap-1.5 sm:gap-2">
+                <div className="w-1 h-4 sm:h-5 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
+                <span className="text-white text-xl sm:text-2xl font-bold tracking-tight">
                   {hasSearched ? `RESULTADOS PARA "${appliedSearchQuery}"` : "NOVIDADES"}
                 </span>
               </h1>
             </div>
 
             {/* Container de busca e filtros - Mobile First */}
-            <div className="space-y-3 sm:space-y-4">
+            <div className="space-y-2 sm:space-y-3">
               {/* Barra de pesquisa responsiva - Mobile First */}
               <div className="relative w-full">
                 <input
@@ -742,7 +748,7 @@ const NewPage = () => {
         </div>
 
         {/* LISTA DE MÚSICAS - Mobile First */}
-        <div className="w-full max-w-6xl mx-auto pb-6 sm:pb-8 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
+        <div className="w-full max-w-[95%] mx-auto pb-4 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
           {/* Estado de loading - Mobile First */}
           {(tracksLoading || searchLoading) && (
             <div className="flex items-center justify-center py-12 sm:py-16">
@@ -940,8 +946,75 @@ const NewPage = () => {
             hasActiveFilters={Boolean(selectedGenre || selectedArtist || selectedDateRange || selectedVersion || selectedMonth || selectedPool)}
           />
         )}
+
+        {/* Footer Simples */}
+        <footer className="bg-black border-t border-gray-800 mt-20">
+          <div className="max-w-[95%] mx-auto px-6 py-12">
+
+            {/* Conteúdo Principal */}
+            <div className="flex flex-col items-center gap-4">
+
+              {/* Logo e Nome */}
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                    <Music className="w-7 h-7 text-white" />
+                  </div>
+                  <span className="text-2xl font-bold text-white">
+                    Nexor Records Pools
+                  </span>
+                </div>
+              </div>
+
+              {/* Links */}
+              <div className="flex flex-wrap justify-center gap-6">
+                <Link href="/new" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                  Novidades
+                </Link>
+                <Link href="/trending" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                  Trending
+                </Link>
+                <Link href="/plans" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                  Planos
+                </Link>
+                <Link href="/privacidade" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                  Privacidade
+                </Link>
+                <Link href="/termos" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
+                  Termos
+                </Link>
+              </div>
+
+              {/* Redes Sociais */}
+              <div className="flex gap-4">
+                <a href="https://twitter.com/plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806.026-1.566.247-2.229.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
+                  </svg>
+                </a>
+                <a href="https://instagram.com/plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-pink-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.746-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24.009c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.017 12.017.017z" />
+                  </svg>
+                </a>
+                <a href="https://youtube.com/@plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-red-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  </svg>
+                </a>
+              </div>
+
+              {/* Copyright */}
+              <div className="text-center">
+                <p className="text-gray-400 text-sm">
+                  © 2025 Nexor Records Pools. Todos os direitos reservados.
+                </p>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 
