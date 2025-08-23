@@ -73,10 +73,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     const enhancedImageProps = {
         ...imageProps,
         onError: handleImageError,
-        ref: imgRef,
-        // Adicionar atributos para prevenir processamento por extensões
-        'data-no-process': 'true',
-        'data-optimized': 'true'
+        ref: imgRef
     };
 
     return (

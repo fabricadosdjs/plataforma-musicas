@@ -168,6 +168,10 @@ src/
 - **Limpeza automática** de notificações antigas (mais de 30 dias)
 - **Intervalo de verificação** a cada 5 minutos
 - **Filtragem automática** ao carregar do localStorage
+- **Prevenção de loops infinitos** usando useRef para controlar verificações
+- **Verificações únicas por sessão** para evitar notificações duplicadas
+- **Sistema de exclusão permanente** - notificações excluídas não aparecem novamente
+- **Limite de 10 notificações** - sistema em tempo real com remoção automática das mais antigas
 
 ### **Contexto `NotificationContext`**
 - **Funções especializadas** para cada categoria
@@ -180,17 +184,20 @@ src/
 - **Botões de ação** quando disponíveis
 - **Tempo relativo** (ex: "2h atrás")
 - **Animações** e transições suaves
+- **Tema preto/branco/verde** - cores consistentes e modernas
+- **Badges verdes** para indicadores de não lidas
 
 ## 📱 **Funcionalidades do Header**
 
 ### **Sino de Notificações**
-- **Badge vermelho** com contador de não lidas
+- **Badge verde** com contador de não lidas
 - **Menu dropdown** com scroll
 - **Botão "Limpar Antigas"** para remover notificações com mais de 30 dias
 - **Botão "Limpar Tudo"** para remover todas as notificações permanentemente
 - **Confirmação** antes de limpar (prevenção de acidentes)
 - **Feedback visual** após limpeza (✓ Limpo!)
 - **Fechamento automático** ao clicar fora
+- **Tema preto/branco/verde** consistente
 
 ### **Menu de Perfil**
 - **Informações do usuário** com status VIP
@@ -261,25 +268,28 @@ addPlanNotification() // Contexto especializado
 - **Limpar tudo**: Marca todas como lidas
 
 ### **4. Persistência**
-- **localStorage**: Salva até 50 notificações
+- **localStorage**: Salva até 10 notificações (sistema em tempo real)
 - **Sessão**: Mantém estado durante navegação
 - **Limpeza automática**: Remove notificações com mais de 30 dias
 - **Filtragem automática**: Ao carregar, remove notificações antigas
 - **Limpeza manual**: Botões para limpar antigas ou todas
+- **Exclusão permanente**: Notificações excluídas não aparecem novamente
+- **Sistema de chaves**: Rastreia notificações por categoria-título-mensagem
 
 ## 🎨 **Personalização**
 
 ### **Estilos CSS**
-- **Cores por categoria**: Planos (amarelo), Segurança (vermelho), etc.
+- **Tema preto/branco/verde**: Cores consistentes e modernas
+- **Verde como cor principal**: Para todos os tipos e categorias
 - **Animações**: Pulse para não lidas, hover effects
 - **Responsividade**: Mobile-first design
 
 ### **Ícones por Categoria**
-- **👑 Plan**: Crown icon
-- **🛡️ Security**: Shield icon
-- **⬇️ Download**: Download icon
-- **⭐ Feature**: Star icon
-- **⚡ System**: Zap icon
+- **👑 Plan**: Crown icon (verde)
+- **🛡️ Security**: Shield icon (verde)
+- **⬇️ Download**: Download icon (verde)
+- **⭐ Feature**: Star icon (verde)
+- **⚡ System**: Zap icon (verde)
 
 ## 📊 **Monitoramento e Debug**
 
@@ -292,6 +302,37 @@ addPlanNotification() // Contexto especializado
 - **Contador** de não lidas
 - **Total** de notificações
 - **Última verificação** automática
+
+## 🐛 **Correção de Bugs**
+
+### **Loop Infinito Corrigido**
+- **Problema**: As funções de verificação dependiam de `notifications` e chamavam `addNotification`, criando um loop infinito
+- **Solução**: Uso de `useRef` para controlar verificações únicas por sessão
+- **Benefícios**: 
+  - ✅ **Sem loops infinitos**
+  - ✅ **Verificações únicas** por sessão
+  - ✅ **Performance otimizada**
+  - ✅ **Notificações não duplicadas**
+
+## 🚀 **Funcionalidades em Tempo Real**
+
+### **Sistema de 10 Notificações**
+- **Limite automático**: Máximo de 10 notificações ativas
+- **Remoção automática**: Notificações mais antigas são removidas automaticamente
+- **Performance otimizada**: Menos memória e melhor performance
+- **Experiência consistente**: Interface sempre limpa e organizada
+
+### **Exclusão Permanente**
+- **Rastreamento por chave**: Sistema identifica notificações por categoria-título-mensagem
+- **Não reaparecem**: Notificações excluídas não são recriadas automaticamente
+- **Persistência**: Lista de exclusões salva no localStorage
+- **Limpeza completa**: Reset total disponível através de "Limpar Tudo"
+
+### **Notificações de Download**
+- **Tempo real**: Aparecem imediatamente após download concluído
+- **Informações detalhadas**: Nome da música, artista e link para downloads
+- **Integração automática**: Sistema detecta downloads e cria notificações
+- **Persistência**: Histórico mantido mesmo após fechar navegador
 
 ## 🚀 **Próximos Passos**
 

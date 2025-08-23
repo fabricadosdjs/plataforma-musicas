@@ -10,6 +10,7 @@ import CreditDashboard from '@/components/credit/CreditDashboard';
 import {
   Heart, Music, TrendingUp, Database, Upload, AlertTriangle, CheckCircle, Clock, Star, Zap, Play, Download, Users, Award, Globe, Headphones, Crown, Sparkles, Target, ArrowRight, ChevronRight, Shuffle, Volume2, Disc3, Mic2, Radio, Disc, Disc2, Archive, Activity, FolderOpen, Search, ShoppingCart
 } from 'lucide-react';
+import { SafeImage } from '@/components/ui/SafeImage';
 
 // Extend NextAuth session user type to include is_vip
 import type { Session } from 'next-auth';
@@ -40,13 +41,31 @@ function HomePageContent() {
   const fetchMostDownloadedTracks = async () => {
     try {
       setLoadingMostDownloaded(true);
-      const response = await fetch('/api/tracks/most-downloaded');
+
+      // Verificar se estamos no cliente
+      if (typeof window === 'undefined') return;
+
+      const response = await fetch('/api/tracks/most-downloaded', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Adicionar timeout
+        signal: AbortSignal.timeout(10000) // 10 segundos
+      });
+
       if (response.ok) {
         const data = await response.json();
         setMostDownloadedTracks(data.tracks || []);
+      } else {
+        console.warn('API response not ok:', response.status, response.statusText);
+        // Em caso de erro, definir tracks vazios para não quebrar a UI
+        setMostDownloadedTracks([]);
       }
     } catch (error) {
       console.error('Error fetching most downloaded tracks:', error);
+      // Em caso de erro, definir tracks vazios para não quebrar a UI
+      setMostDownloadedTracks([]);
     } finally {
       setLoadingMostDownloaded(false);
     }
@@ -136,9 +155,11 @@ function HomePageContent() {
                 {/* Bordas animadas */}
                 <div className="absolute inset-0 rounded-xl lg:rounded-2xl bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-blue-500/50 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
 
-                <img
+                <SafeImage
                   src="https://i.ibb.co/fYTVXwdR/tela-home.png"
                   alt="Tela do computador mostrando a plataforma"
+                  width={800}
+                  height={600}
                   className="relative w-full max-w-4xl lg:max-w-5xl mx-auto rounded-xl lg:rounded-2xl shadow-2xl border border-purple-500/30 group-hover:scale-[1.02] transition-all duration-500"
                 />
 

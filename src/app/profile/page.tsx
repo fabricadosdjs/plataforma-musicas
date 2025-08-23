@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic';
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import React from "react";
-import MainLayout from "@/components/layout/MainLayout";
 import { useDownloadsCache } from "@/hooks/useDownloadsCache";
+import { useUserEdit } from "@/hooks/useUserEdit";
 import {
     User,
     Mail,
@@ -60,8 +60,15 @@ import {
     Volume2,
     MessageCircle as MessageCircleIcon,
     Mail as MailIcon,
-    ExternalLink as ExternalLinkIcon
+    ExternalLink as ExternalLinkIcon,
+    Home,
+    Bell,
+    UserCircle,
+    ChevronRight,
+    X
 } from 'lucide-react';
+import Header from '@/components/layout/Header';
+import { EditableField } from '@/components/ui/EditableField';
 
 // Tipos para os dados da API
 interface Track {
@@ -82,9 +89,27 @@ interface RecentActivity {
 const ProfilePage = () => {
     const { data: session } = useSession();
     const downloadsCache = useDownloadsCache();
+    const userEdit = useUserEdit();
     const [recentDownloads, setRecentDownloads] = useState<RecentActivity[]>([]);
     const [recentLikes, setRecentLikes] = useState<RecentActivity[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('overview');
+
+    // Função para obter o link de renovação baseado no plano
+    const getRenewalLink = (plan: string): string => {
+        const planLower = plan.toLowerCase();
+
+        if (planLower.includes('básico')) {
+            return 'https://mpago.la/28HWukZ'; // Mensal R$ 38,00
+        } else if (planLower.includes('padrão')) {
+            return 'https://mpago.la/1aFWE4k'; // Mensal R$ 42,00
+        } else if (planLower.includes('completo')) {
+            return 'https://mpago.la/2XTWvVS'; // Mensal R$ 60,00
+        }
+
+        // Link padrão para planos não identificados
+        return 'https://mpago.la/28HWukZ';
+    };
 
     // Função para formatar data
     const formatDate = (dateString: string | Date): string => {
@@ -128,21 +153,23 @@ const ProfilePage = () => {
 
     if (loading) {
         return (
-            <MainLayout>
-                <div className="min-h-screen bg-black flex items-center justify-center">
+            <div className="min-h-screen bg-[#121212] relative overflow-hidden">
+                <Header />
+                <div className="pt-12 lg:pt-16 min-h-screen bg-[#121212] flex items-center justify-center">
                     <div className="text-center">
-                        <div className="animate-spin w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-6"></div>
+                        <div className="animate-spin w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full mx-auto mb-6"></div>
                         <p className="text-white text-xl">Carregando perfil...</p>
                     </div>
                 </div>
-            </MainLayout>
+            </div>
         );
     }
 
     if (!session?.user) {
         return (
-            <MainLayout>
-                <div className="min-h-screen bg-black flex items-center justify-center">
+            <div className="min-h-screen bg-[#121212] relative overflow-hidden">
+                <Header />
+                <div className="pt-12 lg:pt-16 min-h-screen bg-[#121212] flex items-center justify-center">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Lock className="h-8 w-8 text-red-400" />
@@ -151,538 +178,657 @@ const ProfilePage = () => {
                         <p className="text-gray-400">Você precisa estar logado para acessar esta página.</p>
                     </div>
                 </div>
-            </MainLayout>
+            </div>
         );
     }
 
-    return (
-        <MainLayout>
-            <div className="min-h-screen bg-black text-white">
-                {/* Header da Página */}
-                <div className="bg-gradient-to-r from-purple-900/20 via-blue-900/20 to-cyan-900/20 border-b border-gray-800/50">
-                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-                        <div className="text-center sm:text-left">
-                            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4">
-                                Meu Perfil
-                            </h1>
-                            <p className="text-gray-400 text-lg sm:text-xl max-w-2xl">
-                                Gerencie suas informações, veja suas estatísticas e acompanhe seu plano VIP
-                            </p>
-                        </div>
-                    </div>
-                </div>
+    const sidebarItems = [
+        { id: 'overview', label: 'Visão Geral', icon: BarChart3, color: 'text-blue-400' },
+        { id: 'profile', label: 'Informações', icon: User, color: 'text-green-400' },
+        { id: 'downloads', label: 'Downloads', icon: Download, color: 'text-purple-400' },
+        { id: 'likes', label: 'Curtidas', icon: Heart, color: 'text-pink-400' },
+        { id: 'plan', label: 'Meu Plano', icon: Crown, color: 'text-yellow-400' },
+        { id: 'activity', label: 'Atividade', icon: Activity, color: 'text-cyan-400' },
+        { id: 'benefits', label: 'Benefícios', icon: Gift, color: 'text-emerald-400' },
+        { id: 'deemix', label: 'Deemix', icon: Music2, color: 'text-violet-400' },
+        { id: 'allavsoft', label: 'Allavsoft', icon: Disc, color: 'text-orange-400' },
+        { id: 'settings', label: 'Configurações', icon: Settings, color: 'text-gray-400' }
+    ];
 
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-                    {/* Sistema de Abas */}
-                    <div className="mb-8 sm:mb-12">
-                        <div className="border-b border-gray-800/50">
-                            <nav className="flex flex-wrap -mb-px gap-2 sm:gap-4 overflow-x-auto">
-                                {[
-                                    { id: 'visao-geral', label: 'Visão Geral', icon: BarChart3, href: '/profile/visao-geral' },
-                                    { id: 'meu-plano', label: 'Meu Plano', icon: Crown, href: '/profile/meu-plano' },
-                                    { id: 'dados', label: 'Dados', icon: User, href: '/profile/dados' },
-                                    { id: 'atividade', label: 'Atividade', icon: Activity, href: '/profile/atividade' },
-                                    { id: 'beneficios', label: 'Benefícios', icon: Gift, href: '/profile/beneficios' },
-                                    { id: 'deemix', label: 'Deemix', icon: Music2, href: '/profile/deemix' },
-                                    { id: 'allavsoft', label: 'Allavsoft', icon: Download, href: '/profile/allavsoft' }
-                                ].map((tab) => {
-                                    const Icon = tab.icon;
-                                    const isActive = window.location.pathname === tab.href;
-
-                                    return (
-                                        <a
-                                            key={tab.id}
-                                            href={tab.href}
-                                            className={`
-                                                flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-all duration-300 whitespace-nowrap
-                                                ${isActive
-                                                    ? 'text-red-400 border-b-2 border-red-400 bg-red-400/10'
-                                                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-                                                }
-                                            `}
-                                        >
-                                            <Icon className="h-4 w-4" />
-                                            {tab.label}
-                                        </a>
-                                    );
-                                })}
-                            </nav>
-                        </div>
-                    </div>
-
-                    {/* Cards de Estatísticas */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                        {/* Status VIP */}
-                        <div className="bg-black rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group border border-gray-800/50">
-                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/5 to-orange-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg mx-auto sm:mx-0">
-                                    <Crown className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-                                </div>
-                                <div className="text-center sm:text-left">
-                                    <p className="text-sm text-gray-400 font-medium">Status VIP</p>
-                                    <p className="text-xl sm:text-2xl font-black text-white tracking-tight">{vipStatus.plan}</p>
-                                </div>
-                            </div>
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'overview':
+                return (
+                    <div className="space-y-8">
+                        {/* Header da Seção */}
+                        <div className="bg-gradient-to-r from-gray-900/50 to-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
+                            <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+                                <BarChart3 className="h-6 w-6 text-blue-400" />
+                                Visão Geral da Conta
+                            </h2>
+                            <p className="text-gray-400">Resumo completo das suas atividades e estatísticas</p>
                         </div>
 
-                        {/* Downloads */}
-                        <div className="bg-black rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group border border-gray-800/50">
-                            <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg mx-auto sm:mx-0">
-                                    <Download className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-                                </div>
-                                <div className="text-center sm:text-left">
-                                    <p className="text-sm text-gray-400 font-medium">Downloads</p>
-                                    <p className="text-xl sm:text-2xl font-black text-white tracking-tight">{downloadsCache.downloadedTrackIds.length}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Likes */}
-                        <div className="bg-black rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group border border-gray-800/50">
-                            <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-pink-500 to-red-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg mx-auto sm:mx-0">
-                                    <Heart className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-                                </div>
-                                <div className="text-center sm:text-left">
-                                    <p className="text-sm text-gray-400 font-medium">Likes</p>
-                                    <p className="text-xl sm:text-2xl font-black text-white tracking-tight">{downloadsCache.likedTrackIds.length}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Vencimento */}
-                        <div className="bg-black rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group border border-gray-800/50">
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg mx-auto sm:mx-0">
-                                    <Calendar className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-                                </div>
-                                <div className="text-center sm:text-left">
-                                    <p className="text-sm text-gray-400 font-medium">Vencimento</p>
-                                    <p className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                                        {vipStatus.hasValidVencimento ? formatDate(vipStatus.vencimento) : 'N/A'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Seção de Informações VIP */}
-                    {vipStatus.isVip && (
-                        <div className="mb-8 sm:mb-12">
-                            <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                                <Crown className="h-6 w-6 sm:h-7 sm:w-7 text-yellow-400" />
-                                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">👑 Plano {vipStatus.plan}</h2>
-                            </div>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-                                {/* Status do Sistema */}
-                                <div className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 group relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                    <div className="relative">
-                                        <h3 className="text-xl sm:text-2xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
-                                            <Database className="h-6 w-6 text-blue-400" />
-                                            Status do Sistema
-                                        </h3>
-
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                                <span className="text-gray-300 text-sm">Cache:</span>
-                                                <span className={`text-xs px-3 py-1 rounded-full font-medium ${downloadsCache.isLoading
-                                                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                                                    : downloadsCache.error
-                                                        ? 'bg-red-500/20 text-red-300 border border-red-500/30'
-                                                        : 'bg-green-500/20 text-green-300 border border-green-500/30'
-                                                    }`}>
-                                                    {downloadsCache.isLoading ? 'Sincronizando...' : downloadsCache.error ? 'Erro' : 'Sincronizado'}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                                <span className="text-gray-300 text-sm">Downloads:</span>
-                                                <span className="text-white font-semibold">
-                                                    {downloadsCache.downloadedTrackIds.length} músicas
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                                <span className="text-gray-300 text-sm">Likes:</span>
-                                                <span className="text-white font-semibold">
-                                                    {downloadsCache.likedTrackIds.length} músicas
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Benefícios VIP */}
-                                <div className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 group relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/5 to-orange-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                    <div className="relative">
-                                        <h3 className="text-xl sm:text-2xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
-                                            <Gift className="h-6 w-6 text-yellow-400" />
-                                            Benefícios VIP
-                                        </h3>
-
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                                <span className="text-gray-300 text-sm">Downloads Diários:</span>
-                                                <span className="text-yellow-300 font-semibold">
-                                                    {downloadsCache.downloadsLeft === 'Ilimitado' ? '∞ Ilimitado' : `${downloadsCache.downloadsLeft} restantes`}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                                <span className="text-gray-300 text-sm">Usados Hoje:</span>
-                                                <span className="text-white font-semibold">
-                                                    {downloadsCache.dailyDownloadCount}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                                <span className="text-gray-300 text-sm">Status:</span>
-                                                <span className="text-green-400 font-semibold flex items-center gap-2">
-                                                    <CheckCircle className="h-4 w-4" />
-                                                    Ativo
-                                                </span>
-                                            </div>
-
-                                            {vipStatus.hasValidVencimento && (
-                                                <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                                    <span className="text-gray-300 text-sm">Vencimento:</span>
-                                                    <span className="text-white font-semibold">
-                                                        {formatDate(vipStatus.vencimento)}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Seção de Informações Pessoais */}
-                    <div className="mb-8 sm:mb-12">
-                        <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                            <User className="h-6 w-6 sm:h-7 sm:w-7 text-purple-400" />
-                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">Informações Pessoais</h2>
-                        </div>
-
-                        <div className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 group relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div className="relative">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <User className="h-5 w-5 text-purple-400" />
-                                            <div>
-                                                <p className="text-gray-400 text-xs">Nome</p>
-                                                <p className="text-white font-semibold">{session.user.name || 'Não informado'}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <Mail className="h-5 w-5 text-blue-400" />
-                                            <div>
-                                                <p className="text-gray-400 text-xs">Email</p>
-                                                <p className="text-white font-semibold">{session.user.email}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <Phone className="h-5 w-5 text-green-400" />
-                                            <div>
-                                                <p className="text-gray-400 text-xs">WhatsApp</p>
-                                                <p className="text-white font-semibold">
-                                                    {(session.user as any).whatsapp || 'Não informado'}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <DollarSign className="h-5 w-5 text-yellow-400" />
-                                            <div>
-                                                <p className="text-gray-400 text-xs">Valor Mensal</p>
-                                                <p className="text-white font-semibold">
-                                                    {(session.user as any).valor ? `R$ ${(session.user as any).valor}` : 'Não informado'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Seção de Downloads e Limites */}
-                    <div className="mb-8 sm:mb-12">
-                        <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                            <Download className="h-6 w-6 sm:h-7 sm:w-7 text-green-400" />
-                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">Downloads e Limites</h2>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                        {/* Cards de Estatísticas */}
+                        <div className="space-y-4">
                             {/* Downloads Hoje */}
-                            <div className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 group relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative">
-                                    <h3 className="text-xl sm:text-2xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
-                                        <Download className="h-6 w-6 text-green-400" />
-                                        Downloads Hoje
-                                    </h3>
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-gray-600/30 rounded-full flex items-center justify-center">
+                                    <Download className="h-10 w-10 text-gray-400/60" />
+                                </div>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">Downloads Hoje</h3>
+                                    <p className="text-white font-bold text-3xl mb-2">{downloadsCache?.dailyDownloadCount || 0}</p>
+                                    <p className="text-gray-300 text-sm font-medium">Downloads realizados hoje</p>
+                                </div>
+                            </div>
 
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <span className="text-gray-300 text-sm">Usados:</span>
-                                            <span className="text-white font-semibold text-2xl">
-                                                {downloadsCache.dailyDownloadCount}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <span className="text-gray-300 text-sm">Limite:</span>
-                                            <span className="text-green-400 font-semibold">
-                                                {downloadsCache.downloadsLeft === 'Ilimitado' ? '∞ Ilimitado' : downloadsCache.downloadsLeft}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <span className="text-gray-300 text-sm">Último Reset:</span>
-                                            <span className="text-white font-semibold">
-                                                {(session.user as any).lastDownloadReset ? formatDate((session.user as any).lastDownloadReset) : 'Nunca'}
-                                            </span>
-                                        </div>
+                            {/* Total de Curtidas */}
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-gray-600/30 rounded-full flex items-center justify-center">
+                                    <Heart className="h-10 w-10 text-gray-400/60" />
+                                </div>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">Total de Curtidas</h3>
+                                    <p className="text-white font-bold text-3xl mb-2">6</p>
+                                    <p className="text-gray-300 text-sm font-medium">Músicas favoritas</p>
+                                    <div className="mt-4 p-3 bg-gray-700/50 rounded-lg">
+                                        <span className="text-gray-300 text-xs">Status: Ativo</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Pack Requests Semanais */}
-                            <div className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 group relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative">
-                                    <h3 className="text-xl sm:text-2xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
-                                        <Package className="h-6 w-6 text-orange-400" />
-                                        Pack Requests
-                                    </h3>
+                            {/* Total de Downloads */}
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-gray-600/30 rounded-full flex items-center justify-center">
+                                    <Music className="h-10 w-10 text-gray-400/60" />
+                                </div>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">Total de Downloads</h3>
+                                    <p className="text-white font-bold text-3xl mb-2">1.870</p>
+                                    <p className="text-gray-300 text-sm font-medium">Músicas baixadas</p>
+                                </div>
+                            </div>
 
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <span className="text-gray-300 text-sm">Usados:</span>
-                                            <span className="text-white font-semibold text-2xl">
-                                                {(session.user as any).weeklyPackRequestsUsed || 0}
-                                            </span>
-                                        </div>
+                            {/* Status do Plano */}
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-gray-600/30 rounded-full flex items-center justify-center">
+                                    <Crown className="h-10 w-10 text-gray-400/60" />
+                                </div>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">Plano Atual</h3>
+                                    <p className="text-white font-bold text-3xl mb-2">{vipStatus.plan}</p>
+                                    <p className={`text-sm font-medium ${vipStatus.isVip ? 'text-gray-200' : 'text-red-300'}`}>
+                                        {vipStatus.isVip ? 'Status: Ativo' : 'Status: Inativo'}
+                                    </p>
+                                    <div className="mt-4 p-3 bg-gray-700/50 rounded-lg">
+                                        <span className="text-gray-300 text-xs">{vipStatus.isVip ? 'VIP ATIVO' : 'PLANO INATIVO'}</span>
+                                    </div>
+                                    {vipStatus.isVip && (
+                                        <div className="mt-4 space-y-3">
+                                            {/* Verificar se o plano está prestes a vencer (5 dias) */}
+                                            {(() => {
+                                                if (!vipStatus.vencimento) return null;
 
-                                        <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <span className="text-gray-300 text-sm">Limite:</span>
-                                            <span className="text-orange-400 font-semibold">
-                                                {(session.user as any).weeklyPackRequests || 0} por semana
-                                            </span>
-                                        </div>
+                                                const vencimento = new Date(vipStatus.vencimento);
+                                                const hoje = new Date();
+                                                const diffTime = vencimento.getTime() - hoje.getTime();
+                                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                                const isPrestesAVencer = diffDays <= 5 && diffDays > 0;
+                                                const isVencido = diffDays < 0;
 
-                                        <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <span className="text-gray-300 text-sm">Último Reset:</span>
-                                            <span className="text-white font-semibold">
-                                                {(session.user as any).lastWeekReset ? formatDate((session.user as any).lastWeekReset) : 'Nunca'}
-                                            </span>
+                                                return (
+                                                    <>
+                                                        {/* Botão de Renovação */}
+                                                        <a
+                                                            href={getRenewalLink(vipStatus.plan)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isPrestesAVencer || isVencido
+                                                                ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+                                                                : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                                                                }`}
+                                                            onClick={(e) => {
+                                                                if (!isPrestesAVencer && !isVencido) {
+                                                                    e.preventDefault();
+                                                                }
+                                                            }}
+                                                        >
+                                                            <CreditCard className="h-4 w-4" />
+                                                            {isVencido ? 'Plano Vencido - Renovar' : 'Renovar Plano'}
+                                                        </a>
+
+                                                        {/* Status do Plano */}
+                                                        <div className="text-xs text-gray-400">
+                                                            {isVencido ? (
+                                                                <span className="text-red-400">Plano vencido há {Math.abs(diffDays)} dias</span>
+                                                            ) : isPrestesAVencer ? (
+                                                                <span className="text-yellow-400">Vence em {diffDays} dias</span>
+                                                            ) : (
+                                                                <span className="text-green-400">Plano em dia - vence em {diffDays} dias</span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Botão WhatsApp */}
+                                                        <div className="space-y-2">
+                                                            <p className="text-xs text-gray-400">
+                                                                Se você já pagou o plano ou precisa de suporte, chame no WhatsApp da administração:
+                                                            </p>
+                                                            <div className="flex items-center gap-3">
+                                                                <a
+                                                                    href={`https://wa.me/5551935052274?text=Olá! Sou ${session.user.name} e preciso de ajuda com meu plano ${vipStatus.plan}.`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                                                                >
+                                                                    <MessageCircle className="h-4 w-4" />
+                                                                    CHAMAR NO WHATSAPP
+                                                                </a>
+                                                                <span className="text-xs text-gray-400">
+                                                                    Número: +55 51 9305-2274
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Cards de Ações Rápidas */}
+                        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-8 border border-gray-700/50">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-xl flex items-center justify-center">
+                                    <Zap className="h-5 w-5 text-yellow-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">Ações Rápidas</h3>
+                                    <p className="text-gray-400 text-sm">Acesse rapidamente as principais funcionalidades</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-800/90 rounded-2xl p-8 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-6 right-6 w-24 h-24 bg-gray-600/30 rounded-full flex items-center justify-center">
+                                    <Zap className="h-12 w-12 text-gray-400/60" />
+                                </div>
+
+                                <div className="relative z-10">
+                                    <div className="text-center mb-8">
+                                        <h3 className="text-white font-bold text-2xl mb-2">Ações Rápidas</h3>
+                                        <p className="text-gray-300 text-lg">Acesse rapidamente as principais funcionalidades</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                        {/* Renovar Plano */}
+                                        <a href="/plans" className="text-center p-4 rounded-xl bg-gray-700/30">
+                                            <div className="w-16 h-16 bg-gray-600/50 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                                <CreditCard className="h-8 w-8 text-gray-300" />
+                                            </div>
+                                            <h4 className="text-white font-semibold mb-1">Renovar Plano</h4>
+                                            <p className="text-gray-300 text-xs">Estenda sua assinatura VIP</p>
+                                        </a>
+
+                                        {/* Nova Música */}
+                                        <a href="/new" className="text-center p-4 rounded-xl bg-gray-700/30">
+                                            <div className="w-16 h-16 bg-gray-600/50 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                                <Music className="h-8 w-8 text-gray-300" />
+                                            </div>
+                                            <h4 className="text-white font-semibold mb-1">Nova Música</h4>
+                                            <p className="text-gray-300 text-xs">Explore nosso catálogo</p>
+                                        </a>
+
+                                        {/* Deemix */}
+                                        <a href="/profile/deemix" className="text-center p-4 rounded-xl bg-gray-700/30">
+                                            <div className="w-16 h-16 bg-gray-600/50 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                                <Disc className="h-8 w-8 text-gray-300" />
+                                            </div>
+                                            <h4 className="text-white font-semibold mb-1">Deemix</h4>
+                                            <p className="text-gray-300 text-xs">Downloads em alta qualidade</p>
+                                        </a>
+
+                                        {/* Suporte */}
+                                        <a href="https://wa.me/5551935052274" target="_blank" rel="noopener noreferrer" className="text-center p-4 rounded-xl bg-gray-700/30">
+                                            <div className="w-16 h-16 bg-gray-600/50 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                                <MessageCircle className="h-8 w-8 text-gray-300" />
+                                            </div>
+                                            <h4 className="text-white font-semibold mb-1">Suporte VIP</h4>
+                                            <p className="text-gray-300 text-xs">Fale conosco pelo WhatsApp</p>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                );
 
-                    {/* Seção de Ferramentas Premium */}
-                    <div className="mb-8 sm:mb-12">
-                        <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                            <Settings className="h-6 w-6 sm:h-7 sm:w-7 text-blue-400" />
-                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">Ferramentas Premium</h2>
+            case 'profile':
+                return (
+                    <div className="space-y-8">
+                        {/* Header da Seção */}
+                        <div className="bg-gradient-to-r from-gray-900/50 to-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
+                            <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+                                <User className="h-6 w-6 text-green-400" />
+                                Informações do Cliente
+                            </h2>
+                            <p className="text-gray-400">Dados pessoais e informações da sua conta</p>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-                            {/* Deemix Premium */}
-                            <div className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 group relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative">
-                                    <h3 className="text-xl sm:text-2xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
-                                        <Disc className="h-6 w-6 text-purple-400" />
-                                        Deemix Premium
-                                    </h3>
+                        {/* Mensagens de Feedback */}
+                        {(userEdit.error || userEdit.success) && (
+                            <div className="bg-gray-800/90 rounded-2xl p-4 border border-gray-700/50">
+                                {userEdit.error && (
+                                    <div className="flex items-center gap-2 text-red-400">
+                                        <AlertCircle className="h-5 w-5" />
+                                        <span>{userEdit.error}</span>
+                                        <button
+                                            onClick={userEdit.resetMessages}
+                                            className="ml-auto text-gray-400 hover:text-white"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
+                                {userEdit.success && (
+                                    <div className="flex items-center gap-2 text-green-400">
+                                        <CheckCircle className="h-5 w-5" />
+                                        <span>{userEdit.success}</span>
+                                        <button
+                                            onClick={userEdit.resetMessages}
+                                            className="ml-auto text-gray-400 hover:text-white"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <span className="text-gray-300 text-sm">Status:</span>
-                                            <span className={`font-semibold flex items-center gap-2 ${(session.user as any).deemix ? 'text-green-400' : 'text-red-400'
-                                                }`}>
-                                                <div className={`h-3 w-3 rounded-full ${(session.user as any).deemix ? 'bg-green-500' : 'bg-red-500'
-                                                    }`}></div>
-                                                {(session.user as any).deemix ? 'Ativo' : 'Inativo'}
-                                            </span>
-                                        </div>
+                        {/* Cards de Informações - Um por Linha */}
+                        <div className="space-y-4">
+                            {/* Nome Completo */}
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-gray-600/30 rounded-full flex items-center justify-center">
+                                    <User className="h-10 w-10 text-gray-400/60" />
+                                </div>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">Nome Completo</h3>
+                                    <EditableField
+                                        value={userEdit.editedData.name || ''}
+                                        onSave={async (value) => {
+                                            console.log('💾 Salvando Nome:', value);
+                                            userEdit.updateField('name', value);
+                                            await userEdit.saveChanges();
+                                        }}
+                                        onCancel={userEdit.cancelEditing}
+                                        onStartEdit={() => userEdit.startEditing('name')}
+                                        isEditing={userEdit.isEditing && userEdit.editingField === 'name'}
+                                        isLoading={userEdit.isLoading}
+                                        placeholder="Digite seu nome completo"
+                                        maxLength={100}
+                                        validation={(value) => {
+                                            if (value.length < 2) return 'Nome deve ter pelo menos 2 caracteres';
+                                            if (value.length > 100) return 'Nome muito longo';
+                                            return null;
+                                        }}
+                                    />
+                                    <p className="text-gray-300 text-sm font-medium">Nome registrado na conta</p>
+                                </div>
+                            </div>
 
-                                        {(session.user as any).deemix && (
-                                            <div className="p-3 bg-green-500/10 rounded-xl border border-green-500/30">
-                                                <p className="text-green-400 text-sm text-center">
-                                                    ✓ Acesso liberado ao Deemix
-                                                </p>
-                                            </div>
-                                        )}
+                            {/* Email */}
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-gray-600/30 rounded-full flex items-center justify-center">
+                                    <Mail className="h-10 w-10 text-gray-400/60" />
+                                </div>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">Email</h3>
+                                    <EditableField
+                                        value={userEdit.editedData.email || ''}
+                                        onSave={async (value) => {
+                                            console.log('💾 Salvando Email:', value);
+                                            userEdit.updateField('email', value);
+                                            await userEdit.saveChanges();
+                                        }}
+                                        onCancel={userEdit.cancelEditing}
+                                        onStartEdit={() => userEdit.startEditing('email')}
+                                        isEditing={userEdit.isEditing && userEdit.editingField === 'email'}
+                                        isLoading={userEdit.isLoading}
+                                        placeholder="Digite seu email"
+                                        maxLength={100}
+                                        validation={(value) => {
+                                            if (!value.includes('@')) return 'Email inválido';
+                                            if (value.length < 5) return 'Email muito curto';
+                                            return null;
+                                        }}
+                                    />
+                                    <p className="text-gray-300 text-sm font-medium">Email de acesso à conta</p>
+                                </div>
+                            </div>
+
+                            {/* WhatsApp */}
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-gray-600/30 rounded-full flex items-center justify-center">
+                                    <Phone className="h-10 w-10 text-gray-400/60" />
+                                </div>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">WhatsApp</h3>
+                                    <EditableField
+                                        value={userEdit.editedData.whatsapp || '(51) 98108 - 6784'}
+                                        onSave={async (value) => {
+                                            console.log('💾 Salvando WhatsApp:', value);
+                                            userEdit.updateField('whatsapp', value);
+                                            await userEdit.saveChanges();
+                                        }}
+                                        onCancel={userEdit.cancelEditing}
+                                        onStartEdit={() => userEdit.startEditing('whatsapp')}
+                                        isEditing={userEdit.isEditing && userEdit.editingField === 'whatsapp'}
+                                        isLoading={userEdit.isLoading}
+                                        placeholder="Digite seu WhatsApp"
+                                        maxLength={20}
+                                        validation={(value) => {
+                                            if (value.length < 10) return 'WhatsApp deve ter pelo menos 10 caracteres';
+                                            return null;
+                                        }}
+                                    />
+                                    <p className="text-gray-300 text-sm font-medium">Contato para suporte</p>
+                                </div>
+                            </div>
+
+                            {/* Status VIP */}
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-gray-600/30 rounded-full flex items-center justify-center">
+                                    <Crown className="h-10 w-10 text-gray-400/60" />
+                                </div>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">Status VIP</h3>
+                                    <p className="text-white font-bold text-3xl mb-2">{vipStatus.isVip ? 'ATIVO' : 'INATIVO'}</p>
+                                    <p className={`text-sm font-medium ${vipStatus.isVip ? 'text-green-400' : 'text-red-400'}`}>
+                                        {vipStatus.isVip ? 'Plano ativo e funcionando' : 'Plano inativo ou vencido'}
+                                    </p>
+                                    <div className="mt-4 p-3 bg-gray-700/50 rounded-lg">
+                                        <span className="text-gray-300 text-xs">Plano: {vipStatus.plan}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Deezer Premium */}
-                            <div className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 group relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative">
-                                    <h3 className="text-xl sm:text-2xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
-                                        <Headphones className="h-6 w-6 text-blue-400" />
-                                        Deezer Premium
-                                    </h3>
-
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <span className="text-gray-300 text-sm">Status:</span>
-                                            <span className={`font-semibold flex items-center gap-2 ${(session.user as any).deezerPremium ? 'text-green-400' : 'text-red-400'
-                                                }`}>
-                                                <div className={`h-3 w-3 rounded-full ${(session.user as any).deezerPremium ? 'bg-green-500' : 'bg-red-500'
-                                                    }`}></div>
-                                                {(session.user as any).deezerPremium ? 'Ativo' : 'Inativo'}
-                                            </span>
+                            {/* Plano e Vencimento */}
+                            <div className="bg-gray-800/90 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                                <div className="absolute top-4 right-4 w-20 h-20 bg-gray-600/30 rounded-full flex items-center justify-center">
+                                    <Package className="h-10 w-10 text-gray-400/60" />
+                                </div>
+                                <div className="relative z-10">
+                                    <h3 className="text-white font-bold text-xl mb-2">Detalhes do Plano</h3>
+                                    <p className="text-white font-bold text-3xl mb-2">{vipStatus.plan}</p>
+                                    <p className="text-gray-300 text-sm font-medium">Valor: R$ 38,00/mês</p>
+                                    {vipStatus.vencimento && (
+                                        <div className="mt-4 p-3 bg-gray-700/50 rounded-lg">
+                                            <span className="text-gray-300 text-xs">Vence em: {formatDate(vipStatus.vencimento)}</span>
                                         </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
 
-                                        {(session.user as any).deezerPremium && (
-                                            <div className="space-y-2">
-                                                <div className="p-3 bg-green-500/10 rounded-xl border border-green-500/30">
-                                                    <p className="text-green-400 text-sm text-center">
-                                                        ✓ Deezer Premium incluído
-                                                    </p>
-                                                </div>
-                                                {(session.user as any).deezerEmail && (
-                                                    <div className="p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                                        <p className="text-gray-300 text-xs text-center">
-                                                            Email: {(session.user as any).deezerEmail}
-                                                        </p>
-                                                    </div>
+            case 'downloads':
+                return (
+                    <div className="space-y-8">
+                        {/* Header da Seção */}
+                        <div className="bg-gradient-to-r from-gray-900/50 to-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
+                            <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+                                <Download className="h-6 w-6 text-purple-400" />
+                                Histórico de Downloads
+                            </h2>
+                            <p className="text-gray-400">Acompanhe todas as suas músicas baixadas</p>
+                        </div>
+
+                        {/* Cards de Estatísticas de Download */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Total de Downloads */}
+                            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-6 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 group hover:scale-[1.02]">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl flex items-center justify-center group-hover:from-purple-500/30 group-hover:to-pink-500/30 transition-all duration-300">
+                                        <Download className="h-6 w-6 text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-gray-400 text-sm font-medium">Total de Downloads</h3>
+                                        <p className="text-white font-bold text-3xl">1.870</p>
+                                    </div>
+                                </div>
+                                <div className="w-full bg-gray-700 rounded-full h-2">
+                                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+                                </div>
+                            </div>
+
+                            {/* Downloads Hoje */}
+                            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-6 border border-gray-700/50 hover:border-green-500/30 transition-all duration-300 group hover:scale-[1.02]">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl flex items-center justify-center group-hover:from-green-500/30 group-hover:to-emerald-500/30 transition-all duration-300">
+                                        <Clock className="h-6 w-6 text-green-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-gray-400 text-sm font-medium">Downloads Hoje</h3>
+                                        <p className="text-white font-bold text-3xl">0</p>
+                                    </div>
+                                </div>
+                                <div className="w-full bg-gray-700 rounded-full h-2">
+                                    <div className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full" style={{ width: '0%' }}></div>
+                                </div>
+                                <p className="text-green-400 text-xs font-medium mt-2">Limite: 100/dia</p>
+                            </div>
+
+                            {/* Último Download */}
+                            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-6 border border-gray-700/50 hover:border-blue-500/30 transition-all duration-300 group hover:scale-[1.02]">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl flex items-center justify-center group-hover:from-blue-500/30 group-hover:to-cyan-500/30 transition-all duration-300">
+                                        <Calendar className="h-6 w-6 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-gray-400 text-sm font-medium">Último Download</h3>
+                                        <p className="text-white font-bold text-lg">22/08/2025</p>
+                                    </div>
+                                </div>
+                                <p className="text-blue-400 text-xs font-medium">Reset diário às 00:00</p>
+                            </div>
+                        </div>
+
+                        {/* Lista de Downloads Recentes */}
+                        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-6 border border-gray-700/50">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl flex items-center justify-center">
+                                    <ListMusic className="h-5 w-5 text-purple-400" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Downloads Recentes</h3>
+                            </div>
+
+                            <div className="text-center py-12">
+                                <Download className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                                <p className="text-gray-400 mb-2">Nenhum download recente</p>
+                                <p className="text-gray-500 text-sm">Suas músicas baixadas aparecerão aqui</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+
+            case 'likes':
+                return (
+                    <div className="space-y-8">
+                        {/* Header da Seção */}
+                        <div className="bg-gradient-to-r from-gray-900/50 to-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
+                            <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+                                <Heart className="h-6 w-6 text-pink-400" />
+                                Músicas Curtidas
+                            </h2>
+                            <p className="text-gray-400">Suas músicas favoritas e preferências</p>
+                        </div>
+
+                        {/* Cards de Estatísticas de Likes */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Total de Curtidas */}
+                            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-6 border border-gray-700/50 hover:border-pink-500/30 transition-all duration-300 group hover:scale-[1.02]">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-xl flex items-center justify-center group-hover:from-pink-500/30 group-hover:to-rose-500/30 transition-all duration-300">
+                                        <Heart className="h-6 w-6 text-pink-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-gray-400 text-sm font-medium">Total de Curtidas</h3>
+                                        <p className="text-white font-bold text-3xl">6</p>
+                                    </div>
+                                </div>
+                                <p className="text-pink-400 text-xs font-medium">Músicas favoritas</p>
+                            </div>
+
+                            {/* Gêneros Favoritos */}
+                            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-6 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 group hover:scale-[1.02]">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-violet-500/20 rounded-xl flex items-center justify-center group-hover:from-purple-500/30 group-hover:to-violet-500/30 transition-all duration-300">
+                                        <Music className="h-6 w-6 text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-gray-400 text-sm font-medium">Gêneros Favoritos</h3>
+                                        <p className="text-white font-bold text-3xl">3</p>
+                                    </div>
+                                </div>
+                                <p className="text-purple-400 text-xs font-medium">Estilos preferidos</p>
+                            </div>
+                        </div>
+
+                        {/* Lista de Curtidas */}
+                        <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl p-6 border border-gray-700/50">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-xl flex items-center justify-center">
+                                    <ListMusic className="h-5 w-5 text-pink-400" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Músicas Curtidas</h3>
+                            </div>
+
+                            <div className="text-center py-12">
+                                <Heart className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                                <p className="text-gray-400 mb-2">Nenhuma música curtida</p>
+                                <p className="text-gray-500 text-sm">Suas músicas favoritas aparecerão aqui</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+
+            default:
+                return (
+                    <div className="text-center py-16">
+                        <div className="w-20 h-20 bg-gradient-to-br from-gray-800 to-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Info className="h-10 w-10 text-gray-400" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Selecione uma Opção</h3>
+                        <p className="text-gray-400">Escolha uma das opções no menu lateral para ver as informações</p>
+                    </div>
+                );
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-[#121212] relative overflow-hidden">
+            <Header />
+
+            <div className="pt-12 lg:pt-16 min-h-screen bg-[#121212]">
+                <div className="max-w-[95%] mx-auto px-4 py-4 sm:py-8">
+                    {/* Header da Página */}
+                    <div className="mb-8">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4">
+                            Meu Perfil
+                        </h1>
+                        <p className="text-gray-400 text-sm sm:text-base lg:text-lg max-w-none lg:max-w-4xl">
+                            Gerencie suas informações, veja suas estatísticas e acompanhe seu plano VIP
+                        </p>
+                    </div>
+
+                    {/* Layout Principal */}
+                    <div className="flex gap-6">
+                        {/* Sidebar */}
+                        <div className="w-64 flex-shrink-0">
+                            <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
+                                <nav className="space-y-2">
+                                    {sidebarItems.map((item) => {
+                                        const Icon = item.icon;
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => setActiveTab(item.id)}
+                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-left ${activeTab === item.id
+                                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                                                    }`}
+                                            >
+                                                <Icon className={`h-5 w-5 ${activeTab === item.id ? 'text-green-400' : item.color}`} />
+                                                <span className="font-medium">{item.label}</span>
+                                                {activeTab === item.id && (
+                                                    <ChevronRight className="h-4 w-4 ml-auto text-green-400" />
                                                 )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Uploader */}
-                            <div className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 group relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative">
-                                    <h3 className="text-xl sm:text-2xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
-                                        <Upload className="h-6 w-6 text-orange-400" />
-                                        Uploader
-                                    </h3>
-
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
-                                            <span className="text-gray-300 text-sm">Status:</span>
-                                            <span className={`font-semibold flex items-center gap-2 ${(session.user as any).isUploader ? 'text-green-400' : 'text-red-400'
-                                                }`}>
-                                                <div className={`h-3 w-3 rounded-full ${(session.user as any).isUploader ? 'bg-green-500' : 'bg-red-500'
-                                                    }`}></div>
-                                                {(session.user as any).isUploader ? 'Ativo' : 'Inativo'}
-                                            </span>
-                                        </div>
-
-                                        {(session.user as any).isUploader && (
-                                            <div className="p-3 bg-green-500/10 rounded-xl border border-green-500/30">
-                                                <p className="text-green-400 text-sm text-center">
-                                                    ✓ Pode fazer upload de músicas
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </nav>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Seção de Ações Rápidas */}
-                    <div className="mb-8 sm:mb-12">
-                        <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                            <Zap className="h-6 w-6 sm:h-7 sm:w-7 text-yellow-400" />
-                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">Ações Rápidas</h2>
+                        {/* Conteúdo Principal */}
+                        <div className="flex-1">
+                            {renderContent()}
                         </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                            {/* Renovar Plano */}
-                            <a href="/plans" className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative text-center">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg mx-auto mb-4">
-                                        <CreditCard className="h-6 w-6 text-white" />
-                                    </div>
-                                    <h3 className="text-lg font-bold text-white mb-2">Renovar Plano</h3>
-                                    <p className="text-gray-400 text-sm">Estenda sua assinatura VIP</p>
-                                </div>
-                            </a>
-
-                            {/* Deemix */}
-                            <a href="/profile/deemix" className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative text-center">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg mx-auto mb-4">
-                                        <Disc className="h-6 w-6 text-white" />
-                                    </div>
-                                    <h3 className="text-lg font-bold text-white mb-2">Deemix</h3>
-                                    <p className="text-gray-400 text-sm">Acesse o Deemix agora</p>
-                                </div>
-                            </a>
-
-                            {/* Suporte VIP */}
-                            <a href="https://wa.me/5551935052274" target="_blank" rel="noopener noreferrer" className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-green-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative text-center">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg mx-auto mb-4">
-                                        <MessageCircle className="h-6 w-6 text-white" />
-                                    </div>
-                                    <h3 className="text-lg font-bold text-white mb-2">Suporte VIP</h3>
-                                    <p className="text-gray-400 text-sm">Fale conosco pelo WhatsApp</p>
-                                </div>
-                            </a>
-
-                            {/* Nova Música */}
-                            <a href="/new" className="bg-black border border-gray-800/50 rounded-2xl sm:rounded-3xl p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative text-center">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg mx-auto mb-4">
-                                        <Music className="h-6 w-6 text-white" />
-                                    </div>
-                                    <h3 className="text-lg font-bold text-white mb-2">Nova Música</h3>
-                                    <p className="text-gray-400 text-sm">Explore nosso catálogo</p>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-
-                    {/* Botão para atualizar cache */}
-                    <div className="text-center">
-                        <button
-                            onClick={() => downloadsCache.refreshCache()}
-                            disabled={downloadsCache.isLoading}
-                            className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-2xl transition-all duration-300 font-semibold text-lg shadow-2xl hover:shadow-blue-500/25 transform hover:scale-[1.02] border border-blue-500/30 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                        >
-                            <CheckCircle className="h-5 w-5" />
-                            {downloadsCache.isLoading ? 'Sincronizando...' : 'Atualizar Cache'}
-                        </button>
                     </div>
                 </div>
             </div>
-        </MainLayout>
+
+            {/* Footer */}
+            <footer className="bg-black border-t border-gray-800/50 py-8 mt-16">
+                <div className="max-w-[95%] mx-auto px-4">
+                    <div className="text-center">
+                        {/* Logo e Nome */}
+                        <div className="flex items-center justify-center gap-3 mb-6">
+                            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                                <Music className="h-5 w-5 text-white" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white">Nexor Records Pools</h3>
+                        </div>
+
+                        {/* Links de Navegação */}
+                        <div className="flex flex-wrap justify-center gap-6 mb-6">
+                            <a href="/new" className="text-gray-400 hover:text-white transition-colors">Novidades</a>
+                            <a href="/trending" className="text-gray-400 hover:text-white transition-colors">Trending</a>
+                            <a href="/plans" className="text-gray-400 hover:text-white transition-colors">Planos</a>
+                            <a href="/debridlink" className="text-gray-400 hover:text-white transition-colors">Debrid-Link</a>
+                            <a href="/allavsoft" className="text-gray-400 hover:text-white transition-colors">Allavsoft</a>
+                            <a href="/deemix" className="text-gray-400 hover:text-white transition-colors">Deemix</a>
+                            <a href="/privacidade" className="text-gray-400 hover:text-white transition-colors">Privacidade</a>
+                            <a href="/termos" className="text-gray-400 hover:text-white transition-colors">Termos</a>
+                        </div>
+
+                        {/* Redes Sociais */}
+                        <div className="flex justify-center gap-4 mb-6">
+                            <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all">
+                                <span className="text-sm font-bold">F</span>
+                            </a>
+                            <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all">
+                                <span className="text-sm font-bold">T</span>
+                            </a>
+                            <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all">
+                                <span className="text-sm font-bold">I</span>
+                            </a>
+                            <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all">
+                                <span className="text-sm font-bold">Y</span>
+                            </a>
+                        </div>
+
+                        {/* Copyright */}
+                        <div className="text-gray-500 text-sm">
+                            © 2025 Nexor Records Pools. Todos os direitos reservados.
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
     );
 };
 

@@ -181,7 +181,7 @@ export default function RootLayout({
           }}
         />
 
-        {/* Script de proteção de imagens - executa antes do React */}
+        {/* Script de proteção de imagens - executa apenas no cliente após hydration */}
         <script
           type="text/javascript"
           dangerouslySetInnerHTML={{
@@ -189,48 +189,65 @@ export default function RootLayout({
               (function() {
                 'use strict';
                 
-                // Proteger imagens imediatamente (modo não-agressivo)
+                // Aguardar o React terminar a hidratação
+                function waitForHydration() {
+                  if (document.readyState === 'complete' && window.React) {
+                    // Aguardar um pouco mais para garantir que o React terminou
+                    setTimeout(protectImages, 100);
+                  } else {
+                    setTimeout(waitForHydration, 100);
+                  }
+                }
+                
+                // Proteger imagens após hidratação (modo não-agressivo)
                 function protectImages() {
                   try {
                     const images = document.querySelectorAll('img');
                     images.forEach(function(img) {
-                      // Marcar como protegida para extensões
-                      img.setAttribute('data-protected', 'true');
-                      img.setAttribute('data-no-process', 'true');
+                      // Só adicionar atributos se não existirem (evitar duplicação)
+                      if (!img.hasAttribute('data-protected')) {
+                        img.setAttribute('data-protected', 'true');
+                      }
+                      if (!img.hasAttribute('data-no-process')) {
+                        img.setAttribute('data-no-process', 'true');
+                      }
                       
                       // Se já está quebrada E tem src, marcar para extensões
                       if (img.complete && img.naturalWidth === 0 && img.src && img.src !== '') {
-                        img.setAttribute('data-error', 'true');
-                        img.setAttribute('data-cleaned', 'true');
-                        // NÃO esconder a imagem - deixar o fallback funcionar
+                        if (!img.hasAttribute('data-error')) {
+                          img.setAttribute('data-error', 'true');
+                        }
+                        if (!img.hasAttribute('data-cleaned')) {
+                          img.setAttribute('data-cleaned', 'true');
+                        }
                       }
                       
-                      // Adicionar listener de erro (apenas para extensões)
-                      img.addEventListener('error', function() {
-                        // Marcar para extensões não processarem
-                        this.setAttribute('data-error', 'true');
-                        this.setAttribute('data-cleaned', 'true');
-                        // NÃO esconder - deixar o fallback funcionar
-                      });
+                      // Adicionar listener de erro apenas uma vez
+                      if (!img.hasAttribute('data-error-listener')) {
+                        img.setAttribute('data-error-listener', 'true');
+                        img.addEventListener('error', function() {
+                          if (!this.hasAttribute('data-error')) {
+                            this.setAttribute('data-error', 'true');
+                          }
+                          if (!this.hasAttribute('data-cleaned')) {
+                            this.setAttribute('data-cleaned', 'true');
+                          }
+                        });
+                      }
                     });
                     
-                    console.log('[Image Protection] Proteção ativada para', images.length, 'imagens (modo não-agressivo)');
+                    console.log('[Image Protection] Proteção ativada para', images.length, 'imagens (pós-hidratação)');
                   } catch (e) {
                     console.warn('[Image Protection] Erro ao proteger imagens:', e);
                   }
                 }
                 
-                // Executar proteção imediatamente
+                // Iniciar processo após DOM estar pronto
                 if (document.readyState === 'loading') {
-                  document.addEventListener('DOMContentLoaded', protectImages);
+                  document.addEventListener('DOMContentLoaded', waitForHydration);
                 } else {
-                  protectImages();
+                  waitForHydration();
                 }
-                
-                // Executar novamente após um delay para pegar imagens carregadas dinamicamente
-                setTimeout(protectImages, 100);
-                setTimeout(protectImages, 500);
-                setTimeout(protectImages, 1000);
                 
               })();
             `

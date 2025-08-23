@@ -99,17 +99,34 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     if (downloadedTracks.length > 0 && dailyDownloadCount > 0) return;
 
     try {
+      // Verificar se estamos no cliente
+      if (typeof window === 'undefined') return;
+
       // Usando a rota GET que modificamos para pegar todos os dados iniciais
-      const response = await fetch('/api/downloads');
+      const response = await fetch('/api/downloads', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(10000) // 10 segundos
+      });
+
       if (response.ok) {
         const data = await response.json();
         setDownloadedTracks(data.downloads || []);
         setDailyDownloadCount(data.dailyDownloadCount || 0);
         setDailyLimit(data.dailyLimit || 15);
+      } else {
+        console.warn('API response not ok:', response.status, response.statusText);
+        // Em caso de erro, definir valores padrão
+        setDownloadedTracks([]);
+        setDailyDownloadCount(0);
+        setDailyLimit(15);
       }
-      // Você pode adicionar o fetch de likes aqui também se quiser unificar
     } catch (error) {
       console.error("Error fetching user data:", error);
+      // Em caso de erro, definir valores padrão
+      setDownloadedTracks([]);
+      setDailyDownloadCount(0);
+      setDailyLimit(15);
       showAlert("Erro ao carregar dados do usuário.");
     }
   }, [user, showAlert, downloadedTracks.length, dailyDownloadCount]);

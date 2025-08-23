@@ -14,6 +14,8 @@ export const NotificationTest: React.FC = () => {
         addSystemNotification
     } = useNotificationContext();
 
+    const { resetChecks } = useNotifications();
+
     const testNotifications = () => {
         // Notificação de plano
         addPlanNotification(
@@ -181,6 +183,17 @@ export const NotificationTest: React.FC = () => {
                     >
                         <Star className="w-4 h-4 mr-2" />
                         Recursos
+                    </Button>
+                </div>
+
+                <div className="flex justify-center">
+                    <Button
+                        onClick={resetChecks}
+                        className="bg-gray-600 hover:bg-gray-700 text-white"
+                        size="sm"
+                    >
+                        <Zap className="w-4 h-4 mr-2" />
+                        Resetar Verificações
                     </Button>
                 </div>
 

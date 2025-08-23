@@ -8,7 +8,7 @@ function isValidDate(val: unknown): val is Date {
 
 import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, Bell, UserCircle, Users, Home } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
-import Image from 'next/image';
+import { SafeImage } from '@/components/ui/SafeImage';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
@@ -117,7 +117,7 @@ const Header = ({ }: HeaderProps) => {
           </button>
           <Link href="/">
             <div className="relative h-10 w-auto">
-              <Image
+              <SafeImage
                 src={NEW_LOGO_URL}
                 alt="NextorDJ Logo"
                 width={150}
@@ -237,7 +237,7 @@ const Header = ({ }: HeaderProps) => {
 
                 {/* Professional Logo Section */}
                 <div className="flex flex-col items-center mb-4">
-                  <Image src={NEW_LOGO_URL} alt="Logo" width={140} height={36} className="mb-3 drop-shadow-lg" />
+                  <SafeImage src={NEW_LOGO_URL} alt="Logo" width={140} height={36} className="mb-3 drop-shadow-lg" />
                   <div className="text-center">
                     <h3 className="text-white font-bold text-lg tracking-wider">PLATAFORMA DJ</h3>
                     <p className="text-gray-400 text-sm font-medium">Sua música, seu estilo</p>
@@ -375,7 +375,7 @@ const Header = ({ }: HeaderProps) => {
                 >
                   <Bell className="h-6 w-6" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                    <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -397,15 +397,15 @@ const Header = ({ }: HeaderProps) => {
                                 if (button) {
                                   const originalText = button.textContent;
                                   button.textContent = '✓ Limpo!';
-                                  button.className = 'text-xs text-blue-400 transition-colors';
+                                  button.className = 'text-xs text-green-400 transition-colors';
                                   setTimeout(() => {
                                     button.textContent = originalText;
-                                    button.className = 'text-xs text-gray-400 hover:text-white transition-colors';
+                                    button.className = 'text-xs text-gray-400 hover:text-green-400 transition-colors';
                                   }, 2000);
                                 }
                               }
                             }}
-                            className="text-xs text-gray-400 hover:text-blue-400 transition-colors"
+                            className="text-xs text-gray-400 hover:text-green-400 transition-colors"
                             title="Limpar notificações antigas (mais de 30 dias)"
                           >
                             Limpar Antigas
@@ -422,12 +422,12 @@ const Header = ({ }: HeaderProps) => {
                                   button.className = 'text-xs text-green-400 transition-colors';
                                   setTimeout(() => {
                                     button.textContent = originalText;
-                                    button.className = 'text-xs text-gray-400 hover:text-white transition-colors';
+                                    button.className = 'text-xs text-gray-400 hover:text-green-400 transition-colors';
                                   }, 2000);
                                 }
                               }
                             }}
-                            className="text-xs text-gray-400 hover:text-white transition-colors"
+                            className="text-xs text-gray-400 hover:text-green-400 transition-colors"
                           >
                             Limpar Tudo
                           </button>
