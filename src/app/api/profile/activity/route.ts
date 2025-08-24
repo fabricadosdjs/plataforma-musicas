@@ -1,0 +1,262 @@
+import { authOptions } from '@/lib/authOptions';
+import prisma, { safeQuery } from '@/lib/prisma';
+import { getServerSession } from 'next-auth/next';
+import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: Request) {
+    try {
+        const session = await getServerSession(authOptions);
+
+        if (!session?.user?.email) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const userEmail = session.user.email;
+
+        // Buscar usuário pelo email
+        const user = await prisma.user.findUnique({
+            where: { email: userEmail },
+            select: { id: true }
+        });
+
+        if (!user) {
+            return NextResponse.json(
+                { error: "Usuário não encontrado" },
+                { status: 404 }
+            );
+        }
+
+        const userId = user.id;
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const yearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+
+        // Estatísticas de Downloads
+        const downloadsToday = await safeQuery(
+            () => prisma.download.count({
+                where: {
+                    userId: userId,
+                    downloadedAt: {
+                        gte: today
+                    }
+                }
+            }),
+            0
+        );
+
+        const downloadsThisWeek = await safeQuery(
+            () => prisma.download.count({
+                where: {
+                    userId: userId,
+                    downloadedAt: {
+                        gte: weekAgo
+                    }
+                }
+            }),
+            0
+        );
+
+        const downloadsThisMonth = await safeQuery(
+            () => prisma.download.count({
+                where: {
+                    userId: userId,
+                    downloadedAt: {
+                        gte: monthAgo
+                    }
+                }
+            }),
+            0
+        );
+
+        const downloadsThisYear = await safeQuery(
+            () => prisma.download.count({
+                where: {
+                    userId: userId,
+                    downloadedAt: {
+                        gte: yearAgo
+                    }
+                }
+            }),
+            0
+        );
+
+        const totalDownloads = await safeQuery(
+            () => prisma.download.count({
+                where: { userId: userId }
+            }),
+            0
+        );
+
+        // Estatísticas de Likes
+        const likesToday = await safeQuery(
+            () => prisma.like.count({
+                where: {
+                    userId: userId,
+                    createdAt: {
+                        gte: today
+                    }
+                }
+            }),
+            0
+        );
+
+        const likesThisWeek = await safeQuery(
+            () => prisma.like.count({
+                where: {
+                    userId: userId,
+                    createdAt: {
+                        gte: weekAgo
+                    }
+                }
+            }),
+            0
+        );
+
+        const likesThisMonth = await safeQuery(
+            () => prisma.like.count({
+                where: {
+                    userId: userId,
+                    createdAt: {
+                        gte: monthAgo
+                    }
+                }
+            }),
+            0
+        );
+
+        const likesThisYear = await safeQuery(
+            () => prisma.like.count({
+                where: {
+                    userId: userId,
+                    createdAt: {
+                        gte: yearAgo
+                    }
+                }
+            }),
+            0
+        );
+
+        const totalLikes = await safeQuery(
+            () => prisma.like.count({
+                where: { userId: userId }
+            }),
+            0
+        );
+
+        // Estatísticas de Plays
+        const playsToday = await safeQuery(
+            () => prisma.play.count({
+                where: {
+                    userId: userId,
+                    createdAt: {
+                        gte: today
+                    }
+                }
+            }),
+            0
+        );
+
+        const playsThisWeek = await safeQuery(
+            () => prisma.play.count({
+                where: {
+                    userId: userId,
+                    createdAt: {
+                        gte: weekAgo
+                    }
+                }
+            }),
+            0
+        );
+
+        const totalPlays = await safeQuery(
+            () => prisma.play.count({
+                where: { userId: userId }
+            }),
+            0
+        );
+
+        // Estatísticas de GB baixados (estimativa)
+        // Assumindo que cada música tem em média 10MB
+        const estimatedGBDownloaded = Math.round((totalDownloads * 10) / 1024 * 100) / 100;
+
+        // Dados para gráficos (últimos 7 dias)
+        const dailyStats = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+            const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+
+            const dayDownloads = await safeQuery(
+                () => prisma.download.count({
+                    where: {
+                        userId: userId,
+                        downloadedAt: {
+                            gte: dayStart,
+                            lt: dayEnd
+                        }
+                    }
+                }),
+                0
+            );
+
+            const dayLikes = await safeQuery(
+                () => prisma.like.count({
+                    where: {
+                        userId: userId,
+                        createdAt: {
+                            gte: dayStart,
+                            lt: dayEnd
+                        }
+                    }
+                }),
+                0
+            );
+
+            dailyStats.push({
+                date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+                downloads: dayDownloads,
+                likes: dayLikes
+            });
+        }
+
+        return NextResponse.json({
+            downloads: {
+                today: downloadsToday,
+                thisWeek: downloadsThisWeek,
+                thisMonth: downloadsThisMonth,
+                thisYear: downloadsThisYear,
+                total: totalDownloads
+            },
+            likes: {
+                today: likesToday,
+                thisWeek: likesThisWeek,
+                thisMonth: likesThisMonth,
+                thisYear: likesThisYear,
+                total: totalLikes
+            },
+            plays: {
+                today: playsToday,
+                thisWeek: playsThisWeek,
+                total: totalPlays
+            },
+            storage: {
+                estimatedGB: estimatedGBDownloaded
+            },
+            dailyStats: dailyStats
+        });
+
+    } catch (error) {
+        console.error("[PROFILE_ACTIVITY_GET_ERROR]", error);
+        return NextResponse.json(
+            { error: "Erro Interno do Servidor" },
+            { status: 500 }
+        );
+    }
+}
