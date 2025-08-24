@@ -37,6 +37,8 @@ model User {
   isUploader                  Boolean?   @default(false)
   dataPrimeiroPagamento       DateTime?
   planName                    String?
+  planType                    String?
+  period                      String?
   downloads                   Download[]
   likes                       Like[]
   plays                       Play[]
@@ -50,7 +52,6 @@ model Track {
   style       String?
   version     String?
   pool        String?
-  folder      String?    // Nova coluna para organizar músicas por pasta/álbum
   imageUrl    String?
   previewUrl  String?
   downloadUrl String?
@@ -61,10 +62,17 @@ model Track {
   uploadedBy  String?
   aiMeta      Json?
   bitrate     Int?
+  releaseId   Int?
+  folder      String?    @db.VarChar(255)
+  filename    String?
   downloads   Download[]
   likes       Like[]
   plays       Play[]
   requests    Request[]
+  release     release?   @relation(fields: [releaseId], references: [id])
+
+  @@index([filename])
+  @@index([folder], map: "idx_track_folder")
 }
 
 model Request {
@@ -157,6 +165,27 @@ model CustomItem {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
   createdBy   String
+}
+
+model release {
+  id          Int      @id @default(autoincrement())
+  title       String
+  artist      String
+  albumArt    String
+  description String?
+  genre       String
+  releaseDate DateTime
+  trackCount  Int      @default(0)
+  duration    String?
+  label       String?
+  producer    String?
+  featured    Boolean  @default(false)
+  exclusive   Boolean  @default(false)
+  streaming   Json?
+  social      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  Track       Track[]
 }
 
 enum Priority {

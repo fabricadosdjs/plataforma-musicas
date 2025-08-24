@@ -27,6 +27,8 @@ interface User {
     downloadsCount?: number;
     likesCount?: number;
     password?: string;
+    planName?: string;
+    planType?: string;
     customBenefits?: any;
 }
 
@@ -38,287 +40,16 @@ import { useState, useEffect } from 'react';
 import { redirect } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
-// ...existing code (VIP_BENEFITS, VIP_PLANS, BENEFIT_LABELS, getUserPlan, getUserBenefits) should remain outside the component, as constants/helpers
-const VIP_BENEFITS = {
-    BASICO: {
-        driveAccess: { enabled: true, description: 'Acesso Mensal' },
-        packRequests: { enabled: true, limit: 4, minLimit: 4, maxLimit: 10, description: 'Até 4 estilos por semana' },
-        individualContent: { enabled: true, description: 'Sim' },
-        extraPacks: { enabled: true, description: 'Sim' },
-        playlistDownloads: { enabled: true, limit: 7, minLimit: 7, maxLimit: 15, description: 'Até 7 por semana' },
-        deezerPremium: { enabled: false, description: 'Não disponível' },
-        deemixDiscount: { enabled: false, percentage: 0, description: 'Não disponível' },
-        arlPremium: { enabled: false, description: 'Não disponível' },
-        musicProduction: { enabled: false, description: 'Não disponível' }
-    },
-    PADRAO: {
-        driveAccess: { enabled: true, description: 'Acesso Mensal' },
-        packRequests: { enabled: true, limit: 6, minLimit: 4, maxLimit: 10, description: 'Até 6 estilos por semana' },
-        individualContent: { enabled: true, description: 'Sim' },
-        extraPacks: { enabled: true, description: 'Sim' },
-        playlistDownloads: { enabled: true, limit: 9, minLimit: 7, maxLimit: 15, description: 'Até 9 por semana' },
-        deezerPremium: { enabled: true, description: 'Sim' },
-        deemixDiscount: { enabled: true, percentage: 15, description: 'Sim' },
-        arlPremium: { enabled: true, description: 'Sim (automático se Deemix)' },
-        musicProduction: { enabled: false, description: 'Não disponível' }
-    },
-    COMPLETO: {
-        driveAccess: { enabled: true, description: 'Acesso Mensal' },
-        packRequests: { enabled: true, limit: 8, minLimit: 4, maxLimit: 10, description: 'Até 8 estilos por semana' },
-        individualContent: { enabled: true, description: 'Sim' },
-        extraPacks: { enabled: true, description: 'Sim' },
-        playlistDownloads: { enabled: true, limit: -1, minLimit: 7, maxLimit: 15, description: 'Ilimitado (máx. 4 por dia)' },
-        deezerPremium: { enabled: true, description: 'Sim' },
-        deemixDiscount: { enabled: true, percentage: 15, description: 'Sim' },
-        arlPremium: { enabled: true, description: 'Sim (automático se Deemix)' },
-        musicProduction: { enabled: true, description: 'Sim' }
-    }
-} as const;
-
-// Uploader é uma opção adicional aos planos VIP
-const UPLOADER_OPTION = {
-    name: 'UPLOADER',
-    description: 'Opção adicional para fazer upload de músicas',
-    monthlyPrice: 10.00, // R$ 10,00 a mais por mês
-    features: [
-        'Upload de até 10 músicas por mês',
-        'Badge de Uploader',
-        'Acesso à comunidade de uploaders'
-    ]
-} as const;
-
-// Definição dos planos VIP
-const VIP_PLANS = {
-    BASICO: {
-        name: 'VIP BÁSICO',
-        minValue: 38,
-        maxValue: 38,
-        color: 'bg-blue-600',
-        icon: '🥉',
-        benefits: VIP_BENEFITS.BASICO
-    },
-    PADRAO: {
-        name: 'VIP PADRÃO',
-        minValue: 39,
-        maxValue: 42,
-        color: 'bg-green-600',
-        icon: '🥈',
-        benefits: VIP_BENEFITS.PADRAO
-    },
-    COMPLETO: {
-        name: 'VIP COMPLETO',
-        minValue: 43,
-        maxValue: 60,
-        color: 'bg-purple-600',
-        icon: '🥇',
-        benefits: VIP_BENEFITS.COMPLETO
-    }
-} as const;
 
 
 
-// Deemix pricing for different plans
-const DEEMIX_PRICING = {
-    STANDALONE: 38, // Preço avulso para não-VIP (R$ 38,00)
-    BASICO: {
-        basePrice: 38,
-        deemixPrice: 38,
-        discount: 0.38, // 38% de desconto
-        finalPrice: 38 - (38 * 0.38) // R$ 23,56
-    },
-    PADRAO: {
-        basePrice: 42,
-        deemixPrice: 38,
-        discount: 0.42, // 42% de desconto (proporcional ao valor)
-        finalPrice: 38 - (38 * 0.42) // R$ 22,04
-    },
-    COMPLETO: {
-        basePrice: 60,
-        deemixPrice: 38,
-        discount: 0.60, // 60% de desconto (proporcional ao valor)
-        finalPrice: 38 - (38 * 0.60) // R$ 15,20
-    }
-} as const;
-
-// Deezer Premium pricing
-const DEEZER_PREMIUM_PRICING = {
-    STANDALONE: 9.75, // Preço avulso mensal
-    INCLUDED_WITH_DEEMIX: 0 // Grátis quando Deemix está incluído
-} as const;
-
-// Function to calculate real price based on plan + add-ons
-const calculateUserRealPrice = (basePrice: number, hasDeemix: boolean, hasDeezerPremium: boolean) => {
-    let totalPrice = basePrice;
-
-    // Se não é VIP, não pode ter add-ons
-    if (basePrice < 38) {
-        return basePrice;
-    }
-
-    // Determinar plano VIP baseado no preço base
-    let planKey: keyof typeof DEEMIX_PRICING = 'BASICO';
-    if (basePrice >= 60) {
-        planKey = 'COMPLETO';
-    } else if (basePrice >= 42) {
-        planKey = 'PADRAO';
-    }
-
-    // Adicionar Deemix se ativo
-    if (hasDeemix && planKey in DEEMIX_PRICING) {
-        const deemixPricing = DEEMIX_PRICING[planKey];
-        if (typeof deemixPricing === 'object' && 'finalPrice' in deemixPricing) {
-            totalPrice += deemixPricing.finalPrice;
-        }
-    }
-
-    // Adicionar Deezer Premium se ativo (e se não já incluído no plano)
-    if (hasDeezerPremium) {
-        // VIP Completo já inclui Deezer Premium grátis
-        if (planKey !== 'COMPLETO') {
-            // Se tem Deemix, Deezer Premium é grátis, senão paga
-            if (!hasDeemix) {
-                totalPrice += DEEZER_PREMIUM_PRICING.STANDALONE;
-            }
-        }
-    }
-
-    return Math.round(totalPrice * 100) / 100; // Arredondar para 2 casas decimais
-};
-
-// Function to get base price from total price (reverse calculation)
-const getBasePriceFromTotal = (totalPrice: number, hasDeemix: boolean, hasDeezerPremium: boolean) => {
-    // Como Deemix e Deezer Premium não alteram mais o preço,
-    // o único add-on que afeta preço é o Uploader (R$ 10)
-    if (totalPrice < 38) {
-        return totalPrice;
-    }
-
-    // Incluir todos os valores possíveis dos planos (com e sem Deemix)
-    const basePrices = [
-        // Planos básicos mensais
-        38, 42, 60,
-        // Planos com Deemix mensais  
-        61.56, 64.04, 75.20,
-        // Outros valores comuns
-        50, 70, 80, 90, 100
-    ];
-
-    for (const basePrice of basePrices) {
-        // Verificar se é exatamente o valor base
-        if (Math.abs(totalPrice - basePrice) < 0.01) {
-            return basePrice;
-        }
-        // Verificar se é valor base + uploader (R$ 10)
-        if (Math.abs(totalPrice - basePrice - 10) < 0.01) {
-            return basePrice; // Retorna o valor base sem o uploader
-        }
-    }
-
-    // Se não encontrou correspondência exata, assumir que é valor base
-    // Se for maior que R$ 45, provavelmente tem uploader
-    if (totalPrice > 45) {
-        return totalPrice - 10; // Remover uploader
-    }
-
-    return totalPrice;
-};// Labels dos benefícios para interface
-const BENEFIT_LABELS = {
-    driveAccess: '📁 Acesso ao Drive Mensal (desde 2023)',
-    packRequests: '🎚️ Solicitação de Packs',
-    individualContent: '📦 Conteúdos Avulsos',
-    extraPacks: '🔥 Packs Extras',
-    playlistDownloads: '🎵 Download de Playlists',
-    deezerPremium: '🎁 Deezer Premium Grátis',
-    deemixDiscount: '💸 15% de Desconto no Deemix',
-    arlPremium: '🔐 ARL Premium para Deemix',
-    musicProduction: '🎼 Produção da sua Música',
-    uploadPrivileges: '📤 Upload de Músicas',
-    communityAccess: '👥 Acesso à Comunidade',
-    uploaderBadge: '🏆 Badge de Uploader',
-    prioritySupport: '🎯 Suporte Prioritário',
-    exclusiveContent: '💎 Conteúdo Exclusivo',
-    analytics: '📊 Analytics Completos',
-    dailyDownloads: '🎵 Downloads Diários'
-} as const;
-
-// Função para determinar o plano baseado no valor BASE (sem add-ons)
-const getUserPlan = (valor: number | null, hasDeemix?: boolean, hasDeezerPremium?: boolean) => {
-    if (!valor || valor < 38) {
-        return null;
-    }
-
-    // Se temos informações sobre add-ons, calcular o preço base
-    const basePrice = (hasDeemix !== undefined && hasDeezerPremium !== undefined)
-        ? getBasePriceFromTotal(valor, hasDeemix, hasDeezerPremium)
-        : valor;
-
-    // VIP Plans baseados no preço BASE
-    if (basePrice >= VIP_PLANS.BASICO.minValue && basePrice <= VIP_PLANS.BASICO.maxValue) {
-        return { ...VIP_PLANS.BASICO, type: 'VIP' };
-    }
-
-    if (basePrice >= VIP_PLANS.PADRAO.minValue && basePrice <= VIP_PLANS.PADRAO.maxValue) {
-        return { ...VIP_PLANS.PADRAO, type: 'VIP' };
-    }
-
-    if (basePrice >= VIP_PLANS.COMPLETO.minValue && basePrice <= VIP_PLANS.COMPLETO.maxValue) {
-        return { ...VIP_PLANS.COMPLETO, type: 'VIP' };
-    }
-
-    // Para valores acima do máximo, considera como VIP COMPLETO
-    if (basePrice > VIP_PLANS.COMPLETO.maxValue) {
-        return { ...VIP_PLANS.COMPLETO, type: 'VIP' };
-    }
-
-    return null;
-};
 
 
-// Função para obter benefícios do usuário (padrão + personalizações)
-const getUserBenefits = (user: User | null | undefined, customBenefits: { [userId: string]: any }) => {
-    if (!user) return VIP_BENEFITS.BASICO;
-    const defaultPlan = getUserPlan(user.valor || null);
-    const defaultBenefits = defaultPlan ? defaultPlan.benefits : VIP_BENEFITS.BASICO;
-    const userCustom = customBenefits[user.id] || {};
 
-    // Mescla benefícios padrão com personalizações
-    const finalBenefits: any = { ...defaultBenefits };
-    Object.keys(userCustom).forEach(key => {
-        finalBenefits[key] = { ...finalBenefits[key], ...userCustom[key] };
-    });
 
-    return finalBenefits;
-};
 
-// Função para calcular valor do plano considerando uploader e período
-// period: 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUAL' | 'ANNUAL'
-function calculateUserPlanWithUploader(
-    basePrice: number,
-    hasDeemix: boolean,
-    hasDeezerPremium: boolean,
-    isUploader: boolean,
-    period: string
-): number {
-    // IMPORTANTE: Deemix e Deezer Premium NÃO alteram o preço
-    // O preço já está definido pelo plano escolhido no dropdown
-    let total = basePrice;
 
-    // Apenas UPLOADER adiciona custo extra
-    if (basePrice >= 38 && isUploader) {
-        const UPLOADER_MONTHLY = 10.00;
 
-        if (period === 'MONTHLY') {
-            total += UPLOADER_MONTHLY; // R$ 10,00
-        } else if (period === 'QUARTERLY') {
-            total += UPLOADER_MONTHLY * (1 - 0.05); // R$ 9,50 (5% desconto)
-        } else if (period === 'SEMIANNUAL' || period === 'ANNUAL') {
-            // Uploader grátis para semestral e anual
-            total += 0;
-        }
-    }
-
-    return Math.round(total * 100) / 100;
-}
 
 
 export default function AdminUsersPage() {
@@ -332,7 +63,7 @@ export default function AdminUsersPage() {
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState<'success' | 'error'>('success');
-    const [editingUser, setEditingUser] = useState<User | null>(null);
+
     const [showAddModal, setShowAddModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -340,160 +71,37 @@ export default function AdminUsersPage() {
     const [showBenefitsModal, setShowBenefitsModal] = useState(false);
     const [userForBenefits, setUserForBenefits] = useState<User | null>(null);
     const [customBenefits, setCustomBenefits] = useState<{ [userId: string]: any }>({});
+    
+    // Estado para o formulário de adição de usuário
     const [editForm, setEditForm] = useState({
         name: '',
         whatsapp: '',
         email: '',
         password: '',
         planName: '',
+        planType: '',
         valor: 0,
-        isUploader: false,
         vencimento: '',
         dataPagamento: '',
         status: 'ativo',
-        deemix: false,
+        deemix: true,
         deezerPremium: false,
         deezerEmail: '',
         deezerPassword: '',
         is_vip: true,
+        isUploader: false,
         dailyDownloadCount: 0
     });
 
-    // Opções de planos com valores corretos calculados
-    const PLAN_OPTIONS = [
-        // PLANO BASE MENSAL
-        { key: 'M_BASICO', title: '🥉 VIP BÁSICO', value: 38.00, deemix: false },
-        { key: 'M_PADRAO', title: '🥈 VIP PADRÃO', value: 42.00, deemix: false },
-        { key: 'M_COMPLETO', title: '🥇 VIP COMPLETO', value: 60.00, deemix: false },
-        // TRIMESTRAL (5% desconto no plano)
-        { key: 'T_BASICO', title: '🥉 VIP BÁSICO TRIMESTRAL', value: 108.30, deemix: false },
-        { key: 'T_PADRAO', title: '🥈 VIP PADRÃO TRIMESTRAL', value: 119.70, deemix: false },
-        { key: 'T_COMPLETO', title: '🥇 VIP COMPLETO TRIMESTRAL', value: 171.00, deemix: false },
-        // SEMESTRAL (15% desconto no plano)
-        { key: 'S_BASICO', title: '🥉 VIP BÁSICO SEMESTRAL', value: 193.80, deemix: false },
-        { key: 'S_PADRAO', title: '🥈 VIP PADRÃO SEMESTRAL', value: 214.20, deemix: false },
-        { key: 'S_COMPLETO', title: '🥇 VIP COMPLETO SEMESTRAL', value: 306.00, deemix: false },
-        // ANUAL (15% desconto no plano)
-        { key: 'A_BASICO', title: '🥉 VIP BÁSICO ANUAL', value: 387.60, deemix: false },
-        { key: 'A_PADRAO', title: '🥈 VIP PADRÃO ANUAL', value: 428.40, deemix: false },
-        { key: 'A_COMPLETO', title: '🥇 VIP COMPLETO ANUAL', value: 612.00, deemix: false },
-        // COM DEEMIX MENSAL
-        { key: 'MD_BASICO', title: '🥉 VIP BÁSICO + 🎧 DEEMIX', value: 61.56, deemix: true },
-        { key: 'MD_PADRAO', title: '🥈 VIP PADRÃO + 🎧 DEEMIX', value: 64.04, deemix: true },
-        { key: 'MD_COMPLETO', title: '🥇 VIP COMPLETO + 🎧 DEEMIX', value: 75.20, deemix: true },
-        // COM DEEMIX TRIMESTRAL (8% desconto no Deemix)
-        { key: 'TD_BASICO', title: '🥉 VIP BÁSICO + 🎧 DEEMIX TRIMESTRAL', value: 173.33, deemix: true },
-        { key: 'TD_PADRAO', title: '🥈 VIP PADRÃO + 🎧 DEEMIX TRIMESTRAL', value: 180.53, deemix: true },
-        { key: 'TD_COMPLETO', title: '🥇 VIP COMPLETO + 🎧 DEEMIX TRIMESTRAL', value: 212.95, deemix: true },
-        // COM DEEMIX SEMESTRAL (50% desconto no Deemix)
-        { key: 'SD_BASICO', title: '🥉 VIP BÁSICO + 🎧 DEEMIX SEMESTRAL', value: 264.48, deemix: true },
-        { key: 'SD_PADRAO', title: '🥈 VIP PADRÃO + 🎧 DEEMIX SEMESTRAL', value: 280.32, deemix: true },
-        { key: 'SD_COMPLETO', title: '🥇 VIP COMPLETO + 🎧 DEEMIX SEMESTRAL', value: 351.60, deemix: true },
-        // COM DEEMIX ANUAL (Deemix grátis)
-        { key: 'AD_BASICO', title: '🥉 VIP BÁSICO + 🎧 DEEMIX ANUAL', value: 387.60, deemix: true },
-        { key: 'AD_PADRAO', title: '🥈 VIP PADRÃO + 🎧 DEEMIX ANUAL', value: 428.40, deemix: true },
-        { key: 'AD_COMPLETO', title: '🥇 VIP COMPLETO + 🎧 DEEMIX ANUAL', value: 612.00, deemix: true },
-        // Avulsos (referência)
-        { key: 'AV_DEEMIX', title: '🎧 DEEMIX AVULSO', value: 38.00, deemix: true },
-        { key: 'AV_DEEZER', title: '🎁 DEEZER PREMIUM AVULSO', value: 9.75, deemix: false },
-    ] as const;
 
-    const UPLOADER_OPTIONS = [
-        { key: 'NONE', title: 'UPLOADER: R$ 0,00', value: 0 },
-        { key: 'MONTHLY', title: 'UPLOADER MENSAL: R$ 10,00', value: 10.00 },
-        { key: 'QUARTERLY', title: 'UPLOADER TRIMESTRAL: R$ 28,50', value: 28.50 },
-        { key: 'SEMIANNUAL', title: 'UPLOADER SEMESTRAL: R$ 0,00', value: 0 },
-        { key: 'ANNUAL', title: 'UPLOADER ANUAL: R$ 0,00', value: 0 },
-    ] as const;
 
-    const [selectedPlanKey, setSelectedPlanKey] = useState<string>('');
-    const [uploaderOptionKey, setUploaderOptionKey] = useState<string>('NONE');
 
-    const recomputeValorFromSelections = (planKey: string, uploaderKey: string) => {
-        const plan = PLAN_OPTIONS.find(p => p.key === planKey);
-        if (!plan) return;
 
-        const planValue = plan.value; // Valor base do plano (já inclui Deemix se aplicável)
 
-        // Calcular valor do uploader baseado no período mensal
-        let uploaderValue = 0;
-        if (uploaderKey === 'MONTHLY') {
-            uploaderValue = 10.00; // R$ 10,00 mensal
-        } else if (uploaderKey === 'QUARTERLY') {
-            uploaderValue = 9.50; // R$ 9,50 (5% desconto)  
-        } else if (uploaderKey === 'SEMIANNUAL' || uploaderKey === 'ANNUAL') {
-            uploaderValue = 0; // Grátis
-        }
 
-        const total = Math.round((planValue + uploaderValue) * 100) / 100;
 
-        setEditForm(prev => ({
-            ...prev,
-            valor: total,
-            is_vip: planValue >= 35,
-            isUploader: uploaderKey !== 'NONE',
-            deemix: !!plan?.deemix
-        }));
-    };
 
-    // Função para calcular valor do plano considerando uploader e período
-    // period: 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUAL' | 'ANNUAL'
-    function calculateUserPlanWithUploader(
-        basePrice: number,
-        hasDeemix: boolean,
-        hasDeezerPremium: boolean,
-        isUploader: boolean,
-        period: string
-    ): number {
-        // IMPORTANTE: Deemix e Deezer Premium NÃO alteram o preço
-        // O preço já está definido pelo plano escolhido no dropdown
-        let total = basePrice;
 
-        // Apenas UPLOADER adiciona custo extra
-        if (basePrice >= 38 && isUploader) {
-            const UPLOADER_MONTHLY = 10.00;
-
-            if (period === 'MONTHLY') {
-                total += UPLOADER_MONTHLY; // R$ 10,00
-            } else if (period === 'QUARTERLY') {
-                total += UPLOADER_MONTHLY * (1 - 0.05); // R$ 9,50 (5% desconto)
-            } else if (period === 'SEMIANNUAL' || period === 'ANNUAL') {
-                // Uploader grátis para semestral e anual
-                total += 0;
-            }
-        }
-
-        return Math.round(total * 100) / 100;
-    }
-    {/* Uploader */ }
-    <div className="group">
-        <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-            <Upload className="w-4 h-4 text-orange-400" />
-            Uploader
-        </label>
-        <div className="flex items-center gap-3">
-            <input
-                type="checkbox"
-                checked={!!editForm.isUploader}
-                onChange={e => {
-                    const isUploader = e.target.checked;
-                    // Recalcular valor do plano
-                    const basePrice = editingUser ? getBasePriceFromTotal(editForm.valor || 0, editForm.deemix, editForm.deezerPremium) : (editForm.valor || 0);
-                    // Período: por padrão mensal, pode ser customizado se houver campo
-                    const period: 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUAL' | 'ANNUAL' = 'MONTHLY';
-                    const total = calculateUserPlanWithUploader(basePrice, editForm.deemix, editForm.deezerPremium, isUploader, period);
-                    setEditForm(prev => ({ ...prev, isUploader, valor: total }));
-                }}
-                className="w-5 h-5 accent-orange-500 rounded focus:ring-2 focus:ring-orange-500"
-            />
-            <span className="text-gray-300">Permitir uploads de músicas</span>
-        </div>
-        <div className="mt-2 p-2 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-lg">
-            <p className="text-xs text-gray-300">
-                {editForm.isUploader ? 'Usuário poderá enviar músicas para a plataforma.' : 'Usuário não terá permissão de upload.'}
-            </p>
-        </div>
-    </div>
 
 
     useEffect(() => {
@@ -826,74 +434,7 @@ export default function AdminUsersPage() {
         }
     };
 
-    const openEditModal = (user: User) => {
-        setEditingUser(user);
 
-        // Função para converter data para formato YYYY-MM-DD
-        const formatDateForInput = (dateValue: any) => {
-            if (!dateValue) return '';
-
-            try {
-                let date;
-                if (typeof dateValue === 'string') {
-                    date = new Date(dateValue);
-                } else if (dateValue instanceof Date) {
-                    date = dateValue;
-                } else {
-                    return '';
-                }
-
-                if (isNaN(date.getTime())) return '';
-
-                return date.toISOString().split('T')[0];
-            } catch (error) {
-                console.error('Erro ao formatar data:', error);
-                return '';
-            }
-        };
-
-        setEditForm({
-            name: user.name || '',
-            whatsapp: user.whatsapp || '',
-            email: user.email || '',
-            password: '', // Não mostrar senha existente por segurança
-            planName: user.planName || '',
-            valor: user.valor || 0,
-            vencimento: formatDateForInput(user.vencimento),
-            dataPagamento: formatDateForInput(user.dataPagamento),
-            status: user.status,
-            deemix: user.deemix,
-            deezerPremium: user.deezerPremium || false,
-            deezerEmail: user.deezerEmail || '',
-            deezerPassword: '', // Não mostrar senha existente por segurança
-            is_vip: user.is_vip,
-            isUploader: user.isUploader || false,
-            dailyDownloadCount: user.dailyDownloadCount || 0
-        });
-    };
-
-    const closeEditModal = () => {
-        setEditingUser(null);
-        setShowAddModal(false);
-        setEditForm({
-            name: '',
-            whatsapp: '',
-            email: '',
-            password: '',
-            planName: '',
-            valor: 0,
-            vencimento: '',
-            dataPagamento: '',
-            status: 'ativo',
-            deemix: true,
-            deezerPremium: false,
-            deezerEmail: '',
-            deezerPassword: '',
-            is_vip: true,
-            isUploader: false,
-            dailyDownloadCount: 0
-        });
-    };
 
     const openBenefitsModal = (user: User) => {
         setUserForBenefits(user);
@@ -913,6 +454,7 @@ export default function AdminUsersPage() {
             email: '',
             password: '',
             planName: '',
+            planType: '',
             valor: 0,
             vencimento: '',
             dataPagamento: '',
@@ -930,11 +472,9 @@ export default function AdminUsersPage() {
     const addNewUser = async () => {
         try {
             setUpdating('new-user');
-            // Recalcular valor do plano com uploader
-            const basePrice = getBasePriceFromTotal(editForm.valor || 0, editForm.deemix, editForm.deezerPremium);
-            const period = 'MONTHLY'; // Ajuste se houver campo de período
-            const valorCorrigido = calculateUserPlanWithUploader(basePrice, editForm.deemix, editForm.deezerPremium, editForm.isUploader, period);
-            const payload = { ...editForm, valor: valorCorrigido, isUploader: !!editForm.isUploader };
+            // Usar o valor do formulário diretamente
+            const valorFinal = editForm.valor || 0;
+            const payload = { ...editForm, valor: valorFinal, isUploader: !!editForm.isUploader };
             const response = await fetch('/api/admin/users', {
                 method: 'POST',
                 headers: {
@@ -947,7 +487,7 @@ export default function AdminUsersPage() {
                 const data = await response.json();
                 showMessage('Usuário adicionado com sucesso!', 'success');
                 fetchUsers();
-                closeEditModal();
+                setShowAddModal(false);
             } else {
                 showMessage('Falha ao adicionar usuário', 'error');
             }
@@ -959,47 +499,7 @@ export default function AdminUsersPage() {
         }
     };
 
-    const saveUserEdit = async () => {
-        if (!editingUser) return;
 
-        setUpdating(editingUser.id);
-        try {
-            // Recalcular valor do plano com uploader
-            const basePrice = getBasePriceFromTotal(editForm.valor || 0, editForm.deemix, editForm.deezerPremium);
-            const period = 'MONTHLY'; // Ajuste se houver campo de período
-            const valorCorrigido = calculateUserPlanWithUploader(basePrice, editForm.deemix, editForm.deezerPremium, editForm.isUploader, period);
-            const requestBody = {
-                userId: editingUser.id,
-                ...editForm,
-                valor: valorCorrigido,
-                isUploader: !!editForm.isUploader
-            };
-
-            const response = await fetch('/api/admin/users', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                showMessage(data.message, 'success');
-                fetchUsers();
-                closeEditModal();
-            } else {
-                const errorText = await response.text();
-                console.error('Resposta de erro do servidor:', errorText);
-                throw new Error(`Falha ao atualizar usuário: ${response.status} - ${errorText}`);
-            }
-        } catch (error) {
-            console.error('Erro ao atualizar usuário:', error);
-            showMessage(`Erro ao atualizar usuário: ${error instanceof Error ? error.message : 'Erro desconhecido'}`, 'error');
-        } finally {
-            setUpdating(null);
-        }
-    };
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('pt-BR', {
@@ -1248,35 +748,26 @@ export default function AdminUsersPage() {
                                                     if (!user.valor) return <span className="text-xs font-light text-gray-400">-</span>;
 
                                                     const totalPrice = Number(user.valor);
-                                                    const basePrice = getBasePriceFromTotal(totalPrice, user.deemix, user.deezerPremium);
-                                                    const hasAddOns = user.deemix || user.deezerPremium;
 
                                                     return (
                                                         <div className="text-center">
                                                             <span className="text-xs font-light text-emerald-300 bg-emerald-500/10 px-2 py-1 rounded-lg block">
                                                                 R$ {totalPrice.toFixed(2)}
                                                             </span>
-                                                            {hasAddOns && totalPrice !== basePrice && (
-                                                                <span className="text-xs text-gray-500 mt-1 block">
-                                                                    Base: R$ {basePrice.toFixed(2)}
-                                                                </span>
-                                                            )}
                                                         </div>
                                                     );
                                                 })()}
                                             </td>
                                             <td className="px-3 py-4">
                                                 {(() => {
-                                                    const userPlan = getUserPlan(user.valor || null, user.deemix, user.deezerPremium);
+                                                    // Removido getUserPlan - usar plano padrão
                                                     const hasCustomBenefits = customBenefits[user.id] && Object.keys(customBenefits[user.id]).length > 0;
 
-                                                    if (!userPlan) {
-                                                        return <span className="text-xs text-gray-400 font-light whitespace-nowrap">Sem plano</span>;
-                                                    }
+
 
                                                     return (
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-lg" title={userPlan.name}>{userPlan.icon}</span>
+                                                            <span className="text-lg" title="Plano VIP">👑</span>
                                                             {user.deemix && (
                                                                 <span className="text-xs bg-purple-600/30 text-purple-300 px-1 py-0.5 rounded border border-purple-500/30" title="Deemix ativo">
                                                                     🎵
@@ -1379,13 +870,13 @@ export default function AdminUsersPage() {
                                             </td>
                                             <td className="px-2 py-4">
                                                 <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => openEditModal(user)}
+                                                    <a
+                                                        href={`/admin/users/edit/${user.id}`}
                                                         className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 hover:text-blue-200 rounded-xl transition-all hover:scale-110 border border-blue-400/30 shadow-blue-500/20 shadow-md"
                                                         title="Editar usuário"
                                                     >
                                                         <Edit className="w-4 h-4" />
-                                                    </button>
+                                                    </a>
                                                     <button
                                                         onClick={() => openBenefitsModal(user)}
                                                         className="p-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-purple-200 rounded-xl transition-all hover:scale-110 border border-purple-400/30 shadow-purple-500/20 shadow-md"
@@ -1460,121 +951,10 @@ export default function AdminUsersPage() {
                         <div className="p-6 bg-gray-900">
 
 
-                            {/* Cards dos Planos VIP */}
-                            <div className="mb-8">
-                                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                                    <span className="text-yellow-400">👑</span>
-                                    Planos VIP
-                                </h3>
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                                    {Object.entries(VIP_PLANS).map(([key, plan]) => (
-                                        <div key={key} className="bg-gray-800 rounded-xl p-6 border-2 border-gray-700 hover:border-gray-600 transition-colors">
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className={`w-12 h-12 ${plan.color} rounded-lg flex items-center justify-center text-2xl`}>
-                                                    {plan.icon}
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-                                                    <p className="text-sm text-gray-400">
-                                                        R$ {plan.minValue} - R$ {plan.maxValue}/mês
-                                                    </p>
-                                                </div>
-                                            </div>
 
-                                            <div className="space-y-3">
-                                                <div className="bg-gray-700 rounded-lg p-3">
-                                                    <h4 className="font-semibold text-white mb-2">Valor Mensal</h4>
-                                                    <p className="text-2xl font-bold text-green-400">
-                                                        R$ {plan.minValue} - R$ {plan.maxValue}
-                                                    </p>
-                                                </div>
-
-                                                <div className="bg-gray-700 rounded-lg p-3">
-                                                    <h4 className="font-semibold text-white mb-2">Benefícios Inclusos</h4>
-                                                    <p className="text-sm text-gray-300">
-                                                        {key === 'BASICO' && 'Acesso básico à plataforma + downloads limitados'}
-                                                        {key === 'PADRAO' && 'Todos os benefícios básicos + packs + playlists'}
-                                                        {key === 'COMPLETO' && 'Todos os benefícios + Deezer Premium + ARL + Produção'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
 
                             {/* Tabela de Benefícios Detalhados */}
-                            <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-700">
-                                <div className="px-6 py-4 bg-gray-950 border-b border-gray-700">
-                                    <h4 className="text-lg font-semibold text-white">Comparativo de Benefícios</h4>
-                                    <p className="text-sm text-gray-300 mt-1">Veja o que cada plano oferece em detalhes</p>
-                                </div>
 
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead className="bg-gray-950">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Benefício</th>
-                                                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
-                                                    📤 UPLOADER BÁSICO<br />
-                                                    <span className="text-xs text-gray-400">R$ 15</span>
-                                                </th>
-                                                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
-                                                    🚀 UPLOADER PRO<br />
-                                                    <span className="text-xs text-gray-400">R$ 25</span>
-                                                </th>
-                                                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
-                                                    🏆 UPLOADER ELITE<br />
-                                                    <span className="text-xs text-gray-400">R$ 35</span>
-                                                </th>
-                                                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
-                                                    🥉 VIP BÁSICO<br />
-                                                    <span className="text-xs text-gray-400">R$ 38,00</span>
-                                                </th>
-                                                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
-                                                    🥈 VIP PADRÃO<br />
-                                                    <span className="text-xs text-gray-400">R$ 42,00</span>
-                                                </th>
-                                                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-300">
-                                                    🥇 VIP COMPLETO<br />
-                                                    <span className="text-xs text-gray-400">R$ 60,00</span>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-700">
-                                            {Object.entries(BENEFIT_LABELS).map(([key, label]) => (
-                                                <tr key={key} className="bg-gray-900 hover:bg-gray-800">
-                                                    <td className="px-6 py-4 text-sm text-gray-200">{label}</td>
-
-                                                    {/* VIP Plans */}
-                                                    {Object.entries(VIP_PLANS).map(([planKey, plan]) => {
-                                                        const benefit = (plan.benefits as any)[key];
-                                                        return (
-                                                            <td key={planKey} className="px-6 py-4 text-center text-sm">
-                                                                {benefit && benefit.enabled ? (
-                                                                    <div className="flex flex-col items-center">
-                                                                        <span className="text-green-400 font-medium">✓</span>
-                                                                        <span className="text-xs text-gray-400 mt-1">
-                                                                            {benefit.description || 'Disponível'}
-                                                                        </span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="flex flex-col items-center">
-                                                                        <span className="text-red-400 font-medium">✗</span>
-                                                                        <span className="text-xs text-gray-400 mt-1">
-                                                                            {benefit?.description || 'Não disponível'}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                            </td>
-                                                        );
-                                                    })}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -1635,9 +1015,8 @@ export default function AdminUsersPage() {
                         )
                     }
 
-                    {/* Modal de Edição/Adição - Design Ultra Moderno */}
-                    {
-                        (editingUser || showAddModal) && (
+                    {/* Modal de Adição - Design Ultra Moderno */}
+                    {showAddModal && (
                             <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-50 p-4">
                                 <div className="bg-gradient-to-br from-[#0F0F23] via-[#1A1A2E] to-[#16213E] border border-purple-500/30 rounded-3xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto text-white shadow-2xl relative">
                                     {/* Decoração de fundo */}
@@ -1647,18 +1026,14 @@ export default function AdminUsersPage() {
                                     <div className="relative z-10">
                                         <div className="flex items-center gap-4 mb-8">
                                             <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
-                                                {editingUser ? (
-                                                    <User className="w-6 h-6 text-white" />
-                                                ) : (
                                                     <UserPlus className="w-6 h-6 text-white" />
-                                                )}
                                             </div>
                                             <div>
                                                 <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                                                    {editingUser ? 'Editar Usuário' : 'Adicionar Novo Usuário'}
+                                                Adicionar Novo Usuário
                                                 </h3>
                                                 <p className="text-gray-400 mt-1">
-                                                    {editingUser ? 'Modifique as informações do usuário' : 'Crie um novo usuário no sistema'}
+                                                Crie um novo usuário no sistema
                                                 </p>
                                             </div>
                                         </div>
@@ -1713,7 +1088,7 @@ export default function AdminUsersPage() {
                                             </div>
 
                                             {/* Campo de senha - só aparece quando estiver adicionando novo usuário */}
-                                            {showAddModal && (
+                                            {/* Campo de senha - obrigatório para novos usuários */}
                                                 <div className="md:col-span-2">
                                                     <label className="block text-sm font-medium text-gray-300 mb-3">
                                                         Senha *
@@ -1743,51 +1118,50 @@ export default function AdminUsersPage() {
                                                         </button>
                                                     </div>
                                                 </div>
-                                            )}
-                                            {editingUser && (
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                        Senha (deixe em branco para não alterar)
-                                                    </label>
-                                                    <div className="flex gap-2">
-                                                        <input
-                                                            type="text"
-                                                            value={editForm.password}
-                                                            onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
-                                                            className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                            placeholder="Nova senha (opcional)"
-                                                            autoComplete="new-password"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            className="px-4 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl"
-                                                            onClick={() => {
-                                                                const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
-                                                                let password = "";
-                                                                for (let i = 0, n = charset.length; i < 14; ++i) {
-                                                                    password += charset.charAt(Math.floor(Math.random() * n));
-                                                                }
-                                                                setEditForm(prev => ({ ...prev, password }));
-                                                            }}
-                                                        >
-                                                            Gerar senha forte
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
 
                                             <div className="group">
                                                 <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
                                                     <Crown className="w-4 h-4 text-yellow-400" />
-                                                    Nome do Plano (personalizável)
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={editForm.planName || ''}
-                                                    onChange={e => setEditForm(prev => ({ ...prev, planName: e.target.value }))}
-                                                    className="w-full px-4 py-4 bg-gray-900/50 border border-yellow-500/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300"
-                                                    placeholder="Digite o nome do plano"
-                                                />
+                                                    Plano VIP
+                                                    </label>
+                                                <div className="relative">
+                                                    <select
+                                                        value={editForm.planType || ''}
+                                                        onChange={(e) => {
+                                                            const planType = e.target.value;
+                                                            // Definir valores baseados no plano selecionado
+                                                            let planName = '';
+                                                            let valor = 0;
+                                                            if (planType === 'BASICO') {
+                                                                planName = 'VIP BÁSICO';
+                                                                valor = 38;
+                                                            } else if (planType === 'PADRAO') {
+                                                                planName = 'VIP PADRÃO';
+                                                                valor = 42;
+                                                            } else if (planType === 'COMPLETO') {
+                                                                planName = 'VIP COMPLETO';
+                                                                valor = 60;
+                                                            }
+                                                            
+                                                            setEditForm(prev => ({
+                                                                ...prev,
+                                                                planType: planType,
+                                                                planName: planName,
+                                                                valor: valor
+                                                            }));
+                                                        }}
+                                                        className="w-full px-4 py-4 bg-gray-900/50 border border-yellow-500/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
+                                                    >
+                                                        <option value="" className="bg-gray-900 text-gray-100">Selecione um plano</option>
+                                                        <option value="BASICO" className="bg-gray-900 text-gray-100">🥉 VIP BÁSICO - R$ 38,00</option>
+                                                        <option value="PADRAO" className="bg-gray-900 text-gray-100">🥈 VIP PADRÃO - R$ 42,00</option>
+                                                        <option value="COMPLETO" className="bg-gray-900 text-gray-100">🥇 VIP COMPLETO - R$ 60,00</option>
+                                                    </select>
+                                                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-20">
+                                                        <ChevronDown className="w-5 h-5 text-gray-400" />
+                                                    </div>
+                                                </div>
+
                                                 <div className="mt-3">
                                                     <label className="block text-sm font-medium text-gray-300 mb-2">Valor Mensal (R$)</label>
                                                     <input
@@ -1797,8 +1171,12 @@ export default function AdminUsersPage() {
                                                         value={editForm.valor}
                                                         onChange={e => setEditForm(prev => ({ ...prev, valor: parseFloat(e.target.value) || 0 }))}
                                                         className="w-full px-4 py-4 bg-gray-900/50 border border-yellow-500/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300"
-                                                        placeholder="Digite o valor mensal"
+                                                        placeholder="Valor será preenchido automaticamente"
+                                                        readOnly
                                                     />
+                                                    <p className="text-xs text-gray-400 mt-2">
+                                                        Valor calculado automaticamente baseado no plano selecionado
+                                                    </p>
                                                 </div>
                                             </div>
 
@@ -2001,7 +1379,7 @@ export default function AdminUsersPage() {
                                         <div className="flex flex-col gap-4">
                                             {/* Botão Principal */}
                                             <button
-                                                onClick={editingUser ? saveUserEdit : addNewUser}
+                                                onClick={addNewUser}
                                                 disabled={updating !== null}
                                                 className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700 text-white rounded-2xl transition-all duration-300 disabled:opacity-50 font-semibold text-lg shadow-2xl hover:shadow-purple-500/25 transform hover:scale-[1.02] border border-purple-500/30 hover:border-purple-400/50"
                                             >
@@ -2012,24 +1390,15 @@ export default function AdminUsersPage() {
                                                     </div>
                                                 ) : (
                                                     <div className="flex items-center justify-center gap-3">
-                                                        {editingUser ? (
-                                                            <>
-                                                                <Save className="w-5 h-5" />
-                                                                <span>Salvar Alterações</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
                                                                 <Save className="w-5 h-5" />
                                                                 <span>Adicionar Usuário</span>
-                                                            </>
-                                                        )}
                                                     </div>
                                                 )}
                                             </button>
 
                                             {/* Botão Secundário */}
                                             <button
-                                                onClick={closeEditModal}
+                                                onClick={() => setShowAddModal(false)}
                                                 className="w-full px-8 py-3 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-gray-200 rounded-2xl transition-all duration-300 font-medium border border-gray-600 hover:border-gray-500 transform hover:scale-[1.01]"
                                             >
                                                 <div className="flex items-center justify-center gap-3">
@@ -2053,7 +1422,7 @@ export default function AdminUsersPage() {
                                         <div>
                                             <h3 className="text-xl font-semibold">Personalizar Benefícios</h3>
                                             <p className="text-sm text-gray-400">
-                                                {userForBenefits?.name} - {getUserPlan(userForBenefits?.valor || null)?.name || 'Sem plano'}
+                                                {userForBenefits?.name} - Plano VIP
                                             </p>
                                         </div>
                                     </div>
@@ -2101,9 +1470,8 @@ export default function AdminUsersPage() {
                                                     if (userForBenefits?.id) {
                                                         const customUsed = customBenefits[userForBenefits.id]?.packRequests?.used;
                                                         if (customUsed !== undefined) used = customUsed;
-                                                        const plan = getUserPlan(userForBenefits.valor || null);
                                                         const customBenefit = customBenefits[userForBenefits.id]?.packRequests;
-                                                        limit = customBenefit?.limit || plan?.benefits.packRequests?.limit || 1;
+                                                        limit = customBenefit?.limit || 4; // Valor padrão para VIP BÁSICO
                                                     }
                                                     return `${used} / ${limit}`;
                                                 })()}
@@ -2118,9 +1486,8 @@ export default function AdminUsersPage() {
                                                             if (userForBenefits?.id) {
                                                                 const customUsed = customBenefits[userForBenefits.id]?.packRequests?.used;
                                                                 if (customUsed !== undefined) used = customUsed;
-                                                                const plan = getUserPlan(userForBenefits.valor || null);
                                                                 const customBenefit = customBenefits[userForBenefits.id]?.packRequests;
-                                                                limit = customBenefit?.limit || plan?.benefits.packRequests?.limit || 1;
+                                                            limit = customBenefit?.limit || 4; // Valor padrão para VIP BÁSICO
                                                             }
                                                             return `${(used / Math.max(1, limit)) * 100}%`;
                                                         })()
@@ -2141,9 +1508,8 @@ export default function AdminUsersPage() {
                                                     if (userForBenefits?.id) {
                                                         const customUsed = customBenefits[userForBenefits.id]?.playlistDownloads?.used;
                                                         if (customUsed !== undefined) used = customUsed;
-                                                        const plan = getUserPlan(userForBenefits.valor || null);
                                                         const customBenefit = customBenefits[userForBenefits.id]?.playlistDownloads;
-                                                        limit = customBenefit?.limit || plan?.benefits.playlistDownloads?.limit || 0;
+                                                        limit = customBenefit?.limit || 7; // Valor padrão para VIP BÁSICO
                                                     }
                                                     return `${used} / ${limit === -1 ? "∞" : limit}`;
                                                 })()}
@@ -2158,9 +1524,8 @@ export default function AdminUsersPage() {
                                                             if (userForBenefits?.id) {
                                                                 const customUsed = customBenefits[userForBenefits.id]?.playlistDownloads?.used;
                                                                 if (customUsed !== undefined) used = customUsed;
-                                                                const plan = getUserPlan(userForBenefits.valor || null);
                                                                 const customBenefit = customBenefits[userForBenefits.id]?.playlistDownloads;
-                                                                limit = customBenefit?.limit || plan?.benefits.playlistDownloads?.limit || 1;
+                                                            limit = customBenefit?.limit || 7; // Valor padrão para VIP BÁSICO
                                                             }
                                                             if (limit === -1) return 100;
                                                             return Math.min(100, (used / Math.max(1, limit)) * 100);
@@ -2203,7 +1568,7 @@ export default function AdminUsersPage() {
                                             <select
                                                 value={userForBenefits?.id && customBenefits[userForBenefits.id]?.driveAccess?.enabled !== undefined
                                                     ? customBenefits[userForBenefits.id]?.driveAccess?.enabled.toString()
-                                                    : getUserBenefits(userForBenefits!, customBenefits).driveAccess.enabled.toString()}
+                                                    : 'true'}
                                                 onChange={(e) => {
                                                     const newValue = e.target.value === 'true';
                                                     if (!userForBenefits?.id) return;
@@ -2239,7 +1604,7 @@ export default function AdminUsersPage() {
                                                         max="10"
                                                         value={userForBenefits?.id && customBenefits[userForBenefits.id]?.packRequests?.limit !== undefined
                                                             ? customBenefits[userForBenefits.id].packRequests.limit
-                                                            : getUserBenefits(userForBenefits!, customBenefits).packRequests.limit}
+                                                            : 4}
                                                         onChange={(e) => {
                                                             if (!userForBenefits?.id) return;
                                                             const newValue = parseInt(e.target.value);
@@ -2284,7 +1649,7 @@ export default function AdminUsersPage() {
                                                     : (userForBenefits?.wweeklyPackRequestsUsed || 0)
                                                 } de {userForBenefits?.id && customBenefits[userForBenefits.id]?.packRequests?.limit !== undefined
                                                     ? customBenefits[userForBenefits.id].packRequests.limit
-                                                    : getUserBenefits(userForBenefits!, customBenefits).packRequests.limit} usados
+                                                    : 4} usados
                                             </div>
                                         </div>
 
@@ -2296,7 +1661,7 @@ export default function AdminUsersPage() {
                                             <select
                                                 value={userForBenefits?.id && customBenefits[userForBenefits.id]?.individualContent?.enabled !== undefined
                                                     ? customBenefits[userForBenefits.id].individualContent.enabled.toString()
-                                                    : getUserBenefits(userForBenefits!, customBenefits).individualContent.enabled.toString()}
+                                                    : 'true'}
                                                 onChange={(e) => {
                                                     if (!userForBenefits?.id) return;
                                                     const newValue = e.target.value === 'true';
@@ -2323,7 +1688,7 @@ export default function AdminUsersPage() {
                                             <select
                                                 value={userForBenefits?.id && customBenefits[userForBenefits.id]?.extraPacks?.enabled !== undefined
                                                     ? customBenefits[userForBenefits.id].extraPacks.enabled.toString()
-                                                    : getUserBenefits(userForBenefits!, customBenefits).extraPacks.enabled.toString()}
+                                                    : 'true'}
                                                 onChange={(e) => {
                                                     if (!userForBenefits?.id) return;
                                                     const newValue = e.target.value === 'true';
@@ -2356,7 +1721,7 @@ export default function AdminUsersPage() {
                                                         max="15"
                                                         value={userForBenefits?.id && customBenefits[userForBenefits.id]?.playlistDownloads?.limit !== undefined
                                                             ? (customBenefits[userForBenefits.id].playlistDownloads.limit === -1 ? 15 : customBenefits[userForBenefits.id].playlistDownloads.limit)
-                                                            : (getUserBenefits(userForBenefits!, customBenefits).playlistDownloads.limit === -1 ? 15 : getUserBenefits(userForBenefits!, customBenefits).playlistDownloads.limit)}
+                                                            : 7}
                                                         onChange={(e) => {
                                                             if (!userForBenefits?.id) return;
                                                             const newValue = parseInt(e.target.value);
@@ -2401,7 +1766,7 @@ export default function AdminUsersPage() {
                                                     : (userForBenefits?.wweeklyPlaylistDownloadsUsed || 0)
                                                 } de {(userForBenefits?.id && customBenefits[userForBenefits.id]?.playlistDownloads?.limit !== undefined)
                                                     ? (customBenefits[userForBenefits.id].playlistDownloads.limit === -1 ? "∞" : customBenefits[userForBenefits.id].playlistDownloads.limit)
-                                                    : (getUserBenefits(userForBenefits!, customBenefits).playlistDownloads.limit === -1 ? "∞" : getUserBenefits(userForBenefits!, customBenefits).playlistDownloads.limit)} usados
+                                                    : 7} usados
                                             </div>
                                         </div>
 
@@ -2413,7 +1778,7 @@ export default function AdminUsersPage() {
                                             <select
                                                 value={userForBenefits?.id && customBenefits[userForBenefits.id]?.deezerPremium?.enabled !== undefined
                                                     ? customBenefits[userForBenefits.id].deezerPremium.enabled.toString()
-                                                    : getUserBenefits(userForBenefits!, customBenefits).deezerPremium.enabled.toString()}
+                                                    : 'false'}
                                                 onChange={(e) => {
                                                     if (!userForBenefits?.id) return;
                                                     const newValue = e.target.value === 'true';
@@ -2440,7 +1805,7 @@ export default function AdminUsersPage() {
                                             <select
                                                 value={userForBenefits?.id && customBenefits[userForBenefits.id]?.deemixDiscount?.enabled !== undefined
                                                     ? customBenefits[userForBenefits.id].deemixDiscount.enabled.toString()
-                                                    : getUserBenefits(userForBenefits!, customBenefits).deemixDiscount.enabled.toString()}
+                                                    : 'false'}
                                                 onChange={(e) => {
                                                     if (!userForBenefits?.id) return;
                                                     const newValue = e.target.value === 'true';
@@ -2470,10 +1835,10 @@ export default function AdminUsersPage() {
                                                     : (
                                                         userForBenefits?.id && (customBenefits[userForBenefits.id]?.deemixDiscount?.enabled !== undefined
                                                             ? customBenefits[userForBenefits.id].deemixDiscount.enabled
-                                                            : getUserBenefits(userForBenefits, customBenefits).deemixDiscount?.enabled)
+                                                            : false)
                                                             ? 'true' : 'false'
                                                     )}
-                                                disabled={!(userForBenefits?.id && (customBenefits[userForBenefits.id]?.deemixDiscount?.enabled || getUserBenefits(userForBenefits!, customBenefits).deemixDiscount.enabled))}
+                                                disabled={!(userForBenefits?.id && customBenefits[userForBenefits.id]?.deemixDiscount?.enabled)}
                                                 onChange={(e) => {
                                                     if (!userForBenefits?.id) return;
                                                     const newValue = e.target.value === 'true';
@@ -2491,7 +1856,7 @@ export default function AdminUsersPage() {
                                                 <option value="false">Não</option>
                                             </select>
                                             <p className="text-xs text-gray-400 mt-1">
-                                                {!(userForBenefits?.id && (customBenefits[userForBenefits.id]?.deemixDiscount?.enabled || getUserBenefits(userForBenefits!, customBenefits).deemixDiscount.enabled))
+                                                {!(userForBenefits?.id && customBenefits[userForBenefits.id]?.deemixDiscount?.enabled)
                                                     ? 'Ativar Deemix primeiro'
                                                     : 'Aplica automaticamente se Deemix ativo'}
                                             </p>
@@ -2505,7 +1870,7 @@ export default function AdminUsersPage() {
                                             <select
                                                 value={userForBenefits?.id && customBenefits[userForBenefits.id]?.musicProduction?.enabled !== undefined
                                                     ? customBenefits[userForBenefits.id].musicProduction.enabled.toString()
-                                                    : getUserBenefits(userForBenefits!, customBenefits).musicProduction.enabled.toString()}
+                                                    : 'false'}
                                                 onChange={(e) => {
                                                     if (!userForBenefits?.id) return;
                                                     const newValue = e.target.value === 'true';

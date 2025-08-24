@@ -119,7 +119,7 @@ export default function ContaboStoragePage() {
     const [itemsPerPage] = useState(50);
 
     // Estados para gerenciamento de pastas
-    const [folders, setFolders] = useState<string[]>([]);
+    const [folders, setFolders] = useState<{ [key: string]: any }>({});
     const [selectedFolder, setSelectedFolder] = useState<string>('');
     const [showFolderSelector, setShowFolderSelector] = useState(false);
 
@@ -191,10 +191,10 @@ export default function ContaboStoragePage() {
 
     // Carrega as pastas quando a aba de importação é acessada
     useEffect(() => {
-        if (currentView === 'import' && folders.length === 0) {
+        if (currentView === 'import' && Object.keys(folders).length === 0) {
             loadFolders();
         }
-    }, [currentView, folders.length]);
+    }, [currentView, Object.keys(folders).length]);
 
     // Detecção automática de estilos e pools quando arquivos são carregados
     useEffect(() => {
@@ -242,7 +242,22 @@ export default function ContaboStoragePage() {
 
             if (data.success) {
                 setImportableFiles(data.files || []);
-                showMessage(`${data.importableCount} arquivos prontos para importação`, 'success');
+
+                // Atualiza informações das pastas se disponível
+                if (data.folders) {
+                    setFolders(prev => {
+                        const updatedFolders = { ...prev };
+                        Object.keys(data.folders).forEach(folderPath => {
+                            updatedFolders[folderPath] = {
+                                ...updatedFolders[folderPath],
+                                ...data.folders[folderPath]
+                            };
+                        });
+                        return updatedFolders;
+                    });
+                }
+
+                showMessage(`${data.importableCount} arquivos prontos para importação (${data.totalFiles} total, ${data.existingInDatabase} já existem)`, 'success');
 
                 // Automaticamente detecta arquivos existentes após carregar importáveis
                 await detectExistingFiles();
@@ -280,8 +295,19 @@ export default function ContaboStoragePage() {
                     }
                 });
 
-                const folderList = Array.from(folderSet).sort();
-                setFolders(folderList);
+                // Converte para objeto com informações básicas
+                const folderObject: { [key: string]: any } = {};
+                Array.from(folderSet).sort().forEach(folderPath => {
+                    folderObject[folderPath] = {
+                        totalFiles: 0,
+                        existingFiles: 0,
+                        importableFiles: 0,
+                        importPercentage: 0,
+                        status: 'unknown'
+                    };
+                });
+
+                setFolders(folderObject);
             }
         } catch (error) {
             console.error('Erro ao carregar pastas:', error);
@@ -1798,15 +1824,54 @@ export default function ContaboStoragePage() {
                                                             📁 Todas as Pastas
                                                         </button>
                                                         <div className="border-t border-gray-600 my-1"></div>
-                                                        {folders.map((folder) => (
-                                                            <button
-                                                                key={folder}
-                                                                onClick={handleSelectFolder(folder)}
-                                                                className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white text-sm"
-                                                            >
-                                                                📁 {folder}
-                                                            </button>
-                                                        ))}
+                                                        {Object.keys(folders).map((folder) => {
+                                                            const folderInfo = folders[folder];
+                                                            const getStatusColor = (status: string) => {
+                                                                switch (status) {
+                                                                    case 'completed':
+                                                                        return 'text-green-400 border-green-500';
+                                                                    case 'partial':
+                                                                        return 'text-yellow-400 border-yellow-500';
+                                                                    case 'started':
+                                                                        return 'text-orange-400 border-orange-500';
+                                                                    case 'pending':
+                                                                        return 'text-red-400 border-red-500';
+                                                                    default:
+                                                                        return 'text-gray-400 border-gray-500';
+                                                                }
+                                                            };
+
+                                                            const getStatusIcon = (status: string) => {
+                                                                switch (status) {
+                                                                    case 'completed':
+                                                                        return '✅';
+                                                                    case 'partial':
+                                                                        return '🟡';
+                                                                    case 'started':
+                                                                        return '🟠';
+                                                                    case 'pending':
+                                                                        return '🔴';
+                                                                    default:
+                                                                        return '📁';
+                                                                }
+                                                            };
+
+                                                            return (
+                                                                <button
+                                                                    key={folder}
+                                                                    onClick={handleSelectFolder(folder)}
+                                                                    className={`w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white text-sm border-l-2 ${getStatusColor(folderInfo?.status || 'unknown')}`}
+                                                                    title={folderInfo ? `${folderInfo.existingFiles}/${folderInfo.totalFiles} arquivos importados (${folderInfo.importPercentage?.toFixed(1)}%)` : folder}
+                                                                >
+                                                                    {getStatusIcon(folderInfo?.status || 'unknown')} {folder}
+                                                                    {folderInfo && (
+                                                                        <span className="text-xs ml-2 opacity-75">
+                                                                            {folderInfo.importableFiles || 0} para importar
+                                                                        </span>
+                                                                    )}
+                                                                </button>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             )}

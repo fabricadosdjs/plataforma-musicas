@@ -9,6 +9,9 @@ import { VIP_PLANS_CONFIG, getVipPlan, PlanType } from '@/lib/plans-config';
 declare module "next-auth" {
     interface Session {
         user: {
+            deezerPassword: any;
+            deezerEmail: string;
+            deezerPremium: any;
             vencimento: boolean | undefined;
             valor: any;
             id: string;
@@ -82,6 +85,7 @@ export async function GET(req: Request) {
                 deezerPremium: true,
                 deezerEmail: true,
                 deezerPassword: true,
+                planName: true,
                 isUploader: true,
                 dailyDownloadCount: true,
                 weeklyPackRequests: true,
@@ -153,6 +157,7 @@ export async function GET(req: Request) {
                 plan: planKey,
                 planIcon: benefits?.icon || '📦',
                 planName,
+                planType: user.planType,
                 deemix: user.deemix,
                 deezerPremium: user.deezerPremium,
                 deezerEmail: user.deezerEmail,

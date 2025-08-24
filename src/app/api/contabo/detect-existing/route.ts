@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
                 songName: true,
                 artist: true,
                 style: true,
-                version: true
+                version: true,
+                filename: true
             }
         });
 
@@ -41,6 +42,14 @@ export async function GET(request: NextRequest) {
             ...existingTracks.map((t: any) => t.downloadUrl),
             ...existingTracks.map((t: any) => t.previewUrl)
         ]);
+
+        // Cria índice para busca por nome de arquivo
+        const existingFilenames = new Set(
+            existingTracks
+                .map((t: any) => t.filename)
+                .filter(Boolean)
+                .map(filename => filename.toLowerCase())
+        );
 
         // Cria índice para busca por nome normalizado
         const tracksByNormalizedName = new Map();
@@ -52,17 +61,31 @@ export async function GET(request: NextRequest) {
             tracksByNormalizedName.get(normalizedKey).push(track);
         });
 
-        // Filtra arquivos que já estão no banco (comparação por URL ou nome)
+        // Filtra arquivos que já estão no banco (comparação por URL, filename ou nome normalizado)
         const existingFiles = audioFiles.filter(file => {
-            // Primeiro verifica por URL exata
+            // 1. Verifica por URL exata (mais confiável)
             if (existingUrls.has(file.url)) {
+                console.log(`🚫 Arquivo já existe por URL: ${file.filename}`);
                 return true;
             }
 
-            // Depois verifica por nome normalizado
+            // 2. Verifica por nome de arquivo exato
+            if (existingFilenames.has(file.filename.toLowerCase())) {
+                console.log(`🚫 Arquivo já existe por nome: ${file.filename}`);
+                return true;
+            }
+
+            // 3. Verifica por nome normalizado (artista + música + versão)
             const parsed = parseAudioFileName(file.filename);
             const normalizedKey = normalizeTrackName(parsed.artist, parsed.songName, parsed.version);
-            return tracksByNormalizedName.has(normalizedKey);
+
+            if (tracksByNormalizedName.has(normalizedKey)) {
+                console.log(`🚫 Arquivo já existe por nome normalizado: ${file.filename} -> ${normalizedKey}`);
+                return true;
+            }
+
+            console.log(`✅ Arquivo não existe no banco: ${file.filename}`);
+            return false;
         });
 
         // Processa informações dos arquivos existentes
@@ -89,7 +112,8 @@ export async function GET(request: NextRequest) {
                     songName: existingTrack.songName,
                     artist: existingTrack.artist,
                     style: existingTrack.style,
-                    version: existingTrack.version
+                    version: existingTrack.version,
+                    filename: existingTrack.filename
                 } : null,
                 parsed: parseAudioFileName(file.filename)
             };

@@ -196,6 +196,9 @@ export const authOptions: AuthOptions = {
                         valor: dbUser.valor,
                         status: dbUser.status,
                         deemix: dbUser.deemix, // Assuming this exists in dbUser
+                        deezerPremium: dbUser.deezerPremium,
+                        deezerEmail: dbUser.deezerEmail,
+                        deezerPassword: dbUser.deezerPassword,
                         dailyDownloadCount: dbUser.dailyDownloadCount,
                         lastDownloadReset: dbUser.lastDownloadReset,
                         weeklyPackRequests: dbUser.weeklyPackRequests,
@@ -206,6 +209,10 @@ export const authOptions: AuthOptions = {
                         dataPagamento: dbUser.dataPagamento,
                         whatsapp: dbUser.whatsapp, // Adicionar campo whatsapp
                         plan: finalPlan, // Plano final considerando vencimento
+                        planName: dbUser.planName, // Adicionar campo planName
+                        planType: dbUser.planType, // Adicionar campo planType
+                        period: dbUser.period, // Adicionar campo period
+                        isUploader: dbUser.isUploader, // Adicionar campo isUploader
                     };
 
                 } catch (error) {
@@ -293,10 +300,17 @@ export const authOptions: AuthOptions = {
                 // Add any other user data from the database that you need in the token
                 token.deemix = (user as any).deemix;
                 token.deezerPremium = (user as any).deezerPremium;
+                token.deezerEmail = (user as any).deezerEmail;
+                token.deezerPassword = (user as any).deezerPassword;
                 token.lastDownloadReset = (user as any).lastDownloadReset;
                 token.lastWeekReset = (user as any).lastWeekReset;
                 token.customBenefits = (user as any).customBenefits;
                 token.whatsapp = (user as any).whatsapp;
+                token.planName = (user as any).planName; // Adicionar campo planName
+                token.planType = (user as any).planType; // Adicionar campo planType
+                token.period = (user as any).period; // Adicionar campo period
+                token.isUploader = (user as any).isUploader; // Adicionar campo isUploader
+                token.updatedAt = (user as any).updatedAt; // Adicionar campo updatedAt
 
             }
             return token;
@@ -316,10 +330,17 @@ export const authOptions: AuthOptions = {
                 // Ensure these are also correctly typed and passed if needed
                 (session.user as any).deemix = token.deemix as boolean;
                 (session.user as any).deezerPremium = token.deezerPremium as boolean;
+                (session.user as any).deezerEmail = token.deezerEmail as string;
+                (session.user as any).deezerPassword = token.deezerPassword as string;
                 (session.user as any).lastDownloadReset = token.lastDownloadReset as string;
                 (session.user as any).lastWeekReset = token.lastWeekReset as string;
                 (session.user as any).customBenefits = token.customBenefits as any;
                 (session.user as any).whatsapp = token.whatsapp as string;
+                (session.user as any).planName = token.planName as string; // Adicionar campo planName
+                (session.user as any).planType = token.planType as string; // Adicionar campo planType
+                (session.user as any).period = token.period as string; // Adicionar campo period
+                (session.user as any).isUploader = token.isUploader as boolean; // Adicionar campo isUploader
+                (session.user as any).updatedAt = token.updatedAt as string; // Adicionar campo updatedAt
             }
             return session;
         },

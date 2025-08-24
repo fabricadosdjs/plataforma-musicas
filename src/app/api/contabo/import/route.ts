@@ -27,6 +27,9 @@ export async function GET(request: NextRequest) {
         const audioOnly = searchParams.get('audioOnly') !== 'false'; // Default true
         const prefix = searchParams.get('prefix') || undefined;
 
+        // Define pasta problemática para debug
+        const problematicFolder = 'albuns/Plus Soda Music/Ibiza Sessions 2025';
+
         console.log('🎵 Analisando arquivos para importação automática...');
 
         // Lista apenas arquivos de áudio do bucket
@@ -43,16 +46,33 @@ export async function GET(request: NextRequest) {
 
         console.log(`🔍 ${audioFiles.length} arquivos de áudio encontrados`);
 
-        // Busca músicas já existentes no banco
+        // Busca músicas já existentes no banco com mais campos para comparação
         const existingTracks = await prisma.track.findMany({
             select: {
+                id: true,
                 downloadUrl: true,
                 previewUrl: true,
                 songName: true,
                 artist: true,
-                version: true
+                version: true,
+                filename: true
             }
         });
+
+        console.log(`🔍 DEBUG: Encontrados ${existingTracks.length} tracks no banco de dados`);
+
+        // Log de alguns exemplos para debug
+        if (existingTracks.length > 0) {
+            console.log(`🔍 DEBUG: Primeiros 3 tracks no banco:`, existingTracks.slice(0, 3).map(t => ({
+                id: t.id,
+                artist: t.artist,
+                songName: t.songName,
+                filename: t.filename,
+                hasFilename: !!t.filename
+            })));
+        }
+
+        console.log(`📊 ${existingTracks.length} músicas já existem no banco de dados`);
 
         // Mapeia URLs existentes para verificação rápida
         const existingUrls = new Set([
@@ -67,18 +87,143 @@ export async function GET(request: NextRequest) {
             tracksByNormalizedName.add(normalizedKey);
         });
 
-        // Filtra arquivos que ainda não estão no banco (comparação por URL e nome)
+        // Cria índice para busca por nome de arquivo
+        const existingFilenames = new Set(
+            existingTracks
+                .map((t: any) => t.filename)
+                .filter(Boolean)
+                .map(filename => filename.toLowerCase())
+        );
+
+        // Cria índice para busca por artista + música (sem versão)
+        const tracksByArtistSong = new Set();
+        existingTracks.forEach(track => {
+            const key = `${track.artist?.toLowerCase().trim()}|${track.songName?.toLowerCase().trim()}`;
+            tracksByArtistSong.add(key);
+        });
+
+        console.log(`🔍 DEBUG: Índices criados:`);
+        console.log(`  - URLs únicas: ${existingUrls.size}`);
+        console.log(`  - Filenames únicos: ${existingFilenames.size}`);
+        console.log(`  - Nomes normalizados únicos: ${tracksByNormalizedName.size}`);
+        console.log(`  - Artista+Música únicos: ${tracksByArtistSong.size}`);
+
+        // Filtra arquivos que ainda não estão no banco (comparação por URL, nome e filename)
         const importableFiles = audioFiles.filter(file => {
-            // Primeiro verifica por URL exata
+            console.log(`🔍 Verificando arquivo: ${file.filename}`);
+
+            // 1. Verifica por URL exata (mais confiável)
             if (existingUrls.has(file.url)) {
+                console.log(`🚫 Arquivo já existe por URL: ${file.filename}`);
                 return false;
             }
 
-            // Depois verifica por nome normalizado
+            // 2. Verifica por nome de arquivo exato
+            if (existingFilenames.has(file.filename.toLowerCase())) {
+                console.log(`🚫 Arquivo já existe por nome: ${file.filename}`);
+                return false;
+            }
+
+            // 3. Verifica por nome normalizado (artista + música + versão)
             const parsed = parseAudioFileName(file.filename);
             const normalizedKey = normalizeTrackName(parsed.artist, parsed.songName, parsed.version || undefined);
-            return !tracksByNormalizedName.has(normalizedKey);
+
+            if (tracksByNormalizedName.has(normalizedKey)) {
+                console.log(`🚫 Arquivo já existe por nome normalizado: ${file.filename} -> ${normalizedKey}`);
+                return false;
+            }
+
+            // 4. Verifica por artista + música (sem versão) - mais flexível
+            const artistSongKey = `${parsed.artist.toLowerCase().trim()}|${parsed.songName.toLowerCase().trim()}`;
+            if (tracksByArtistSong.has(artistSongKey)) {
+                console.log(`🚫 Arquivo já existe por artista+música: ${file.filename} -> ${artistSongKey}`);
+                return false;
+            }
+
+            console.log(`✅ Arquivo disponível para importação: ${file.filename}`);
+            return true;
         });
+
+        // Logs de debug para entender o que está acontecendo
+        console.log(`🔍 DEBUG: ${existingTracks.length} tracks no banco`);
+        console.log(`🔍 DEBUG: ${existingFilenames.size} filenames únicos no banco`);
+        console.log(`🔍 DEBUG: ${tracksByNormalizedName.size} nomes normalizados únicos no banco`);
+        console.log(`🔍 DEBUG: ${audioFiles.length} arquivos no storage`);
+        console.log(`🔍 DEBUG: ${importableFiles.length} arquivos para importar`);
+
+        // Log de alguns exemplos para debug
+        if (existingTracks.length > 0) {
+            console.log(`🔍 DEBUG: Exemplo de track no banco:`, {
+                artist: existingTracks[0].artist,
+                songName: existingTracks[0].songName,
+                filename: existingTracks[0].filename,
+                downloadUrl: existingTracks[0].downloadUrl?.substring(0, 100) + '...'
+            });
+        }
+
+        if (audioFiles.length > 0) {
+            console.log(`🔍 DEBUG: Exemplo de arquivo no storage:`, {
+                filename: audioFiles[0].filename,
+                url: audioFiles[0].url.substring(0, 100) + '...'
+            });
+        }
+
+        // Log detalhado de comparação
+        console.log(`🔍 DEBUG: Comparando arquivos do storage com tracks do banco:`);
+        audioFiles.slice(0, 10).forEach((file, index) => {
+            const parsed = parseAudioFileName(file.filename);
+            const normalizedKey = normalizeTrackName(parsed.artist, parsed.songName, parsed.version || undefined);
+            const artistSongKey = `${parsed.artist.toLowerCase().trim()}|${parsed.songName.toLowerCase().trim()}`;
+
+            console.log(`  ${index + 1}. ${file.filename}:`);
+            console.log(`     URL no storage: ${file.url.substring(0, 80)}...`);
+            console.log(`     Parsed: ${parsed.artist} - ${parsed.songName} (${parsed.version || 'sem versão'})`);
+            console.log(`     Normalized: ${normalizedKey}`);
+            console.log(`     Artist+Song: ${artistSongKey}`);
+            console.log(`     Existe por URL: ${existingUrls.has(file.url)}`);
+            console.log(`     Existe por filename: ${existingFilenames.has(file.filename.toLowerCase())}`);
+            console.log(`     Existe por nome normalizado: ${tracksByNormalizedName.has(normalizedKey)}`);
+            console.log(`     Existe por artista+música: ${tracksByArtistSong.has(artistSongKey)}`);
+        });
+
+        // Log específico para a pasta problemática
+        const problematicFiles = audioFiles.filter(file => file.key.startsWith(problematicFolder));
+        const problematicTracks = existingTracks.filter(track =>
+            track.filename && track.filename.startsWith(problematicFolder)
+        );
+
+        if (problematicFiles.length > 0) {
+            console.log(`🔍 DEBUG ESPECÍFICO - Pasta: ${problematicFolder}`);
+            console.log(`  Arquivos no storage: ${problematicFiles.length}`);
+            console.log(`  Tracks no banco: ${problematicTracks.length}`);
+
+            console.log(`  Primeiros 5 arquivos no storage:`);
+            problematicFiles.slice(0, 5).forEach((file, index) => {
+                console.log(`    ${index + 1}. ${file.filename} (${file.key})`);
+            });
+
+            console.log(`  Primeiros 5 tracks no banco:`);
+            problematicTracks.slice(0, 5).forEach((track, index) => {
+                console.log(`    ${index + 1}. ${track.filename} | ${track.artist} - ${track.songName}`);
+            });
+
+            // Verifica correspondência
+            problematicFiles.forEach(file => {
+                const parsed = parseAudioFileName(file.filename);
+                const artistSongKey = `${parsed.artist.toLowerCase().trim()}|${parsed.songName.toLowerCase().trim()}`;
+
+                const matchingTrack = problematicTracks.find(track => {
+                    const trackKey = `${track.artist?.toLowerCase().trim()}|${track.songName?.toLowerCase().trim()}`;
+                    return trackKey === artistSongKey;
+                });
+
+                if (matchingTrack) {
+                    console.log(`    ✅ ${file.filename} <-> ${matchingTrack.filename}`);
+                } else {
+                    console.log(`    ❌ ${file.filename} - NÃO ENCONTRADO NO BANCO`);
+                }
+            });
+        }
 
         // Processa informações dos arquivos para importação
         const processedFiles = importableFiles.map(file => {
@@ -102,13 +247,48 @@ export async function GET(request: NextRequest) {
         });
 
         console.log(`✅ ${importableFiles.length} arquivos prontos para importação`);
+        console.log(`📊 Resumo: ${audioFiles.length} total, ${audioFiles.length - importableFiles.length} já existem, ${importableFiles.length} para importar`);
 
-        return NextResponse.json({
-            success: true,
+        // Validação final dos dados
+        const finalStats = {
             totalFiles: audioFiles.length,
             existingInDatabase: audioFiles.length - importableFiles.length,
             importableCount: importableFiles.length,
-            files: processedFiles
+            processedFilesCount: processedFiles.length
+        };
+
+        console.log(`🔍 VALIDAÇÃO FINAL:`);
+        console.log(`  Total no storage: ${finalStats.totalFiles}`);
+        console.log(`  Detectados como existentes: ${finalStats.existingInDatabase}`);
+        console.log(`  Para importar: ${finalStats.importableCount}`);
+        console.log(`  Arquivos processados: ${finalStats.processedFilesCount}`);
+        console.log(`  Diferença: ${finalStats.totalFiles - finalStats.existingInDatabase - finalStats.importableCount}`);
+
+        if (finalStats.totalFiles !== finalStats.existingInDatabase + finalStats.importableCount) {
+            console.warn(`⚠️ ATENÇÃO: Soma não confere! ${finalStats.totalFiles} ≠ ${finalStats.existingInDatabase} + ${finalStats.importableCount}`);
+        }
+
+        // Validação específica para pasta problemática
+        const problematicFilesInStorage = audioFiles.filter(file => file.key.startsWith(problematicFolder));
+        const problematicTracksInDB = existingTracks.filter(track =>
+            track.filename && track.filename.startsWith(problematicFolder)
+        );
+
+        console.log(`🔍 VALIDAÇÃO ESPECÍFICA - Pasta: ${problematicFolder}`);
+        console.log(`  Arquivos no storage: ${problematicFilesInStorage.length}`);
+        console.log(`  Tracks no banco: ${problematicTracksInDB.length}`);
+        console.log(`  Arquivos para importar (calculado): ${importableFiles.filter(file => file.key.startsWith(problematicFolder)).length}`);
+
+        if (problematicFilesInStorage.length !== problematicTracksInDB.length) {
+            console.warn(`⚠️ PROBLEMA DETECTADO: Pasta ${problematicFolder} tem ${problematicFilesInStorage.length} no storage mas ${problematicTracksInDB.length} no banco!`);
+        }
+
+        return NextResponse.json({
+            success: true,
+            ...finalStats,
+            files: processedFiles,
+            // Adiciona informações sobre pastas para melhor visualização
+            folders: await getFolderStatus(audioFiles, existingTracks)
         });
 
     } catch (error) {
@@ -230,6 +410,7 @@ export async function POST(request: NextRequest) {
                         previewUrl: importData.previewUrl,
                         downloadUrl: importData.downloadUrl,
                         releaseDate: new Date(importData.releaseDate),
+                        filename: fileData.file?.filename || null, // Salva o nome do arquivo original
                         // Campos extras poderiam ser salvos em futura migração (ex: aiConfidence)
                     }
                 });
@@ -301,35 +482,41 @@ function parseAudioFileName(filename: string) {
             if (match[2]) {
                 // Tem artista - tudo após o primeiro "-" é o nome da música
                 const songName = match[2].trim();
-                return {
+                const result = {
                     artist: match[1].trim(),
                     songName: songName,
                     version: variation,
                     style: null,
                     variation
                 };
+                console.log(`🔍 parseAudioFileName: "${filename}" -> ${JSON.stringify(result)}`);
+                return result;
             } else {
                 // Só tem nome da música
                 const songName = match[1].trim();
-                return {
+                const result = {
                     artist: 'Artista Desconhecido',
                     songName: songName,
                     version: variation,
                     style: null,
                     variation
                 };
+                console.log(`🔍 parseAudioFileName: "${filename}" -> ${JSON.stringify(result)}`);
+                return result;
             }
         }
     }
 
     // Fallback: usa o nome do arquivo como nome da música
-    return {
+    const result = {
         artist: 'Artista Desconhecido',
         songName: name,
         version: null,
         style: null,
         variation
     };
+    console.log(`🔍 parseAudioFileName: "${filename}" -> ${JSON.stringify(result)} (fallback)`);
+    return result;
 }
 
 /**
@@ -366,4 +553,118 @@ function normalizeTrackName(artist: string, songName: string, version?: string):
     const normalizedVersion = version ? normalize(version) : '';
 
     return `${normalizedArtist}|${normalizedSong}|${normalizedVersion}`;
+}
+
+/**
+ * Analisa o status das pastas para mostrar quais têm arquivos não importados
+ */
+async function getFolderStatus(audioFiles: any[], existingTracks: any[]) {
+    const folderStats: { [key: string]: any } = {};
+
+    console.log(`🔍 getFolderStatus: Analisando ${audioFiles.length} arquivos e ${existingTracks.length} tracks existentes`);
+
+    // Agrupa arquivos por pasta
+    audioFiles.forEach(file => {
+        const folderPath = file.key.split('/').slice(0, -1).join('/') || 'root';
+
+        if (!folderStats[folderPath]) {
+            folderStats[folderPath] = {
+                totalFiles: 0,
+                existingFiles: 0,
+                importableFiles: 0,
+                importPercentage: 0,
+                status: 'unknown'
+            };
+        }
+
+        folderStats[folderPath].totalFiles++;
+    });
+
+    console.log(`🔍 getFolderStatus: Pastas encontradas:`, Object.keys(folderStats));
+
+    // Verifica quantos arquivos de cada pasta já existem no banco
+    existingTracks.forEach(track => {
+        if (track.filename) {
+            const folderPath = track.filename.split('/').slice(0, -1).join('/') || 'root';
+
+            if (folderStats[folderPath]) {
+                folderStats[folderPath].existingFiles++;
+            } else {
+                console.log(`🔍 getFolderStatus: Track com pasta não encontrada: ${track.filename} -> pasta: ${folderPath}`);
+            }
+        } else {
+            // Se não tem filename, tenta extrair da URL
+            if (track.downloadUrl) {
+                try {
+                    const url = new URL(track.downloadUrl);
+                    const pathParts = url.pathname.split('/');
+                    if (pathParts.length > 1) {
+                        const folderPath = pathParts.slice(0, -1).join('/');
+                        if (folderStats[folderPath]) {
+                            folderStats[folderPath].existingFiles++;
+                            console.log(`🔍 getFolderStatus: Track sem filename, usando URL: ${track.downloadUrl} -> pasta: ${folderPath}`);
+                        }
+                    }
+                } catch (e) {
+                    console.log(`🔍 getFolderStatus: Erro ao processar URL: ${track.downloadUrl}`);
+                }
+            }
+        }
+    });
+
+    // Log específico para pasta problemática
+    if (folderStats[problematicFolder]) {
+        const stats = folderStats[problematicFolder];
+        console.log(`🔍 getFolderStatus: Pasta problemática ${problematicFolder}:`);
+        console.log(`  Total no storage: ${stats.totalFiles}`);
+        console.log(`  Existente no banco: ${stats.existingFiles}`);
+        console.log(`  Para importar: ${stats.importableFiles}`);
+        console.log(`  Porcentagem: ${stats.importPercentage?.toFixed(1)}%`);
+
+        // Verifica se há tracks no banco para essa pasta
+        const tracksInFolder = existingTracks.filter(track =>
+            track.filename && track.filename.startsWith(problematicFolder)
+        );
+        console.log(`  Tracks encontrados no banco para esta pasta: ${tracksInFolder.length}`);
+
+        if (tracksInFolder.length > 0) {
+            console.log(`  Exemplos de tracks no banco:`);
+            tracksInFolder.slice(0, 3).forEach(track => {
+                console.log(`    - ${track.filename} | ${track.artist} - ${track.songName}`);
+            });
+        }
+    }
+
+    // Log detalhado de cada pasta
+    console.log(`🔍 getFolderStatus: Estatísticas finais das pastas:`);
+    Object.entries(folderStats).forEach(([folderPath, stats]) => {
+        console.log(`  ${folderPath}:`);
+        console.log(`    Total no storage: ${stats.totalFiles}`);
+        console.log(`    Existente no banco: ${stats.existingFiles}`);
+        console.log(`    Para importar: ${stats.importableFiles}`);
+        console.log(`    Porcentagem: ${stats.importPercentage?.toFixed(1)}%`);
+        console.log(`    Status: ${stats.status}`);
+    });
+
+    // Calcula estatísticas e status de cada pasta
+    Object.keys(folderStats).forEach(folderPath => {
+        const stats = folderStats[folderPath];
+        stats.importableFiles = stats.totalFiles - stats.existingFiles;
+        stats.importPercentage = stats.totalFiles > 0 ? (stats.existingFiles / stats.totalFiles) * 100 : 0;
+
+        console.log(`🔍 getFolderStatus: Pasta ${folderPath}: ${stats.existingFiles}/${stats.totalFiles} (${stats.importPercentage.toFixed(1)}%)`);
+
+        // Define status da pasta
+        if (stats.importPercentage >= 90) {
+            stats.status = 'completed'; // Verde: pasta quase toda importada
+        } else if (stats.importPercentage >= 50) {
+            stats.status = 'partial'; // Amarelo: pasta parcialmente importada
+        } else if (stats.importPercentage > 0) {
+            stats.status = 'started'; // Laranja: pasta começou a ser importada
+        } else {
+            stats.status = 'pending'; // Vermelho: pasta não foi importada
+        }
+    });
+
+    return folderStats;
 }
