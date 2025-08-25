@@ -389,9 +389,18 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         const handleEnded = () => {
             console.log('🎵 GlobalPlayer: Track ended, auto-advancing to next track');
-            if (playlist.length > 0 && currentTrackIndex >= 0) {
+
+            // Se temos uma lista de músicas específica (MusicList), usar ela
+            if (currentMusicList.length > 0 && currentMusicListIndex >= 0) {
+                console.log('🎵 GlobalPlayer: Auto-advancing to next track in MusicList');
+                nextMusicListTrack();
+            }
+            // Se não, usar a playlist geral
+            else if (playlist.length > 0 && currentTrackIndex >= 0) {
+                console.log('🎵 GlobalPlayer: Auto-advancing to next track in playlist');
                 nextTrack();
             } else {
+                console.log('🎵 GlobalPlayer: No more tracks to play, stopping');
                 setIsPlaying(false);
             }
         };
@@ -418,7 +427,7 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
             audio.removeEventListener('ended', handleEnded);
             audio.removeEventListener('error', handleError);
         };
-    }, [playlist, currentTrackIndex, currentTrack]);
+    }, [playlist, currentTrackIndex, currentTrack, currentMusicList, currentMusicListIndex]);
 
     return (
         <GlobalPlayerContext.Provider

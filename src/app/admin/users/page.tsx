@@ -29,7 +29,7 @@ interface User {
     password?: string;
     planName?: string;
     planType?: string;
-    customBenefits?: any;
+
 }
 
 // Imports
@@ -68,10 +68,9 @@ export default function AdminUsersPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [vipFilter, setVipFilter] = useState('all');
-    const [showBenefitsModal, setShowBenefitsModal] = useState(false);
-    const [userForBenefits, setUserForBenefits] = useState<User | null>(null);
-    const [customBenefits, setCustomBenefits] = useState<{ [userId: string]: any }>({});
-    
+
+
+
     // Estado para o formulário de adição de usuário
     const [editForm, setEditForm] = useState({
         name: '',
@@ -436,15 +435,7 @@ export default function AdminUsersPage() {
 
 
 
-    const openBenefitsModal = (user: User) => {
-        setUserForBenefits(user);
-        setShowBenefitsModal(true);
-    };
 
-    const closeBenefitsModal = () => {
-        setUserForBenefits(null);
-        setShowBenefitsModal(false);
-    };
 
     const openAddModal = () => {
         setShowAddModal(true);
@@ -761,7 +752,7 @@ export default function AdminUsersPage() {
                                             <td className="px-3 py-4">
                                                 {(() => {
                                                     // Removido getUserPlan - usar plano padrão
-                                                    const hasCustomBenefits = customBenefits[user.id] && Object.keys(customBenefits[user.id]).length > 0;
+
 
 
 
@@ -778,13 +769,7 @@ export default function AdminUsersPage() {
                                                                     🎁
                                                                 </span>
                                                             )}
-                                                            {hasCustomBenefits && (
-                                                                <div className="ml-1" title="Benefícios personalizados">
-                                                                    <span className="text-xs bg-gray-600/30 text-gray-300 px-1 py-0.5 rounded border border-gray-500/30">
-                                                                        ✨
-                                                                    </span>
-                                                                </div>
-                                                            )}
+
                                                         </div>
                                                     );
                                                 })()}
@@ -877,13 +862,13 @@ export default function AdminUsersPage() {
                                                     >
                                                         <Edit className="w-4 h-4" />
                                                     </a>
-                                                    <button
-                                                        onClick={() => openBenefitsModal(user)}
+                                                    <a
+                                                        href={`/admin/users/benefits/${user.id}`}
                                                         className="p-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-purple-200 rounded-xl transition-all hover:scale-110 border border-purple-400/30 shadow-purple-500/20 shadow-md"
                                                         title="Personalizar benefícios"
                                                     >
                                                         <Crown className="w-4 h-4" />
-                                                    </button>
+                                                    </a>
                                                     <button
                                                         onClick={() => showDeleteConfirmation(user)}
                                                         disabled={deleting === user.id}
@@ -1017,996 +1002,403 @@ export default function AdminUsersPage() {
 
                     {/* Modal de Adição - Design Ultra Moderno */}
                     {showAddModal && (
-                            <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-50 p-4">
-                                <div className="bg-gradient-to-br from-[#0F0F23] via-[#1A1A2E] to-[#16213E] border border-purple-500/30 rounded-3xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto text-white shadow-2xl relative">
-                                    {/* Decoração de fundo */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-blue-500/5 to-cyan-500/5 rounded-3xl"></div>
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 rounded-t-3xl"></div>
+                        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-50 p-4">
+                            <div className="bg-gradient-to-br from-[#0F0F23] via-[#1A1A2E] to-[#16213E] border border-purple-500/30 rounded-3xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto text-white shadow-2xl relative">
+                                {/* Decoração de fundo */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-blue-500/5 to-cyan-500/5 rounded-3xl"></div>
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 rounded-t-3xl"></div>
 
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-4 mb-8">
-                                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
-                                                    <UserPlus className="w-6 h-6 text-white" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                            <UserPlus className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                                                 Adicionar Novo Usuário
-                                                </h3>
-                                                <p className="text-gray-400 mt-1">
+                                            </h3>
+                                            <p className="text-gray-400 mt-1">
                                                 Crie um novo usuário no sistema
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="group">
+                                            <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                                <User className="w-4 h-4 text-purple-400" />
+                                                Nome *
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    value={editForm.name}
+                                                    onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                                                    className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 placeholder-gray-500 relative z-10"
+                                                    placeholder="Nome completo"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="group">
+                                            <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                                <MessageSquare className="w-4 h-4 text-green-400" />
+                                                WhatsApp
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    value={editForm.whatsapp}
+                                                    onChange={(e) => setEditForm(prev => ({ ...prev, whatsapp: e.target.value }))}
+                                                    className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-300 placeholder-gray-500 relative z-10"
+                                                    placeholder="(11) 99999-9999"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="md:col-span-2 group">
+                                            <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                                <Mail className="w-4 h-4 text-blue-400" />
+                                                Email *
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="email"
+                                                    value={editForm.email}
+                                                    onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                                                    className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 placeholder-gray-500 relative z-10"
+                                                    placeholder="email@exemplo.com"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Campo de senha - só aparece quando estiver adicionando novo usuário */}
+                                        {/* Campo de senha - obrigatório para novos usuários */}
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                Senha *
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={editForm.password}
+                                                    onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
+                                                    className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                    placeholder="Senha forte para novo usuário"
+                                                    autoComplete="new-password"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="px-4 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl"
+                                                    onClick={() => {
+                                                        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
+                                                        let password = "";
+                                                        for (let i = 0, n = charset.length; i < 14; ++i) {
+                                                            password += charset.charAt(Math.floor(Math.random() * n));
+                                                        }
+                                                        setEditForm(prev => ({ ...prev, password }));
+                                                    }}
+                                                >
+                                                    Gerar senha forte
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="group">
+                                            <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                                <Crown className="w-4 h-4 text-yellow-400" />
+                                                Plano VIP
+                                            </label>
+                                            <div className="relative">
+                                                <select
+                                                    value={editForm.planType || ''}
+                                                    onChange={(e) => {
+                                                        const planType = e.target.value;
+                                                        // Definir valores baseados no plano selecionado
+                                                        let planName = '';
+                                                        let valor = 0;
+                                                        if (planType === 'BASICO') {
+                                                            planName = 'VIP BÁSICO';
+                                                            valor = 38;
+                                                        } else if (planType === 'PADRAO') {
+                                                            planName = 'VIP PADRÃO';
+                                                            valor = 42;
+                                                        } else if (planType === 'COMPLETO') {
+                                                            planName = 'VIP COMPLETO';
+                                                            valor = 60;
+                                                        }
+
+                                                        setEditForm(prev => ({
+                                                            ...prev,
+                                                            planType: planType,
+                                                            planName: planName,
+                                                            valor: valor
+                                                        }));
+                                                    }}
+                                                    className="w-full px-4 py-4 bg-gray-900/50 border border-yellow-500/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
+                                                >
+                                                    <option value="" className="bg-gray-900 text-gray-100">Selecione um plano</option>
+                                                    <option value="BASICO" className="bg-gray-900 text-gray-100">🥉 VIP BÁSICO - R$ 38,00</option>
+                                                    <option value="PADRAO" className="bg-gray-900 text-gray-100">🥈 VIP PADRÃO - R$ 42,00</option>
+                                                    <option value="COMPLETO" className="bg-gray-900 text-gray-100">🥇 VIP COMPLETO - R$ 60,00</option>
+                                                </select>
+                                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-20">
+                                                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-3">
+                                                <label className="block text-sm font-medium text-gray-300 mb-2">Valor Mensal (R$)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={editForm.valor}
+                                                    onChange={e => setEditForm(prev => ({ ...prev, valor: parseFloat(e.target.value) || 0 }))}
+                                                    className="w-full px-4 py-4 bg-gray-900/50 border border-yellow-500/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300"
+                                                    placeholder="Valor será preenchido automaticamente"
+                                                    readOnly
+                                                />
+                                                <p className="text-xs text-gray-400 mt-2">
+                                                    Valor calculado automaticamente baseado no plano selecionado
                                                 </p>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="group">
-                                                <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                                    <User className="w-4 h-4 text-purple-400" />
-                                                    Nome *
-                                                </label>
-                                                <div className="relative">
-                                                    <input
-                                                        type="text"
-                                                        value={editForm.name}
-                                                        onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                                                        className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 placeholder-gray-500 relative z-10"
-                                                        placeholder="Nome completo"
-                                                    />
-                                                </div>
-                                            </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                Status
+                                            </label>
+                                            <select
+                                                value={editForm.status}
+                                                onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                            >
+                                                <option value="ativo" className="bg-gray-900">Ativo</option>
+                                                <option value="inativo" className="bg-gray-900">Inativo</option>
+                                            </select>
+                                        </div>
 
-                                            <div className="group">
-                                                <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                                    <MessageSquare className="w-4 h-4 text-green-400" />
-                                                    WhatsApp
-                                                </label>
-                                                <div className="relative">
-                                                    <input
-                                                        type="text"
-                                                        value={editForm.whatsapp}
-                                                        onChange={(e) => setEditForm(prev => ({ ...prev, whatsapp: e.target.value }))}
-                                                        className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-300 placeholder-gray-500 relative z-10"
-                                                        placeholder="(11) 99999-9999"
-                                                    />
-                                                </div>
-                                            </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                Data de Vencimento
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={editForm.vencimento || ''}
+                                                onChange={(e) => setEditForm(prev => ({ ...prev, vencimento: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                            />
+                                        </div>
 
-                                            <div className="md:col-span-2 group">
-                                                <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                                    <Mail className="w-4 h-4 text-blue-400" />
-                                                    Email *
-                                                </label>
-                                                <div className="relative">
-                                                    <input
-                                                        type="email"
-                                                        value={editForm.email}
-                                                        onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                                                        className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 placeholder-gray-500 relative z-10"
-                                                        placeholder="email@exemplo.com"
-                                                    />
-                                                </div>
-                                            </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                Data do Pagamento
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={editForm.dataPagamento || ''}
+                                                onChange={(e) => setEditForm(prev => ({ ...prev, dataPagamento: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                            />
+                                        </div>
 
-                                            {/* Campo de senha - só aparece quando estiver adicionando novo usuário */}
-                                            {/* Campo de senha - obrigatório para novos usuários */}
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                        Senha *
+                                        <div className="md:col-span-2">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                {/* Deemix */}
+                                                <div className="group">
+                                                    <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                                        <Music className="w-4 h-4 text-purple-400" />
+                                                        Deemix Ativo
                                                     </label>
-                                                    <div className="flex gap-2">
-                                                        <input
-                                                            type="text"
-                                                            value={editForm.password}
-                                                            onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
-                                                            className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                            placeholder="Senha forte para novo usuário"
-                                                            autoComplete="new-password"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            className="px-4 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl"
-                                                            onClick={() => {
-                                                                const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
-                                                                let password = "";
-                                                                for (let i = 0, n = charset.length; i < 14; ++i) {
-                                                                    password += charset.charAt(Math.floor(Math.random() * n));
-                                                                }
-                                                                setEditForm(prev => ({ ...prev, password }));
-                                                            }}
-                                                        >
-                                                            Gerar senha forte
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                            <div className="group">
-                                                <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                                    <Crown className="w-4 h-4 text-yellow-400" />
-                                                    Plano VIP
-                                                    </label>
-                                                <div className="relative">
-                                                    <select
-                                                        value={editForm.planType || ''}
-                                                        onChange={(e) => {
-                                                            const planType = e.target.value;
-                                                            // Definir valores baseados no plano selecionado
-                                                            let planName = '';
-                                                            let valor = 0;
-                                                            if (planType === 'BASICO') {
-                                                                planName = 'VIP BÁSICO';
-                                                                valor = 38;
-                                                            } else if (planType === 'PADRAO') {
-                                                                planName = 'VIP PADRÃO';
-                                                                valor = 42;
-                                                            } else if (planType === 'COMPLETO') {
-                                                                planName = 'VIP COMPLETO';
-                                                                valor = 60;
-                                                            }
-                                                            
-                                                            setEditForm(prev => ({
-                                                                ...prev,
-                                                                planType: planType,
-                                                                planName: planName,
-                                                                valor: valor
-                                                            }));
-                                                        }}
-                                                        className="w-full px-4 py-4 bg-gray-900/50 border border-yellow-500/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
-                                                    >
-                                                        <option value="" className="bg-gray-900 text-gray-100">Selecione um plano</option>
-                                                        <option value="BASICO" className="bg-gray-900 text-gray-100">🥉 VIP BÁSICO - R$ 38,00</option>
-                                                        <option value="PADRAO" className="bg-gray-900 text-gray-100">🥈 VIP PADRÃO - R$ 42,00</option>
-                                                        <option value="COMPLETO" className="bg-gray-900 text-gray-100">🥇 VIP COMPLETO - R$ 60,00</option>
-                                                    </select>
-                                                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-20">
-                                                        <ChevronDown className="w-5 h-5 text-gray-400" />
-                                                    </div>
-                                                </div>
-
-                                                <div className="mt-3">
-                                                    <label className="block text-sm font-medium text-gray-300 mb-2">Valor Mensal (R$)</label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        step="0.01"
-                                                        value={editForm.valor}
-                                                        onChange={e => setEditForm(prev => ({ ...prev, valor: parseFloat(e.target.value) || 0 }))}
-                                                        className="w-full px-4 py-4 bg-gray-900/50 border border-yellow-500/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300"
-                                                        placeholder="Valor será preenchido automaticamente"
-                                                        readOnly
-                                                    />
-                                                    <p className="text-xs text-gray-400 mt-2">
-                                                        Valor calculado automaticamente baseado no plano selecionado
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                    Status
-                                                </label>
-                                                <select
-                                                    value={editForm.status}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
-                                                    className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                >
-                                                    <option value="ativo" className="bg-gray-900">Ativo</option>
-                                                    <option value="inativo" className="bg-gray-900">Inativo</option>
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                    Data de Vencimento
-                                                </label>
-                                                <input
-                                                    type="date"
-                                                    value={editForm.vencimento || ''}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, vencimento: e.target.value }))}
-                                                    className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                    Data do Pagamento
-                                                </label>
-                                                <input
-                                                    type="date"
-                                                    value={editForm.dataPagamento || ''}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, dataPagamento: e.target.value }))}
-                                                    className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                />
-                                            </div>
-
-                                            <div className="md:col-span-2">
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                    {/* Deemix */}
-                                                    <div className="group">
-                                                        <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                                            <Music className="w-4 h-4 text-purple-400" />
-                                                            Deemix Ativo
-                                                        </label>
-                                                        <div className="relative">
-                                                            <select
-                                                                value={editForm.deemix ? 'sim' : 'nao'}
-                                                                onChange={(e) => {
-                                                                    const hasDeemix = e.target.value === 'sim';
-                                                                    // Não altera valor: apenas flag de acesso
-                                                                    setEditForm(prev => ({ ...prev, deemix: hasDeemix }));
-                                                                }}
-                                                                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
-                                                            >
-                                                                <option value="sim" className="bg-gray-900 text-gray-100">✅ Sim</option>
-                                                                <option value="nao" className="bg-gray-900 text-gray-100">❌ Não</option>
-                                                            </select>
-                                                            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-20">
-                                                                <ChevronDown className="w-5 h-5 text-gray-400" />
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-2 p-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-lg">
-                                                            <p className="text-xs text-gray-300">
-                                                                {editForm.deemix ? '🎵 Usuário pode acessar o sistema Deemix' : '🚫 Usuário não tem acesso ao Deemix'}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* VIP */}
-                                                    <div className="group">
-                                                        <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                                            <Crown className="w-4 h-4 text-yellow-400" />
-                                                            Usuário VIP
-                                                        </label>
-                                                        <div className="relative">
-                                                            <select
-                                                                value={editForm.is_vip ? 'sim' : 'nao'}
-                                                                onChange={(e) => setEditForm(prev => ({
-                                                                    ...prev,
-                                                                    is_vip: e.target.value === 'sim'
-                                                                }))}
-                                                                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
-                                                            >
-                                                                <option value="sim" className="bg-gray-900 text-gray-100">👑 Sim</option>
-                                                                <option value="nao" className="bg-gray-900 text-gray-100">❌ Não</option>
-                                                            </select>
-                                                            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-20">
-                                                                <ChevronDown className="w-5 h-5 text-gray-400" />
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-2 p-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg">
-                                                            <p className="text-xs text-gray-300">
-                                                                {editForm.is_vip ? '👑 Usuário tem acesso VIP às músicas' : '🚫 Usuário sem acesso às músicas'}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Uploader */}
-                                                    <div className="group">
-                                                        <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                                            <Upload className="w-4 h-4 text-orange-400" />
-                                                            Uploader
-                                                        </label>
-                                                        <div className="relative">
-                                                            <select
-                                                                value={editForm.isUploader ? 'sim' : 'nao'}
-                                                                onChange={(e) => setEditForm(prev => ({
-                                                                    ...prev,
-                                                                    isUploader: e.target.value === 'sim'
-                                                                }))}
-                                                                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
-                                                            >
-                                                                <option value="sim" className="bg-gray-900 text-gray-100">📤 Sim</option>
-                                                                <option value="nao" className="bg-gray-900 text-gray-100">❌ Não</option>
-                                                            </select>
-                                                            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-20">
-                                                                <ChevronDown className="w-5 h-5 text-gray-400" />
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-2 p-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-lg">
-                                                            <p className="text-xs text-gray-300">
-                                                                {editForm.isUploader ? '📤 Pode fazer upload de até 10 músicas/mês' : '🚫 Sem permissão para upload'}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="md:col-span-2">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                            Deezer Premium Ativo
-                                                        </label>
+                                                    <div className="relative">
                                                         <select
-                                                            value={editForm.deezerPremium ? 'sim' : 'nao'}
+                                                            value={editForm.deemix ? 'sim' : 'nao'}
                                                             onChange={(e) => {
-                                                                const hasDeezerPremium = e.target.value === 'sim';
+                                                                const hasDeemix = e.target.value === 'sim';
                                                                 // Não altera valor: apenas flag de acesso
-                                                                setEditForm(prev => ({
-                                                                    ...prev,
-                                                                    deezerPremium: hasDeezerPremium
-                                                                }));
+                                                                setEditForm(prev => ({ ...prev, deemix: hasDeemix }));
                                                             }}
-                                                            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                            className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
                                                         >
-                                                            <option value="sim" className="bg-gray-900">Sim</option>
-                                                            <option value="nao" className="bg-gray-900">Não</option>
+                                                            <option value="sim" className="bg-gray-900 text-gray-100">✅ Sim</option>
+                                                            <option value="nao" className="bg-gray-900 text-gray-100">❌ Não</option>
                                                         </select>
-                                                        <p className="text-xs text-gray-400 mt-2">
-                                                            {editForm.deezerPremium ? 'Usuário tem acesso ao Deezer Premium' : 'Usuário não tem acesso ao Deezer Premium'}
+                                                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-20">
+                                                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-2 p-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-lg">
+                                                        <p className="text-xs text-gray-300">
+                                                            {editForm.deemix ? '🎵 Usuário pode acessar o sistema Deemix' : '🚫 Usuário não tem acesso ao Deemix'}
                                                         </p>
                                                     </div>
+                                                </div>
 
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                            Email Deezer Premium
-                                                        </label>
-                                                        <input
-                                                            type="email"
-                                                            value={editForm.deezerEmail || ''}
-                                                            onChange={(e) => setEditForm(prev => ({ ...prev, deezerEmail: e.target.value }))}
-                                                            placeholder="email@deezer.com"
-                                                            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
-                                                        />
-                                                        <p className="text-xs text-gray-400 mt-2">
-                                                            Email para acesso ao Deezer Premium
+                                                {/* VIP */}
+                                                <div className="group">
+                                                    <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                                        <Crown className="w-4 h-4 text-yellow-400" />
+                                                        Usuário VIP
+                                                    </label>
+                                                    <div className="relative">
+                                                        <select
+                                                            value={editForm.is_vip ? 'sim' : 'nao'}
+                                                            onChange={(e) => setEditForm(prev => ({
+                                                                ...prev,
+                                                                is_vip: e.target.value === 'sim'
+                                                            }))}
+                                                            className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
+                                                        >
+                                                            <option value="sim" className="bg-gray-900 text-gray-100">👑 Sim</option>
+                                                            <option value="nao" className="bg-gray-900 text-gray-100">❌ Não</option>
+                                                        </select>
+                                                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-20">
+                                                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-2 p-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg">
+                                                        <p className="text-xs text-gray-300">
+                                                            {editForm.is_vip ? '👑 Usuário tem acesso VIP às músicas' : '🚫 Usuário sem acesso às músicas'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Uploader */}
+                                                <div className="group">
+                                                    <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                                        <Upload className="w-4 h-4 text-orange-400" />
+                                                        Uploader
+                                                    </label>
+                                                    <div className="relative">
+                                                        <select
+                                                            value={editForm.isUploader ? 'sim' : 'nao'}
+                                                            onChange={(e) => setEditForm(prev => ({
+                                                                ...prev,
+                                                                isUploader: e.target.value === 'sim'
+                                                            }))}
+                                                            className="w-full px-4 py-4 bg-gray-900/50 border border-gray-600/50 rounded-2xl text-gray-100 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-300 appearance-none cursor-pointer relative z-10"
+                                                        >
+                                                            <option value="sim" className="bg-gray-900 text-gray-100">📤 Sim</option>
+                                                            <option value="nao" className="bg-gray-900 text-gray-100">❌ Não</option>
+                                                        </select>
+                                                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-20">
+                                                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-2 p-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-lg">
+                                                        <p className="text-xs text-gray-300">
+                                                            {editForm.isUploader ? '📤 Pode fazer upload de até 10 músicas/mês' : '🚫 Sem permissão para upload'}
                                                         </p>
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
 
-                                            <div className="md:col-span-2">
+                                        <div className="md:col-span-2">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-300 mb-3">
-                                                        Senha Deezer Premium
+                                                        Deezer Premium Ativo
+                                                    </label>
+                                                    <select
+                                                        value={editForm.deezerPremium ? 'sim' : 'nao'}
+                                                        onChange={(e) => {
+                                                            const hasDeezerPremium = e.target.value === 'sim';
+                                                            // Não altera valor: apenas flag de acesso
+                                                            setEditForm(prev => ({
+                                                                ...prev,
+                                                                deezerPremium: hasDeezerPremium
+                                                            }));
+                                                        }}
+                                                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                    >
+                                                        <option value="sim" className="bg-gray-900">Sim</option>
+                                                        <option value="nao" className="bg-gray-900">Não</option>
+                                                    </select>
+                                                    <p className="text-xs text-gray-400 mt-2">
+                                                        {editForm.deezerPremium ? 'Usuário tem acesso ao Deezer Premium' : 'Usuário não tem acesso ao Deezer Premium'}
+                                                    </p>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                        Email Deezer Premium
                                                     </label>
                                                     <input
-                                                        type="password"
-                                                        value={editForm.deezerPassword || ''}
-                                                        onChange={(e) => setEditForm(prev => ({ ...prev, deezerPassword: e.target.value }))}
-                                                        placeholder="••••••••"
+                                                        type="email"
+                                                        value={editForm.deezerEmail || ''}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, deezerEmail: e.target.value }))}
+                                                        placeholder="email@deezer.com"
                                                         className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
                                                     />
                                                     <p className="text-xs text-gray-400 mt-2">
-                                                        Senha para acesso ao Deezer Premium
+                                                        Email para acesso ao Deezer Premium
                                                     </p>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Botões Modernos - Posicionados Abaixo */}
-                                    <div className="mt-10 pt-8 border-t border-gray-700/50">
-                                        <div className="flex flex-col gap-4">
-                                            {/* Botão Principal */}
-                                            <button
-                                                onClick={addNewUser}
-                                                disabled={updating !== null}
-                                                className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700 text-white rounded-2xl transition-all duration-300 disabled:opacity-50 font-semibold text-lg shadow-2xl hover:shadow-purple-500/25 transform hover:scale-[1.02] border border-purple-500/30 hover:border-purple-400/50"
-                                            >
-                                                {updating !== null ? (
-                                                    <div className="flex items-center justify-center gap-3">
-                                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                                        <span>Salvando...</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center justify-center gap-3">
-                                                                <Save className="w-5 h-5" />
-                                                                <span>Adicionar Usuário</span>
-                                                    </div>
-                                                )}
-                                            </button>
-
-                                            {/* Botão Secundário */}
-                                            <button
-                                                onClick={() => setShowAddModal(false)}
-                                                className="w-full px-8 py-3 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-gray-200 rounded-2xl transition-all duration-300 font-medium border border-gray-600 hover:border-gray-500 transform hover:scale-[1.01]"
-                                            >
-                                                <div className="flex items-center justify-center gap-3">
-                                                    <X className="w-5 h-5" />
-                                                    <span>Cancelar</span>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                    {/* Modal de Benefícios */}
-                    {showBenefitsModal && userForBenefits && (
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                            <div className="bg-gradient-to-br from-[#1B1C1D] to-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto text-white">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <Crown className="w-8 h-8 text-purple-400" />
-                                        <div>
-                                            <h3 className="text-xl font-semibold">Personalizar Benefícios</h3>
-                                            <p className="text-sm text-gray-400">
-                                                {userForBenefits?.name} - Plano VIP
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={closeBenefitsModal}
-                                        className="text-gray-400 hover:text-gray-300"
-                                    >
-                                        <X className="w-6 h-6" />
-                                    </button>
-                                </div>
-
-                                <div className="mb-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
-                                    <h4 className="font-semibold text-blue-400 mb-2">Benefícios do Plano Atual</h4>
-                                    <p className="text-sm text-gray-300">
-                                        Os benefícios abaixo são baseados no plano atual do usuário.
-                                        Você pode personalizar cada benefício individualmente para este usuário específico.
-                                    </p>
-                                </div>
-
-                                {/* Seção de Uso Atual dos Benefícios */}
-                                <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <h4 className="font-semibold text-white flex items-center gap-2">
-                                            📊 Uso Atual dos Benefícios
-                                        </h4>
-                                        <div className="text-xs text-gray-400">
-                                            Último reset semanal: {userForBenefits?.llastWeekReset
-                                                ? new Date(userForBenefits?.llastWeekReset).toLocaleDateString('pt-BR')
-                                                : 'Nunca'
-                                            }
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-xs text-gray-300">🎚️ Packs Semanais</span>
-                                                <span className="text-xs text-gray-400">Esta semana</span>
-                                            </div>
-                                            <div className="text-lg font-bold text-white">
-                                                {/* Calculate 'used' and 'limit' above, then use them here */}
-                                                {(() => {
-                                                    let used = userForBenefits?.wweeklyPackRequestsUsed || 0;
-                                                    let limit = 1;
-                                                    if (userForBenefits?.id) {
-                                                        const customUsed = customBenefits[userForBenefits.id]?.packRequests?.used;
-                                                        if (customUsed !== undefined) used = customUsed;
-                                                        const customBenefit = customBenefits[userForBenefits.id]?.packRequests;
-                                                        limit = customBenefit?.limit || 4; // Valor padrão para VIP BÁSICO
-                                                    }
-                                                    return `${used} / ${limit}`;
-                                                })()}
-                                            </div>
-                                            <div className="w-full bg-gray-800 rounded-full h-2 mt-2">
-                                                <div
-                                                    className="bg-blue-600 h-2 rounded-full transition-all"
-                                                    style={{
-                                                        width: (() => {
-                                                            let used = userForBenefits?.wweeklyPackRequestsUsed || 0;
-                                                            let limit = 1;
-                                                            if (userForBenefits?.id) {
-                                                                const customUsed = customBenefits[userForBenefits.id]?.packRequests?.used;
-                                                                if (customUsed !== undefined) used = customUsed;
-                                                                const customBenefit = customBenefits[userForBenefits.id]?.packRequests;
-                                                            limit = customBenefit?.limit || 4; // Valor padrão para VIP BÁSICO
-                                                            }
-                                                            return `${(used / Math.max(1, limit)) * 100}%`;
-                                                        })()
-                                                    }}
-                                                ></div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-xs text-gray-300">🎵 Playlists Semanais</span>
-                                                <span className="text-xs text-gray-400">Esta semana</span>
-                                            </div>
-                                            <div className="text-lg font-bold text-white">
-                                                {(() => {
-                                                    let used = userForBenefits?.wweeklyPlaylistDownloadsUsed || 0;
-                                                    let limit = 0;
-                                                    if (userForBenefits?.id) {
-                                                        const customUsed = customBenefits[userForBenefits.id]?.playlistDownloads?.used;
-                                                        if (customUsed !== undefined) used = customUsed;
-                                                        const customBenefit = customBenefits[userForBenefits.id]?.playlistDownloads;
-                                                        limit = customBenefit?.limit || 7; // Valor padrão para VIP BÁSICO
-                                                    }
-                                                    return `${used} / ${limit === -1 ? "∞" : limit}`;
-                                                })()}
-                                            </div>
-                                            <div className="w-full bg-gray-800 rounded-full h-2 mt-2">
-                                                <div
-                                                    className="bg-green-600 h-2 rounded-full transition-all"
-                                                    style={{
-                                                        width: `${(() => {
-                                                            let used = userForBenefits?.wweeklyPlaylistDownloadsUsed || 0;
-                                                            let limit = 1;
-                                                            if (userForBenefits?.id) {
-                                                                const customUsed = customBenefits[userForBenefits.id]?.playlistDownloads?.used;
-                                                                if (customUsed !== undefined) used = customUsed;
-                                                                const customBenefit = customBenefits[userForBenefits.id]?.playlistDownloads;
-                                                            limit = customBenefit?.limit || 7; // Valor padrão para VIP BÁSICO
-                                                            }
-                                                            if (limit === -1) return 100;
-                                                            return Math.min(100, (used / Math.max(1, limit)) * 100);
-                                                        })()}%`
-                                                    }}
-                                                ></div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-xs text-gray-300">⬇️ Downloads Diários</span>
-                                                <span className="text-xs text-gray-400">Hoje</span>
-                                            </div>
-                                            <div className="text-lg font-bold text-white">
-                                                {userForBenefits?.iddailyDownloadCount || 0}
-                                            </div>
-                                            <div className="text-xs text-gray-400 mt-1">
-                                                Último reset: {userForBenefits?.llastDownloadReset
-                                                    ? new Date(userForBenefits?.llastDownloadReset).toLocaleDateString('pt-BR')
-                                                    : 'Nunca'
-                                                }
+                                        <div className="md:col-span-2">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-300 mb-3">
+                                                    Senha Deezer Premium
+                                                </label>
+                                                <input
+                                                    type="password"
+                                                    value={editForm.deezerPassword || ''}
+                                                    onChange={(e) => setEditForm(prev => ({ ...prev, deezerPassword: e.target.value }))}
+                                                    placeholder="••••••••"
+                                                    className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-gray-100 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200"
+                                                />
+                                                <p className="text-xs text-gray-400 mt-2">
+                                                    Senha para acesso ao Deezer Premium
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Personalização de Benefícios */}
-                                <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
-                                    <h4 className="font-semibold text-white flex items-center gap-2 mb-4">
-                                        ⚙️ Personalizar Benefícios
-                                    </h4>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {/* Acesso ao Drive */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                📁 Acesso ao Drive Mensal
-                                            </label>
-                                            <select
-                                                value={userForBenefits?.id && customBenefits[userForBenefits.id]?.driveAccess?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id]?.driveAccess?.enabled.toString()
-                                                    : 'true'}
-                                                onChange={(e) => {
-                                                    const newValue = e.target.value === 'true';
-                                                    if (!userForBenefits?.id) return;
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            driveAccess: {
-                                                                ...prev[userForBenefits.id]?.driveAccess,
-                                                                enabled: newValue,
-                                                            },
-                                                        },
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                        </div>
-
-                                        {/* Solicitação de Packs */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🎚️ Solicitação de Packs
-                                            </label>
-                                            <div className="flex gap-2 mb-2">
-                                                <div className="flex-1">
-                                                    <label className="text-xs text-gray-300 mb-1 block">Disponível (4-10)</label>
-                                                    <input
-                                                        type="number"
-                                                        min="4"
-                                                        max="10"
-                                                        value={userForBenefits?.id && customBenefits[userForBenefits.id]?.packRequests?.limit !== undefined
-                                                            ? customBenefits[userForBenefits.id].packRequests.limit
-                                                            : 4}
-                                                        onChange={(e) => {
-                                                            if (!userForBenefits?.id) return;
-                                                            const newValue = parseInt(e.target.value);
-                                                            setCustomBenefits(prev => ({
-                                                                ...prev,
-                                                                [userForBenefits.id]: {
-                                                                    ...prev[userForBenefits.id],
-                                                                    packRequests: { ...prev[userForBenefits.id]?.packRequests, limit: newValue, enabled: true }
-                                                                }
-                                                            }));
-                                                        }}
-                                                        className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
-                                                    />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <label className="text-xs text-gray-300 mb-1 block">Usado (manual)</label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="10"
-                                                        value={userForBenefits?.id && customBenefits[userForBenefits.id]?.packRequests?.used !== undefined
-                                                            ? customBenefits[userForBenefits.id].packRequests.used
-                                                            : (userForBenefits?.wweeklyPackRequestsUsed || 0)}
-                                                        onChange={(e) => {
-                                                            if (!userForBenefits?.id) return;
-                                                            const newValue = parseInt(e.target.value) || 0;
-                                                            setCustomBenefits(prev => ({
-                                                                ...prev,
-                                                                [userForBenefits.id]: {
-                                                                    ...prev[userForBenefits.id],
-                                                                    packRequests: { ...prev[userForBenefits.id]?.packRequests, used: newValue }
-                                                                }
-                                                            }));
-                                                        }}
-                                                        className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="text-xs text-gray-400">
-                                                {userForBenefits?.id && customBenefits[userForBenefits.id]?.packRequests?.used !== undefined
-                                                    ? customBenefits[userForBenefits.id].packRequests.used
-                                                    : (userForBenefits?.wweeklyPackRequestsUsed || 0)
-                                                } de {userForBenefits?.id && customBenefits[userForBenefits.id]?.packRequests?.limit !== undefined
-                                                    ? customBenefits[userForBenefits.id].packRequests.limit
-                                                    : 4} usados
-                                            </div>
-                                        </div>
-
-                                        {/* Conteúdos Avulsos */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                📦 Conteúdos Avulsos
-                                            </label>
-                                            <select
-                                                value={userForBenefits?.id && customBenefits[userForBenefits.id]?.individualContent?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].individualContent.enabled.toString()
-                                                    : 'true'}
-                                                onChange={(e) => {
-                                                    if (!userForBenefits?.id) return;
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            individualContent: { ...prev[userForBenefits.id]?.individualContent, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                        </div>
-
-                                        {/* Packs Extras */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🔥 Packs Extras
-                                            </label>
-                                            <select
-                                                value={userForBenefits?.id && customBenefits[userForBenefits.id]?.extraPacks?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].extraPacks.enabled.toString()
-                                                    : 'true'}
-                                                onChange={(e) => {
-                                                    if (!userForBenefits?.id) return;
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            extraPacks: { ...prev[userForBenefits.id]?.extraPacks, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                        </div>
-
-                                        {/* Download de Playlists */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🎵 Download de Playlists
-                                            </label>
-                                            <div className="flex gap-2 mb-2">
-                                                <div className="flex-1">
-                                                    <label className="text-xs text-gray-300 mb-1 block">Disponível (7-15)</label>
-                                                    <input
-                                                        type="number"
-                                                        min="7"
-                                                        max="15"
-                                                        value={userForBenefits?.id && customBenefits[userForBenefits.id]?.playlistDownloads?.limit !== undefined
-                                                            ? (customBenefits[userForBenefits.id].playlistDownloads.limit === -1 ? 15 : customBenefits[userForBenefits.id].playlistDownloads.limit)
-                                                            : 7}
-                                                        onChange={(e) => {
-                                                            if (!userForBenefits?.id) return;
-                                                            const newValue = parseInt(e.target.value);
-                                                            setCustomBenefits(prev => ({
-                                                                ...prev,
-                                                                [userForBenefits.id]: {
-                                                                    ...prev[userForBenefits.id],
-                                                                    playlistDownloads: { ...prev[userForBenefits.id]?.playlistDownloads, limit: newValue, enabled: true }
-                                                                }
-                                                            }));
-                                                        }}
-                                                        className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
-                                                    />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <label className="text-xs text-gray-300 mb-1 block">Usado (manual)</label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="15"
-                                                        value={userForBenefits?.id && customBenefits[userForBenefits.id]?.playlistDownloads?.used !== undefined
-                                                            ? customBenefits[userForBenefits.id].playlistDownloads.used
-                                                            : (userForBenefits?.wweeklyPlaylistDownloadsUsed || 0)}
-                                                        onChange={(e) => {
-                                                            if (!userForBenefits?.id) return;
-                                                            const newValue = parseInt(e.target.value) || 0;
-                                                            setCustomBenefits(prev => ({
-                                                                ...prev,
-                                                                [userForBenefits.id]: {
-                                                                    ...prev[userForBenefits.id],
-                                                                    playlistDownloads: { ...prev[userForBenefits.id]?.playlistDownloads, used: newValue }
-                                                                }
-                                                            }));
-                                                        }}
-                                                        className="w-full bg-gray-600 text-white border border-gray-500 rounded px-2 py-1 text-sm"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="text-xs text-gray-400">
-                                                {(userForBenefits?.id && customBenefits[userForBenefits.id]?.playlistDownloads?.used !== undefined)
-                                                    ? customBenefits[userForBenefits.id].playlistDownloads.used
-                                                    : (userForBenefits?.wweeklyPlaylistDownloadsUsed || 0)
-                                                } de {(userForBenefits?.id && customBenefits[userForBenefits.id]?.playlistDownloads?.limit !== undefined)
-                                                    ? (customBenefits[userForBenefits.id].playlistDownloads.limit === -1 ? "∞" : customBenefits[userForBenefits.id].playlistDownloads.limit)
-                                                    : 7} usados
-                                            </div>
-                                        </div>
-
-                                        {/* Deezer Premium */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🎁 Deezer Premium Grátis
-                                            </label>
-                                            <select
-                                                value={userForBenefits?.id && customBenefits[userForBenefits.id]?.deezerPremium?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].deezerPremium.enabled.toString()
-                                                    : 'false'}
-                                                onChange={(e) => {
-                                                    if (!userForBenefits?.id) return;
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            deezerPremium: { ...prev[userForBenefits.id]?.deezerPremium, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                        </div>
-
-                                        {/* Desconto no Deemix */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                💸 Desconto no Deemix
-                                            </label>
-                                            <select
-                                                value={userForBenefits?.id && customBenefits[userForBenefits.id]?.deemixDiscount?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].deemixDiscount.enabled.toString()
-                                                    : 'false'}
-                                                onChange={(e) => {
-                                                    if (!userForBenefits?.id) return;
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            deemixDiscount: { ...prev[userForBenefits.id]?.deemixDiscount, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                        </div>
-
-                                        {/* ARL Premium */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🔐 ARL Premium para Deemix
-                                            </label>
-                                            <select
-                                                value={userForBenefits?.id && customBenefits[userForBenefits.id]?.arlPremium?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].arlPremium.enabled.toString()
-                                                    : (
-                                                        userForBenefits?.id && (customBenefits[userForBenefits.id]?.deemixDiscount?.enabled !== undefined
-                                                            ? customBenefits[userForBenefits.id].deemixDiscount.enabled
-                                                            : false)
-                                                            ? 'true' : 'false'
-                                                    )}
-                                                disabled={!(userForBenefits?.id && customBenefits[userForBenefits.id]?.deemixDiscount?.enabled)}
-                                                onChange={(e) => {
-                                                    if (!userForBenefits?.id) return;
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            arlPremium: { ...prev[userForBenefits.id]?.arlPremium, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm disabled:opacity-50"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                            <p className="text-xs text-gray-400 mt-1">
-                                                {!(userForBenefits?.id && customBenefits[userForBenefits.id]?.deemixDiscount?.enabled)
-                                                    ? 'Ativar Deemix primeiro'
-                                                    : 'Aplica automaticamente se Deemix ativo'}
-                                            </p>
-                                        </div>
-
-                                        {/* Produção Musical */}
-                                        <div className="bg-gray-700 rounded-lg p-3">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2 mb-2">
-                                                🎼 Produção da sua Música
-                                            </label>
-                                            <select
-                                                value={userForBenefits?.id && customBenefits[userForBenefits.id]?.musicProduction?.enabled !== undefined
-                                                    ? customBenefits[userForBenefits.id].musicProduction.enabled.toString()
-                                                    : 'false'}
-                                                onChange={(e) => {
-                                                    if (!userForBenefits?.id) return;
-                                                    const newValue = e.target.value === 'true';
-                                                    setCustomBenefits(prev => ({
-                                                        ...prev,
-                                                        [userForBenefits.id]: {
-                                                            ...prev[userForBenefits.id],
-                                                            musicProduction: { ...prev[userForBenefits.id]?.musicProduction, enabled: newValue }
-                                                        }
-                                                    }));
-                                                }}
-                                                className="w-full bg-gray-600 text-white border border-gray-500 rounded px-3 py-2 text-sm"
-                                            >
-                                                <option value="true">Sim</option>
-                                                <option value="false">Não</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    {/* Botão Salvar Benefícios */}
-                                    <div className="mt-4 pt-4 border-t border-gray-600">
+                                {/* Botões Modernos - Posicionados Abaixo */}
+                                <div className="mt-10 pt-8 border-t border-gray-700/50">
+                                    <div className="flex flex-col gap-4">
+                                        {/* Botão Principal */}
                                         <button
-                                            onClick={async () => {
-                                                try {
-                                                    if (!userForBenefits || !userForBenefits.id) {
-                                                        alert('Usuário inválido para salvar benefícios.');
-                                                        return;
-                                                    }
-                                                    console.log('💾 Salvando benefícios para usuário:', userForBenefits.id);
-                                                    console.log('📋 Benefícios:', customBenefits[userForBenefits.id] || {});
-
-                                                    // Mapear campos para API
-                                                    const cb = customBenefits[userForBenefits.id] || {};
-                                                    const mappedBenefits = {
-                                                        ...cb,
-                                                        weeklyPackRequests: cb.packRequests?.limit,
-                                                        wweeklyPackRequestsUsed: cb.packRequests?.used,
-                                                        weeklyPlaylistDownloads: cb.playlistDownloads?.limit,
-                                                        wweeklyPlaylistDownloadsUsed: cb.playlistDownloads?.used,
-                                                    };
-
-                                                    const requestBody = {
-                                                        userId: userForBenefits.id,
-                                                        customBenefits: mappedBenefits
-                                                    };
-
-                                                    console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
-
-                                                    const response = await fetch('/api/admin/update-custom-benefits', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        credentials: 'include',
-                                                        body: JSON.stringify(requestBody)
-                                                    });
-
-                                                    const responseData = await response.json();
-                                                    console.log('📡 Resposta da API:', responseData);
-
-                                                    if (response.ok) {
-                                                        console.log('✅ Benefícios salvos com sucesso!');
-                                                        alert('Benefícios personalizados salvos com sucesso!');
-                                                        window.location.reload();
-                                                    } else {
-                                                        console.error('❌ Erro na API:', responseData);
-                                                        const errorMessage = responseData.error || responseData.details || 'Erro desconhecido';
-                                                        alert(`Erro ao salvar benefícios personalizados: ${errorMessage}`);
-                                                    }
-                                                } catch (error) {
-                                                    console.error('❌ Erro ao salvar benefícios:', error);
-                                                    alert(`Erro ao salvar benefícios personalizados: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
-                                                }
-                                            }}
-                                            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
+                                            onClick={addNewUser}
+                                            disabled={updating !== null}
+                                            className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700 text-white rounded-2xl transition-all duration-300 disabled:opacity-50 font-semibold text-lg shadow-2xl hover:shadow-purple-500/25 transform hover:scale-[1.02] border border-purple-500/30 hover:border-purple-400/50"
                                         >
-                                            💾 Salvar Benefícios Personalizados
+                                            {updating !== null ? (
+                                                <div className="flex items-center justify-center gap-3">
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                    <span>Salvando...</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-center gap-3">
+                                                    <Save className="w-5 h-5" />
+                                                    <span>Adicionar Usuário</span>
+                                                </div>
+                                            )}
+                                        </button>
+
+                                        {/* Botão Secundário */}
+                                        <button
+                                            onClick={() => setShowAddModal(false)}
+                                            className="w-full px-8 py-3 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-gray-200 rounded-2xl transition-all duration-300 font-medium border border-gray-600 hover:border-gray-500 transform hover:scale-[1.01]"
+                                        >
+                                            <div className="flex items-center justify-center gap-3">
+                                                <X className="w-5 h-5" />
+                                                <span>Cancelar</span>
+                                            </div>
                                         </button>
                                     </div>
-                                </div>
-
-                                {/* Ações de Gerenciamento */}
-                                <div className="mb-6 flex flex-wrap gap-3">
-                                    <button
-                                        onClick={async () => {
-                                            if (confirm('Tem certeza que deseja resetar os contadores semanais deste usuário?')) {
-                                                try {
-                                                    const response = await fetch('/api/admin/reset-weekly-counters', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ userId: userForBenefits?.id })
-                                                    });
-
-                                                    if (response.ok) {
-                                                        alert('Contadores semanais resetados com sucesso!');
-                                                        window.location.reload();
-                                                    } else {
-                                                        alert('Erro ao resetar contadores');
-                                                    }
-                                                } catch (error) {
-                                                    alert('Erro ao resetar contadores');
-                                                }
-                                            }
-                                        }}
-                                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm transition-colors"
-                                    >
-                                        🔄 Resetar Contadores Semanais
-                                    </button>
-
-                                    <button
-                                        onClick={async () => {
-                                            if (confirm('Tem certeza que deseja resetar o contador diário de downloads deste usuário?')) {
-                                                try {
-                                                    const response = await fetch('/api/admin/reset-daily-counter', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ userId: userForBenefits?.id })
-                                                    });
-
-                                                    if (response.ok) {
-                                                        alert('Contador diário resetado com sucesso!');
-                                                        window.location.reload();
-                                                    } else {
-                                                        alert('Erro ao resetar contador diário');
-                                                    }
-                                                } catch (error) {
-                                                    alert('Erro ao resetar contador diário');
-                                                }
-                                            }
-                                        }}
-                                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg"
-                                    >
-                                        ⬇️ Resetar Contador Diário
-                                    </button>
                                 </div>
                             </div>
                         </div>
                     )}
+
+                    {/* Modal de Benefícios */}
+
                 </div>
             </div>
         </AdminAuth>

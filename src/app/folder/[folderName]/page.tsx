@@ -99,32 +99,93 @@ export default function FolderPage() {
         }
     }, [selectedStyle, tracks]);
 
+    // Estado para contador em tempo real
+    const [availableTracksCount, setAvailableTracksCount] = useState(0);
+
     // Calcular quantas músicas estão disponíveis para download
-    const getAvailableTracksCount = () => {
+    const getAvailableTracksCount = useCallback(() => {
         if (!filteredTracks.length) return 0;
 
-        return filteredTracks.filter(track => {
-            // Verificar se não foi baixada no localStorage (antigos)
-            const notInLocalStorage = !downloadedTrackIds.includes(track.id);
-            // Por enquanto, considerar todas como disponíveis
-            return notInLocalStorage;
+        const availableCount = filteredTracks.filter(track => {
+            return !downloadedTrackIds.includes(track.id);
         }).length;
-    };
+
+        console.log('🔍 getAvailableTracksCount:', {
+            totalTracks: filteredTracks.length,
+            downloadedIds: downloadedTrackIds.length,
+            availableCount
+        });
+
+        return availableCount;
+    }, [filteredTracks, downloadedTrackIds]);
+
+    // Função para atualizar contador automaticamente
+    const updateAvailableTracksCount = useCallback(() => {
+        const count = getAvailableTracksCount();
+        setAvailableTracksCount(count);
+        console.log('🔄 Contador atualizado automaticamente:', count);
+    }, [getAvailableTracksCount]);
+
+    // Atualizar contador sempre que downloadedTrackIds mudar
+    useEffect(() => {
+        updateAvailableTracksCount();
+    }, [downloadedTrackIds, updateAvailableTracksCount]);
+
+    // Atualizar contador sempre que filteredTracks mudar
+    useEffect(() => {
+        updateAvailableTracksCount();
+    }, [filteredTracks, updateAvailableTracksCount]);
+
+    // Função para obter tracks disponíveis para download
+    const getAvailableTracks = useCallback(() => {
+        if (!filteredTracks.length) return [];
+
+        const availableTracks = filteredTracks.filter(track => {
+            return !downloadedTrackIds.includes(track.id);
+        });
+
+        console.log('🔍 getAvailableTracks:', {
+            totalTracks: filteredTracks.length,
+            downloadedIds: downloadedTrackIds.length,
+            availableTracks: availableTracks.length
+        });
+
+        return availableTracks;
+    }, [filteredTracks, downloadedTrackIds]);
 
     useEffect(() => {
-        const saved = localStorage.getItem('downloadedTrackIds');
-        if (saved) {
-            try { setDownloadedTrackIds(JSON.parse(saved)); } catch { }
-        }
+        syncDownloadedTrackIds();
     }, []);
 
     const handleDownloadedTrackIdsChange = (newIds: number[] | ((prev: number[]) => number[])) => {
         if (typeof newIds === 'function') {
-            setDownloadedTrackIds(newIds);
+            setDownloadedTrackIds(prev => {
+                const result = newIds(prev);
+                localStorage.setItem('downloadedTrackIds', JSON.stringify(result));
+                // Forçar atualização do contador
+                setTimeout(() => updateAvailableTracksCount(), 0);
+                return result;
+            });
         } else {
             setDownloadedTrackIds(newIds);
+            localStorage.setItem('downloadedTrackIds', JSON.stringify(newIds));
+            // Forçar atualização do contador
+            setTimeout(() => updateAvailableTracksCount(), 0);
         }
-        localStorage.setItem('downloadedTrackIds', JSON.stringify(typeof newIds === 'function' ? newIds(downloadedTrackIds) : newIds));
+    };
+
+    // Função para sincronizar estado com localStorage
+    const syncDownloadedTrackIds = () => {
+        const saved = localStorage.getItem('downloadedTrackIds');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                setDownloadedTrackIds(parsed);
+                console.log('🔄 Sincronizando downloadedTrackIds com localStorage:', parsed.length, 'IDs');
+            } catch (error) {
+                console.error('❌ Erro ao sincronizar downloadedTrackIds:', error);
+            }
+        }
     };
 
     useEffect(() => {
@@ -223,7 +284,14 @@ export default function FolderPage() {
                             // Simular download
                             await new Promise(resolve => setTimeout(resolve, 500));
 
-                            setDownloadedTrackIds(prev => [...prev, track.id]);
+                            setDownloadedTrackIds(prev => {
+                                const newIds = [...prev, track.id];
+                                // Sincronizar com localStorage
+                                localStorage.setItem('downloadedTrackIds', JSON.stringify(newIds));
+                                // Forçar atualização do contador em tempo real
+                                setTimeout(() => updateAvailableTracksCount(), 0);
+                                return newIds;
+                            });
                             setBatchProgress(prev => ({
                                 ...prev,
                                 downloaded: prev.downloaded + 1
@@ -254,6 +322,10 @@ export default function FolderPage() {
         } finally {
             setIsBatchDownloading(false);
             setBatchProgress({ total: 0, downloaded: 0, failed: 0, skipped: 0, currentTrack: '', failedDetails: [] });
+
+            // Sincronizar estado após download em lote
+            syncDownloadedTrackIds();
+            console.log('🔄 Estado sincronizado após download em lote');
         }
     };
 
@@ -376,6 +448,54 @@ export default function FolderPage() {
 
                             {/* Botões de Download */}
                             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                                {/* Botão de Debug - Temporário */}
+                                <button
+                                    onClick={() => {
+                                        console.log('🔍 Debug - Estado atual:');
+                                        console.log('📊 filteredTracks:', filteredTracks.length);
+                                        console.log('💾 downloadedTrackIds (estado):', downloadedTrackIds.length);
+                                        console.log('💾 localStorage downloadedTrackIds:', JSON.parse(localStorage.getItem('downloadedTrackIds') || '[]').length);
+                                        console.log('💾 localStorage downloadedTracks:', JSON.parse(localStorage.getItem('downloadedTracks') || '[]').length);
+
+                                        // Forçar sincronização
+                                        syncDownloadedTrackIds();
+
+                                        // Recalcular contagem
+                                        const newCount = getAvailableTracksCount();
+                                        console.log('🔄 Nova contagem após sincronização:', newCount);
+
+                                        showToast(`🔍 Debug: ${newCount} tracks disponíveis`, 'info');
+                                    }}
+                                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm"
+                                >
+                                    🔍 Debug
+                                </button>
+
+                                {/* Botão de Sincronização Forçada */}
+                                <button
+                                    onClick={() => {
+                                        console.log('🔄 Forçando sincronização de estado...');
+
+                                        // 1. Marcar TODAS as tracks como baixadas
+                                        const allTrackIds = filteredTracks.map(track => track.id);
+                                        console.log('📝 Marcando todas as tracks como baixadas:', allTrackIds.length);
+
+                                        // 2. Atualizar estado local
+                                        setDownloadedTrackIds(allTrackIds);
+
+                                        // 3. Atualizar localStorage
+                                        localStorage.setItem('downloadedTrackIds', JSON.stringify(allTrackIds));
+
+                                        // 4. Recalcular contagem
+                                        const newCount = getAvailableTracksCount();
+                                        console.log('🔄 Nova contagem após sincronização forçada:', newCount);
+
+                                        showToast(`🔄 Estado sincronizado! ${newCount} tracks disponíveis`, 'success');
+                                    }}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                                >
+                                    🔄 Sincronizar Estado
+                                </button>
                                 <button
                                     onClick={() => downloadTracksInBatches(filteredTracks)}
                                     disabled={isBatchDownloading || filteredTracks.length === 0}
@@ -387,18 +507,18 @@ export default function FolderPage() {
 
                                 <button
                                     onClick={() => {
-                                        const newTracks = filteredTracks.filter(track => !downloadedTrackIds.includes(track.id));
-                                        if (newTracks.length > 0) {
-                                            downloadTracksInBatches(newTracks);
+                                        const availableTracks = getAvailableTracks();
+                                        if (availableTracks.length > 0) {
+                                            downloadTracksInBatches(availableTracks);
                                         } else {
-                                            showToast('Todas as músicas já foram baixadas!', 'info');
+                                            showToast('✅ Todas as músicas já foram baixadas!', 'info');
                                         }
                                     }}
-                                    disabled={isBatchDownloading || filteredTracks.length === 0}
+                                    disabled={isBatchDownloading || availableTracksCount === 0}
                                     className="flex items-center justify-center gap-3 px-8 py-3 bg-[#282828] text-white rounded-xl hover:bg-[#3e3e3e] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg border border-[#3e3e3e] shadow-lg hover:shadow-xl"
                                 >
                                     <RefreshCw className="w-5 h-5" />
-                                    Baixar Novas ({getAvailableTracksCount()})
+                                    Baixar Novas ({availableTracksCount})
                                 </button>
                             </div>
 

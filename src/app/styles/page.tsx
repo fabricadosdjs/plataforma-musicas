@@ -5,14 +5,15 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Music, Download, Users } from "lucide-react";
-import MainLayout from "@/components/layout/MainLayout";
-import FooterSpacer from "@/components/layout/FooterSpacer";
+import { ArrowLeft, Music, Download, Users, TrendingUp, Calendar } from "lucide-react";
+import Header from "@/components/layout/Header";
 
 interface Style {
     name: string;
     trackCount: number;
     downloadCount: number;
+    lastUpdated?: string;
+    hasUpdatesToday?: boolean;
 }
 
 export default function StylesPage() {
@@ -49,126 +50,203 @@ export default function StylesPage() {
         style.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    // Função para verificar se o estilo foi atualizado hoje
+    const isUpdatedToday = (style: Style): boolean => {
+        if (style.hasUpdatesToday) return true;
+
+        if (style.lastUpdated) {
+            const today = new Date();
+            const lastUpdate = new Date(style.lastUpdated);
+            return today.toDateString() === lastUpdate.toDateString();
+        }
+
+        return false;
+    };
+
     const goBack = () => {
-        router.back();
+        window.history.back();
     };
 
     return (
-        <MainLayout>
-            <div className="min-h-screen bg-[#121212] overflow-x-hidden">
-                {/* Header */}
-                <div className="w-full max-w-6xl mx-auto mt-4 sm:mt-8 mb-8 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
-                    <div className="flex items-center gap-4 mb-6">
+        <div className="min-h-screen bg-[#121212] overflow-x-hidden">
+            {/* Header Fixo */}
+            <Header />
+
+            {/* Conteúdo Principal - Tela Cheia */}
+            <div className="pt-12 lg:pt-16">
+                {/* Header dos Estilos */}
+                <div className="w-full bg-gradient-to-b from-[#1db954]/20 to-transparent">
+                    <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8 sm:py-12">
+                        {/* Botão Voltar */}
                         <button
                             onClick={goBack}
-                            className="p-2 bg-[#181818] hover:bg-[#282828] rounded-lg text-white transition-all duration-300 hover:scale-105"
+                            className="flex items-center gap-2 text-[#b3b3b3] hover:text-white transition-colors mb-6"
                         >
                             <ArrowLeft className="w-5 h-5" />
+                            Voltar
                         </button>
-                        <div>
-                            <h1 className="text-white text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+
+                        {/* Informações dos Estilos */}
+                        <div className="text-center">
+                            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
                                 Todos os Estilos
                             </h1>
-                            <p className="text-[#b3b3b3] text-sm sm:text-base mt-2">
-                                Explore todos os estilos musicais disponíveis na plataforma
-                            </p>
-                        </div>
-                    </div>
 
-                    {/* Barra de busca */}
-                    <div className="mb-6">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder="Buscar estilos..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-12 pr-4 py-3 bg-[#282828] border border-[#3e3e3e] rounded-xl text-white placeholder-[#b3b3b3] focus:outline-none focus:ring-2 focus:ring-[#1db954]/50 focus:border-[#1db954]/50 transition-all duration-300"
-                            />
-                            <Music className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#b3b3b3]" />
-                        </div>
-                    </div>
+                            {/* Informações Adicionais */}
+                            <div className="max-w-3xl mx-auto mb-8">
+                                <div className="bg-[#181818] rounded-xl p-6 border border-[#282828] mb-6">
+                                    <div className="text-[#b3b3b3] text-sm leading-relaxed">
+                                        Explore todos os estilos musicais disponíveis em nossa plataforma. Descubra novos gêneros,
+                                        artistas e músicas que combinam com seu gosto musical. Cada estilo oferece uma experiência
+                                        única e diversificada para expandir seu repertório musical.
+                                    </div>
+                                </div>
+                            </div>
 
-                    {/* Estatísticas gerais */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                        <div className="bg-[#181818]/80 backdrop-blur-sm rounded-xl p-4 border border-[#282828]/50 text-center">
-                            <div className="w-12 h-12 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-xl flex items-center justify-center mx-auto mb-3">
-                                <Music className="h-6 w-6 text-white" />
-                            </div>
-                            <div className="text-2xl font-bold text-[#1db954] mb-1">
-                                {styles.length}
-                            </div>
-                            <div className="text-[#b3b3b3] text-sm">Estilos Disponíveis</div>
-                        </div>
+                            {/* Estatísticas */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-2xl mx-auto">
+                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
+                                        {filteredStyles.length}
+                                    </div>
+                                    <div className="text-[#b3b3b3] text-sm">
+                                        {filteredStyles.length === 1 ? 'Estilo' : 'Estilos'}
+                                    </div>
+                                </div>
 
-                        <div className="bg-[#181818]/80 backdrop-blur-sm rounded-xl p-4 border border-[#282828]/50 text-center">
-                            <div className="w-12 h-12 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-xl flex items-center justify-center mx-auto mb-3">
-                                <Download className="h-6 w-6 text-white" />
-                            </div>
-                            <div className="text-2xl font-bold text-[#1db954] mb-1">
-                                {styles.reduce((sum, style) => sum + style.downloadCount, 0)}
-                            </div>
-                            <div className="text-[#b3b3b3] text-sm">Total de Downloads</div>
-                        </div>
+                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
+                                        {filteredStyles.reduce((sum, style) => sum + style.trackCount, 0)}
+                                    </div>
+                                    <div className="text-[#b3b3b3] text-sm">Músicas</div>
+                                </div>
 
-                        <div className="bg-[#181818]/80 backdrop-blur-sm rounded-xl p-4 border border-[#282828]/50 text-center">
-                            <div className="w-12 h-12 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-xl flex items-center justify-center mx-auto mb-3">
-                                <Users className="h-6 w-6 text-white" />
+                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
+                                        {filteredStyles.reduce((sum, style) => sum + style.downloadCount, 0)}
+                                    </div>
+                                    <div className="text-[#b3b3b3] text-sm">Downloads</div>
+                                </div>
+
+                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
+                                        {Math.round(filteredStyles.reduce((sum, style) => sum + style.downloadCount, 0) / Math.max(filteredStyles.length, 1))}
+                                    </div>
+                                    <div className="text-[#b3b3b3] text-sm">Média/Estilo</div>
+                                </div>
                             </div>
-                            <div className="text-2xl font-bold text-[#1db954] mb-1">
-                                {styles.reduce((sum, style) => sum + style.trackCount, 0)}
+
+                            {/* Barra de busca */}
+                            <div className="mt-8 max-w-2xl mx-auto">
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar estilos..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onFocus={(e) => e.target.select()}
+                                        className="w-full pl-12 pr-4 py-3 bg-[#181818] border border-[#282828] rounded-xl text-white placeholder-[#b3b3b3] focus:outline-none focus:ring-2 focus:ring-[#1db954]/50 focus:border-[#1db954]/50 transition-all duration-300 z-10 relative"
+                                    />
+                                    <Music className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#b3b3b3] pointer-events-none" />
+                                </div>
                             </div>
-                            <div className="text-[#b3b3b3] text-sm">Total de Músicas</div>
                         </div>
                     </div>
                 </div>
 
-                {/* Lista de estilos */}
-                <div className="w-full max-w-6xl mx-auto mb-8 px-3 sm:px-6 md:px-8 lg:pl-6 lg:pr-16 xl:pl-8 xl:pr-20 2xl:pl-10 2xl:pr-24">
+                {/* Lista de Estilos */}
+                <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8">
                     {loading ? (
-                        // Loading skeleton
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {[...Array(9)].map((_, index) => (
-                                <div key={index} className="bg-[#181818] rounded-xl p-6 border border-[#282828] animate-pulse">
-                                    <div className="w-12 h-12 bg-[#282828] rounded-lg mx-auto mb-4"></div>
-                                    <div className="h-4 bg-[#282828] rounded mb-2"></div>
-                                    <div className="h-3 bg-[#282828] rounded mb-1"></div>
-                                    <div className="h-3 bg-[#282828] rounded"></div>
-                                </div>
-                            ))}
+                        <div className="flex items-center justify-center py-16">
+                            <div className="text-center">
+                                <div className="animate-spin w-12 h-12 border-4 border-[#1db954] border-t-transparent rounded-full mx-auto mb-4"></div>
+                                <p className="text-[#b3b3b3] text-lg">
+                                    Carregando estilos musicais...
+                                </p>
+                            </div>
                         </div>
-                    ) : filteredStyles.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ) : filteredStyles.length === 0 ? (
+                        <div className="text-center py-16">
+                            <div className="bg-[#181818] rounded-2xl p-8 max-w-md mx-auto border border-[#282828]">
+                                <div className="text-6xl mb-4">🎵</div>
+                                <h3 className="text-xl font-bold text-white mb-2">
+                                    Nenhum estilo encontrado
+                                </h3>
+                                <p className="text-[#b3b3b3] mb-6">
+                                    {searchQuery
+                                        ? `Não encontramos estilos que correspondam a "${searchQuery}".`
+                                        : 'Não encontramos estilos musicais disponíveis.'
+                                    }
+                                </p>
+                                <button
+                                    onClick={goBack}
+                                    className="px-6 py-2 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] transition-colors font-medium"
+                                >
+                                    Voltar
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                             {filteredStyles.map((style, index) => (
                                 <div
                                     key={style.name}
-                                    className="group bg-[#181818] rounded-xl border border-[#282828] p-6 hover:scale-105 transition-all duration-300 hover:border-[#1db954]/50 hover:shadow-lg hover:shadow-[#1db954]/10 cursor-pointer"
-                                    onClick={() => router.push(`/genre/${encodeURIComponent(style.name)}`)}
+                                    className="group bg-[#181818] rounded-xl border border-[#282828] p-4 hover:scale-105 transition-all duration-300 hover:border-[#1db954]/50 hover:shadow-lg hover:shadow-[#1db954]/10 cursor-pointer relative"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        router.push(`/genre/${encodeURIComponent(style.name)}`);
+                                    }}
                                 >
+                                    {/* Badge de posição para top estilos */}
+                                    {index < 10 && (
+                                        <div
+                                            className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-full flex items-center justify-center shadow-lg pointer-events-none"
+                                        >
+                                            <span className="text-white text-xs font-bold">
+                                                {index + 1}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Badge de "ATUALIZADO HOJE" */}
+                                    {isUpdatedToday(style) && (
+                                        <div className="absolute -top-2 -left-2 w-6 h-6 bg-gradient-to-br from-[#ff6b35] to-[#f7931e] rounded-full flex items-center justify-center shadow-lg pointer-events-none">
+                                            <span className="text-white text-xs font-bold">🔥</span>
+                                        </div>
+                                    )}
+
                                     {/* Ícone do estilo */}
-                                    <div className="w-12 h-12 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                                        <Music className="h-6 w-6 text-white" />
+                                    <div
+                                        className="w-10 h-10 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            router.push(`/genre/${encodeURIComponent(style.name)}`);
+                                        }}
+                                    >
+                                        <Music className="h-5 w-5 text-white" />
                                     </div>
 
                                     {/* Nome do estilo */}
-                                    <h3 className="text-white text-lg font-bold mb-3 text-center">
+                                    <h3 className="text-white text-sm font-bold mb-2 text-center">
                                         {style.name}
                                     </h3>
 
                                     {/* Estatísticas */}
-                                    <div className="space-y-2 text-center">
-                                        <div className="flex items-center justify-center gap-2 text-[#1db954] text-sm font-semibold">
-                                            <Music className="w-4 h-4" />
+                                    <div className="space-y-1 text-center">
+                                        <div className="flex items-center justify-center gap-1 text-[#1db954] text-xs font-semibold">
+                                            <Music className="w-3 h-3" />
                                             <span>{style.trackCount} músicas</span>
                                         </div>
-                                        <div className="flex items-center justify-center gap-2 text-[#b3b3b3] text-sm">
-                                            <Download className="w-4 h-4" />
+                                        <div className="flex items-center justify-center gap-1 text-[#b3b3b3] text-xs">
+                                            <Download className="w-3 h-3" />
                                             <span>{style.downloadCount} downloads</span>
                                         </div>
                                     </div>
 
                                     {/* Indicador de popularidade */}
-                                    <div className="mt-4 flex justify-center">
+                                    <div className="mt-2 flex justify-center">
                                         <div className="flex space-x-1">
                                             {[...Array(5)].map((_, i) => (
                                                 <div
@@ -182,29 +260,26 @@ export default function StylesPage() {
                                         </div>
                                     </div>
 
+                                    {/* Indicador de última atualização */}
+                                    {style.lastUpdated && (
+                                        <div className="mt-2 text-center">
+                                            <div className={`text-xs font-medium ${isUpdatedToday(style)
+                                                    ? 'text-[#ff6b35]'
+                                                    : 'text-[#b3b3b3]'
+                                                }`}>
+                                                {isUpdatedToday(style) ? '🔥 Atualizado hoje' : `Atualizado: ${new Date(style.lastUpdated).toLocaleDateString('pt-BR')}`}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Hover effect */}
                                     <div className="absolute inset-0 bg-gradient-to-br from-[#1db954]/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                 </div>
                             ))}
                         </div>
-                    ) : (
-                        // Nenhum resultado encontrado
-                        <div className="text-center py-12">
-                            <div className="w-16 h-16 bg-[#282828] rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Music className="w-8 h-8 text-[#b3b3b3]" />
-                            </div>
-                            <h3 className="text-white text-lg font-semibold mb-2">
-                                Nenhum estilo encontrado
-                            </h3>
-                            <p className="text-[#b3b3b3] text-sm">
-                                {searchQuery ? `Nenhum estilo encontrado para "${searchQuery}"` : 'Não há estilos disponíveis no momento'}
-                            </p>
-                        </div>
                     )}
                 </div>
-
-                <FooterSpacer />
             </div>
-        </MainLayout>
+        </div>
     );
 }

@@ -5,9 +5,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
     try {
+        console.log('🔍 API Download: Iniciando requisição');
+
         const session = await getServerSession(authOptions);
 
         if (!session?.user) {
+            console.log('❌ API Download: Usuário não autenticado');
             return NextResponse.json(
                 { error: 'Não autorizado' },
                 { status: 401 }
@@ -15,8 +18,10 @@ export async function POST(request: NextRequest) {
         }
 
         const { trackId } = await request.json();
+        console.log('🔍 API Download: Track ID recebido:', trackId);
 
         if (!trackId) {
+            console.log('❌ API Download: Track ID não fornecido');
             return NextResponse.json(
                 { error: 'ID da música é obrigatório' },
                 { status: 400 }
@@ -77,11 +82,20 @@ export async function POST(request: NextRequest) {
         });
 
         if (!track) {
+            console.log('❌ API Download: Track não encontrado para ID:', trackId);
             return NextResponse.json(
                 { error: 'Música não encontrada' },
                 { status: 404 }
             );
         }
+
+        console.log('🔍 API Download: Track encontrado:', {
+            id: track.id,
+            songName: track.songName,
+            artist: track.artist,
+            hasDownloadUrl: !!track.downloadUrl,
+            downloadUrl: track.downloadUrl
+        });
 
         // Verificar se já baixou essa música
         const existingDownload = await prisma.download.findFirst({
@@ -113,11 +127,14 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        return NextResponse.json({
+        // Gerar URL do proxy de download
+        const proxyUrl = `/api/download-proxy?key=${encodeURIComponent(track.downloadUrl)}`;
+
+        const responseData = {
             success: true,
             message: 'Download autorizado',
-            downloadUrl: track.downloadUrl,
-            remainingDownloads: isVipUser ? 'Ilimitado' : (dailyLimit - (user.dailyDownloadCount + 1)),
+            downloadUrl: proxyUrl, // Usar URL do proxy em vez da URL direta
+            remainingDownloads: isVipUser ? 'Ilimitado' : (dailyLimit - (user.downloadCount + 1)),
             track: {
                 id: track.id,
                 songName: track.songName,
@@ -125,7 +142,10 @@ export async function POST(request: NextRequest) {
                 style: track.style
             },
             isVipUser: isVipUser
-        });
+        };
+
+        console.log('🔍 API Download: Retornando resposta:', responseData);
+        return NextResponse.json(responseData);
 
     } catch (error) {
         console.error('Erro no download:', error);

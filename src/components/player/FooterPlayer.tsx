@@ -16,10 +16,14 @@ import {
     ChevronRight,
     Square,
     Circle,
-    Waves
+    Waves,
+    Heart,
+    Download
 } from 'lucide-react';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { useSession } from 'next-auth/react';
+import { useToastContext } from '@/context/ToastContext';
+import { useDownloadsCache } from '@/hooks/useDownloadsCache';
 
 const FooterPlayer = () => {
     const {
@@ -31,7 +35,8 @@ const FooterPlayer = () => {
         audioRef
     } = useGlobalPlayer();
     const { data: session } = useSession();
-
+    const { showToast } = useToastContext();
+    const downloadsCache = useDownloadsCache();
     const [volume, setVolume] = useState(1.0);
     const [isMuted, setIsMuted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -228,6 +233,51 @@ const FooterPlayer = () => {
         nextTrack();
     };
 
+    const handleLike = () => {
+        if (!session) {
+            showToast('🔐 Faça login para curtir músicas', 'warning');
+            return;
+        }
+
+        if (!currentTrack) return;
+
+        const currentLiked = downloadsCache.isLiked(currentTrack.id);
+
+        if (currentLiked) {
+            downloadsCache.markAsUnliked(currentTrack.id);
+            showToast('💔 Música removida dos favoritos', 'info');
+        } else {
+            downloadsCache.markAsLiked(currentTrack.id);
+            showToast('❤️ Música adicionada aos favoritos', 'success');
+        }
+
+        console.log('🎵 FooterPlayer: Like toggled for track:', currentTrack.songName);
+    };
+
+    const handleDownload = () => {
+        if (!session) {
+            showToast('🔐 Faça login para baixar músicas', 'warning');
+            return;
+        }
+
+        if (!currentTrack) return;
+
+        // Verificar se já foi baixado
+        const isDownloaded = downloadsCache.isDownloaded(currentTrack.id);
+
+        if (isDownloaded) {
+            showToast('✅ Música já foi baixada', 'info');
+            return;
+        }
+
+        // Aqui você pode implementar a lógica de download
+        // Por enquanto, apenas mostra uma mensagem
+        showToast('📥 Iniciando download...', 'info');
+        console.log('🎵 FooterPlayer: Download iniciado para:', currentTrack.songName);
+    };
+
+
+
     // Verificar se o usuário está logado
     const isLoggedIn = !!session;
 
@@ -276,8 +326,9 @@ const FooterPlayer = () => {
             <div className="w-full max-w-3xl flex flex-col items-center px-4 py-2">
                 {/* Controles centrais acima do waveform */}
                 <div className="flex items-center w-full justify-between mb-4">
+                    {/* Informações da música (esquerda) */}
                     {!isMinimized && (
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-shrink-0">
                             <div className="flex-shrink-0 w-12 h-12">
                                 <img
                                     src={currentTrack.imageUrl}
@@ -286,18 +337,19 @@ const FooterPlayer = () => {
                                     style={{ minWidth: '48px', minHeight: '48px', maxWidth: '48px', maxHeight: '48px' }}
                                 />
                             </div>
-                            <div className="flex flex-col min-w-0 flex-1">
-                                <span className="text-white font-semibold text-sm truncate max-w-[180px]">
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-white font-semibold text-sm truncate max-w-[150px]">
                                     {currentTrack.songName}
                                 </span>
-                                <span className="text-gray-300 text-xs truncate max-w-[180px]">
+                                <span className="text-gray-300 text-xs truncate max-w-[150px]">
                                     {currentTrack.artist}
                                 </span>
                             </div>
                         </div>
                     )}
 
-                    <div className="flex items-center gap-3">
+                    {/* Controles de reprodução (centro) */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
                         <button
                             onClick={handlePrevious}
                             className="group p-2.5 rounded-full hover:bg-white/10 text-gray-300 hover:text-white transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/5 hover:border-white/20"
@@ -324,7 +376,33 @@ const FooterPlayer = () => {
                             <ChevronRight size={20} className="group-hover:scale-110 transition-transform duration-200" />
                         </button>
                     </div>
-                    <div className="w-20"></div>
+
+                    {/* Botões de Like e Download (direita) */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* Botão de Like - CORES CHAMATIVAS PARA DEBUG */}
+                        <button
+                            onClick={handleLike}
+                            className="group p-2.5 rounded-full transition-all duration-200 hover:scale-105 backdrop-blur-sm border bg-red-500/30 text-red-300 border-red-500/50 hover:bg-red-500/40"
+                            title="Curtir música"
+                        >
+                            <Heart
+                                size={20}
+                                className="group-hover:scale-110 transition-transform duration-200"
+                            />
+                        </button>
+
+                        {/* Botão de Download - CORES CHAMATIVAS PARA DEBUG */}
+                        <button
+                            onClick={handleDownload}
+                            className="group p-2.5 rounded-full transition-all duration-200 hover:scale-105 backdrop-blur-sm border bg-green-500/30 text-green-300 border-green-500/50 hover:bg-green-500/40"
+                            title="Baixar música"
+                        >
+                            <Download
+                                size={20}
+                                className="group-hover:scale-110 transition-transform duration-200"
+                            />
+                        </button>
+                    </div>
                 </div>
                 {/* Waveform centralizado e ocupando toda a linha */}
                 {!isMinimized && (

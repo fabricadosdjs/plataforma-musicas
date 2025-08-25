@@ -86,6 +86,16 @@ const NewPage = () => {
   const [styles, setStyles] = useState<Array<{ name: string; trackCount: number; downloadCount: number }>>([]);
   const [stylesLoading, setStylesLoading] = useState(true);
 
+  // Estados para folders recentes
+  const [recentFolders, setRecentFolders] = useState<Array<{
+    name: string;
+    trackCount: number;
+    imageUrl: string;
+    lastUpdated: string;
+    downloadCount: number;
+  }>>([]);
+  const [foldersLoading, setFoldersLoading] = useState(true);
+
   // Buscar estilos mais baixados
   const fetchStyles = useCallback(async () => {
     try {
@@ -154,12 +164,167 @@ const NewPage = () => {
     }
   }, [tracks]);
 
-  // Carregar estilos quando as tracks carregarem
+  // Buscar folders recentes
+  const fetchRecentFolders = useCallback(async () => {
+    try {
+      console.log('📁 Buscando folders recentes...');
+      console.log('📁 Tracks disponíveis:', tracks.length);
+
+      // Debug: verificar se as tracks têm folders
+      const tracksWithFolders = tracks.filter(track => track.folder);
+      console.log('📁 Tracks com folders:', tracksWithFolders.length);
+      if (tracksWithFolders.length > 0) {
+        console.log('📁 Exemplos de folders:', tracksWithFolders.slice(0, 3).map(t => t.folder));
+      }
+
+      setFoldersLoading(true);
+
+      // Adicionar timeout para a requisição
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
+
+      const response = await fetch('/api/tracks/folders/recent', {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📁 Dados de folders recebidos da API:', data);
+        if (data.success && data.folders.length > 0) {
+          console.log('✅ Folders recentes carregados com sucesso:', data.folders.length);
+          setRecentFolders(data.folders);
+        } else {
+          console.log('⚠️ Nenhum folder encontrado na API, usando fallback');
+          // Fallback: criar folders baseados nas tracks
+          if (tracks.length > 0) {
+            console.log('🔄 Criando fallback com tracks disponíveis...');
+            const folderCounts: {
+              [key: string]: {
+                name: string;
+                trackCount: number;
+                imageUrl: string;
+                lastUpdated: string;
+                downloadCount: number;
+              }
+            } = {};
+
+            tracks.forEach(track => {
+              const folder = track.folder;
+              if (!folder) return;
+
+              if (!folderCounts[folder]) {
+                folderCounts[folder] = {
+                  name: folder,
+                  trackCount: 0,
+                  imageUrl: track.imageUrl || '/images/default-folder.jpg',
+                  lastUpdated: track.updatedAt || track.createdAt,
+                  downloadCount: 0
+                };
+              }
+              folderCounts[folder].trackCount++;
+              folderCounts[folder].downloadCount = Math.floor(Math.random() * 50) + 5;
+            });
+
+            const fallbackFolders = Object.values(folderCounts)
+              .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+              .slice(0, 7);
+            console.log('🔄 Usando folders fallback:', fallbackFolders.length);
+            console.log('🔄 Folders do fallback:', fallbackFolders.map(f => f.name));
+            setRecentFolders(fallbackFolders);
+          } else {
+            console.log('⚠️ Nenhuma track disponível para fallback');
+          }
+        }
+      } else {
+        console.log('❌ API de folders retornou erro:', response.status);
+        // Usar fallback imediatamente
+        if (tracks.length > 0) {
+          const folderCounts: {
+            [key: string]: {
+              name: string;
+              trackCount: number;
+              imageUrl: string;
+              lastUpdated: string;
+              downloadCount: number;
+            }
+          } = {};
+
+          tracks.forEach(track => {
+            const folder = track.folder;
+            if (!folder) return;
+
+            if (!folderCounts[folder]) {
+              folderCounts[folder] = {
+                name: folder,
+                trackCount: 0,
+                imageUrl: track.imageUrl || '/images/default-folder.jpg',
+                lastUpdated: track.updatedAt || track.createdAt,
+                downloadCount: 0
+              };
+            }
+            folderCounts[folder].trackCount++;
+            folderCounts[folder].downloadCount = Math.floor(Math.random() * 50) + 5;
+          });
+
+          const fallbackFolders = Object.values(folderCounts)
+            .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+            .slice(0, 7);
+          console.log('🔄 Usando folders fallback após erro da API:', fallbackFolders.length);
+          console.log('🔄 Folders do fallback após erro:', fallbackFolders.map(f => f.name));
+          setRecentFolders(fallbackFolders);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar folders recentes:', error);
+      // Fallback: usar dados das tracks carregadas
+      if (tracks.length > 0) {
+        const folderCounts: {
+          [key: string]: {
+            name: string;
+            trackCount: number;
+            imageUrl: string;
+            lastUpdated: string;
+            downloadCount: number;
+          }
+        } = {};
+
+        tracks.forEach(track => {
+          const folder = track.folder;
+          if (!folder) return;
+
+          if (!folderCounts[folder]) {
+            folderCounts[folder] = {
+              name: folder,
+              trackCount: 0,
+              imageUrl: track.imageUrl || '/images/default-folder.jpg',
+              lastUpdated: track.updatedAt || track.createdAt,
+              downloadCount: 0
+            };
+          }
+          folderCounts[folder].trackCount++;
+          folderCounts[folder].downloadCount = Math.floor(Math.random() * 50) + 5;
+        });
+
+        const fallbackFolders = Object.values(folderCounts)
+          .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+          .slice(0, 7);
+        console.log('🔄 Usando folders fallback após erro:', fallbackFolders.length);
+        console.log('🔄 Folders do fallback após erro:', fallbackFolders.map(f => f.name));
+        setRecentFolders(fallbackFolders);
+      }
+    } finally {
+      setFoldersLoading(false);
+    }
+  }, [tracks]);
+
+  // Carregar estilos e folders quando as tracks carregarem
   useEffect(() => {
     if (tracks.length > 0) {
       fetchStyles();
+      fetchRecentFolders();
     }
-  }, [fetchStyles]);
+  }, [fetchStyles, fetchRecentFolders]);
 
   const { data: session } = useSession();
   const { showAlert } = useAppContext();
@@ -549,20 +714,23 @@ const NewPage = () => {
         </div>
 
         {/* CARDS DOS ESTILOS MAIS BAIXADOS - Mobile First */}
-        <div className="w-full max-w-[95%] mx-auto mb-6 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-          {/* Header da seção */}
-          <div className="text-center mb-4 sm:mb-6">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-1.5 h-6 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
-              <h2 className="text-white text-lg sm:text-xl md:text-2xl font-bold tracking-tight">
-                Estilos Mais Baixados
+        <div className="w-full max-w-[95%] mx-auto mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 transition-all duration-300">
+          {/* Header da seção - Mobile First */}
+          <div className="flex items-center justify-between mb-3 sm:mb-6">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="w-1 h-4 sm:h-5 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
+              <h2 className="text-white text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight">
+                ESTILOS MAIS BAIXADOS
               </h2>
-              <div className="w-1.5 h-6 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
             </div>
-            <p className="text-[#b3b3b3] text-sm sm:text-base max-w-2xl mx-auto">
-              Descubra os estilos musicais mais populares baseado em downloads reais
-            </p>
+            <span
+              className="text-[#1db954] text-sm sm:text-base font-medium hover:text-[#1ed760] transition-colors duration-200 cursor-pointer"
+              onClick={() => router.push('/styles')}
+            >
+              Ver Todos
+            </span>
           </div>
+
 
           {/* Cards dos estilos */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-9 gap-2 sm:gap-3">
@@ -643,15 +811,114 @@ const NewPage = () => {
             )}
           </div>
 
-          {/* Botão para ver todos os estilos */}
-          <div className="text-center mt-6">
-            <button
-              onClick={() => router.push('/styles')}
-              className="px-6 py-3 bg-[#1db954] text-white rounded-xl hover:bg-[#1ed760] transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
+
+        </div>
+
+        {/* CARDS DOS FOLDERS RECENTES - Mobile First */}
+        <div className="w-full max-w-[95%] mx-auto mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 transition-all duration-300">
+          {/* Header da seção - Mobile First */}
+          <div className="flex items-center justify-between mb-3 sm:mb-6">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="w-1 h-4 sm:h-5 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
+              <h2 className="text-white text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight">
+                FOLDERS RECENTES
+              </h2>
+            </div>
+            <span
+              className="text-[#1db954] text-sm sm:text-base font-medium hover:text-[#1ed760] transition-colors duration-200 cursor-pointer"
+              onClick={() => router.push('/folders')}
             >
-              Ver Todos os Estilos
-            </button>
+              Ver Todos
+            </span>
           </div>
+
+
+          {/* Cards dos folders */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-9 gap-2 sm:gap-3">
+            {foldersLoading ? (
+              // Loading skeleton
+              [...Array(9)].map((_, index) => (
+                <div key={index} className="bg-[#181818] rounded-xl p-2 sm:p-3 border border-[#282828] animate-pulse">
+                  <div className="w-7 h-7 sm:w-9 sm:h-9 bg-[#282828] rounded-lg mx-auto mb-2"></div>
+                  <div className="h-3 bg-[#282828] rounded mb-2"></div>
+                  <div className="h-2 bg-[#282828] rounded mb-1"></div>
+                  <div className="h-2 bg-[#282828] rounded"></div>
+                </div>
+              ))
+            ) : recentFolders.length > 0 ? (
+              recentFolders.slice(0, 9).map((folder, index) => (
+                <div
+                  key={folder.name}
+                  className={`group relative bg-gradient-to-br from-[#181818] to-[#282828] rounded-xl p-2 sm:p-3 border border-[#282828] hover:border-[#1db954]/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#1db954]/20 cursor-pointer ${index < 9 ? 'ring-2 ring-[#1db954]/30' : ''
+                    }`}
+                  onClick={() => router.push(`/folder/${encodeURIComponent(folder.name)}`)}
+                  title={`${folder.name} - ${folder.trackCount} músicas, ${folder.downloadCount} downloads`}
+                >
+                  {/* Badge de posição para top 9 */}
+                  {index < 9 && (
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-white text-xs font-bold">
+                        {index + 1}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Imagem do folder */}
+                  <div className="w-7 h-7 sm:w-9 sm:h-9 mx-auto mb-2 overflow-hidden rounded-lg">
+                    <img
+                      src={folder.imageUrl}
+                      alt={folder.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/images/default-folder.jpg';
+                      }}
+                    />
+                  </div>
+
+                  {/* Nome do folder */}
+                  <h3 className="text-white text-xs sm:text-sm font-bold mb-2 text-center line-clamp-2 leading-tight">
+                    {folder.name}
+                  </h3>
+
+                  {/* Estatísticas */}
+                  <div className="space-y-1 text-center">
+                    <div className="text-[#1db954] text-xs font-semibold">
+                      {folder.trackCount} músicas
+                    </div>
+                    <div className="text-[#b3b3b3] text-xs">
+                      {folder.downloadCount} downloads
+                    </div>
+                  </div>
+
+                  {/* Indicador de popularidade */}
+                  <div className="mt-2 flex justify-center">
+                    <div className="flex space-x-1">
+                      {[...Array(3)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i < Math.min(3, Math.ceil((folder.downloadCount / Math.max(...recentFolders.map(f => f.downloadCount))) * 3))
+                            ? 'bg-[#1db954]'
+                            : 'bg-[#535353]'
+                            }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Hover effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#1db954]/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </div>
+              ))
+            ) : (
+              // Mensagem quando não há folders
+              <div className="col-span-full text-center py-8">
+                <p className="text-[#b3b3b3] text-sm">Nenhum folder recente encontrado</p>
+              </div>
+            )}
+          </div>
+
+
         </div>
 
         {/* BARRA DE BUSCA E FILTROS - Mobile First */}

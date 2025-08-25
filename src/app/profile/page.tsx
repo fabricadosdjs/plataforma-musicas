@@ -788,13 +788,13 @@ const ProfilePage = () => {
                                             }
                                         }}
                                         className={`group/action text-center p-6 rounded-2xl transition-all duration-300 border ${isRenewalButtonEnabled()
-                                                ? 'bg-gray-800/50 hover:bg-gray-700/50 border-gray-700/50 hover:border-green-500/30 hover:scale-105'
-                                                : 'bg-gray-700/50 border-gray-600/50 cursor-not-allowed opacity-60'
+                                            ? 'bg-gray-800/50 hover:bg-gray-700/50 border-gray-700/50 hover:border-green-500/30 hover:scale-105'
+                                            : 'bg-gray-700/50 border-gray-600/50 cursor-not-allowed opacity-60'
                                             }`}
                                     >
                                         <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 transition-all duration-300 ${isRenewalButtonEnabled()
-                                                ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 group-hover/action:scale-110'
-                                                : 'bg-gray-600/20'
+                                            ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 group-hover/action:scale-110'
+                                            : 'bg-gray-600/20'
                                             }`}>
                                             <CreditCard className={`h-8 w-8 ${isRenewalButtonEnabled() ? 'text-green-400' : 'text-gray-400'
                                                 }`} />

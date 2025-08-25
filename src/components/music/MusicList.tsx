@@ -7,7 +7,7 @@ import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { useSession } from 'next-auth/react';
 import { useNotificationContext } from '@/context/NotificationContext';
 import { Play, Pause, Download, Heart, Plus, Calendar } from 'lucide-react';
-import { formatDateBrazil, formatDateExtendedBrazil, getDateKeyBrazil, isTodayBrazil, isYesterdayBrazil } from '@/utils/dateUtils';
+import { formatDateBrazil, formatDateShortBrazil, formatDateExtendedBrazil, getDateKeyBrazil, isTodayBrazil, isYesterdayBrazil } from '@/utils/dateUtils';
 import { useRouter } from 'next/navigation';
 import { useMobileAudio } from '@/hooks/useMobileAudio';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -249,6 +249,8 @@ export const MusicList = React.memo(({
         setDownloadingTracks(prev => new Set([...prev, track.id]));
 
         try {
+            console.log('🔍 Iniciando download para track:', track.id);
+
             const response = await fetch(`/api/download`, {
                 method: 'POST',
                 headers: {
@@ -258,24 +260,58 @@ export const MusicList = React.memo(({
                 body: JSON.stringify({ trackId: track.id }),
             });
 
+            console.log('🔍 Response status:', response.status, response.statusText);
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Falha no download');
+                let errorMessage = 'Falha no download';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorMessage;
+                } catch (parseError) {
+                    console.error('❌ Erro ao fazer parse da resposta de erro:', parseError);
+                }
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
+            console.log('🔍 Dados da API:', data);
 
             if (!data.downloadUrl) {
+                console.error('❌ URL de download não disponível nos dados:', data);
                 throw new Error('URL de download não disponível');
             }
 
-            // Fazer download do arquivo
+            console.log('🔍 Fazendo download via proxy:', data.downloadUrl);
+
+            // Fazer download do arquivo via nosso proxy
             const downloadResponse = await fetch(data.downloadUrl);
+            console.log('🔍 Download response status:', downloadResponse.status, downloadResponse.statusText);
+
             if (!downloadResponse.ok) {
-                throw new Error('Erro ao baixar arquivo');
+                console.error('❌ Erro na resposta do download:', downloadResponse.status, downloadResponse.statusText);
+
+                let errorMessage = `Erro ao baixar arquivo: ${downloadResponse.status}`;
+
+                if (downloadResponse.status === 404) {
+                    errorMessage = 'Arquivo não encontrado no servidor';
+                } else if (downloadResponse.status === 403) {
+                    errorMessage = 'Acesso negado ao arquivo';
+                } else if (downloadResponse.status === 500) {
+                    errorMessage = 'Erro interno do servidor';
+                } else if (downloadResponse.status === 0) {
+                    errorMessage = 'Falha na conexão com o servidor';
+                }
+
+                throw new Error(errorMessage);
             }
 
             const blob = await downloadResponse.blob();
+            console.log('🔍 Blob criado, tamanho:', blob.size);
+
+            if (blob.size === 0) {
+                throw new Error('Arquivo vazio recebido');
+            }
+
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
@@ -297,7 +333,8 @@ export const MusicList = React.memo(({
                 'Ver Downloads'
             );
         } catch (error) {
-            console.error('Erro no download:', error);
+            console.error('❌ Erro no download:', error);
+            showToast(`❌ ${error instanceof Error ? error.message : 'Erro ao baixar arquivo'}`, 'error');
         } finally {
             setDownloadingTracks(prev => {
                 const newSet = new Set(prev);
@@ -696,15 +733,15 @@ export const MusicList = React.memo(({
                                                         {/* Informações adicionais - Mobile */}
                                                         <button
                                                             onClick={() => {
-                                                                const folderName = track.folder || formatDateBrazil(track.updatedAt || track.createdAt);
+                                                                const folderName = track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt);
                                                                 router.push(`/folder/${encodeURIComponent(folderName)}`);
                                                             }}
                                                             className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 mb-2 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer"
-                                                            title={`Ver todas as músicas do folder: ${track.folder || formatDateBrazil(track.updatedAt || track.createdAt)}`}
+                                                            title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
                                                         >
                                                             <span className="text-purple-400 text-xs">📁</span>
                                                             <span className="text-gray-200 text-xs font-medium">
-                                                                {track.folder || formatDateBrazil(track.updatedAt || track.createdAt)}
+                                                                {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
                                                             </span>
                                                         </button>
 
@@ -890,15 +927,15 @@ export const MusicList = React.memo(({
                                                         {/* Nova coluna Folder */}
                                                         <button
                                                             onClick={() => {
-                                                                const folderName = track.folder || formatDateBrazil(track.updatedAt || track.createdAt);
+                                                                const folderName = track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt);
                                                                 router.push(`/folder/${encodeURIComponent(folderName)}`);
                                                             }}
                                                             className="flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer"
-                                                            title={`Ver todas as músicas do folder: ${track.folder || formatDateBrazil(track.updatedAt || track.createdAt)}`}
+                                                            title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
                                                         >
                                                             <span className="text-purple-400 text-xs">📁</span>
                                                             <span className="text-gray-200 text-xs font-medium">
-                                                                {track.folder || formatDateBrazil(track.updatedAt || track.createdAt)}
+                                                                {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
                                                             </span>
                                                         </button>
 

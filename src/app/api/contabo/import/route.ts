@@ -288,7 +288,7 @@ export async function GET(request: NextRequest) {
             ...finalStats,
             files: processedFiles,
             // Adiciona informações sobre pastas para melhor visualização
-            folders: await getFolderStatus(audioFiles, existingTracks)
+            folders: await getFolderStatus(audioFiles, existingTracks, problematicFolder)
         });
 
     } catch (error) {
@@ -558,7 +558,7 @@ function normalizeTrackName(artist: string, songName: string, version?: string):
 /**
  * Analisa o status das pastas para mostrar quais têm arquivos não importados
  */
-async function getFolderStatus(audioFiles: any[], existingTracks: any[]) {
+async function getFolderStatus(audioFiles: any[], existingTracks: any[], problematicFolder?: string) {
     const folderStats: { [key: string]: any } = {};
 
     console.log(`🔍 getFolderStatus: Analisando ${audioFiles.length} arquivos e ${existingTracks.length} tracks existentes`);
@@ -613,7 +613,7 @@ async function getFolderStatus(audioFiles: any[], existingTracks: any[]) {
     });
 
     // Log específico para pasta problemática
-    if (folderStats[problematicFolder]) {
+    if (problematicFolder && folderStats[problematicFolder]) {
         const stats = folderStats[problematicFolder];
         console.log(`🔍 getFolderStatus: Pasta problemática ${problematicFolder}:`);
         console.log(`  Total no storage: ${stats.totalFiles}`);

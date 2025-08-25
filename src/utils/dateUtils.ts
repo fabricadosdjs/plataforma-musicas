@@ -77,6 +77,19 @@ export function formatDateBrazil(date: Date | string): string {
 }
 
 /**
+ * Formata uma data para exibição no formato DD/MM/AAAA
+ */
+export function formatDateShortBrazil(date: Date | string): string {
+    const brazilDate = convertToBrazilTimezone(date);
+    const options: Intl.DateTimeFormatOptions = {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    };
+    return brazilDate.toLocaleDateString('pt-BR', options);
+}
+
+/**
  * Formata uma data para exibição no formato solicitado: "Domingo, 17 de Agosto de 2025"
  */
 export function formatDateExtendedBrazil(date: Date | string): string {
