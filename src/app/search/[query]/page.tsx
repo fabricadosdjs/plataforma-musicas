@@ -9,7 +9,7 @@ import { useParams } from 'next/navigation';
 import { Search, X, Filter, Music, ArrowLeft, Sparkles } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import FiltersModal from '@/components/music/FiltersModal';
-import { MusicList } from '@/components/music/MusicList';
+import MusicList from '@/components/music/MusicList';
 import { useAppContext } from '@/context/AppContext';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { Track } from '@/types/track';

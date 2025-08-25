@@ -11,6 +11,13 @@ export interface Notification {
     category: 'plan' | 'system' | 'download' | 'security' | 'feature';
     actionUrl?: string;
     actionText?: string;
+    // Novos campos para notificações de música
+    musicData?: {
+        coverUrl?: string;
+        artistName?: string;
+        songName?: string;
+        trackId?: number;
+    };
 }
 
 export const useNotifications = () => {
@@ -68,6 +75,9 @@ export const useNotifications = () => {
         // Manter apenas 10 notificações no localStorage
         localStorage.setItem('notifications', JSON.stringify(stored.slice(0, 10)));
         console.log('➕ Notificação salva no localStorage');
+
+        // Mostrar notificação push nativa se disponível
+        showNativeNotification(newNotification);
     }, [excludedNotifications]);
 
     // Função para marcar como lida
@@ -506,15 +516,88 @@ export const useNotifications = () => {
         };
     }, []);
 
+    // Função para mostrar notificação push nativa do Android
+    const showNativeNotification = useCallback((notification: Notification) => {
+        // Verificar se o navegador suporta notificações
+        if (!('Notification' in window)) {
+            console.log('📱 Notificações nativas não suportadas neste navegador');
+            return;
+        }
+
+        // Verificar se é uma notificação de música
+        if (notification.musicData) {
+            const { coverUrl, artistName, songName, trackId } = notification.musicData;
+            
+            // Solicitar permissão se necessário
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        createMusicNotification(notification);
+                    }
+                });
+            } else if (Notification.permission === 'granted') {
+                createMusicNotification(notification);
+            }
+        }
+    }, []);
+
+    // Função para criar notificação de música específica
+    const createMusicNotification = useCallback((notification: Notification) => {
+        const { coverUrl, artistName, songName, trackId } = notification.musicData!;
+        
+        // Criar notificação com dados da música
+        const musicNotification = new Notification(notification.title, {
+            body: notification.message,
+            icon: coverUrl || '/favicon.ico', // Usar capa da música ou favicon como fallback
+            badge: '/favicon.ico',
+            tag: `music-${trackId}`, // Tag única para evitar duplicatas
+            requireInteraction: false,
+            silent: false,
+            data: {
+                trackId,
+                artistName,
+                songName,
+                coverUrl,
+                actionUrl: notification.actionUrl
+            }
+        });
+
+        // Adicionar evento de clique
+        musicNotification.onclick = () => {
+            // Focar na janela se estiver em background
+            window.focus();
+            
+            // Se tiver URL de ação, navegar para ela
+            if (notification.actionUrl) {
+                window.location.href = notification.actionUrl;
+            }
+            
+            // Fechar a notificação
+            musicNotification.close();
+        };
+
+        // Auto-fechar após 5 segundos
+        setTimeout(() => {
+            musicNotification.close();
+        }, 5000);
+
+        console.log('📱 Notificação push nativa criada para música:', songName);
+    }, []);
+
     return {
         notifications,
-        unreadCount,
         addNotification,
         markAsRead,
         clearAllNotifications,
         removeNotification,
         cleanOldNotifications,
-        resetChecks,
-        lastCheck
+        lastCheck,
+        hasCheckedRef,
+        excludedNotifications,
+        setExcludedNotifications,
+        // Nova função para notificações de música
+        addMusicNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'> & { musicData: NonNullable<Notification['musicData']> }) => {
+            addNotification(notification);
+        }
     };
 };

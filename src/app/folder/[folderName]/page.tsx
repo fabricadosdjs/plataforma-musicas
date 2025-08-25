@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
-import { MusicList } from '@/components/music/MusicList';
+import MusicList from '@/components/music/MusicList';
 import { Track } from '@/types/track';
 import { Download, Heart, Play, TrendingUp, Users, Calendar, X, RefreshCw, ArrowLeft, Folder } from 'lucide-react';
 import { useToastContext } from '@/context/ToastContext';

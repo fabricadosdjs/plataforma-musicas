@@ -101,7 +101,7 @@ const Header = ({ }: HeaderProps) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-[9998] bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-md shadow-lg border-b border-gray-700/30 py-3">
+    <header className="fixed top-0 left-0 w-full z-[9998] bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-md shadow-lg border-b border-gray-700/30 py-2">
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center space-x-4 md:space-x-6">
           {/* Mobile menu button */}
@@ -129,86 +129,86 @@ const Header = ({ }: HeaderProps) => {
           </Link>
           {/* Desktop nav */}
           {/* Professional Desktop Navigation */}
-          <nav className="hidden md:flex space-x-2 text-gray-300 font-medium items-center">
+          <nav className="hidden md:flex space-x-1 text-gray-300 font-medium items-center">
             <Link
               href="/"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
             >
-              <Home className="h-4 w-4" />
+              <Home className="h-3.5 w-3.5" />
               HOME
             </Link>
 
             <Link
               href="/new"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-emerald-400 hover:bg-emerald-500/10 hover:scale-105 border border-transparent hover:border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-emerald-400 hover:bg-emerald-500/10 hover:scale-105 border border-transparent hover:border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20"
             >
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="h-3.5 w-3.5" />
               NOVIDADES
             </Link>
 
             <Link
               href="/community"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105 border border-transparent hover:border-purple-500/30 shadow-lg hover:shadow-purple-500/20"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105 border border-transparent hover:border-purple-500/30 shadow-lg hover:shadow-purple-500/20"
             >
-              <Users className="h-4 w-4" />
+              <Users className="h-3.5 w-3.5" />
               COMUNIDADE
             </Link>
 
             <Link
               href="/trending"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-orange-400 hover:bg-orange-500/10 hover:scale-105 border border-transparent hover:border-orange-500/30 shadow-lg hover:shadow-orange-500/20"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-orange-400 hover:bg-orange-500/10 hover:scale-105 border border-transparent hover:border-orange-500/30 shadow-lg hover:shadow-orange-500/20"
             >
-              <Star className="h-4 w-4" />
+              <Star className="h-3.5 w-3.5" />
               TRENDING
             </Link>
 
             <Link
               href="/plans"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-yellow-400 hover:bg-yellow-500/10 hover:scale-105 border border-transparent hover:border-yellow-500/30 shadow-lg hover:shadow-yellow-500/20"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-yellow-400 hover:bg-yellow-500/10 hover:scale-105 border border-transparent hover:border-yellow-500/30 shadow-lg hover:shadow-yellow-500/20"
             >
-              <Crown className="h-4 w-4" />
+              <Crown className="h-3.5 w-3.5" />
               PLANOS VIP
             </Link>
 
             {Boolean((session?.user as any)?.isAdmin) && (
               <Link
                 href="/admin/users"
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
               >
-                <Crown className="h-4 w-4" />
+                <Crown className="h-3.5 w-3.5" />
                 ADMIN
               </Link>
             )}
 
             {/* Professional Tools Dropdown */}
             <div className="relative group" tabIndex={0}>
-              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold tracking-wide text-sm transition-all duration-300 hover:text-cyan-400 hover:bg-cyan-500/10 hover:scale-105 border border-transparent hover:border-cyan-500/30 shadow-lg hover:shadow-cyan-500/20 focus:outline-none group-hover:bg-cyan-500/20" tabIndex={-1}>
-                <Wrench className="h-4 w-4" />
+              <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-cyan-400 hover:bg-cyan-500/10 hover:scale-105 border border-transparent hover:border-cyan-500/30 shadow-lg hover:shadow-cyan-500/20 focus:outline-none group-hover:bg-cyan-500/20" tabIndex={-1}>
+                <Wrench className="h-3.5 w-3.5" />
                 FERRAMENTAS
-                <svg className="ml-1 h-3 w-3 transition-transform duration-300 group-hover:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="ml-1 h-2.5 w-2.5 transition-transform duration-300 group-hover:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className="absolute left-0 mt-2 w-56 bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-xl border border-gray-600/30 rounded-xl shadow-2xl z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-all duration-300 pointer-events-none overflow-hidden" tabIndex={0} onMouseDown={e => e.preventDefault()}>
+              <div className="absolute left-0 mt-2 w-48 bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-xl border border-gray-600/30 rounded-xl shadow-2xl z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-all duration-300 pointer-events-none overflow-hidden" tabIndex={0} onMouseDown={e => e.preventDefault()}>
                 <Link
                   href="/debridlink"
-                  className="flex items-center gap-3 px-4 py-3.5 text-gray-200 hover:bg-gradient-to-r hover:from-green-600/20 hover:to-green-700/20 border-b border-gray-700/50 transition-all duration-300 font-semibold tracking-wide hover:text-green-300 hover:scale-[1.02] transform"
+                  className="flex items-center gap-2 px-3 py-2.5 text-gray-200 hover:bg-gradient-to-r hover:from-green-600/20 hover:to-green-700/20 border-b border-gray-700/50 transition-all duration-300 font-semibold tracking-wide hover:text-green-300 hover:scale-[1.02] transform text-sm"
                 >
-                  <Link2 className="h-4 w-4 text-green-400" />
+                  <Link2 className="h-3.5 w-3.5 text-green-400" />
                   DEBRIDLINK
                 </Link>
                 <Link
                   href="/allavsoft"
-                  className="flex items-center gap-3 px-4 py-3.5 text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 border-b border-gray-700/50 transition-all duration-300 font-semibold tracking-wide hover:text-red-300 hover:scale-[1.02] transform"
+                  className="flex items-center gap-2 px-3 py-2.5 text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 border-b border-gray-700/50 transition-all duration-300 font-semibold tracking-wide hover:text-red-300 hover:scale-[1.02] transform text-sm"
                 >
-                  <Download className="h-4 w-4 text-red-400" />
+                  <Download className="h-3.5 w-3.5 text-red-400" />
                   ALLAVSOFT
                 </Link>
                 <Link
                   href="/deemix"
-                  className="flex items-center gap-3 px-4 py-3.5 text-gray-200 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-purple-700/20 transition-all duration-300 font-semibold tracking-wide hover:text-purple-300 hover:scale-[1.02] transform"
+                  className="flex items-center gap-2 px-3 py-2.5 text-gray-200 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-purple-700/20 transition-all duration-300 font-semibold tracking-wide hover:text-purple-300 hover:scale-[1.02] transform text-sm"
                 >
-                  <Wrench className="h-4 w-4 text-purple-400" />
+                  <Wrench className="h-3.5 w-3.5 text-purple-400" />
                   DEEMIX
                 </Link>
               </div>
@@ -348,13 +348,24 @@ const Header = ({ }: HeaderProps) => {
                     SAIR DA CONTA
                   </button>
                 ) : (
-                  <Link
-                    href="/auth/sign-in"
-                    className="w-full block py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center font-bold tracking-wider hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transform border border-blue-500/30"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    ENTRAR NA CONTA
-                  </Link>
+                  <div className="space-y-3">
+                    <a
+                      href="https://wa.me/55514935052274?text=Olá! Gostaria de solicitar informações sobre os planos de assinatura da plataforma de músicas."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full block py-3.5 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 text-white text-center font-bold tracking-wider hover:from-yellow-700 hover:to-yellow-800 transition-all duration-300 shadow-lg hover:shadow-yellow-500/30 hover:scale-[1.02] transform border border-yellow-500/30"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      ASSINAR
+                    </a>
+                    <Link
+                      href="/auth/sign-in"
+                      className="w-full block py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center font-bold tracking-wider hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transform border border-blue-500/30"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      ENTRAR NA CONTA
+                    </Link>
+                  </div>
                 )}
               </div>
             </div>
@@ -564,9 +575,14 @@ const Header = ({ }: HeaderProps) => {
               </div>
             </div>
           ) : (
-            <Link href="/auth/sign-in" className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl font-semibold hover:from-red-700 hover:to-red-800 transition-all shadow-lg">
-              Entrar
-            </Link>
+            <div className="flex items-center space-x-3">
+              <Link href="/plans" className="px-4 py-2.5 bg-gradient-to-r from-yellow-600 to-yellow-700 text-white rounded-lg font-semibold hover:from-yellow-700 hover:to-yellow-800 transition-all shadow-lg text-sm">
+                ASSINAR
+              </Link>
+              <Link href="/auth/sign-in" className="px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transition-all shadow-lg text-sm">
+                ENTRAR
+              </Link>
+            </div>
           )}
         </div>
       </div>

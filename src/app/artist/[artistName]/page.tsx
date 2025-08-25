@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { MusicList } from '@/components/music/MusicList';
+import MusicList from '@/components/music/MusicList';
 import FooterSpacer from '@/components/layout/FooterSpacer';
 import { Track } from '@/types/track';
 import { Download, Heart, Play, TrendingUp, Users, Calendar, X, RefreshCw, ArrowLeft } from 'lucide-react';

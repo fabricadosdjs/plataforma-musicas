@@ -8,7 +8,7 @@ import { useSession } from 'next-auth/react';
 import { Search, Filter, Users, TrendingUp, Heart, Download, Play, Upload, Star, X, Crown, ChevronLeft, ChevronRight, Music } from 'lucide-react';
 import { Track } from '@/types/track';
 import Header from '@/components/layout/Header';
-import { MusicList } from '@/components/music/MusicList';
+import MusicList from '@/components/music/MusicList';
 import FooterSpacer from '@/components/layout/FooterSpacer';
 import FiltersModal from '@/components/music/FiltersModal';
 import { useToastContext } from '@/context/ToastContext';

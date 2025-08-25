@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { MusicList } from '@/components/music/MusicList';
+import MusicList from '@/components/music/MusicList';
 import { Track } from '@/types/track';
 import { useSession } from 'next-auth/react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -78,15 +78,15 @@ export default function TestFilterPage() {
     useEffect(() => {
         if (tracks.length > 0) {
             let filtered = tracks;
-            
+
             // Aplicar filtro de estilo se selecionado
             if (selectedGenre && selectedGenre !== 'N/A') {
-                filtered = tracks.filter(track => 
+                filtered = tracks.filter(track =>
                     track.style && track.style.toLowerCase().includes(selectedGenre.toLowerCase())
                 );
                 console.log(`🎵 Filtrado por estilo "${selectedGenre}": ${filtered.length} tracks`);
             }
-            
+
             setFilteredTracks(filtered);
         } else {
             setFilteredTracks([]);

@@ -198,7 +198,7 @@ export default function TrendingPage() {
         console.log('🔍 handleDownload chamado para track:', track.id);
         console.log('🔍 session.user:', session?.user);
         console.log('🔍 session.user.id:', session?.user?.id);
-        
+
         if (!session?.user?.id) {
             console.log('❌ Usuário não logado, bloqueando download');
             showToast('🔐 Faça login para baixar músicas', 'warning');
@@ -206,7 +206,7 @@ export default function TrendingPage() {
         }
 
         console.log('✅ Usuário logado, prosseguindo com download');
-        
+
         try {
             // Usar a mesma API da página /new para manter consistência
             const response = await fetch('/api/download', {

@@ -18,7 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import FiltersModal from "@/components/music/FiltersModal";
-import { MusicList } from "@/components/music/MusicList";
+import MusicList from "@/components/music/MusicList";
 
 import { useAppContext } from "@/context/AppContext";
 import { useGlobalPlayer } from "@/context/GlobalPlayerContext";

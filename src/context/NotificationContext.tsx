@@ -8,6 +8,8 @@ interface NotificationContextType {
     addDownloadNotification: (title: string, message: string, actionUrl?: string, actionText?: string) => void;
     addFeatureNotification: (title: string, message: string, actionUrl?: string, actionText?: string) => void;
     addSystemNotification: (title: string, message: string, actionUrl?: string, actionText?: string) => void;
+    // Nova função para notificações de música
+    addMusicNotification: (title: string, message: string, musicData: { coverUrl?: string; artistName?: string; songName?: string; trackId?: number }, actionUrl?: string, actionText?: string) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -107,13 +109,33 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         });
     }, [addNotification]);
 
+    // Nova função para notificações de música
+    const addMusicNotification = useCallback((
+        title: string,
+        message: string,
+        musicData: { coverUrl?: string; artistName?: string; songName?: string; trackId?: number },
+        actionUrl?: string,
+        actionText?: string
+    ) => {
+        addNotification({
+            type: 'success',
+            title,
+            message,
+            category: 'download',
+            actionUrl,
+            actionText,
+            musicData
+        });
+    }, [addNotification]);
+
     const value: NotificationContextType = {
         addNotification,
         addPlanNotification,
         addSecurityNotification,
         addDownloadNotification,
         addFeatureNotification,
-        addSystemNotification
+        addSystemNotification,
+        addMusicNotification
     };
 
     return (
