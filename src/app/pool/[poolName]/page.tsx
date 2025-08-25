@@ -84,6 +84,14 @@ export default function PoolPage() {
     });
     const [abortController, setAbortController] = useState<AbortController | null>(null);
 
+    // Estados para modal de confirmação mobile
+    const [showMobileConfirmModal, setShowMobileConfirmModal] = useState(false);
+    const [pendingDownloadAction, setPendingDownloadAction] = useState<{
+        type: 'new' | 'all';
+        tracks: Track[];
+        callback: () => void;
+    } | null>(null);
+
     // Função para baixar músicas em lote (simplificada)
     const downloadTracksInBatches = async (tracksToDownload: Track[]) => {
         if (!isVip) {
@@ -482,6 +490,32 @@ export default function PoolPage() {
         }
     };
 
+    // Função para mostrar modal de confirmação mobile
+    const showMobileDownloadConfirmation = (type: 'new' | 'all', tracks: Track[], callback: () => void) => {
+        if (window.innerWidth < 640) {
+            setPendingDownloadAction({ type, tracks, callback });
+            setShowMobileConfirmModal(true);
+        } else {
+            // Em desktop, executa diretamente
+            callback();
+        }
+    };
+
+    // Função para confirmar download mobile
+    const confirmMobileDownload = () => {
+        if (pendingDownloadAction) {
+            pendingDownloadAction.callback();
+            setShowMobileConfirmModal(false);
+            setPendingDownloadAction(null);
+        }
+    };
+
+    // Função para cancelar download mobile
+    const cancelMobileDownload = () => {
+        setShowMobileConfirmModal(false);
+        setPendingDownloadAction(null);
+    };
+
     useEffect(() => {
         const fetchPoolTracks = async () => {
             try {
@@ -711,7 +745,9 @@ export default function PoolPage() {
                                     🔄 Sincronizar Estado
                                 </button>
                                 <button
-                                    onClick={() => downloadTracksInBatches(filteredTracks)}
+                                    onClick={() => {
+                                        showMobileDownloadConfirmation('all', filteredTracks, () => downloadTracksInBatches(filteredTracks));
+                                    }}
                                     disabled={isBatchDownloading || filteredTracks.length === 0}
                                     className="flex items-center justify-center gap-3 px-8 py-3 bg-[#1db954] text-white rounded-xl hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
                                 >
@@ -723,7 +759,7 @@ export default function PoolPage() {
                                     onClick={() => {
                                         const availableTracks = getAvailableTracks();
                                         if (availableTracks.length > 0) {
-                                            downloadTracksInBatches(availableTracks);
+                                            showMobileDownloadConfirmation('new', availableTracks, () => downloadTracksInBatches(availableTracks));
                                         } else {
                                             showToast('✅ Todas as músicas já foram baixadas!', 'info');
                                         }
@@ -916,6 +952,81 @@ export default function PoolPage() {
                 </div>
 
             </div>
+
+            {/* Modal de Confirmação para Downloads Mobile */}
+            {showMobileConfirmModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+                    <div className="bg-[#282828] border border-[#3e3e3e] rounded-xl p-5 max-w-sm w-full mx-3">
+                        {/* Ícone de Aviso */}
+                        <div className="flex justify-center mb-4">
+                            <div className="w-14 h-14 bg-yellow-500/20 border-2 border-yellow-500/30 rounded-full flex items-center justify-center">
+                                <svg className="w-7 h-7 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        {/* Título */}
+                        <h3 className="text-white text-lg font-bold text-center mb-4">
+                            Aviso de Download
+                        </h3>
+
+                        {/* Mensagem */}
+                        <div className="text-gray-300 text-sm text-center mb-6 space-y-3">
+                            <p className="font-medium">
+                                {pendingDownloadAction?.type === 'new'
+                                    ? `Baixar ${pendingDownloadAction.tracks.filter(t => !downloadedTrackIds.includes(t.id)).length} músicas novas?`
+                                    : `Baixar todas as ${pendingDownloadAction?.tracks.length} músicas?`
+                                }
+                            </p>
+
+                            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+                                <p className="text-yellow-400 font-medium text-xs">
+                                    ⚠️ Celulares podem não suportar muitos downloads simultâneos.
+                                </p>
+                                <p className="text-gray-300 text-xs mt-1">
+                                    Recomendamos usar um computador para downloads em massa.
+                                </p>
+                            </div>
+
+                            <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
+                                <p className="text-purple-300 font-medium text-xs">
+                                    💎 Para uma experiência premium, acesse nossa plataforma VIP!
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Botões de Ação */}
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={confirmMobileDownload}
+                                className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg text-sm"
+                            >
+                                Continuar no Celular
+                            </button>
+
+                            <button
+                                onClick={() => window.open('https://plataformavip.nexorrecords.com.br/atualizacoes', '_blank')}
+                                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg border border-purple-400/30 text-sm"
+                            >
+                                <div className="flex items-center justify-center gap-2">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                    </svg>
+                                    Acessar Plataforma VIP
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={cancelMobileDownload}
+                                className="w-full bg-gradient-to-r from-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 text-sm"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

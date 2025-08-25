@@ -13,6 +13,26 @@ const prismaClientConfig = {
     ],
     // Desabilitar logs de query para reduzir ruído no console
     // e melhorar performance
+
+    // Configuração de connection pooling para evitar "Too many database connections"
+    datasources: {
+        db: {
+            url: process.env.DATABASE_URL,
+        },
+    },
+    // Configurações de pool de conexões
+    __internal: {
+        engine: {
+            // Limitar conexões simultâneas
+            connectionLimit: 5,
+            // Tempo de vida da conexão (em segundos)
+            connectionTimeout: 30000,
+            // Tempo de espera para obter conexão (em segundos)
+            acquireTimeout: 60000,
+            // Tempo de inatividade antes de fechar conexão (em segundos)
+            idleTimeout: 300000,
+        },
+    },
 };
 
 // Cliente Prisma com configuração personalizada

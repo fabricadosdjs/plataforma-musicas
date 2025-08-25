@@ -42,7 +42,8 @@ export async function POST(request: NextRequest) {
 
         // Verificar se é VIP ou admin
         const isAdmin = session.user.email === 'edersonleonardo@nexorrecords.com.br';
-        const isVipUser = user.is_vip || isAdmin;
+        // Permitir que todos os usuários logados baixem (como na página /new)
+        const isVipUser = true; // Temporariamente permitir todos os usuários logados
 
         // Verificar se precisa resetar contador diário (mantido para estatísticas)
         const now = new Date();

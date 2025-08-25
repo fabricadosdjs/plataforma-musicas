@@ -185,6 +185,18 @@ export const authOptions: AuthOptions = {
                         isVip
                     });
 
+                    // Atualizar o campo is_vip no banco para manter consistência
+                    if (dbUser.is_vip !== isVip) {
+                        await safeQuery(
+                            () => prisma.user.update({
+                                where: { id: dbUser.id },
+                                data: { is_vip: isVip }
+                            }),
+                            null
+                        );
+                        console.log('🔄 Campo is_vip atualizado no banco:', isVip);
+                    }
+
                     // Retornar dados mínimos para sessão
                     return {
                         id: dbUser.id,

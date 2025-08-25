@@ -454,6 +454,13 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 ref={audioRef}
                 style={{ display: 'none' }}
                 preload="metadata"
+                crossOrigin="anonymous"
+                playsInline
+                webkit-playsinline="true"
+                x-webkit-airplay="allow"
+                controlsList="nodownload nofullscreen noremoteplayback"
+                disablePictureInPicture
+                onContextMenu={(e) => e.preventDefault()}
             />
         </GlobalPlayerContext.Provider>
     );

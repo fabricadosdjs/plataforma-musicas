@@ -448,7 +448,7 @@ const NewPage = () => {
       id: 1,
       title: "Upload Comunitário",
       artist: "DJs da Comunidade",
-      image: "https://i.ibb.co/QFxLcxhj/20250822-1324-M-sica-Eletr-nica-Vibrante-remix-01k399bwmxebctfdn0yec14eph.png",
+      image: "https://i.ibb.co/Q7B5BSTz/20250513-1005-DJ-em-Balada-Brasileira-remix-01jv4vx7prex7a005qqn46ee4z.png",
       link: "/community",
       badge: "COMUNIDADE",
     },
@@ -456,7 +456,7 @@ const NewPage = () => {
       id: 2,
       title: "Trending da Semana",
       artist: "Músicas Mais Populares",
-      image: "https://i.ibb.co/ZfDzHn9/slide2.jpg",
+      image: "https://i.ibb.co/Q7B5BSTz/20250513-1005-DJ-em-Balada-Brasileira-remix-01jv4vx7prex7a005qqn46ee4z.png",
       link: "/community",
       badge: "TRENDING",
     },
@@ -464,7 +464,7 @@ const NewPage = () => {
       id: 3,
       title: "Curadoria Premium",
       artist: "Seleção Especializada",
-      image: "https://i.ibb.co/VpVHbQ76/20250822-1329-Curadoria-de-M-sica-Eletr-nica-remix-01k399nd3qekzrz8d96pa16zkq.png",
+      image: "https://i.ibb.co/Q7B5BSTz/20250513-1005-DJ-em-Balada-Brasileira-remix-01jv4vx7prex7a005qqn46ee4z.png",
       link: "/community",
       badge: "PREMIUM",
     },
@@ -580,9 +580,9 @@ const NewPage = () => {
       <Header />
 
       {/* Conteúdo Principal - Tela Cheia */}
-      <div className="pt-12 lg:pt-16">
+      <div className="pt-16 lg:pt-20">
         {/* CARROUSEL "COMUNIDADE DOS VIPS" - Mobile First */}
-        <div className="w-full max-w-[95%] mx-auto mt-2 sm:mt-4 mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 transition-all duration-300">
+        <div className="w-full max-w-[95%] mx-auto mt-6 sm:mt-8 mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 transition-all duration-300">
           {/* Header do carrousel - Mobile First */}
           <div className="flex items-center justify-between mb-3 sm:mb-6">
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -627,12 +627,14 @@ const NewPage = () => {
                     <div className="relative h-32 sm:h-40 overflow-hidden group">
                       {/* Background image com overlay */}
                       <div className="absolute inset-0">
-                        <Image
+                        <img
                           src={slide.image}
                           alt={slide.title}
-                          fill
-                          className="object-cover opacity-60 group-hover:opacity-80 transition-all duration-500"
-                          priority={currentCommunitySlide === slide.id - 1}
+                          className="object-cover opacity-60 group-hover:opacity-80 transition-all duration-500 w-full h-full"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://i.ibb.co/Q7B5BSTz/20250513-1005-DJ-em-Balada-Brasileira-remix-01jv4vx7prex7a005qqn46ee4z.png';
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
                       </div>
@@ -664,12 +666,14 @@ const NewPage = () => {
                     <div className="relative h-48 sm:h-56 md:h-64 lg:h-72 overflow-hidden group">
                       {/* Background image com overlay */}
                       <div className="absolute inset-0">
-                        <Image
+                        <img
                           src={slide.image}
                           alt={slide.title}
-                          fill
-                          className="object-cover opacity-60 group-hover:opacity-80 transition-all duration-500"
-                          priority={currentCommunitySlide === slide.id - 1}
+                          className="object-cover opacity-60 group-hover:opacity-80 transition-all duration-500 w-full h-full"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://i.ibb.co/Q7B5BSTz/20250513-1005-DJ-em-Balada-Brasileira-remix-01jv4vx7prex7a005qqn46ee4z.png';
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
                       </div>
@@ -699,8 +703,8 @@ const NewPage = () => {
               ))}
             </div>
 
-            {/* Indicadores de slide */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+            {/* Indicadores de slide - Ocultos em mobile */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 hidden sm:flex">
               {communitySlides.map((_, index) => (
                 <button
                   key={index}
@@ -709,6 +713,27 @@ const NewPage = () => {
                     }`}
                 />
               ))}
+            </div>
+          </div>
+
+          {/* Aviso Mobile - Experiência Desktop Recomendada */}
+          <div className="block sm:hidden mt-4">
+            <div className="bg-[#282828] border border-[#3e3e3e] rounded-xl p-4 text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                </svg>
+                <span className="text-white font-semibold text-sm">Dica de Experiência</span>
+              </div>
+              <p className="text-white text-xs leading-relaxed">
+                Para uma experiência completa e otimizada, acesse o site através de um computador
+              </p>
+              <div className="mt-2 flex items-center justify-center gap-2 text-white text-xs">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                </svg>
+                <span>Mais recursos • Melhor navegação • Interface completa</span>
+              </div>
             </div>
           </div>
         </div>
@@ -735,9 +760,9 @@ const NewPage = () => {
           {/* Cards dos estilos */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-9 gap-2 sm:gap-3">
             {stylesLoading ? (
-              // Loading skeleton
+              // Loading skeleton - 4 em mobile, 9 em desktop
               [...Array(9)].map((_, index) => (
-                <div key={index} className="bg-[#181818] rounded-xl p-2 sm:p-3 border border-[#282828] animate-pulse">
+                <div key={index} className={`bg-[#181818] rounded-xl p-2 sm:p-3 border border-[#282828] animate-pulse ${index >= 4 ? 'hidden sm:block' : ''}`}>
                   <div className="w-7 h-7 sm:w-9 sm:h-9 bg-[#282828] rounded-lg mx-auto mb-2"></div>
                   <div className="h-3 bg-[#282828] rounded mb-2"></div>
                   <div className="h-2 bg-[#282828] rounded mb-1"></div>
@@ -748,8 +773,7 @@ const NewPage = () => {
               styles.slice(0, 9).map((style, index) => (
                 <div
                   key={style.name}
-                  className={`group relative bg-gradient-to-br from-[#181818] to-[#282828] rounded-xl p-2 sm:p-3 border border-[#282828] hover:border-[#1db954]/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#1db954]/20 cursor-pointer ${index < 9 ? 'ring-2 ring-[#1db954]/30' : ''
-                    }`}
+                  className={`group relative bg-gradient-to-br from-[#181818] to-[#282828] rounded-xl p-2 sm:p-3 border border-[#282828] hover:border-[#1db954]/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#1db954]/20 cursor-pointer ${index < 9 ? 'ring-2 ring-[#1db954]/30' : ''} ${index >= 4 ? 'hidden sm:block' : ''}`}
                   onClick={() => router.push(`/genre/${encodeURIComponent(style.name)}`)}
                   title={`${style.name} - ${style.trackCount} músicas, ${style.downloadCount} downloads`}
                 >
@@ -836,9 +860,9 @@ const NewPage = () => {
           {/* Cards dos folders */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-9 gap-2 sm:gap-3">
             {foldersLoading ? (
-              // Loading skeleton
+              // Loading skeleton - 4 em mobile, 9 em desktop
               [...Array(9)].map((_, index) => (
-                <div key={index} className="bg-[#181818] rounded-xl p-2 sm:p-3 border border-[#282828] animate-pulse">
+                <div key={index} className={`bg-[#181818] rounded-xl p-2 sm:p-3 border border-[#282828] animate-pulse ${index >= 4 ? 'hidden sm:block' : ''}`}>
                   <div className="w-7 h-7 sm:w-9 sm:h-9 bg-[#282828] rounded-lg mx-auto mb-2"></div>
                   <div className="h-3 bg-[#282828] rounded mb-2"></div>
                   <div className="h-2 bg-[#282828] rounded mb-1"></div>
@@ -849,8 +873,7 @@ const NewPage = () => {
               recentFolders.slice(0, 9).map((folder, index) => (
                 <div
                   key={folder.name}
-                  className={`group relative bg-gradient-to-br from-[#181818] to-[#282828] rounded-xl p-2 sm:p-3 border border-[#282828] hover:border-[#1db954]/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#1db954]/20 cursor-pointer ${index < 9 ? 'ring-2 ring-[#1db954]/30' : ''
-                    }`}
+                  className={`group relative bg-gradient-to-br from-[#181818] to-[#282828] rounded-xl p-2 sm:p-3 border border-[#282828] hover:border-[#1db954]/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#1db954]/20 cursor-pointer ${index < 9 ? 'ring-2 ring-[#1db954]/30' : ''} ${index >= 4 ? 'hidden sm:block' : ''}`}
                   onClick={() => router.push(`/folder/${encodeURIComponent(folder.name)}`)}
                   title={`${folder.name} - ${folder.trackCount} músicas, ${folder.downloadCount} downloads`}
                 >
@@ -1091,6 +1114,13 @@ const NewPage = () => {
           {!tracksLoading && !searchLoading && !hasSearched && totalPages > 1 && (
             <div className="mt-8 sm:mt-12">
               <div className="bg-[#121212] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg">
+                {/* Indicador de página atual - Visível em mobile */}
+                <div className="text-center mb-4 sm:hidden">
+                  <span className="text-[#1db954] font-bold text-lg">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                </div>
+
                 {/* Controles de paginação */}
                 <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
                   {/* Primeira página */}
@@ -1125,8 +1155,8 @@ const NewPage = () => {
                     Anterior
                   </button>
 
-                  {/* Navegação rápida por páginas */}
-                  <div className="flex flex-wrap items-center justify-center gap-2">
+                  {/* Navegação rápida por páginas - Ocultar em mobile para economizar espaço */}
+                  <div className="hidden sm:flex flex-wrap items-center justify-center gap-2">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}

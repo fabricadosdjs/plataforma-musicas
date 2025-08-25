@@ -8,7 +8,7 @@ import { useSession } from 'next-auth/react';
 import { useNotificationContext } from '@/context/NotificationContext';
 import { Play, Pause, Download, Heart, Plus, Calendar } from 'lucide-react';
 import { formatDateBrazil, formatDateShortBrazil, formatDateExtendedBrazil, getDateKeyBrazil, isTodayBrazil, isYesterdayBrazil } from '@/utils/dateUtils';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useMobileAudio } from '@/hooks/useMobileAudio';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useDownloadsCache } from '@/hooks/useDownloadsCache';
@@ -55,15 +55,109 @@ export const MusicList = React.memo(({
     const [testingAudio, setTestingAudio] = useState<Set<number>>(new Set());
     const [stableTracks, setStableTracks] = useState<Track[]>([]);
     const [isStable, setIsStable] = useState(false);
+
+    // Estados para modal de confirmação mobile
+    const [showMobileConfirmModal, setShowMobileConfirmModal] = useState(false);
+    const [pendingDownloadAction, setPendingDownloadAction] = useState<{
+        type: 'new' | 'all';
+        tracks: Track[];
+        callback: () => void;
+    } | null>(null);
+
+    // Cache para URLs que falharam (evitar tentativas repetidas)
+    const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
+
+    // Limpar cache de falhas periodicamente (a cada 5 minutos)
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setFailedUrls(new Set());
+            console.log('🎵 MusicList: Cache de falhas limpo');
+        }, 5 * 60 * 1000); // 5 minutos
+
+        return () => clearInterval(interval);
+    }, []);
+
     const { showToast } = useToastContext();
-    const { playTrack, currentTrack, isPlaying } = useGlobalPlayer();
+    const { playTrack, currentTrack, isPlaying, togglePlayPause, stopTrack } = useGlobalPlayer();
     const { data: session } = useSession();
     const { addDownloadNotification } = useNotificationContext();
     const router = useRouter();
+    const pathname = usePathname();
     const { isMobile, hasUserInteracted, canPlayAudio, requestAudioPermission } = useMobileAudio();
 
     // Hook para cache de downloads
     const downloadsCache = useDownloadsCache();
+
+    // Função para mostrar modal de confirmação mobile
+    const showMobileDownloadConfirmation = (type: 'new' | 'all', tracks: Track[], callback: () => void) => {
+        if (window.innerWidth < 640) {
+            setPendingDownloadAction({ type, tracks, callback });
+            setShowMobileConfirmModal(true);
+        } else {
+            // Em desktop, executa diretamente
+            callback();
+        }
+    };
+
+    // Função para confirmar download mobile
+    const confirmMobileDownload = () => {
+        if (pendingDownloadAction) {
+            pendingDownloadAction.callback();
+            setShowMobileConfirmModal(false);
+            setPendingDownloadAction(null);
+        }
+    };
+
+    // Função para cancelar download mobile
+    const cancelMobileDownload = () => {
+        setShowMobileConfirmModal(false);
+        setPendingDownloadAction(null);
+    };
+
+    // Função para mostrar notificação amigável de arquivo não disponível
+    const showFileUnavailableMessage = (track: Track, reason: string) => {
+        const message = `❌ "${track.songName}" não está disponível: ${reason}`;
+        showToast(message, 'warning');
+
+        // Adicionar ao cache de falhas para evitar tentativas futuras
+        setFailedUrls(prev => new Set([...prev, track.downloadUrl]));
+
+        // Log para debugging
+        console.log(`🎵 MusicList: Arquivo marcado como não disponível:`, {
+            trackId: track.id,
+            songName: track.songName,
+            reason,
+            url: track.downloadUrl
+        });
+    };
+
+    // Função para tentar reproduzir com diferentes estratégias
+    const tryPlayWithFallback = async (track: Track, tracks: Track[]) => {
+        const strategies = [
+            { name: 'URL direta', url: track.downloadUrl },
+            { name: 'Proxy CORS', url: `/api/audio-mobile-proxy?url=${encodeURIComponent(track.downloadUrl)}` }
+        ];
+
+        for (const strategy of strategies) {
+            try {
+                console.log(`🎵 MusicList: Tentando estratégia: ${strategy.name}`);
+
+                const trackWithStrategy = {
+                    ...track,
+                    downloadUrl: strategy.url
+                };
+
+                await playTrack(trackWithStrategy, undefined, tracks);
+                console.log(`🎵 MusicList: Estratégia ${strategy.name} funcionou!`);
+                return true;
+            } catch (error) {
+                console.log(`🎵 MusicList: Estratégia ${strategy.name} falhou:`, error);
+                continue;
+            }
+        }
+
+        return false;
+    };
 
     // Estabilizar tracks para evitar piscamentos - Solução mais robusta
     useEffect(() => {
@@ -207,27 +301,274 @@ export const MusicList = React.memo(({
 
     const handlePlayPause = async (track: Track) => {
         try {
+            // Se a música atual já está tocando, apenas pausar/despausar
+            if (currentTrack?.id === track.id && isPlaying) {
+                console.log('🎵 MusicList: Música já tocando, alternando play/pause');
+                togglePlayPause();
+                return;
+            }
+
+            // Detectar dispositivo móvel e tipo
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const isChrome = /Chrome/i.test(navigator.userAgent);
+            const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
+
+            console.log('🎵 MusicList: Dispositivo detectado:', {
+                isMobile,
+                isAndroid,
+                isIOS,
+                isChrome,
+                isSafari
+            });
+
             // Em dispositivos móveis, verificar permissões primeiro
             if (isMobile && !hasUserInteracted) {
                 console.log('🎵 MusicList: Primeira interação em mobile - solicitando permissão');
+
+                // Estratégia universal para mobile
+                try {
+                    // Tentar criar um contexto de áudio silencioso para "desbloquear" o áudio
+                    if (window.AudioContext || (window as any).webkitAudioContext) {
+                        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+                        const audioContext = new AudioContextClass();
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+
+                        gainNode.gain.value = 0; // Volume 0 (silencioso)
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+
+                        oscillator.start();
+                        oscillator.stop(audioContext.currentTime + 0.001);
+
+                        console.log('🎵 MusicList: Contexto de áudio mobile ativado');
+
+                        // Aguardar um pouco para o contexto ser estabelecido
+                        await new Promise(resolve => setTimeout(resolve, 100));
+
+                        audioContext.close();
+                    }
+                } catch (audioContextError) {
+                    console.log('🎵 MusicList: Erro no contexto de áudio mobile:', audioContextError);
+                }
+
                 const permissionGranted = await requestAudioPermission();
                 if (!permissionGranted) {
-                    showToast('🔇 Toque novamente para ativar o áudio no seu dispositivo', 'warning');
+                    if (isAndroid) {
+                        showToast('🔇 Toque novamente para ativar o áudio no Android', 'warning');
+                    } else if (isIOS) {
+                        showToast('🔇 Toque novamente para ativar o áudio no iOS', 'warning');
+                    } else {
+                        showToast('🔇 Toque novamente para ativar o áudio no seu dispositivo', 'warning');
+                    }
                     return;
                 }
             }
 
+            // Solução universal para problemas de CORS em mobile
+            if (isMobile && track.downloadUrl && track.downloadUrl.includes('contabostorage.com')) {
+                console.log('🎵 MusicList: Mobile + Contabo - aplicando solução universal CORS');
+
+                // Verificar se esta URL já falhou recentemente
+                if (failedUrls.has(track.downloadUrl)) {
+                    console.log('🎵 MusicList: URL já falhou recentemente, tentando proxy direto');
+                    try {
+                        const trackWithProxy = {
+                            ...track,
+                            downloadUrl: `/api/audio-mobile-proxy?url=${encodeURIComponent(track.downloadUrl)}`
+                        };
+                        await playTrack(trackWithProxy, undefined, tracks);
+                        return;
+                    } catch (proxyError) {
+                        console.log('🎵 MusicList: Proxy direto falhou para URL em cache:', proxyError);
+                        showFileUnavailableMessage(track, 'arquivo não disponível (pode ter sido removido)');
+                        return;
+                    }
+                }
+
+                // Verificar se a URL está acessível antes de tentar proxy
+                try {
+                    console.log('🎵 MusicList: Verificando acessibilidade da URL antes do proxy');
+                    const testResponse = await fetch(track.downloadUrl, {
+                        method: 'HEAD',
+                        signal: AbortSignal.timeout(5000) // 5 segundos timeout
+                    });
+
+                    if (testResponse.status === 401 || testResponse.status === 403) {
+                        console.log(`🎵 MusicList: URL retorna ${testResponse.status} - arquivo não autorizado`);
+                        showFileUnavailableMessage(track, 'arquivo não autorizado ou removido');
+                        return;
+                    } else if (testResponse.status === 404) {
+                        console.log('🎵 MusicList: URL retorna 404 - arquivo não encontrado');
+                        showFileUnavailableMessage(track, 'arquivo não encontrado (pode ter sido movido)');
+                        return;
+                    } else if (!testResponse.ok) {
+                        console.log(`🎵 MusicList: URL retorna ${testResponse.status} - erro desconhecido`);
+                        // Continuar com proxy para tentar resolver CORS
+                    } else {
+                        console.log('🎵 MusicList: URL acessível, tentando proxy para resolver CORS');
+                    }
+                } catch (testError) {
+                    console.log('🎵 MusicList: Erro ao testar URL:', testError);
+                    // Se não conseguir testar, continuar com proxy
+                }
+
+                // Para iOS Safari e Android Chrome, sempre usar proxy CORS
+                if ((isIOS && isSafari) || (isAndroid && isChrome)) {
+                    console.log('🎵 MusicList: Usando proxy CORS para', isIOS ? 'iOS Safari' : 'Android Chrome');
+
+                    // Sistema de retry com 3 tentativas
+                    for (let attempt = 1; attempt <= 3; attempt++) {
+                        try {
+                            console.log(`🎵 MusicList: Tentativa ${attempt}/3 com proxy CORS`);
+
+                            const proxyUrl = `/api/audio-mobile-proxy?url=${encodeURIComponent(track.downloadUrl)}`;
+
+                            // Verificar se o proxy está funcionando com timeout
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos
+
+                            const proxyResponse = await fetch(proxyUrl, {
+                                signal: controller.signal,
+                                method: 'HEAD' // Usar HEAD para teste mais rápido
+                            });
+
+                            clearTimeout(timeoutId);
+
+                            if (proxyResponse.ok) {
+                                console.log(`🎵 MusicList: Proxy CORS funcionou na tentativa ${attempt}`);
+
+                                // Criar uma nova track com URL do proxy
+                                const trackWithProxy = {
+                                    ...track,
+                                    downloadUrl: proxyUrl
+                                };
+
+                                await playTrack(trackWithProxy, undefined, tracks);
+                                return;
+                            } else if (proxyResponse.status === 401 || proxyResponse.status === 403) {
+                                // Se for erro de autorização, não tentar mais com proxy
+                                console.log(`🎵 MusicList: Erro de autorização (${proxyResponse.status}) - arquivo não acessível`);
+                                showFileUnavailableMessage(track, 'arquivo não autorizado ou removido');
+                                return;
+                            } else {
+                                throw new Error(`Proxy falhou com status ${proxyResponse.status}`);
+                            }
+                        } catch (proxyError) {
+                            console.log(`🎵 MusicList: Tentativa ${attempt}/3 falhou:`, proxyError);
+
+                            if (attempt === 3) {
+                                // Adicionar URL ao cache de falhas
+                                setFailedUrls(prev => new Set([...prev, track.downloadUrl]));
+
+                                // Última tentativa: tentar URL direta
+                                try {
+                                    console.log('🎵 MusicList: Última tentativa com URL direta');
+                                    await playTrack(track, undefined, tracks);
+                                    return;
+                                } catch (finalError) {
+                                    console.log('🎵 MusicList: URL direta também falhou:', finalError);
+                                    showFileUnavailableMessage(track, 'erro de reprodução');
+                                    return;
+                                }
+                            } else {
+                                // Aguardar um pouco antes da próxima tentativa
+                                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                            }
+                        }
+                    }
+                } else {
+                    // Para outros navegadores mobile, tentar proxy direto
+                    try {
+                        console.log('🎵 MusicList: Outro navegador mobile - tentando proxy direto');
+                        const trackWithProxy = {
+                            ...track,
+                            downloadUrl: `/api/audio-mobile-proxy?url=${encodeURIComponent(track.downloadUrl)}`
+                        };
+                        await playTrack(trackWithProxy, undefined, tracks);
+                        return;
+                    } catch (proxyError) {
+                        console.log('🎵 MusicList: Proxy direto falhou, tentando URL original:', proxyError);
+                        // Continuar com a URL original
+                    }
+                }
+            }
+
             // Passar a lista de músicas atual para permitir navegação
-            await playTrack(track, undefined, tracks);
+            try {
+                await playTrack(track, undefined, tracks);
+            } catch (playError) {
+                console.log('🎵 MusicList: Erro ao tocar música diretamente:', playError);
+
+                // Se falhar, tentar com estratégias de fallback
+                if (isMobile && track.downloadUrl && track.downloadUrl.includes('contabostorage.com')) {
+                    console.log('🎵 MusicList: Tentando estratégias de fallback para mobile');
+
+                    const fallbackSuccess = await tryPlayWithFallback(track, tracks);
+                    if (fallbackSuccess) {
+                        return;
+                    }
+
+                    // Se todas as estratégias falharem, mostrar mensagem de erro
+                    showFileUnavailableMessage(track, 'erro de reprodução em todas as estratégias');
+                    return;
+                } else {
+                    showToast('❌ Erro ao reproduzir música. Tente novamente.', 'error');
+                    return;
+                }
+            }
         } catch (error) {
             console.error('Erro ao tocar música:', error);
 
             // Mensagens específicas para mobile
             if (isMobile) {
-                if (error instanceof Error && error.name === 'NotAllowedError') {
-                    showToast('🔇 Toque no botão de play para ativar o áudio', 'warning');
+                const isAndroid = /Android/i.test(navigator.userAgent);
+                const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+                if (error instanceof Error) {
+                    if (error.name === 'NotAllowedError') {
+                        if (isAndroid) {
+                            showToast('🔇 Permissão negada no Android. Toque novamente.', 'warning');
+                        } else if (isIOS) {
+                            showToast('🔇 Permissão negada no iOS. Toque novamente.', 'warning');
+                        } else {
+                            showToast('🔇 Toque no botão de play para ativar o áudio', 'warning');
+                        }
+                    } else if (error.name === 'NotSupportedError') {
+                        if (isAndroid) {
+                            showToast('🔇 Formato de áudio não suportado no Android', 'error');
+                        } else if (isIOS) {
+                            showToast('🔇 Formato de áudio não suportado no iOS', 'error');
+                        } else {
+                            showToast('❌ Formato de áudio não suportado', 'error');
+                        }
+                    } else if (error.message.includes('CORS') || error.message.includes('cors')) {
+                        if (isAndroid) {
+                            showToast('🔇 Erro de CORS no Android. Tentando solução automática...', 'warning');
+                        } else if (isIOS) {
+                            showToast('🔇 Erro de CORS no iOS. Tentando solução automática...', 'warning');
+                        } else {
+                            showToast('❌ Erro de CORS ao reproduzir áudio', 'error');
+                        }
+                    } else {
+                        if (isAndroid) {
+                            showToast('❌ Erro ao reproduzir música no Android', 'error');
+                        } else if (isIOS) {
+                            showToast('❌ Erro ao reproduzir música no iOS', 'error');
+                        } else {
+                            showToast('❌ Erro ao reproduzir música no dispositivo móvel', 'error');
+                        }
+                    }
                 } else {
-                    showToast('❌ Erro ao reproduzir música no dispositivo móvel', 'error');
+                    if (isAndroid) {
+                        showToast('❌ Erro desconhecido no Android', 'error');
+                    } else if (isIOS) {
+                        showToast('❌ Erro desconhecido no iOS', 'error');
+                    } else {
+                        showToast('❌ Erro desconhecido ao reproduzir música', 'error');
+                    }
                 }
             } else {
                 showToast('❌ Erro ao reproduzir música', 'error');
@@ -608,13 +949,13 @@ export const MusicList = React.memo(({
                         <div className="mb-3">
                             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                                 <div className="flex items-center justify-between lg:justify-start gap-2 lg:gap-4 flex-nowrap">
-                                    <h2 className="text-lg lg:text-2xl text-white font-sans min-w-0 flex-1 break-words">
+                                    <h2 className="text-sm sm:text-lg lg:text-2xl text-white font-sans min-w-0 flex-1 break-words">
                                         {group.label === 'Hoje' || group.label === 'Em breve' ? (
                                             <span className="font-bold">{group.label}</span>
                                         ) : (
                                             <>
                                                 <span className="font-bold">{group.label.split(',')[0]}</span>
-                                                <span className="text-base lg:text-xl">, {group.label.split(',').slice(1).join(',')}</span>
+                                                <span className="text-xs sm:text-base lg:text-xl">, {group.label.split(',').slice(1).join(',')}</span>
                                             </>
                                         )}
                                     </h2>
@@ -626,24 +967,28 @@ export const MusicList = React.memo(({
                                 {/* Botões de download em massa responsivos */}
                                 <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-2 w-full lg:w-auto">
                                     <button
-                                        onClick={() => downloadNewTracks(group.tracks)}
-                                        className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm transition-all duration-200 transform hover:scale-105 shadow-lg border border-blue-400/30 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                        onClick={() => {
+                                            showMobileDownloadConfirmation('new', group.tracks, () => downloadNewTracks(group.tracks));
+                                        }}
+                                        className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white px-2 sm:px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm transition-all duration-200 transform hover:scale-105 shadow-lg border border-blue-400/30 flex items-center justify-center gap-2 w-full sm:w-auto"
                                         title={`Baixar ${group.tracks.filter(t => !downloadedTrackIds.includes(t.id)).length} músicas novas desta data`}
                                     >
                                         <Download className="h-3 w-3 lg:h-4 lg:w-4" />
                                         <span className="hidden sm:inline">Baixar Novas</span>
-                                        <span className="sm:hidden">Novas</span>
+                                        <span className="sm:hidden">Baixar Novas</span>
                                         ({group.tracks.filter(t => !downloadedTrackIds.includes(t.id)).length})
                                     </button>
 
                                     <button
-                                        onClick={() => downloadAllTracks(group.tracks)}
-                                        className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm transition-all duration-200 transform hover:scale-105 shadow-lg border border-green-400/30 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                        onClick={() => {
+                                            showMobileDownloadConfirmation('all', group.tracks, () => downloadAllTracks(group.tracks));
+                                        }}
+                                        className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-2 sm:px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm transition-all duration-200 transform hover:scale-105 shadow-lg border border-green-400/30 flex items-center justify-center gap-2 w-full sm:w-auto"
                                         title={`Baixar todas as ${group.tracks.length} músicas desta data`}
                                     >
                                         <Download className="h-3 w-3 lg:h-4 lg:w-4" />
                                         <span className="hidden sm:inline">Baixar Tudo</span>
-                                        <span className="sm:hidden">Tudo</span>
+                                        <span className="sm:hidden">Baixar Tudo</span>
                                         ({group.tracks.length})
                                     </button>
                                 </div>
@@ -656,7 +1001,7 @@ export const MusicList = React.memo(({
 
                     {/* Lista de músicas */}
                     <div className="">
-                        {/* Mobile: Grid de 2 itens por linha */}
+                        {/* Mobile: Grid de cards */}
                         <div className="block sm:hidden">
                             <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                                 {group.tracks.map((track, index) => {
@@ -665,28 +1010,50 @@ export const MusicList = React.memo(({
 
                                     return (
                                         <div key={track.id} className="">
-                                            <div className="group mb-4">
+                                            <div className="group mb-3">
                                                 <div className="bg-black border border-gray-700/50 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 group relative overflow-hidden">
                                                     <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                                                    <div className="relative mb-1.5 sm:mb-2">
-                                                        {/* Thumbnail com botão play centralizado */}
+                                                    <div className="relative mb-2 sm:mb-2">
+                                                        {/* Thumbnail responsivo */}
                                                         <div className="w-full aspect-square bg-black border border-gray-700 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden relative">
                                                             <OptimizedImage
                                                                 track={track}
-                                                                className="w-full h-full object-cover"
-                                                                fallbackClassName={`w-full h-full bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-lg shadow-lg border border-gray-700`}
+                                                                className="w-full h-full object-cover rounded-lg sm:rounded-xl"
+                                                                fallbackClassName={`w-full h-full bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-lg shadow-lg border border-gray-700 rounded-lg sm:rounded-xl`}
                                                                 fallbackContent={initials}
                                                             />
 
+                                                            {/* Player sempre visível na thumbnail - Mobile */}
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (!session) {
+                                                                        showToast('🔐 Faça login para ouvir músicas', 'warning');
+                                                                        return;
+                                                                    }
+                                                                    handlePlayPause(track);
+                                                                }}
+                                                                disabled={testingAudio.has(track.id)}
+                                                                className="absolute inset-0 bg-black/50 rounded-lg sm:rounded-xl opacity-100 flex items-center justify-center transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed z-20 hover:bg-black/70"
+                                                                title={testingAudio.has(track.id) ? 'Testando compatibilidade...' : isCurrentlyPlaying ? 'Pausar' : 'Tocar'}
+                                                            >
+                                                                {testingAudio.has(track.id) ? (
+                                                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                                ) : isCurrentlyPlaying ? (
+                                                                    <Pause className="h-8 w-8 text-white drop-shadow-lg" />
+                                                                ) : (
+                                                                    <Play className="h-8 w-8 text-white drop-shadow-lg ml-1" />
+                                                                )}
+                                                            </button>
+
                                                             {/* Badge do estilo da música */}
-                                                            <div className="absolute top-1.5 left-1.5">
+                                                            <div className="absolute top-1.5 left-1.5 z-40">
                                                                 <button
                                                                     onClick={() => handleStyleClick(track.style)}
                                                                     disabled={!track.style || track.style === 'N/A'}
-                                                                    className={`px-1.5 py-0.5 text-white text-[10px] font-semibold rounded-md backdrop-blur-sm border transition-all duration-200 ${track.style && track.style !== 'N/A'
-                                                                        ? 'bg-emerald-500/90 border-emerald-400/40 cursor-pointer hover:bg-emerald-500 hover:scale-105'
-                                                                        : 'bg-gray-600/90 border-gray-400/40 cursor-not-allowed opacity-60'
+                                                                    className={`px-0.5 text-white text-[9px] font-bold rounded-sm backdrop-blur-sm border transition-all duration-200 shadow-sm ${track.style && track.style !== 'N/A'
+                                                                        ? 'bg-emerald-500/90 border-emerald-400/50 cursor-pointer hover:bg-emerald-500 hover:scale-105 hover:shadow-md'
+                                                                        : 'bg-gray-600/90 border-gray-400/50 cursor-not-allowed opacity-60'
                                                                         }`}
                                                                     title={track.style && track.style !== 'N/A' ? `Filtrar por estilo: ${track.style}` : 'Estilo não disponível'}
                                                                 >
@@ -696,11 +1063,11 @@ export const MusicList = React.memo(({
                                                         </div>
                                                     </div>
 
-                                                    {/* Informações da música - Nome e Artista apenas */}
+                                                    {/* Informações da música - Nome, Artista e Folder com espaçamento igual */}
                                                     <div className="space-y-1.5 sm:space-y-2">
                                                         <div className="overflow-hidden">
                                                             <h3
-                                                                className="font-black text-white text-xs sm:text-base truncate cursor-pointer transition-all duration-500 ease-in-out tracking-tight -mt-0.5"
+                                                                className="font-black text-white text-xs sm:text-base truncate cursor-pointer transition-all duration-500 ease-in-out tracking-tight"
                                                                 title={track.songName}
                                                                 onClick={() => {
                                                                     const element = event?.target as HTMLElement;
@@ -725,9 +1092,9 @@ export const MusicList = React.memo(({
                                                             >
                                                                 {track.songName}
                                                             </h3>
-                                                        </div>
-                                                        <div className="text-xs sm:text-sm text-gray-300 relative z-10 -mt-1 font-medium">
-                                                            {renderArtists(track.artist)}
+                                                            <div className="text-xs sm:text-sm text-gray-300 font-medium truncate">
+                                                                {track.artist}
+                                                            </div>
                                                         </div>
 
                                                         {/* Informações adicionais - Mobile */}
@@ -736,40 +1103,22 @@ export const MusicList = React.memo(({
                                                                 const folderName = track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt);
                                                                 router.push(`/folder/${encodeURIComponent(folderName)}`);
                                                             }}
-                                                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 mb-2 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer"
+                                                            className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer w-full relative z-50"
                                                             title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
                                                         >
                                                             <span className="text-purple-400 text-xs">📁</span>
-                                                            <span className="text-gray-200 text-xs font-medium">
+                                                            <span className="text-gray-200 text-[10px] sm:text-xs font-medium truncate text-center">
                                                                 {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
                                                             </span>
                                                         </button>
 
                                                         {/* Botões de ação - Mobile */}
-                                                        <div className="flex flex-col gap-2 mt-3">
-                                                            {/* Botão Play/Pause */}
-                                                            <button
-                                                                onClick={() => handlePlayPause(track)}
-                                                                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${isCurrentlyPlaying
-                                                                    ? 'bg-red-600/20 text-red-400 border border-red-600/30'
-                                                                    : 'bg-green-600/20 text-green-400 border border-green-600/30 hover:bg-green-600/30'
-                                                                    } font-sans`}
-                                                            >
-                                                                {isCurrentlyPlaying ? (
-                                                                    <Pause className="h-3 w-3" />
-                                                                ) : (
-                                                                    <Play className="h-3 w-3" />
-                                                                )}
-                                                                <span>
-                                                                    {isCurrentlyPlaying ? 'Pausar' : 'Tocar'}
-                                                                </span>
-                                                            </button>
-
+                                                        <div className="flex flex-col gap-2 mt-1 relative z-50">
                                                             {/* Botão Download */}
                                                             <button
                                                                 onClick={() => handleDownload(track)}
                                                                 disabled={downloadingTracks.has(track.id) || isDownloaded(track) || !session}
-                                                                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${isDownloaded(track)
+                                                                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 w-full ${isDownloaded(track)
                                                                     ? 'bg-green-600/20 text-green-400 border border-green-600/30 cursor-not-allowed'
                                                                     : !session
                                                                         ? 'bg-gray-600/40 text-gray-500 border border-gray-600/30 cursor-not-allowed'
@@ -797,7 +1146,7 @@ export const MusicList = React.memo(({
                                                                     handleLike(track);
                                                                 }}
                                                                 disabled={!session}
-                                                                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${!session
+                                                                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 w-full ${!session
                                                                     ? 'bg-gray-600/40 text-gray-500 border border-gray-600/30 cursor-not-allowed'
                                                                     : isLiked(track)
                                                                         ? 'bg-red-600/20 text-red-400 border border-red-600/30'
@@ -934,7 +1283,7 @@ export const MusicList = React.memo(({
                                                             title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
                                                         >
                                                             <span className="text-purple-400 text-xs">📁</span>
-                                                            <span className="text-gray-200 text-xs font-medium">
+                                                            <span className="text-gray-200 text-[10px] sm:text-xs font-medium">
                                                                 {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
                                                             </span>
                                                         </button>
@@ -1100,6 +1449,81 @@ export const MusicList = React.memo(({
                                         Carregando...
                                     </div>
                                 ) : 'Carregar Mais'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Confirmação para Downloads Mobile */}
+            {showMobileConfirmModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+                    <div className="bg-[#282828] border border-[#3e3e3e] rounded-xl p-5 max-w-sm w-full mx-3">
+                        {/* Ícone de Aviso */}
+                        <div className="flex justify-center mb-4">
+                            <div className="w-14 h-14 bg-yellow-500/20 border-2 border-yellow-500/30 rounded-full flex items-center justify-center">
+                                <svg className="w-7 h-7 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        {/* Título */}
+                        <h3 className="text-white text-lg font-bold text-center mb-4">
+                            Aviso de Download
+                        </h3>
+
+                        {/* Mensagem */}
+                        <div className="text-gray-300 text-sm text-center mb-6 space-y-3">
+                            <p className="font-medium">
+                                {pendingDownloadAction?.type === 'new'
+                                    ? `Baixar ${pendingDownloadAction.tracks.filter(t => !finalDownloadedTrackIds.includes(t.id)).length} músicas novas?`
+                                    : `Baixar todas as ${pendingDownloadAction?.tracks.length} músicas?`
+                                }
+                            </p>
+
+                            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+                                <p className="text-yellow-400 font-medium text-xs">
+                                    ⚠️ Celulares podem não suportar muitos downloads simultâneos.
+                                </p>
+                                <p className="text-gray-300 text-xs mt-1">
+                                    Recomendamos usar um computador para downloads em massa.
+                                </p>
+                            </div>
+
+                            <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
+                                <p className="text-purple-300 font-medium text-xs">
+                                    💎 Para uma experiência premium, acesse nossa plataforma VIP!
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Botões de Ação */}
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={confirmMobileDownload}
+                                className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg text-sm"
+                            >
+                                Continuar no Celular
+                            </button>
+
+                            <button
+                                onClick={() => window.open('https://plataformavip.nexorrecords.com.br/atualizacoes', '_blank')}
+                                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg border border-purple-400/30 text-sm"
+                            >
+                                <div className="flex items-center justify-center gap-2">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                    </svg>
+                                    Acessar Plataforma VIP
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={cancelMobileDownload}
+                                className="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 text-sm"
+                            >
+                                Cancelar
                             </button>
                         </div>
                     </div>
