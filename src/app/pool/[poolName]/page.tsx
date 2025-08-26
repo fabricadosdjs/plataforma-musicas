@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Header from '@/components/layout/Header';
 import MusicList from '@/components/music/MusicList';
 import InlineDownloadProgress from '@/components/music/InlineDownloadProgress';
@@ -50,6 +51,7 @@ export default function PoolPage() {
     const poolName = params?.poolName as string;
     const decodedPoolName = decodeURIComponent(poolName);
     const { showToast } = useToastContext();
+    const { data: session } = useSession();
 
     // Verificar se deve iniciar download automático
     const [shouldAutoDownload, setShouldAutoDownload] = useState(false);
@@ -94,8 +96,8 @@ export default function PoolPage() {
 
     // Função para baixar músicas em lote (simplificada)
     const downloadTracksInBatches = async (tracksToDownload: Track[]) => {
-        if (!isVip) {
-            showToast('👑 Apenas usuários VIP podem baixar músicas em lote', 'warning');
+        if (!session) {
+            showToast('👑 Para baixar músicas em lote, você precisa estar logado. Ative um plano VIP!', 'warning');
             return;
         }
 
@@ -351,8 +353,8 @@ export default function PoolPage() {
 
     // Função para limpar o histórico de downloads de um estilo específico
     const clearDownloadHistory = async (tracks: Track[]) => {
-        if (!isVip) {
-            showToast('👑 Apenas usuários VIP podem limpar o histórico de downloads', 'warning');
+        if (!session) {
+            showToast('👑 Para limpar o histórico de downloads, você precisa estar logado. Ative um plano VIP!', 'warning');
             return;
         }
 
@@ -696,59 +698,15 @@ export default function PoolPage() {
 
                             {/* Botões de Download */}
                             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-                                {/* Botão de Debug - Temporário */}
                                 <button
                                     onClick={() => {
-                                        console.log('🔍 Debug - Estado atual:');
-                                        console.log('📊 filteredTracks:', filteredTracks.length);
-                                        console.log('💾 downloadedTrackIds (estado):', downloadedTrackIds.length);
-                                        console.log('💾 localStorage downloadedTrackIds:', JSON.parse(localStorage.getItem('downloadedTrackIds') || '[]').length);
-                                        console.log('💾 localStorage downloadedTracks:', JSON.parse(localStorage.getItem('downloadedTracks') || '[]').length);
-
-                                        // Forçar sincronização
-                                        syncDownloadedTrackIds();
-
-                                        // Recalcular contagem
-                                        const newCount = getAvailableTracksCount();
-                                        console.log('🔄 Nova contagem após sincronização:', newCount);
-
-                                        showToast(`🔍 Debug: ${newCount} tracks disponíveis`, 'info');
+                                        if (session) {
+                                            showMobileDownloadConfirmation('all', filteredTracks, () => downloadTracksInBatches(filteredTracks));
+                                        } else {
+                                            showToast('👑 Para baixar músicas em lote, você precisa estar logado. Ative um plano VIP!', 'warning');
+                                        }
                                     }}
-                                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm"
-                                >
-                                    🔍 Debug
-                                </button>
-
-                                {/* Botão de Sincronização Forçada */}
-                                <button
-                                    onClick={() => {
-                                        console.log('🔄 Forçando sincronização de estado...');
-
-                                        // 1. Marcar TODAS as tracks como baixadas
-                                        const allTrackIds = filteredTracks.map(track => track.id);
-                                        console.log('📝 Marcando todas as tracks como baixadas:', allTrackIds.length);
-
-                                        // 2. Atualizar estado local
-                                        setDownloadedTrackIds(allTrackIds);
-
-                                        // 3. Atualizar localStorage
-                                        localStorage.setItem('downloadedTrackIds', JSON.stringify(allTrackIds));
-
-                                        // 4. Recalcular contagem
-                                        const newCount = getAvailableTracksCount();
-                                        console.log('🔄 Nova contagem após sincronização forçada:', newCount);
-
-                                        showToast(`🔄 Estado sincronizado! ${newCount} tracks disponíveis`, 'success');
-                                    }}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                                >
-                                    🔄 Sincronizar Estado
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        showMobileDownloadConfirmation('all', filteredTracks, () => downloadTracksInBatches(filteredTracks));
-                                    }}
-                                    disabled={isBatchDownloading || filteredTracks.length === 0}
+                                    disabled={isBatchDownloading || filteredTracks.length === 0 || !session}
                                     className="flex items-center justify-center gap-3 px-8 py-3 bg-[#1db954] text-white rounded-xl hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
                                 >
                                     <Download className="w-5 h-5" />
@@ -757,14 +715,18 @@ export default function PoolPage() {
 
                                 <button
                                     onClick={() => {
-                                        const availableTracks = getAvailableTracks();
-                                        if (availableTracks.length > 0) {
-                                            showMobileDownloadConfirmation('new', availableTracks, () => downloadTracksInBatches(availableTracks));
+                                        if (session) {
+                                            const availableTracks = getAvailableTracks();
+                                            if (availableTracks.length > 0) {
+                                                showMobileDownloadConfirmation('new', availableTracks, () => downloadTracksInBatches(availableTracks));
+                                            } else {
+                                                showToast('✅ Todas as músicas já foram baixadas!', 'info');
+                                            }
                                         } else {
-                                            showToast('✅ Todas as músicas já foram baixadas!', 'info');
+                                            showToast('👑 Para baixar músicas em lote, você precisa estar logado. Ative um plano VIP!', 'warning');
                                         }
                                     }}
-                                    disabled={isBatchDownloading || availableTracksCount === 0}
+                                    disabled={isBatchDownloading || availableTracksCount === 0 || !session}
                                     className="flex items-center justify-center gap-3 px-8 py-3 bg-[#282828] text-white rounded-xl hover:bg-[#3e3e3e] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg border border-[#3e3e3e] shadow-lg hover:shadow-xl"
                                 >
                                     <RefreshCw className="w-5 h-5" />

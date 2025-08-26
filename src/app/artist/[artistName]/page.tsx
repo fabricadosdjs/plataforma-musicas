@@ -3,8 +3,9 @@
 // Força renderização dinâmica para evitar erro de pré-renderização
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import MainLayout from '@/components/layout/MainLayout';
 import MusicList from '@/components/music/MusicList';
 import FooterSpacer from '@/components/layout/FooterSpacer';
@@ -56,6 +57,7 @@ export default function ArtistPage() {
     const decodedArtistName = decodeURIComponent(artistName);
     const { showToast } = useToastContext();
     const router = useRouter();
+    const { data: session } = useSession();
 
     const [tracks, setTracks] = useState<Track[]>([]);
     const [loading, setLoading] = useState(true);
@@ -183,6 +185,27 @@ export default function ArtistPage() {
         router.back();
     };
 
+    const handleBatchDownload = useCallback(() => {
+        if (!session) {
+            showToast('Para baixar músicas, você precisa estar logado. Ative um plano para continuar.', 'info');
+            return;
+        }
+        startBatchDownload(tracks, decodedArtistName, 'genre');
+    }, [session, startBatchDownload, tracks, decodedArtistName, showToast]);
+
+    const handleDownloadNewTracks = useCallback(() => {
+        if (!session) {
+            showToast('Para baixar músicas, você precisa estar logado. Ative um plano para continuar.', 'info');
+            return;
+        }
+        const newTracks = tracks.filter(track => !downloadedTrackIds.includes(track.id));
+        if (newTracks.length > 0) {
+            startBatchDownload(newTracks, decodedArtistName, 'genre');
+        } else {
+            showToast('Todas as músicas já foram baixadas!', 'info');
+        }
+    }, [session, startBatchDownload, tracks, decodedArtistName, downloadedTrackIds, showToast]);
+
     return (
         <MainLayout>
             <div className="min-h-screen bg-[#121212]">
@@ -251,8 +274,8 @@ export default function ArtistPage() {
                             {/* Botões de Download */}
                             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
                                 <button
-                                    onClick={() => startBatchDownload(tracks, decodedArtistName, 'genre')}
-                                    disabled={isBatchDownloading || tracks.length === 0}
+                                    onClick={handleBatchDownload}
+                                    disabled={isBatchDownloading || tracks.length === 0 || !session}
                                     className="flex items-center justify-center gap-3 px-8 py-3 bg-[#1db954] text-white rounded-xl hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
                                 >
                                     <Download className="w-5 h-5" />
@@ -260,15 +283,8 @@ export default function ArtistPage() {
                                 </button>
 
                                 <button
-                                    onClick={() => {
-                                        const newTracks = tracks.filter(track => !downloadedTrackIds.includes(track.id));
-                                        if (newTracks.length > 0) {
-                                            startBatchDownload(newTracks, decodedArtistName, 'genre');
-                                        } else {
-                                            showToast('Todas as músicas já foram baixadas!', 'info');
-                                        }
-                                    }}
-                                    disabled={isBatchDownloading || tracks.length === 0}
+                                    onClick={handleDownloadNewTracks}
+                                    disabled={isBatchDownloading || tracks.length === 0 || !session}
                                     className="flex items-center justify-center gap-3 px-8 py-3 bg-[#282828] text-white rounded-xl hover:bg-[#3e3e3e] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg border border-[#3e3e3e] shadow-lg hover:shadow-xl"
                                 >
                                     <RefreshCw className="w-5 h-5" />

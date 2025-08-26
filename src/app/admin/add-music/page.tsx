@@ -105,7 +105,12 @@ export default function AddMusicPage() {
       if (response.ok) {
         const result = await response.json();
         setDuplicateCheckResult(result);
-        setMessage(`✅ Verificação concluída: ${result.summary.unique} únicas, ${result.summary.duplicates} duplicadas`);
+
+        if (result.summary.duplicates > 0) {
+          setMessage(`⚠️ Verificação concluída: ${result.summary.unique} únicas, ${result.summary.duplicates} duplicadas encontradas!`);
+        } else {
+          setMessage(`✅ Verificação concluída: ${result.summary.unique} músicas únicas - todas podem ser importadas!`);
+        }
       } else {
         const errorText = await response.text();
         setMessage(`❌ Erro na verificação: ${errorText}`);
@@ -167,24 +172,43 @@ export default function AddMusicPage() {
                 Resumo da Importação
               </h3>
 
+              {/* Estatísticas da importação */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F]">
-                  <div className="text-2xl font-bold text-blue-400">{importResult.summary.received}</div>
-                  <div className="text-sm text-gray-400">Total Recebido</div>
+                <div className="bg-[#3D3E3F] rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-400">{importResult.totalReceived}</div>
+                  <div className="text-sm text-gray-300">Total Recebido</div>
                 </div>
-                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F]">
-                  <div className="text-2xl font-bold text-green-400">{importResult.summary.inserted}</div>
-                  <div className="text-sm text-gray-400">Inseridas</div>
+                <div className="bg-[#3D3E3F] rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-green-400">{importResult.totalInserted}</div>
+                  <div className="text-sm text-gray-300">Inseridas</div>
                 </div>
-                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F]">
-                  <div className="text-2xl font-bold text-yellow-400">{importResult.summary.unique}</div>
-                  <div className="text-sm text-gray-400">Únicas</div>
+                <div className="bg-[#3D3E3F] rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-yellow-400">{importResult.totalDuplicates}</div>
+                  <div className="text-sm text-gray-300">Duplicatas</div>
                 </div>
-                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F]">
-                  <div className="text-2xl font-bold text-red-400">{importResult.summary.duplicates}</div>
-                  <div className="text-sm text-gray-400">Duplicadas</div>
+                <div className="bg-[#3D3E3F] rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-400">{importResult.summary.unique}</div>
+                  <div className="text-sm text-gray-300">Únicas</div>
                 </div>
               </div>
+
+              {/* Lista de duplicatas */}
+              {importResult.duplicates && importResult.duplicates.length > 0 && (
+                <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-red-200 mb-3 flex items-center gap-2">
+                    ⚠️ Músicas Não Importadas ({importResult.duplicates.length})
+                  </h4>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {importResult.duplicates.map((duplicate: string, index: number) => (
+                      <div key={index} className="text-red-100 text-sm bg-red-800/30 rounded px-3 py-2">
+                        {duplicate}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+
 
               {/* Lista de duplicados */}
               {importResult.duplicates && importResult.duplicates.length > 0 && (
@@ -234,48 +258,62 @@ export default function AddMusicPage() {
                 Verificação de Duplicatas
               </h3>
 
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F]">
+              {/* Estatísticas da verificação */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F] text-center">
                   <div className="text-2xl font-bold text-blue-400">{duplicateCheckResult.summary.total}</div>
                   <div className="text-sm text-gray-400">Total Verificado</div>
                 </div>
-                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F]">
+                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F] text-center">
                   <div className="text-2xl font-bold text-green-400">{duplicateCheckResult.summary.unique}</div>
                   <div className="text-sm text-gray-400">Únicas</div>
                 </div>
-                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F]">
-                  <div className="text-2xl font-bold text-red-400">{duplicateCheckResult.summary.duplicates}</div>
+                <div className="bg-[#1B1C1D] p-4 rounded-lg border border-[#3D3E3F] text-center">
+                  <div className="text-2xl font-bold text-yellow-400">{duplicateCheckResult.summary.duplicates}</div>
                   <div className="text-sm text-gray-400">Duplicadas</div>
                 </div>
               </div>
 
               {/* Lista de duplicatas encontradas */}
               {duplicateCheckResult.duplicates && duplicateCheckResult.duplicates.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-lg font-semibold text-white mb-3">
-                    Músicas Duplicadas Encontradas ({duplicateCheckResult.duplicates.length})
+                <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4 mb-4">
+                  <h4 className="text-lg font-semibold text-red-200 mb-3 flex items-center gap-2">
+                    ⚠️ Duplicatas Encontradas ({duplicateCheckResult.duplicates.length})
                   </h4>
-                  <div className="bg-[#1B1C1D] rounded-lg p-4 max-h-60 overflow-y-auto">
-                    <ul className="space-y-3">
-                      {duplicateCheckResult.duplicates.map((duplicate: any, index: number) => (
-                        <li key={index} className="text-sm text-gray-300 border-l-2 border-red-400 pl-3">
-                          <div className="font-medium">{duplicate.track.artist} - {duplicate.track.songName}</div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            Motivo: {duplicate.reason}
-                            {duplicate.existingTrack && (
-                              <div className="mt-1">
-                                Já existe: ID {duplicate.existingTrack.id} - {duplicate.existingTrack.artist} - {duplicate.existingTrack.songName}
-                              </div>
-                            )}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {duplicateCheckResult.duplicates.map((duplicate: any, index: number) => (
+                      <div key={index} className="text-red-100 text-sm bg-red-800/30 rounded px-3 py-2">
+                        {duplicate.reason || duplicate}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              <div className="mt-6 flex justify-end">
+              {/* Lista de músicas únicas */}
+              {duplicateCheckResult.unique && duplicateCheckResult.unique.length > 0 && (
+                <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-green-200 mb-3 flex items-center gap-2">
+                    ✅ Músicas Únicas ({duplicateCheckResult.unique.length})
+                  </h4>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {duplicateCheckResult.unique.slice(0, 10).map((track: any, index: number) => (
+                      <div key={index} className="text-green-100 text-sm bg-green-800/30 rounded px-3 py-2">
+                        {track.artist} - {track.songName}
+                      </div>
+                    ))}
+                    {duplicateCheckResult.unique.length > 10 && (
+                      <div className="text-green-200 text-sm text-center py-2">
+                        ... e mais {duplicateCheckResult.unique.length - 10} músicas únicas
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+
+
+              <div className="mt-6 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setDuplicateCheckResult(null)}
@@ -283,6 +321,18 @@ export default function AddMusicPage() {
                 >
                   Limpar Verificação
                 </button>
+                {duplicateCheckResult.summary.unique > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, jsonData: JSON.stringify(duplicateCheckResult.unique, null, 2) });
+                      setDuplicateCheckResult(null);
+                    }}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm"
+                  >
+                    Usar Apenas Músicas Únicas
+                  </button>
+                )}
               </div>
             </div>
           )}

@@ -6,7 +6,7 @@ function isValidDate(val: unknown): val is Date {
 }
 // src/components/layout/Header.tsx
 
-import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, Bell, UserCircle, Users, Home } from 'lucide-react';
+import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, UserCircle, Users, Home } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { SafeImage } from '@/components/ui/SafeImage';
 import Link from 'next/link';
@@ -14,8 +14,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Filter } from 'lucide-react'; // Certifique-se de que Filter está importado aqui
 import { getSignInUrl } from '@/lib/utils';
-import { useNotifications } from '@/hooks/useNotifications';
-import { NotificationItem } from '@/components/ui/NotificationItem';
+
 
 interface HeaderProps {
 }
@@ -25,37 +24,23 @@ const NEW_LOGO_URL = 'https://i.ibb.co/Y7WKPY57/logo-nexor.png';
 const Header = ({ }: HeaderProps) => {
   const { data: session } = useSession();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const {
-    notifications,
-    unreadCount,
-    markAsRead,
-    clearAllNotifications,
-    removeNotification,
-    cleanOldNotifications
-  } = useNotifications();
-
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const notificationsMenuRef = useRef<HTMLDivElement>(null);
   // Fecha os menus ao clicar fora
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
       }
-      if (notificationsMenuRef.current && !notificationsMenuRef.current.contains(event.target as Node)) {
-        setShowNotifications(false);
-      }
     }
-    if (showProfileMenu || showNotifications) {
+    if (showProfileMenu) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showProfileMenu, showNotifications]);
+  }, [showProfileMenu]);
 
   // Previne scroll quando menu móvel está aberto
   useEffect(() => {
@@ -377,107 +362,7 @@ const Header = ({ }: HeaderProps) => {
             <div className="flex items-center space-x-3">
 
 
-              {/* Sino de Notificações */}
-              <div className="relative" ref={notificationsMenuRef}>
-                <button
-                  className="relative p-2 text-gray-300 hover:text-white focus:outline-none transition-colors"
-                  onClick={() => setShowNotifications((prev) => !prev)}
-                  aria-label="Ver notificações"
-                >
-                  <Bell className="h-6 w-6" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </button>
 
-                {/* Menu de Notificações */}
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 max-h-96 overflow-hidden">
-                    <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                      <h3 className="font-bold text-white">Notificações</h3>
-                      {notifications.length > 0 && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              if (confirm('Limpar notificações antigas (mais de 30 dias)?')) {
-                                cleanOldNotifications();
-                                // Mostrar feedback visual
-                                const button = event?.target as HTMLButtonElement;
-                                if (button) {
-                                  const originalText = button.textContent;
-                                  button.textContent = '✓ Limpo!';
-                                  button.className = 'text-xs text-green-400 transition-colors';
-                                  setTimeout(() => {
-                                    button.textContent = originalText;
-                                    button.className = 'text-xs text-gray-400 hover:text-green-400 transition-colors';
-                                  }, 2000);
-                                }
-                              }
-                            }}
-                            className="text-xs text-gray-400 hover:text-green-400 transition-colors"
-                            title="Limpar notificações antigas (mais de 30 dias)"
-                          >
-                            Limpar Antigas
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm('Tem certeza que deseja limpar todas as notificações? Esta ação não pode ser desfeita.')) {
-                                clearAllNotifications();
-                                // Mostrar feedback visual
-                                const button = event?.target as HTMLButtonElement;
-                                if (button) {
-                                  const originalText = button.textContent;
-                                  button.textContent = '✓ Limpo!';
-                                  button.className = 'text-xs text-green-400 transition-colors';
-                                  setTimeout(() => {
-                                    button.textContent = originalText;
-                                    button.className = 'text-xs text-gray-400 hover:text-green-400 transition-colors';
-                                  }, 2000);
-                                }
-                              }
-                            }}
-                            className="text-xs text-gray-400 hover:text-green-400 transition-colors"
-                          >
-                            Limpar Tudo
-                          </button>
-                          <button
-                            onClick={() => {
-                              console.log('🧪 Teste: Estado atual das notificações:', notifications);
-                              console.log('🧪 Teste: localStorage notifications:', localStorage.getItem('notifications'));
-                              console.log('🧪 Teste: localStorage excludedNotifications:', localStorage.getItem('excludedNotifications'));
-                              console.log('🧪 Teste: localStorage notificationsCleared:', localStorage.getItem('notificationsCleared'));
-                            }}
-                            className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                            title="Testar sistema de notificações"
-                          >
-                            🧪 Teste
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="max-h-80 overflow-y-auto group">
-                      {notifications.length === 0 ? (
-                        <div className="p-6 text-center text-gray-400">
-                          <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p>Nenhuma notificação</p>
-                        </div>
-                      ) : (
-                        notifications.map((notification) => (
-                          <NotificationItem
-                            key={notification.id}
-                            notification={notification}
-                            onMarkAsRead={markAsRead}
-                            onRemove={removeNotification}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
 
               {/* Menu do Perfil */}
               <div className="relative" ref={profileMenuRef}>
@@ -589,7 +474,7 @@ const Header = ({ }: HeaderProps) => {
 
 
 
-      {/* Não há notificações locais aqui, elas são gerenciadas pelo AppContext */}
+
     </header>
   );
 };

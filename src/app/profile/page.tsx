@@ -1899,300 +1899,92 @@ const ProfilePage = () => {
                     </div>
                 );
 
-            case 'plan':
+            case 'allavsoft':
                 return (
                     <div className="space-y-8">
                         {/* Header da Seção com Design Melhorado */}
                         <div className="bg-gradient-to-r from-gray-900/80 via-gray-800/80 to-gray-900/80 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden">
                             {/* Background Pattern */}
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(234,179,8,0.1),transparent_50%)]"></div>
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(147,51,234,0.1),transparent_50%)]"></div>
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,146,60,0.1),transparent_50%)]"></div>
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(251,146,60,0.1),transparent_50%)]"></div>
 
                             <div className="relative z-10">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center border border-yellow-500/30">
-                                        <Crown className="h-8 w-8 text-yellow-400" />
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-2xl flex items-center justify-center border border-orange-500/30 group-hover:scale-110 transition-all duration-300">
+                                        <Disc className="h-8 w-8 text-orange-400" />
                                     </div>
                                     <div>
                                         <h2 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
-                                            Meu Plano
-                                            <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 text-sm rounded-full border border-yellow-500/30 font-medium">
-                                                VIP
+                                            Allavsoft - Download Universal
+                                            <span className="px-3 py-1 bg-orange-500/20 text-orange-300 text-sm rounded-full border border-orange-500/30 font-medium">
+                                                Download
                                             </span>
                                         </h2>
-                                        <p className="text-gray-300 text-lg">Gerencie seu plano VIP e acompanhe vencimentos</p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Última verificação: {lastRefresh ? formatDateTime(lastRefresh.toISOString()) : 'Nunca'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Status Rápido */}
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                                                <Crown className="h-5 w-5 text-yellow-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Plano</p>
-                                                <p className="text-yellow-400 font-bold">{vipStatus.plan}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                                                <ShieldCheck className="h-5 w-5 text-green-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Status</p>
-                                                <p className={`font-bold ${vipStatus.isVip ? 'text-green-400' : 'text-red-400'}`}>
-                                                    {vipStatus.isVip ? 'ATIVO' : 'INATIVO'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                                <Calendar className="h-5 w-5 text-blue-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Vencimento</p>
-                                                <p className="text-blue-400 font-bold">
-                                                    {vipStatus.vencimento ? formatDate(vipStatus.vencimento) : 'Não definido'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                                                <DollarSign className="h-5 w-5 text-purple-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Valor</p>
-                                                <p className="text-purple-400 font-bold">
-                                                    R$ {calculateCorrectValue().toFixed(2).replace('.', ',')}
-                                                </p>
-                                            </div>
-                                        </div>
+                                        <p className="text-gray-300 text-lg">Ferramenta completa para download de vídeos e áudios de qualquer plataforma</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Cards de Estatísticas do Plano com Design Moderno */}
-                        <div className="space-y-6">
-                            {/* Estatísticas Principais */}
-                            <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-500">
-                                {/* Background Effects */}
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(234,179,8,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_20%_80%,rgba(234,179,8,0.15),transparent_50%)] transition-all duration-500"></div>
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
+                        {/* Conteúdo Principal */}
+                        <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-orange-500/30 transition-all duration-500">
+                            {/* Background Effects */}
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(251,146,60,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_80%_20%,rgba(251,146,60,0.15),transparent_50%)] transition-all duration-500"></div>
+                            <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-orange-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
 
-                                <div className="relative z-10">
-                                    <div className="flex items-start justify-between mb-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-16 h-16 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center border border-yellow-500/30 group-hover:scale-110 transition-all duration-300">
-                                                <Package className="h-8 w-8 text-yellow-400" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-2xl font-bold text-white mb-2">Estatísticas do Plano</h3>
-                                                <p className="text-gray-300">Informações detalhadas sobre sua assinatura</p>
-                                            </div>
+                            <div className="relative z-10">
+                                <div className="text-center mb-8">
+                                    <div className="w-20 h-20 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                        <Disc className="h-12 w-12 text-orange-400" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-white mb-4">Allavsoft Premium</h3>
+                                    <p className="text-orange-400 text-lg font-semibold mb-6">A ferramenta mais completa para downloads universais!</p>
+                                </div>
+
+                                {/* Características Principais */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                    <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
+                                        <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                            <Download className="h-8 w-8 text-blue-400" />
                                         </div>
-                                        <div className="px-4 py-2 bg-yellow-500/20 text-yellow-300 text-sm rounded-full border border-yellow-500/30 font-medium">
-                                            Assinatura
-                                        </div>
+                                        <h4 className="text-white font-semibold text-lg mb-2">🌐 Download Universal</h4>
+                                        <p className="text-blue-400 text-sm">YouTube, Vimeo, Facebook, Instagram e muito mais</p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                            <div className="w-16 h-16 bg-yellow-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                                <Crown className="h-8 w-8 text-yellow-400" />
-                                            </div>
-                                            <h4 className="text-white font-semibold text-lg mb-2">Plano Atual</h4>
-                                            <p className="text-yellow-400 text-3xl font-black mb-2">{vipStatus.plan}</p>
-                                            <p className="text-gray-300 text-sm">Seu plano VIP</p>
+                                    <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
+                                        <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                            <Monitor className="h-8 w-8 text-purple-400" />
                                         </div>
+                                        <h4 className="text-white font-semibold text-lg mb-2">📱 Interface Intuitiva</h4>
+                                        <p className="text-purple-400 text-sm">Fácil de usar e configurar</p>
+                                    </div>
 
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                            <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                                <DollarSign className="h-8 w-8 text-green-400" />
-                                            </div>
-                                            <h4 className="text-white font-semibold text-lg mb-2">Valor Mensal</h4>
-                                            <p className="text-green-400 text-3xl font-black mb-2">
-                                                R$ {calculateCorrectValue().toFixed(2).replace('.', ',')}
-                                            </p>
-                                            <p className="text-gray-300 text-sm">Valor da assinatura</p>
+                                    <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
+                                        <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                            <Zap className="h-8 w-8 text-emerald-400" />
                                         </div>
+                                        <h4 className="text-white font-semibold text-lg mb-2">⚡ Downloads Rápidos</h4>
+                                        <p className="text-emerald-400 text-sm">Performance otimizada e estável</p>
+                                    </div>
 
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                            <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                                <Calendar className="h-8 w-8 text-blue-400" />
-                                            </div>
-                                            <h4 className="text-white font-semibold text-lg mb-2">Vencimento</h4>
-                                            <p className="text-blue-400 text-lg font-bold mb-2">
-                                                {vipStatus.vencimento ? formatDate(vipStatus.vencimento) : 'Não definido'}
-                                            </p>
-                                            <p className="text-gray-300 text-sm">Data de vencimento</p>
+                                    <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
+                                        <div className="w-16 h-16 bg-yellow-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                            <Diamond className="h-8 w-8 text-yellow-400" />
                                         </div>
+                                        <h4 className="text-white font-semibold text-lg mb-2">💎 Qualidade Premium</h4>
+                                        <p className="text-yellow-400 text-sm">Suporte a múltiplas qualidades</p>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Detalhes do Plano com Design Premium */}
-                            <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-purple-500/30 transition-all duration-500">
-                                {/* Background Effects */}
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(147,51,234,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_80%_20%,rgba(147,51,234,0.15),transparent_50%)] transition-all duration-500"></div>
-                                <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
-
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-4 mb-6">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-violet-500/20 rounded-2xl flex items-center justify-center border border-purple-500/30 group-hover:scale-110 transition-all duration-300">
-                                            <Settings className="h-8 w-8 text-purple-400" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-2xl font-bold text-white mb-2">Detalhes do Plano</h3>
-                                            <p className="text-gray-300">Configurações e informações avançadas</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        {/* Status do Plano */}
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-green-500/30 transition-all duration-300">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl flex items-center justify-center border border-gray-600/50">
-                                                    <ShieldCheck className="h-6 w-6 text-green-400" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h4 className="text-white font-semibold text-lg mb-2">Status do Plano</h4>
-                                                    <p className="text-gray-300 text-sm mb-3">
-                                                        {vipStatus.isVip ? 'Plano ativo e funcionando' : 'Plano inativo ou vencido'}
-                                                    </p>
-                                                    <div className="flex items-center gap-3">
-                                                        <span className={`px-3 py-1 text-sm rounded-full border font-medium ${vipStatus.isVip
-                                                            ? 'bg-green-500/20 text-green-300 border-green-500/30'
-                                                            : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
-                                                            {vipStatus.isVip ? 'ATIVO' : 'INATIVO'}
-                                                        </span>
-                                                        <span className="px-3 py-1 bg-blue-500/20 text-blue-300 text-sm rounded-full border border-blue-500/30 font-medium">
-                                                            {vipStatus.plan}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="w-12 h-12 bg-gray-700/50 rounded-xl flex items-center justify-center">
-                                                        {vipStatus.isVip ? (
-                                                            <CheckCircle className="h-6 w-6 text-green-400" />
-                                                        ) : (
-                                                            <XCircle className="h-6 w-6 text-red-400" />
-                                                        )}
-                                                    </div>
-                                                    <p className="text-gray-400 text-xs mt-2 font-medium">
-                                                        {vipStatus.isVip ? 'Ativo' : 'Inativo'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Informações de Vencimento */}
-                                        {vipStatus.vencimento && (
-                                            <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-blue-500/30 transition-all duration-300">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl flex items-center justify-center border border-gray-600/50">
-                                                        <Clock className="h-6 w-6 text-blue-400" />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <h4 className="text-white font-semibold text-lg mb-2">Informações de Vencimento</h4>
-                                                        <p className="text-gray-300 text-sm mb-3">
-                                                            Data de vencimento: {formatDate(vipStatus.vencimento)}
-                                                        </p>
-                                                        <div className="flex items-center gap-3">
-                                                            {(() => {
-                                                                const today = new Date();
-                                                                const vencimento = new Date(vipStatus.vencimento);
-                                                                const diffTime = vencimento.getTime() - today.getTime();
-                                                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                                                const isVencido = diffDays < 0;
-
-                                                                if (isVencido) {
-                                                                    return (
-                                                                        <span className="px-3 py-1 bg-red-500/20 text-red-300 text-sm rounded-full border border-red-500/30 font-medium">
-                                                                            Vencido há {Math.abs(diffDays)} dias
-                                                                        </span>
-                                                                    );
-                                                                } else if (diffDays <= 5) {
-                                                                    return (
-                                                                        <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 text-sm rounded-full border border-yellow-500/30 font-medium">
-                                                                            Vence em {diffDays} dias
-                                                                        </span>
-                                                                    );
-                                                                } else {
-                                                                    return (
-                                                                        <span className="px-3 py-1 bg-green-500/20 text-green-300 text-sm rounded-full border border-green-500/30 font-medium">
-                                                                            Vence em {diffDays} dias
-                                                                        </span>
-                                                                    );
-                                                                }
-                                                            })()}
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                                                            <Calendar className="h-6 w-6 text-blue-400" />
-                                                        </div>
-                                                        <p className="text-blue-400 text-xs mt-2 font-medium">Vencimento</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Ações do Plano */}
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl flex items-center justify-center border border-gray-600/50">
-                                                    <Settings className="h-6 w-6 text-purple-400" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h4 className="text-white font-semibold text-lg mb-2">Ações do Plano</h4>
-                                                    <p className="text-gray-300 text-sm mb-3">
-                                                        Gerencie seu plano e renovações
-                                                    </p>
-                                                    <div className="flex items-center gap-3">
-                                                        <a
-                                                            href={getRenewalLink(vipStatus.plan)}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className={`px-4 py-2 text-sm rounded-xl border transition-all duration-200 font-medium ${isRenewalButtonEnabled()
-                                                                ? 'bg-green-500/20 text-green-300 border-green-500/30 hover:bg-green-500/30'
-                                                                : 'bg-gray-500/20 text-gray-400 border-gray-500/30 cursor-not-allowed'}`}
-                                                            onClick={(e) => {
-                                                                if (!isRenewalButtonEnabled()) {
-                                                                    e.preventDefault();
-                                                                }
-                                                            }}
-                                                        >
-                                                            Renovar Plano
-                                                        </a>
-                                                        <a
-                                                            href="/plans"
-                                                            className="px-4 py-2 bg-blue-500/20 text-blue-300 text-sm rounded-xl border border-blue-500/30 hover:bg-blue-500/30 transition-all duration-200 font-medium"
-                                                        >
-                                                            Ver Planos
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                                                        <ExternalLink className="h-6 w-6 text-purple-400" />
-                                                    </div>
-                                                    <p className="text-purple-400 text-xs mt-2 font-medium">Ações</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                {/* Botão de Acesso */}
+                                <div className="text-center">
+                                    <a
+                                        href="/allavsoft"
+                                        className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold text-lg rounded-2xl hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                                    >
+                                        <ExternalLink className="h-5 w-5" />
+                                        ACESSAR ALLAVSOFT
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -2651,9 +2443,9 @@ const ProfilePage = () => {
                                             <div>
                                                 <p className="text-gray-400 text-sm">Packs</p>
                                                 <p className="text-purple-400 font-bold">
-                                                    {vipStatus.plan === 'COMPLETO' ? '8/semana' :
-                                                        vipStatus.plan === 'PADRAO' ? '6/semana' :
-                                                            vipStatus.plan === 'BÁSICO' ? '4/semana' : 'Não disponível'}
+                                                    {vipStatus.plan === 'Completo' ? '8/semana' :
+                                                        vipStatus.plan === 'Padrão' ? '6/semana' :
+                                                            vipStatus.plan === 'Básico' ? '4/semana' : 'Não disponível'}
                                                 </p>
                                             </div>
                                         </div>
@@ -2688,77 +2480,85 @@ const ProfilePage = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {/* Downloads Diários */}
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-green-500/30 transition-all duration-300 hover:scale-105">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center border border-green-500/30">
-                                                    <Download className="h-8 w-8 text-green-400" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <h4 className="text-white font-semibold text-lg">Downloads Diários</h4>
-                                                        <span className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded-full border border-green-500/30 font-medium">🎯</span>
+                                        <div>
+                                            <h4 className="text-white font-semibold text-lg mb-3">Downloads Diários</h4>
+                                            <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-green-500/30 transition-all duration-300 hover:scale-105">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center border border-green-500/30 flex-shrink-0">
+                                                        <Download className="h-8 w-8 text-green-400" />
                                                     </div>
-                                                    <p className="text-green-400 text-2xl font-black mb-2">Ilimitado</p>
-                                                    <p className="text-gray-300 text-sm">Disponível para qualquer plano</p>
+                                                    <div className="flex-1 text-center">
+                                                        <p className="text-green-400 text-2xl font-black mb-2">Ilimitado</p>
+                                                        <div className="mt-4">
+                                                            <a href="/new" className="w-full block text-center px-4 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:scale-105 shadow-lg">
+                                                                VER NOVIDADES
+                                                            </a>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Acesso ao Drive Mensal */}
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-blue-500/30 transition-all duration-300 hover:scale-105">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center border border-blue-500/30">
-                                                    <Database className="h-8 w-8 text-blue-400" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <h4 className="text-white font-semibold text-lg">Acesso ao Drive Mensal</h4>
-                                                        <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full border border-blue-500/30 font-medium">💾</span>
+                                        <div>
+                                            <h4 className="text-white font-semibold text-lg mb-3">Acesso ao Drive Mensal</h4>
+                                            <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-blue-500/30 transition-all duration-300 hover:scale-105">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center border border-blue-500/30 flex-shrink-0">
+                                                        <Database className="h-8 w-8 text-blue-400" />
                                                     </div>
-                                                    <p className="text-blue-400 text-2xl font-black mb-2">Ilimitado</p>
-                                                    <p className="text-gray-300 text-sm">Disponível para qualquer plano</p>
+                                                    <div className="flex-1 text-center">
+                                                        <p className="text-blue-400 text-2xl font-black mb-2">Ilimitado</p>
+                                                        <div className="mt-4">
+                                                            <a href="https://plataformavip.nexorrecords.com.br/atualizacoes" target="_blank" rel="noopener noreferrer" className="w-full block text-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:scale-105 shadow-lg">
+                                                                ACESSAR DRIVE
+                                                            </a>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Solicitação de Packs */}
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 hover:scale-105">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center border border-purple-500/30">
-                                                    <Package className="h-8 w-8 text-purple-400" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <h4 className="text-white font-semibold text-lg">Solicitação de Packs</h4>
-                                                        <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full border border-purple-500/30 font-medium">📦</span>
+                                        <div>
+                                            <h4 className="text-white font-semibold text-lg mb-3">Solicitação de Packs</h4>
+                                            <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 hover:scale-105">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center border border-purple-500/30 flex-shrink-0">
+                                                        <Package className="h-8 w-8 text-purple-400" />
                                                     </div>
-                                                    <p className="text-purple-400 text-2xl font-black mb-2">
-                                                        {vipStatus.plan === 'COMPLETO' ? '8 por semana' :
-                                                            vipStatus.plan === 'PADRAO' ? '6 por semana' :
-                                                                vipStatus.plan === 'BÁSICO' ? '4 por semana' : 'Não disponível'}
-                                                    </p>
-                                                    <p className="text-gray-300 text-sm">
-                                                        {vipStatus.plan === 'COMPLETO' ? 'Plano Completo - Máximo 8 estilos por semana' :
-                                                            vipStatus.plan === 'PADRAO' ? 'Plano Padrão - Máximo 6 estilos por semana' :
-                                                                vipStatus.plan === 'BÁSICO' ? 'Plano Básico - Máximo 4 estilos por semana' : 'Sem plano'}
-                                                    </p>
+                                                    <div className="flex-1 text-center">
+                                                        <p className="text-purple-400 text-2xl font-black mb-2">
+                                                            {vipStatus.plan === 'Completo' ? '8 por semana' :
+                                                                vipStatus.plan === 'Padrão' ? '6 por semana' :
+                                                                    vipStatus.plan === 'Básico' ? '4 por semana' : 'Não disponível'}
+                                                        </p>
+                                                        <div className="mt-4">
+                                                            <a href="/pedidos" className="w-full block text-center px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:scale-105 shadow-lg">
+                                                                SOLICITAR
+                                                            </a>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Conteúdos Avulsos */}
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-yellow-500/30 transition-all duration-300 hover:scale-105">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-16 h-16 bg-yellow-500/20 rounded-2xl flex items-center justify-center border border-yellow-500/30">
-                                                    <Music className="h-8 w-8 text-yellow-400" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <h4 className="text-white font-semibold text-lg">Conteúdos Avulsos</h4>
-                                                        <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs rounded-full border border-yellow-500/30 font-medium">🎵</span>
+                                        <div>
+                                            <h4 className="text-white font-semibold text-lg mb-3">Conteúdos Avulsos</h4>
+                                            <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-yellow-500/30 transition-all duration-300 hover:scale-105">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-16 h-16 bg-yellow-500/20 rounded-2xl flex items-center justify-center border border-yellow-500/30 flex-shrink-0">
+                                                        <Music className="h-8 w-8 text-yellow-400" />
                                                     </div>
-                                                    <p className="text-yellow-400 text-2xl font-black mb-2">Disponível</p>
-                                                    <p className="text-gray-300 text-sm">Acesso completo para qualquer plano</p>
+                                                    <div className="flex-1 text-center">
+                                                        <p className="text-yellow-400 text-2xl font-black mb-2">Disponível</p>
+                                                        <div className="mt-4">
+                                                            <a href="/new" className="w-full block text-center px-4 py-3 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:scale-105 shadow-lg">
+                                                                VER CONTEÚDOS
+                                                            </a>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -2818,14 +2618,14 @@ const ProfilePage = () => {
                                                         <span className="px-2 py-1 bg-indigo-500/20 text-indigo-300 text-xs rounded-full border border-indigo-500/30 font-medium">🎵</span>
                                                     </div>
                                                     <p className="text-indigo-400 text-2xl font-black mb-2">
-                                                        {vipStatus.plan === 'COMPLETO' ? 'Ilimitado' :
-                                                            vipStatus.plan === 'PADRAO' ? '9 por semana' :
-                                                                vipStatus.plan === 'BÁSICO' ? '7 por semana' : 'Não disponível'}
+                                                        {vipStatus.plan === 'Completo' ? 'Ilimitado' :
+                                                            vipStatus.plan === 'Padrão' ? '9 por semana' :
+                                                                vipStatus.plan === 'Básico' ? '7 por semana' : 'Não disponível'}
                                                     </p>
                                                     <p className="text-gray-300 text-sm">
-                                                        {vipStatus.plan === 'COMPLETO' ? 'Plano Completo - Ilimitado (máx. 4 por dia)' :
-                                                            vipStatus.plan === 'PADRAO' ? 'Plano Padrão - Máximo 9 por semana' :
-                                                                vipStatus.plan === 'BÁSICO' ? 'Plano Básico - Máximo 7 por semana' : 'Sem plano'}
+                                                        {vipStatus.plan === 'Completo' ? 'Plano Completo - Ilimitado (máx. 4 por dia)' :
+                                                            vipStatus.plan === 'Padrão' ? 'Plano Padrão - Máximo 9 por semana' :
+                                                                vipStatus.plan === 'Básico' ? 'Plano Básico - Máximo 7 por semana' : 'Sem plano'}
                                                     </p>
                                                 </div>
                                             </div>
@@ -2843,10 +2643,10 @@ const ProfilePage = () => {
                                                         <span className="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded-full border border-emerald-500/30 font-medium">🎧</span>
                                                     </div>
                                                     <p className="text-emerald-400 text-2xl font-black mb-2">
-                                                        {vipStatus.plan === 'COMPLETO' ? 'Grátis' : 'R$ 9,75'}
+                                                        {vipStatus.plan === 'Completo' ? 'Grátis' : 'R$ 9,75'}
                                                     </p>
                                                     <p className="text-gray-300 text-sm">
-                                                        {vipStatus.plan === 'COMPLETO' ? 'Incluído no plano Completo' : 'Disponível para qualquer plano'}
+                                                        {vipStatus.plan === 'Completo' ? 'Incluído no plano Completo' : 'Disponível para qualquer plano'}
                                                     </p>
                                                 </div>
                                             </div>
@@ -2865,9 +2665,9 @@ const ProfilePage = () => {
                                                     </div>
                                                     <p className="text-violet-400 text-2xl font-black mb-2">Disponível</p>
                                                     <p className="text-gray-300 text-sm">
-                                                        {vipStatus.plan === 'COMPLETO' ? 'R$ 15,20 (60% desconto)' :
-                                                            vipStatus.plan === 'PADRAO' ? 'R$ 22,04 (42% desconto)' :
-                                                                vipStatus.plan === 'BÁSICO' ? 'R$ 23,56 (38% desconto)' : 'R$ 38,00 (sem desconto)'}
+                                                        {vipStatus.plan === 'Completo' ? 'R$ 15,20 (60% desconto)' :
+                                                            vipStatus.plan === 'Padrão' ? 'R$ 22,04 (42% desconto)' :
+                                                                vipStatus.plan === 'Básico' ? 'R$ 23,56 (38% desconto)' : 'R$ 38,00 (sem desconto)'}
                                                     </p>
                                                 </div>
                                             </div>
@@ -2911,10 +2711,10 @@ const ProfilePage = () => {
                                                         <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full border border-blue-500/30 font-medium">🔐</span>
                                                     </div>
                                                     <p className="text-blue-400 text-2xl font-black mb-2">
-                                                        {vipStatus.plan === 'COMPLETO' ? 'Sim' : 'Não'}
+                                                        {vipStatus.plan === 'Completo' ? 'Sim' : 'Não'}
                                                     </p>
                                                     <p className="text-gray-300 text-sm">
-                                                        {vipStatus.plan === 'COMPLETO' ? 'Plano Completo - Automático se Deemix ativo' : '❌ Não disponível'}
+                                                        {vipStatus.plan === 'Completo' ? 'Plano Completo - Automático se Deemix ativo' : '❌ Não disponível'}
                                                     </p>
                                                 </div>
                                             </div>
@@ -2932,10 +2732,10 @@ const ProfilePage = () => {
                                                         <span className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded-full border border-green-500/30 font-medium">🎹</span>
                                                     </div>
                                                     <p className="text-green-400 text-2xl font-black mb-2">
-                                                        {vipStatus.plan === 'COMPLETO' ? 'Disponível' : 'Não'}
+                                                        {vipStatus.plan === 'Completo' ? 'Disponível' : 'Não'}
                                                     </p>
                                                     <p className="text-gray-300 text-sm">
-                                                        {vipStatus.plan === 'COMPLETO' ? 'Plano Completo - Acesso completo' : '❌ Não disponível'}
+                                                        {vipStatus.plan === 'Completo' ? 'Plano Completo - Acesso completo' : '❌ Não disponível'}
                                                     </p>
                                                 </div>
                                             </div>

@@ -44,17 +44,17 @@ interface GroupedTracks {
     };
 }
 
-export default function MusicList({ 
-    tracks, 
-    itemsPerPage = 20, 
-    enableInfiniteScroll = false, 
-    downloadedTrackIds = [], 
-    setDownloadedTrackIds, 
-    likedTrackIds = [], 
+export default function MusicList({
+    tracks,
+    itemsPerPage = 20,
+    enableInfiniteScroll = false,
+    downloadedTrackIds = [],
+    setDownloadedTrackIds,
+    likedTrackIds = [],
     setLikedTrackIds,
     hasMore = false,
     isLoading = false,
-    onLoadMore = () => {},
+    onLoadMore = () => { },
     showDate = true
 }: MusicListProps) {
     const { showToast } = useToastContext();
@@ -607,7 +607,7 @@ export default function MusicList({
 
     const handleDownload = async (track: Track) => {
         if (!session) {
-            showToast('🔐 Faça login para baixar músicas', 'warning');
+            showToast('🔐 Ative um plano', 'warning');
             return;
         }
 
@@ -855,7 +855,7 @@ export default function MusicList({
 
     const downloadTracksInBatches = async (tracksToDownload: Track[], includeDownloaded: boolean) => {
         if (!session) {
-            showToast('🔐 Faça login para baixar músicas', 'warning');
+            showToast('🔐 Ative um plano', 'warning');
             return;
         }
 
@@ -962,23 +962,7 @@ export default function MusicList({
         await downloadTracksInBatches(tracksToDownload, true);
     };
 
-    // Função para testar notificações push nativas (apenas para desenvolvimento)
-    const testPushNotification = useCallback((track: Track) => {
-        addMusicNotification(
-            '🎵 Nova Música Disponível',
-            `"${track.songName}" de ${track.artist} está disponível para download!`,
-            {
-                coverUrl: track.imageUrl || track.thumbnailUrl,
-                artistName: track.artist,
-                songName: track.songName,
-                trackId: track.id
-            },
-            `/track/${track.id}`,
-            'Ver Música'
-        );
-        
-        showToast('📱 Notificação push enviada!', 'success');
-    }, [addMusicNotification, showToast]);
+
 
     // Mostrar skeleton durante transições para evitar piscamentos
     if (!isStable || stableTracks.length === 0) {
@@ -1117,7 +1101,7 @@ export default function MusicList({
                                                                     <button
                                                                         onClick={() => {
                                                                             if (!session) {
-                                                                                showToast('🔐 Faça login para ouvir músicas', 'warning');
+                                                                                showToast('🔐 Ative um plano', 'warning');
                                                                                 return;
                                                                             }
                                                                             handlePlayPause(track);
@@ -1213,7 +1197,7 @@ export default function MusicList({
                                                                                 ? 'bg-gray-600/40 text-gray-500 border border-gray-600/30 cursor-not-allowed'
                                                                                 : 'bg-gray-700/60 text-gray-300 border border-gray-600/50 hover:bg-gray-600/60 hover:text-gray-200'
                                                                             } font-sans`}
-                                                                        title={isDownloaded(track) ? 'Música já baixada' : !session ? 'Faça login para baixar' : 'Baixar música'}
+                                                                        title={isDownloaded(track) ? 'Música já baixada' : !session ? 'Ative um plano' : 'Baixar música'}
                                                                     >
                                                                         {downloadingTracks.has(track.id) ? (
                                                                             <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
@@ -1229,7 +1213,7 @@ export default function MusicList({
                                                                     <button
                                                                         onClick={() => {
                                                                             if (!session) {
-                                                                                showToast('🔐 Faça login para curtir músicas', 'warning');
+                                                                                showToast('🔐 Ative um plano', 'warning');
                                                                                 return;
                                                                             }
                                                                             handleLike(track);
@@ -1241,7 +1225,7 @@ export default function MusicList({
                                                                                 ? 'bg-red-600/20 text-red-400 border border-red-600/30'
                                                                                 : 'bg-gray-700/60 text-gray-300 border border-gray-600/50 hover:bg-red-600/20 hover:text-red-400 hover:border-red-600/30'
                                                                             } font-sans`}
-                                                                        title={!session ? 'Faça login para curtir' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                                                                        title={!session ? 'Ative um plano' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                                                     >
                                                                         <Heart className={`h-3 w-3 ${isLiked(track) ? 'fill-current' : ''}`} />
                                                                         <span>
@@ -1293,7 +1277,7 @@ export default function MusicList({
                                                             <button
                                                                 onClick={() => {
                                                                     if (!session) {
-                                                                        showToast('🔐 Faça login para ouvir músicas', 'warning');
+                                                                        showToast('🔐 Ative um plano', 'warning');
                                                                         return;
                                                                     }
                                                                     handlePlayPause(track);
@@ -1392,7 +1376,7 @@ export default function MusicList({
                                                                         ? 'bg-gray-600/40 text-gray-500 border border-gray-600/30 cursor-not-allowed'
                                                                         : 'bg-gray-700/60 text-gray-300 border border-gray-600/50 hover:bg-gray-600/60 hover:text-gray-200'
                                                                     } font-sans`}
-                                                                title={isDownloadedTrack ? 'Música já baixada' : !session ? 'Faça login para baixar' : 'Baixar música'}
+                                                                title={isDownloadedTrack ? 'Música já baixada' : !session ? 'Ative um plano' : 'Baixar música'}
                                                             >
                                                                 {downloadingTracks.has(track.id) ? (
                                                                     <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
@@ -1407,7 +1391,7 @@ export default function MusicList({
                                                             <button
                                                                 onClick={() => {
                                                                     if (!session) {
-                                                                        showToast('🔐 Faça login para curtir músicas', 'warning');
+                                                                        showToast('🔐 Ative um plano', 'warning');
                                                                         return;
                                                                     }
                                                                     handleLike(track);
@@ -1419,7 +1403,7 @@ export default function MusicList({
                                                                         ? 'bg-red-600/20 text-red-400 border border-red-600/30'
                                                                         : 'bg-gray-700/60 text-gray-300 border border-gray-600/50 hover:bg-red-600/20 hover:text-red-400 hover:border-red-600/30'
                                                                     } font-sans`}
-                                                                title={!session ? 'Faça login para curtir' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                                                                title={!session ? 'Ative um plano' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                                             >
                                                                 <span className="flex justify-center w-full"><Heart className={`h-3 w-3 ${isLiked(track) ? 'fill-current' : ''}`} /></span>
                                                                 <span className="text-xs sm:text-sm">
@@ -1427,17 +1411,7 @@ export default function MusicList({
                                                                 </span>
                                                             </button>
 
-                                                            {/* Botão de teste para notificações push (apenas para desenvolvimento) */}
-                                                            {process.env.NODE_ENV === 'development' && (
-                                                                <button
-                                                                    onClick={() => testPushNotification(track)}
-                                                                    className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-200 bg-blue-600/20 text-blue-400 border border-blue-600/30 hover:bg-blue-600/30"
-                                                                    title="Testar notificação push nativa"
-                                                                >
-                                                                    <span className="text-xs">📱</span>
-                                                                    <span className="hidden sm:inline">Push</span>
-                                                                </button>
-                                                            )}
+
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1447,24 +1421,7 @@ export default function MusicList({
                                 </div>
                             </div>
 
-                            {/* Mensagem para usuários não logados */}
-                            {!session && groupIndex === 0 && (
-                                <div className="w-full flex flex-col items-center justify-center my-6 px-0 sm:px-0">
-                                    <div className="w-full min-h-[60vh] sm:min-h-[80vh] flex flex-col items-center justify-center bg-gradient-to-br from-blue-900/80 via-gray-900/90 to-gray-800/90 border-2 border-blue-700/30 rounded-none sm:rounded-2xl shadow-xl p-4 sm:p-10 text-center animate-fade-in">
-                                        <span className="text-4xl sm:text-6xl mb-4">🔊</span>
-                                        <h2 className="text-2xl sm:text-4xl font-extrabold text-blue-200 mb-4 font-sans">Bem-vindo à plataforma!</h2>
-                                        <p className="text-gray-200 text-base sm:text-xl mb-6 font-sans max-w-2xl mx-auto">
-                                            Usuários não logados podem <span className="text-green-300 font-semibold">ouvir todas as músicas gratuitamente</span>.<br className="hidden sm:block" />
-                                            Para <span className="text-yellow-300 font-semibold">baixar faixas individuais</span> ou <span className="text-yellow-300 font-semibold">fazer downloads em massa</span>, é necessário ter um <span className="text-pink-300 font-semibold">plano pago</span>.<br className="hidden sm:block" />
-                                            <span className="text-blue-200 font-semibold">Faça login ou assine para liberar todos os recursos.</span>
-                                        </p>
-                                        <div className="flex flex-col sm:flex-row gap-3 mt-2 w-full sm:w-auto justify-center">
-                                            <a href="/login" className="px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg transition-all duration-200 shadow-md w-full sm:w-auto">Entrar</a>
-                                            <a href="/planos" className="px-6 py-3 rounded-lg bg-pink-600 hover:bg-pink-700 text-white font-bold text-lg transition-all duration-200 shadow-md w-full sm:w-auto">Ver Planos</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+
                         </div>
                     ))}
 
@@ -1631,23 +1588,7 @@ export default function MusicList({
                         </div>
                     )}
                 </div>
-            ) : (
-                <div className="w-full flex flex-col items-center justify-center my-6 px-0 sm:px-0">
-                    <div className="w-full min-h-[60vh] sm:min-h-[80vh] flex flex-col items-center justify-center bg-gradient-to-br from-blue-900/80 via-gray-900/90 to-gray-800/90 border-2 border-blue-700/30 rounded-none sm:rounded-2xl shadow-xl p-4 sm:p-10 text-center animate-fade-in">
-                        <span className="text-4xl sm:text-6xl mb-4">🔊</span>
-                        <h2 className="text-2xl sm:text-4xl font-extrabold text-blue-200 mb-4 font-sans">Bem-vindo à plataforma!</h2>
-                        <p className="text-gray-200 text-base sm:text-xl mb-6 font-sans max-w-2xl mx-auto">
-                            Usuários não logados podem <span className="text-green-300 font-semibold">ouvir todas as músicas gratuitamente</span>.<br className="hidden sm:block" />
-                            Para <span className="text-yellow-300 font-semibold">baixar faixas individuais</span> ou <span className="text-yellow-300 font-semibold">fazer downloads em massa</span>, é necessário ter um <span className="text-pink-300 font-semibold">plano pago</span>.<br className="hidden sm:block" />
-                            <span className="text-blue-200 font-semibold">Faça login ou assine para liberar todos os recursos.</span>
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-3 mt-2 w-full sm:w-auto justify-center">
-                            <a href="/login" className="px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg transition-all duration-200 shadow-md w-full sm:w-auto">Entrar</a>
-                            <a href="/planos" className="px-6 py-3 rounded-lg bg-pink-600 hover:bg-pink-700 text-white font-bold text-lg transition-all duration-200 shadow-md w-full sm:w-auto">Ver Planos</a>
-                        </div>
-                    </div>
-                </div>
-            )}
+            ) : null}
         </div>
     );
 }

@@ -149,7 +149,7 @@ export default function TrendingPage() {
     // Play functionality
     const handlePlay = (track: TrendingTrack) => {
         if (!session) {
-            showToast('🔐 Faça login para ouvir músicas', 'warning');
+            showToast('🔐 Ative um plano', 'warning');
             return;
         }
 
