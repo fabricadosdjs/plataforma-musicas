@@ -382,7 +382,7 @@ const FooterPlayer = () => {
                         {/* Botão de Like - CORES CHAMATIVAS PARA DEBUG */}
                         <button
                             onClick={handleLike}
-                            className="group p-2.5 rounded-full transition-all duration-200 hover:scale-105 backdrop-blur-sm border bg-red-500/30 text-red-300 border-red-500/50 hover:bg-red-500/40"
+                            className="group p-2.5 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm border bg-gradient-to-br from-red-500/40 to-red-600/50 text-red-300 border-red-500/60 hover:from-red-500/50 hover:to-red-600/60 shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40"
                             title="Curtir música"
                         >
                             <Heart
@@ -394,7 +394,7 @@ const FooterPlayer = () => {
                         {/* Botão de Download - CORES CHAMATIVAS PARA DEBUG */}
                         <button
                             onClick={handleDownload}
-                            className="group p-2.5 rounded-full transition-all duration-200 hover:scale-105 backdrop-blur-sm border bg-green-500/30 text-green-300 border-green-500/50 hover:bg-green-500/40"
+                            className="group p-2.5 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm border bg-gradient-to-br from-green-500/40 to-green-600/50 text-green-300 border-green-500/60 hover:from-green-500/50 hover:to-green-600/60 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40"
                             title="Baixar música"
                         >
                             <Download

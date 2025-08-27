@@ -93,24 +93,14 @@ export default function FolderPage() {
     // Verificar se o usuário é VIP (simples)
     const isVip = true; // Por enquanto, sempre true para teste
 
+    // Estado para contador em tempo real
+    const [availableTracksCount, setAvailableTracksCount] = useState(0);
+
     // Obter estilos únicos disponíveis
     const availableStyles = useMemo(() => {
         if (!tracks.length) return [];
         return Array.from(new Set(tracks.map(track => track.style).filter(Boolean))).sort();
     }, [tracks]);
-
-    // Filtrar tracks baseado no estilo selecionado
-    useEffect(() => {
-        if (selectedStyle) {
-            const filtered = tracks.filter(track => track.style === selectedStyle);
-            setFilteredTracks(filtered);
-        } else {
-            setFilteredTracks(tracks);
-        }
-    }, [selectedStyle, tracks]);
-
-    // Estado para contador em tempo real
-    const [availableTracksCount, setAvailableTracksCount] = useState(0);
 
     // Calcular quantas músicas estão disponíveis para download
     const getAvailableTracksCount = useCallback(() => {
@@ -120,7 +110,7 @@ export default function FolderPage() {
             return !downloadedTrackIds.includes(track.id);
         }).length;
 
-        console.log('🔍 getAvailableTracksCount:', {
+        console.log('🔍 getAvailableTracksCount (Folder):', {
             totalTracks: filteredTracks.length,
             downloadedIds: downloadedTrackIds.length,
             availableCount
@@ -133,18 +123,8 @@ export default function FolderPage() {
     const updateAvailableTracksCount = useCallback(() => {
         const count = getAvailableTracksCount();
         setAvailableTracksCount(count);
-        console.log('🔄 Contador atualizado automaticamente:', count);
+        console.log('🔄 Contador atualizado automaticamente (Folder):', count);
     }, [getAvailableTracksCount]);
-
-    // Atualizar contador sempre que downloadedTrackIds mudar
-    useEffect(() => {
-        updateAvailableTracksCount();
-    }, [downloadedTrackIds, updateAvailableTracksCount]);
-
-    // Atualizar contador sempre que filteredTracks mudar
-    useEffect(() => {
-        updateAvailableTracksCount();
-    }, [filteredTracks, updateAvailableTracksCount]);
 
     // Função para obter tracks disponíveis para download
     const getAvailableTracks = useCallback(() => {
@@ -154,7 +134,7 @@ export default function FolderPage() {
             return !downloadedTrackIds.includes(track.id);
         });
 
-        console.log('🔍 getAvailableTracks:', {
+        console.log('🔍 getAvailableTracks (Folder):', {
             totalTracks: filteredTracks.length,
             downloadedIds: downloadedTrackIds.length,
             availableTracks: availableTracks.length
@@ -163,9 +143,19 @@ export default function FolderPage() {
         return availableTracks;
     }, [filteredTracks, downloadedTrackIds]);
 
-    useEffect(() => {
-        syncDownloadedTrackIds();
-    }, []);
+    // Função para sincronizar estado com localStorage
+    const syncDownloadedTrackIds = () => {
+        const saved = localStorage.getItem('downloadedTrackIds');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                setDownloadedTrackIds(parsed);
+                console.log('🔄 Sincronizando downloadedTrackIds com localStorage (Folder):', parsed.length, 'IDs');
+            } catch (error) {
+                console.error('❌ Erro ao sincronizar downloadedTrackIds (Folder):', error);
+            }
+        }
+    };
 
     const handleDownloadedTrackIdsChange = (newIds: number[] | ((prev: number[]) => number[])) => {
         if (typeof newIds === 'function') {
@@ -184,19 +174,29 @@ export default function FolderPage() {
         }
     };
 
-    // Função para sincronizar estado com localStorage
-    const syncDownloadedTrackIds = () => {
-        const saved = localStorage.getItem('downloadedTrackIds');
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                setDownloadedTrackIds(parsed);
-                console.log('🔄 Sincronizando downloadedTrackIds com localStorage:', parsed.length, 'IDs');
-            } catch (error) {
-                console.error('❌ Erro ao sincronizar downloadedTrackIds:', error);
-            }
+    // Filtrar tracks baseado no estilo selecionado
+    useEffect(() => {
+        if (selectedStyle) {
+            const filtered = tracks.filter(track => track.style === selectedStyle);
+            setFilteredTracks(filtered);
+        } else {
+            setFilteredTracks(tracks);
         }
-    };
+    }, [selectedStyle, tracks]);
+
+    // Atualizar contador sempre que downloadedTrackIds mudar
+    useEffect(() => {
+        updateAvailableTracksCount();
+    }, [downloadedTrackIds, updateAvailableTracksCount]);
+
+    // Atualizar contador sempre que filteredTracks mudar
+    useEffect(() => {
+        updateAvailableTracksCount();
+    }, [filteredTracks, updateAvailableTracksCount]);
+
+    useEffect(() => {
+        syncDownloadedTrackIds();
+    }, []);
 
     // Função para mostrar modal de confirmação mobile
     const showMobileDownloadConfirmation = (type: 'new' | 'all', tracks: Track[], callback: () => void) => {
@@ -229,33 +229,37 @@ export default function FolderPage() {
             try {
                 setLoading(true);
 
-                const response = await fetch(`/api/tracks/by-folder?folder=${encodeURIComponent(folderName)}`);
+                // Buscar tracks e estatísticas em paralelo
+                const [tracksResponse, statsResponse] = await Promise.all([
+                    fetch(`/api/tracks/by-folder?folder=${encodeURIComponent(folderName)}`),
+                    fetch(`/api/tracks/folder/${encodeURIComponent(folderName)}/stats`)
+                ]);
 
-                if (response.ok) {
-                    const data = await response.json();
+                if (tracksResponse.ok) {
+                    const data = await tracksResponse.json();
                     const tracks = Array.isArray(data.tracks) ? data.tracks : [];
                     setTracks(tracks);
                     setFilteredTracks(tracks);
 
-                    // Calcular estatísticas básicas
-                    const totalDownloads = tracks.reduce((sum: number, track: Track) => sum + (track.downloadCount || 0), 0);
-                    const totalLikes = tracks.reduce((sum: number, track: Track) => sum + (track.likeCount || 0), 0);
-                    const uniqueArtists = new Set(tracks.map((t: Track) => t.artist)).size;
-                    const uniquePools = new Set(tracks.map((t: Track) => t.pool).filter(Boolean)).size;
-                    const latestRelease = tracks.length > 0 ? new Date(Math.max(...tracks.map((t: Track) => new Date(t.releaseDate || t.createdAt).getTime()))) : null;
-
-                    setStats({
-                        totalDownloads,
-                        totalLikes,
-                        totalPlays: 0, // Não temos esse dado ainda
-                        uniqueArtists,
-                        uniquePools,
-                        latestRelease,
-                        totalTracks: tracks.length
-                    });
+                    // Atualizar totalTracks nas estatísticas
+                    setStats(prev => ({ ...prev, totalTracks: tracks.length }));
                 } else {
                     setTracks([]);
                     setStats(prev => ({ ...prev, totalTracks: 0 }));
+                }
+
+                if (statsResponse.ok) {
+                    const statsData = await statsResponse.json();
+                    setStats(prev => ({
+                        ...prev,
+                        totalDownloads: statsData.totalDownloads || 0,
+                        totalLikes: statsData.totalLikes || 0,
+                        totalPlays: statsData.totalPlays || 0,
+                        uniqueArtists: statsData.uniqueArtists || 0,
+                        uniquePools: statsData.uniquePools || 0,
+                        latestRelease: statsData.latestRelease ? new Date(statsData.latestRelease) : null,
+                        totalTracks: tracks.length // Manter sincronizado com o número de tracks
+                    }));
                 }
             } catch (e) {
                 console.error('Erro ao buscar dados do folder:', e);
@@ -462,14 +466,14 @@ export default function FolderPage() {
 
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#8b5cf6] mb-1">
-                                        {filteredTracks.reduce((sum: number, track: Track) => sum + (track.downloadCount || 0), 0)}
+                                        {stats.totalDownloads}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Downloads</div>
                                 </div>
 
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#8b5cf6] mb-1">
-                                        {filteredTracks.reduce((sum: number, track: Track) => sum + (track.likeCount || 0), 0)}
+                                        {stats.totalLikes}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Curtidas</div>
                                 </div>

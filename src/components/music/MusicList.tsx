@@ -1084,7 +1084,7 @@ export default function MusicList({
                                             return (
                                                 <div key={track.id} className="">
                                                     <div className="group mb-3">
-                                                        <div className="bg-black border border-gray-700/50 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 group relative overflow-hidden">
+                                                        <div className="bg-black border border-white/10 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 group relative overflow-hidden">
                                                             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                                                             <div className="relative mb-2 sm:mb-2">
@@ -1118,6 +1118,24 @@ export default function MusicList({
                                                                             <Play className="h-8 w-8 text-white drop-shadow-lg ml-1" />
                                                                         )}
                                                                     </button>
+
+                                                                    {/* Overlay preto com 70% de opacidade quando tocando - Mobile */}
+                                                                    {currentTrack?.id === track.id && isPlaying && (
+                                                                        <div className="absolute inset-0 bg-black/70 rounded-lg sm:rounded-xl z-20"></div>
+                                                                    )}
+
+                                                                    {/* Efeito de ondas sonoras quando tocando - Mobile */}
+                                                                    {currentTrack?.id === track.id && isPlaying && (
+                                                                        <div className="absolute inset-0 z-40 flex items-center justify-center">
+                                                                            <div className="flex items-center gap-1">
+                                                                                <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1s' }}></div>
+                                                                                <div className="w-1 h-3 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1s' }}></div>
+                                                                                <div className="w-1 h-1.5 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1s' }}></div>
+                                                                                <div className="w-1 h-4 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '1s' }}></div>
+                                                                                <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.8s', animationDuration: '1s' }}></div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
 
                                                                     {/* Badge do estilo da música */}
                                                                     <div className="absolute top-1.5 left-1.5 z-40">
@@ -1191,11 +1209,11 @@ export default function MusicList({
                                                                     <button
                                                                         onClick={() => handleDownload(track)}
                                                                         disabled={downloadingTracks.has(track.id) || isDownloaded(track) || !session}
-                                                                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 w-full ${isDownloaded(track)
-                                                                            ? 'bg-green-600/20 text-green-400 border border-green-600/30 cursor-not-allowed'
+                                                                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 w-full transform hover:scale-105 active:scale-95 ${isDownloaded(track)
+                                                                            ? 'bg-gradient-to-br from-green-500/30 to-green-600/40 text-green-400 border border-green-500/50 cursor-not-allowed shadow-lg shadow-green-500/20'
                                                                             : !session
-                                                                                ? 'bg-gray-600/40 text-gray-500 border border-gray-600/30 cursor-not-allowed'
-                                                                                : 'bg-gray-700/60 text-gray-300 border border-gray-600/50 hover:bg-gray-600/60 hover:text-gray-200'
+                                                                                ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
+                                                                                : 'bg-gradient-to-br from-blue-600/60 to-blue-700/70 text-white border border-blue-500/60 hover:from-blue-500/70 hover:to-blue-600/80 hover:border-blue-400/70 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40'
                                                                             } font-sans`}
                                                                         title={isDownloaded(track) ? 'Música já baixada' : !session ? 'Ative um plano' : 'Baixar música'}
                                                                     >
@@ -1219,11 +1237,11 @@ export default function MusicList({
                                                                             handleLike(track);
                                                                         }}
                                                                         disabled={!session}
-                                                                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 w-full ${!session
-                                                                            ? 'bg-gray-600/40 text-gray-500 border border-gray-600/30 cursor-not-allowed'
+                                                                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 w-full transform hover:scale-105 active:scale-95 ${!session
+                                                                            ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
                                                                             : isLiked(track)
-                                                                                ? 'bg-red-600/20 text-red-400 border border-red-600/30'
-                                                                                : 'bg-gray-700/60 text-gray-300 border border-gray-600/50 hover:bg-red-600/20 hover:text-red-400 hover:border-red-600/30'
+                                                                                ? 'bg-gradient-to-br from-red-500/30 to-red-600/40 text-red-400 border border-red-500/50 shadow-lg shadow-red-500/20'
+                                                                                : 'bg-gradient-to-br from-pink-600/60 to-pink-700/70 text-white border border-pink-500/60 hover:from-pink-500/70 hover:to-pink-600/80 hover:border-pink-400/70 shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40'
                                                                             } font-sans`}
                                                                         title={!session ? 'Ative um plano' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                                                     >
@@ -1251,6 +1269,10 @@ export default function MusicList({
 
                                         return (
                                             <div key={track.id} className="overflow-x-hidden">
+                                                {/* Linha separadora sutil */}
+                                                {index > 0 && (
+                                                    <div className="w-full h-px bg-white/15 mb-1 mt-0"></div>
+                                                )}
                                                 <div className="group py-1">
                                                     <div className="flex items-start gap-2 min-h-16 sm:min-h-20">
                                                         {/* Thumbnail responsivo */}
@@ -1272,6 +1294,24 @@ export default function MusicList({
                                                             </ImageErrorBoundary>
 
 
+
+                                                            {/* Overlay preto com 70% de opacidade quando tocando */}
+                                                            {currentTrack?.id === track.id && isPlaying && (
+                                                                <div className="absolute inset-0 bg-black/70 rounded-lg sm:rounded-xl z-20"></div>
+                                                            )}
+
+                                                            {/* Efeito de ondas sonoras quando tocando */}
+                                                            {currentTrack?.id === track.id && isPlaying && (
+                                                                <div className="absolute inset-0 z-40 flex items-center justify-center">
+                                                                    <div className="flex items-center gap-1">
+                                                                        <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1s' }}></div>
+                                                                        <div className="w-1 h-4 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1s' }}></div>
+                                                                        <div className="w-1 h-3 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1s' }}></div>
+                                                                        <div className="w-1 h-5 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '1s' }}></div>
+                                                                        <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.8s', animationDuration: '1s' }}></div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
 
                                                             {/* Botão Play/Pause responsivo */}
                                                             <button
@@ -1302,12 +1342,7 @@ export default function MusicList({
                                                                 <h3 className="text-white font-bold text-xs sm:text-sm truncate tracking-wide font-sans">
                                                                     {track.songName}
                                                                 </h3>
-                                                                {/* Indicador sutil de "tocando" */}
-                                                                {currentTrack?.id === track.id && isPlaying && (
-                                                                    <span className="text-red-400 text-xs font-medium opacity-80">
-                                                                        (tocando)
-                                                                    </span>
-                                                                )}
+
                                                             </div>
 
                                                             <div className="text-gray-300 text-xs sm:text-sm font-medium mb-0.5 font-sans">
@@ -1370,11 +1405,11 @@ export default function MusicList({
                                                             <button
                                                                 onClick={() => handleDownload(track)}
                                                                 disabled={downloadingTracks.has(track.id) || isDownloadedTrack || !session}
-                                                                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-200 justify-center ${isDownloadedTrack
-                                                                    ? 'bg-green-600/20 text-green-400 border border-green-600/30 cursor-not-allowed'
+                                                                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-300 justify-center transform hover:scale-105 active:scale-95 ${isDownloadedTrack
+                                                                    ? 'bg-gradient-to-br from-green-500/30 to-green-600/40 text-green-400 border border-green-500/50 cursor-not-allowed shadow-lg shadow-green-500/20'
                                                                     : !session
-                                                                        ? 'bg-gray-600/40 text-gray-500 border border-gray-600/30 cursor-not-allowed'
-                                                                        : 'bg-gray-700/60 text-gray-300 border border-gray-600/50 hover:bg-gray-600/60 hover:text-gray-200'
+                                                                        ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
+                                                                        : 'bg-gradient-to-br from-blue-600/60 to-blue-700/70 text-white border border-blue-500/60 hover:from-blue-500/70 hover:to-blue-600/80 hover:border-blue-400/70 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40'
                                                                     } font-sans`}
                                                                 title={isDownloadedTrack ? 'Música já baixada' : !session ? 'Ative um plano' : 'Baixar música'}
                                                             >
@@ -1397,11 +1432,11 @@ export default function MusicList({
                                                                     handleLike(track);
                                                                 }}
                                                                 disabled={!session}
-                                                                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${!session
-                                                                    ? 'bg-gray-600/40 text-gray-500 border border-gray-600/30 cursor-not-allowed'
+                                                                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 ${!session
+                                                                    ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
                                                                     : isLiked(track)
-                                                                        ? 'bg-red-600/20 text-red-400 border border-red-600/30'
-                                                                        : 'bg-gray-700/60 text-gray-300 border border-gray-600/50 hover:bg-red-600/20 hover:text-red-400 hover:border-red-600/30'
+                                                                        ? 'bg-gradient-to-br from-red-500/30 to-red-600/40 text-red-400 border border-red-500/50 shadow-lg shadow-red-500/20'
+                                                                        : 'bg-gradient-to-br from-pink-600/60 to-pink-700/70 text-white border border-pink-500/60 hover:from-pink-500/70 hover:to-pink-600/80 hover:border-pink-400/70 shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40'
                                                                     } font-sans`}
                                                                 title={!session ? 'Ative um plano' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                                             >

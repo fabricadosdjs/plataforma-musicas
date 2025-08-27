@@ -343,9 +343,9 @@ const NewPage = () => {
                                                     {/* Botão de like */}
                                                     <button
                                                         onClick={() => handleLikeToggle(track.id)}
-                                                        className={`p-2 rounded-lg transition-all duration-300 ${likedTrackIds.includes(track.id)
-                                                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                                            : 'bg-gray-600/20 text-gray-400 border border-gray-600/30 hover:bg-gray-500/30 hover:text-gray-300'
+                                                        className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${likedTrackIds.includes(track.id)
+                                                            ? 'bg-gradient-to-br from-red-500/30 to-red-600/40 text-red-400 border border-red-500/50 shadow-lg shadow-red-500/20'
+                                                            : 'bg-gradient-to-br from-gray-600/30 to-gray-700/40 text-gray-400 border border-gray-600/50 hover:from-gray-500/40 hover:to-gray-600/50 hover:text-gray-300 shadow-lg shadow-gray-600/20 hover:shadow-xl hover:shadow-gray-600/30'
                                                             }`}
                                                         title={likedTrackIds.includes(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                                     >
@@ -356,9 +356,9 @@ const NewPage = () => {
                                                     <button
                                                         onClick={() => handleDownload(track)}
                                                         disabled={downloadedTrackIds.includes(track.id)}
-                                                        className={`p-2 rounded-lg transition-all duration-300 ${downloadedTrackIds.includes(track.id)
-                                                            ? 'bg-green-500/20 text-green-400 border border-green-500/30 cursor-not-allowed'
-                                                            : 'bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 hover:text-blue-300'
+                                                        className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${downloadedTrackIds.includes(track.id)
+                                                            ? 'bg-gradient-to-br from-green-500/30 to-green-600/40 text-green-400 border border-green-500/50 cursor-not-allowed shadow-lg shadow-green-500/20'
+                                                            : 'bg-gradient-to-br from-blue-500/30 to-blue-600/40 text-blue-400 border border-blue-500/50 hover:from-blue-500/40 hover:to-blue-600/50 hover:text-blue-300 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30'
                                                             }`}
                                                         title={downloadedTrackIds.includes(track.id) ? 'Já baixada' : 'Baixar música'}
                                                     >

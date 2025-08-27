@@ -37,7 +37,6 @@ import {
     CreditCard,
     Zap,
     Disc,
-    Settings,
     Smartphone,
     Hand,
     Play,
@@ -69,6 +68,7 @@ import {
     RefreshCw
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { EditableField } from '@/components/ui/EditableField';
 import ActivityChart from '@/components/ui/ActivityChart';
 
@@ -94,10 +94,23 @@ const ProfilePage = () => {
     const { data: session, update: updateSession, status } = useSession();
     const downloadsCache = useDownloadsCache();
     const userEdit = useUserEdit();
+    const [isMobile, setIsMobile] = useState(false);
 
     // Debug: Log do status da sessão
     console.log('🔍 SESSION STATUS:', status);
     console.log('🔍 SESSION DATA:', session);
+
+    // Detectar se é dispositivo móvel
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 640);
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
     const [recentDownloads, setRecentDownloads] = useState<RecentActivity[]>([]);
     const [recentLikes, setRecentLikes] = useState<RecentActivity[]>([]);
     const [downloadStats, setDownloadStats] = useState<any>(null);
@@ -546,8 +559,7 @@ const ProfilePage = () => {
         { id: 'activity', label: 'Atividade', icon: Activity, color: 'text-cyan-400' },
         { id: 'benefits', label: 'Benefícios', icon: Gift, color: 'text-emerald-400' },
         { id: 'deemix', label: 'Deemix', icon: Music2, color: 'text-violet-400' },
-        { id: 'allavsoft', label: 'Allavsoft', icon: Disc, color: 'text-orange-400' },
-        { id: 'settings', label: 'Configurações', icon: Settings, color: 'text-gray-400' }
+        { id: 'allavsoft', label: 'Allavsoft', icon: Disc, color: 'text-orange-400' }
     ];
 
     const renderContent = () => {
@@ -3029,7 +3041,7 @@ const ProfilePage = () => {
                                                         rel="noopener noreferrer"
                                                         className="inline-flex items-center justify-center gap-3 px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-500 text-white font-semibold text-base rounded-xl hover:from-violet-600 hover:to-purple-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
                                                     >
-                                                        <Settings className="h-4 w-4" />
+                                                        <ExternalLink className="h-4 w-4" />
                                                         GERENCIAR DEEMIX
                                                     </a>
                                                 </div>
@@ -3234,102 +3246,96 @@ const ProfilePage = () => {
         <div className="min-h-screen bg-[#121212] relative overflow-hidden">
             <Header />
 
-            <div className="pt-12 lg:pt-16 min-h-screen bg-[#121212]">
-                <div className="max-w-[95%] mx-auto px-4 py-4 sm:py-8">
-                    {/* Header da Página */}
-                    <div className="mb-8">
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4">
-                            Meu Perfil
-                        </h1>
-                        <p className="text-gray-400 text-sm sm:text-base lg:text-lg max-w-none lg:max-w-4xl">
-                            Gerencie suas informações, veja suas estatísticas e acompanhe seu plano VIP
-                        </p>
-                    </div>
-
-                    {/* Layout Principal */}
-                    <div className="flex gap-6">
-                        {/* Sidebar */}
-                        <div className="w-64 flex-shrink-0">
-                            <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
-                                <nav className="space-y-2">
-                                    {sidebarItems.map((item) => {
-                                        const Icon = item.icon;
-                                        return (
-                                            <button
-                                                key={item.id}
-                                                onClick={() => setActiveTab(item.id)}
-                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-left ${activeTab === item.id
-                                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-                                                    }`}
-                                            >
-                                                <Icon className={`h-5 w-5 ${activeTab === item.id ? 'text-green-400' : item.color}`} />
-                                                <span className="font-medium">{item.label}</span>
-                                                {activeTab === item.id && (
-                                                    <ChevronRight className="h-4 w-4 ml-auto text-green-400" />
-                                                )}
-                                            </button>
-                                        );
-                                    })}
-                                </nav>
+            {/* Verificação Mobile */}
+            {isMobile && (
+                <div className="pt-12 lg:pt-16 min-h-screen bg-[#121212] flex items-center justify-center">
+                    <div className="max-w-md mx-auto text-center px-4">
+                        <div className="mb-8">
+                            <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Monitor className="w-12 h-12 text-white" />
                             </div>
-                        </div>
-
-                        {/* Conteúdo Principal */}
-                        <div className="flex-1">
-                            {renderContent()}
+                            <h1 className="text-2xl font-bold text-white mb-4">
+                                Acesso Restrito ao Desktop
+                            </h1>
+                            <p className="text-gray-300 mb-6 leading-relaxed">
+                                Para gerenciar seu perfil e plano, é necessário acessar através de um computador.
+                            </p>
+                            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+                                <h2 className="text-lg font-semibold text-white mb-4">
+                                    Gerenciar Plano via WhatsApp
+                                </h2>
+                                <p className="text-gray-400 mb-6 text-sm">
+                                    Entre em contato conosco para alterações no seu plano ou suporte
+                                </p>
+                                <a
+                                    href="https://wa.me/5551935052274?text=Olá! Gostaria de gerenciar meu plano na plataforma Nexor Records."
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-3 w-full justify-center px-6 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all duration-300 font-medium text-lg"
+                                >
+                                    <MessageCircle className="w-6 h-6" />
+                                    WhatsApp +55 51 93505-2274
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* Footer */}
-            <footer className="bg-black border-t border-gray-800/50 py-8 mt-16">
-                <div className="max-w-[95%] mx-auto px-4">
-                    <div className="text-center">
-                        {/* Logo e Nome */}
-                        <div className="flex items-center justify-center gap-3 mb-6">
-                            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                                <Music className="h-5 w-5 text-white" />
+            {/* Conteúdo Desktop */}
+            {!isMobile && (
+                <div className="pt-12 lg:pt-16 min-h-screen bg-[#121212]">
+                    <div className="max-w-[95%] mx-auto px-4 py-4 sm:py-8">
+                        {/* Header da Página */}
+                        <div className="mb-8">
+                            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4">
+                                Meu Perfil
+                            </h1>
+                            <p className="text-gray-400 text-sm sm:text-base lg:text-lg max-w-none lg:max-w-4xl">
+                                Gerencie suas informações, veja suas estatísticas e acompanhe seu plano VIP
+                            </p>
+                        </div>
+
+                        {/* Layout Principal */}
+                        <div className="flex gap-6">
+                            {/* Sidebar */}
+                            <div className="w-64 flex-shrink-0">
+                                <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
+                                    <nav className="space-y-2">
+                                        {sidebarItems.map((item) => {
+                                            const Icon = item.icon;
+                                            return (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => setActiveTab(item.id)}
+                                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-left ${activeTab === item.id
+                                                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                        : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                                                        }`}
+                                                >
+                                                    <Icon className={`h-5 w-5 ${activeTab === item.id ? 'text-green-400' : item.color}`} />
+                                                    <span className="font-medium">{item.label}</span>
+                                                    {activeTab === item.id && (
+                                                        <ChevronRight className="h-4 w-4 ml-auto text-green-400" />
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                    </nav>
+                                </div>
                             </div>
-                            <h3 className="text-xl font-bold text-white">Nexor Records Pools</h3>
-                        </div>
 
-                        {/* Links de Navegação */}
-                        <div className="flex flex-wrap justify-center gap-6 mb-6">
-                            <a href="/new" className="text-gray-400 hover:text-white transition-colors">Novidades</a>
-                            <a href="/trending" className="text-gray-400 hover:text-white transition-colors">Trending</a>
-                            <a href="/plans" className="text-gray-400 hover:text-white transition-colors">Planos</a>
-                            <a href="/debridlink" className="text-gray-400 hover:text-white transition-colors">Debrid-Link</a>
-                            <a href="/allavsoft" className="text-gray-400 hover:text-white transition-colors">Allavsoft</a>
-                            <a href="/deemix" className="text-gray-400 hover:text-white transition-colors">Deemix</a>
-                            <a href="/privacidade" className="text-gray-400 hover:text-white transition-colors">Privacidade</a>
-                            <a href="/termos" className="text-gray-400 hover:text-white transition-colors">Termos</a>
-                        </div>
-
-                        {/* Redes Sociais */}
-                        <div className="flex justify-center gap-4 mb-6">
-                            <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all">
-                                <span className="text-sm font-bold">F</span>
-                            </a>
-                            <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all">
-                                <span className="text-sm font-bold">T</span>
-                            </a>
-                            <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all">
-                                <span className="text-sm font-bold">I</span>
-                            </a>
-                            <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all">
-                                <span className="text-sm font-bold">Y</span>
-                            </a>
-                        </div>
-
-                        {/* Copyright */}
-                        <div className="text-gray-500 text-sm">
-                            © 2025 Nexor Records Pools. Todos os direitos reservados.
+                            {/* Conteúdo Principal */}
+                            <div className="flex-1">
+                                {renderContent()}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </footer>
+            )}
+
+            {/* Footer - Visível apenas em Desktop */}
+            {!isMobile && <Footer />}
         </div>
     );
 };

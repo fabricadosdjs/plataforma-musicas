@@ -29,6 +29,8 @@ import { Track } from "@/types/track";
 import { motion } from "framer-motion";
 
 const NewPage = () => {
+
+
   // Estados para filtros
   const [tracks, setTracks] = useState<Track[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -95,6 +97,10 @@ const NewPage = () => {
     downloadCount: number;
   }>>([]);
   const [foldersLoading, setFoldersLoading] = useState(true);
+
+
+
+
 
   // Buscar estilos mais baixados
   const fetchStyles = useCallback(async () => {

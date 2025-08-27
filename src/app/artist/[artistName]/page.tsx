@@ -95,17 +95,32 @@ export default function ArtistPage() {
     // Verificar se o usuário é VIP (simples)
     const isVip = true; // Por enquanto, sempre true para teste
 
+    // Estado para contador em tempo real
+    const [availableTracksCount, setAvailableTracksCount] = useState(0);
+
     // Calcular quantas músicas estão disponíveis para download
-    const getAvailableTracksCount = () => {
+    const getAvailableTracksCount = useCallback(() => {
         if (!tracks.length) return 0;
 
-        return tracks.filter(track => {
-            // Verificar se não foi baixada no localStorage (antigos)
-            const notInLocalStorage = !downloadedTrackIds.includes(track.id);
-            // Por enquanto, considerar todas como disponíveis
-            return notInLocalStorage;
+        const availableCount = tracks.filter(track => {
+            return !downloadedTrackIds.includes(track.id);
         }).length;
-    };
+
+        console.log('🔍 getAvailableTracksCount (Artist):', {
+            totalTracks: tracks.length,
+            downloadedIds: downloadedTrackIds.length,
+            availableCount
+        });
+
+        return availableCount;
+    }, [tracks, downloadedTrackIds]);
+
+    // Função para atualizar contador automaticamente
+    const updateAvailableTracksCount = useCallback(() => {
+        const count = getAvailableTracksCount();
+        setAvailableTracksCount(count);
+        console.log('🔄 Contador atualizado automaticamente (Artist):', count);
+    }, [getAvailableTracksCount]);
 
     // Sincronizar estado local com o hook
     useEffect(() => {
@@ -120,6 +135,16 @@ export default function ArtistPage() {
         });
     }, [batchState]);
 
+    // Atualizar contador sempre que downloadedTrackIds mudar
+    useEffect(() => {
+        updateAvailableTracksCount();
+    }, [downloadedTrackIds, updateAvailableTracksCount]);
+
+    // Atualizar contador sempre que tracks mudar
+    useEffect(() => {
+        updateAvailableTracksCount();
+    }, [tracks, updateAvailableTracksCount]);
+
     useEffect(() => {
         const saved = localStorage.getItem('downloadedTrackIds');
         if (saved) {
@@ -129,11 +154,19 @@ export default function ArtistPage() {
 
     const handleDownloadedTrackIdsChange = (newIds: number[] | ((prev: number[]) => number[])) => {
         if (typeof newIds === 'function') {
-            setDownloadedTrackIds(newIds);
+            setDownloadedTrackIds(prev => {
+                const result = newIds(prev);
+                localStorage.setItem('downloadedTrackIds', JSON.stringify(result));
+                // Forçar atualização do contador
+                setTimeout(() => updateAvailableTracksCount(), 0);
+                return result;
+            });
         } else {
             setDownloadedTrackIds(newIds);
+            localStorage.setItem('downloadedTrackIds', JSON.stringify(newIds));
+            // Forçar atualização do contador
+            setTimeout(() => updateAvailableTracksCount(), 0);
         }
-        localStorage.setItem('downloadedTrackIds', JSON.stringify(typeof newIds === 'function' ? newIds(downloadedTrackIds) : newIds));
     };
 
     useEffect(() => {
@@ -284,11 +317,11 @@ export default function ArtistPage() {
 
                                 <button
                                     onClick={handleDownloadNewTracks}
-                                    disabled={isBatchDownloading || tracks.length === 0 || !session}
+                                    disabled={isBatchDownloading || availableTracksCount === 0 || !session}
                                     className="flex items-center justify-center gap-3 px-8 py-3 bg-[#282828] text-white rounded-xl hover:bg-[#3e3e3e] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg border border-[#3e3e3e] shadow-lg hover:shadow-xl"
                                 >
                                     <RefreshCw className="w-5 h-5" />
-                                    Baixar Novas ({getAvailableTracksCount()})
+                                    Baixar Novas ({availableTracksCount})
                                 </button>
                             </div>
 

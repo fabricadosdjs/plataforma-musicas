@@ -2,7 +2,6 @@
 
 import {
     AlertCircle,
-    AlertTriangle,
     BarChart3,
     Bot,
     Brain,
@@ -130,7 +129,6 @@ export default function ContaboStoragePage() {
     const [detectingDuplicates, setDetectingDuplicates] = useState(false);
     const [deletingDuplicates, setDeletingDuplicates] = useState(false);
     const [duplicateStats, setDuplicateStats] = useState<any>(null);
-    const [lastDuplicateCheck, setLastDuplicateCheck] = useState<Date | null>(null);
 
     // Estados para detector de duplicatas do banco de dados
     const [databaseDuplicates, setDatabaseDuplicates] = useState<any[]>([]);
@@ -144,10 +142,7 @@ export default function ContaboStoragePage() {
     const [selectedExistingFiles, setSelectedExistingFiles] = useState<string[]>([]);
     const [detectingExisting, setDetectingExisting] = useState(false);
     const [deletingExisting, setDeletingExisting] = useState(false);
-    const [existingStats, setExistingStats] = useState<{
-        totalFiles: number;
-        existingCount: number;
-    } | null>(null);
+    const [existingStats, setExistingStats] = useState<any>(null);
 
     // Estados para IA e análise inteligente
     const [smartAnalysis, setSmartAnalysis] = useState<any>(null);
@@ -215,26 +210,6 @@ export default function ContaboStoragePage() {
         }
     }, [isLoaded, user]);
 
-    // Efeito para sincronização automática quando a página é carregada
-    useEffect(() => {
-        if (isLoaded && user && currentView === 'import') {
-            // Sincronizar automaticamente quando entrar na aba de importação
-            const autoSync = async () => {
-                console.log('🔄 Sincronização automática iniciada...');
-                try {
-                    await detectExistingFiles();
-                    await loadImportableFiles(selectedFolder);
-                    console.log('✅ Sincronização automática concluída');
-                } catch (error) {
-                    console.error('❌ Erro na sincronização automática:', error);
-                }
-            };
-
-            // Aguarda um momento para garantir que tudo foi carregado
-            setTimeout(autoSync, 1000);
-        }
-    }, [isLoaded, user, currentView]);
-
     const loadFiles = async () => {
         setLoading(true);
         try {
@@ -266,8 +241,7 @@ export default function ContaboStoragePage() {
             const data = await response.json();
 
             if (data.success) {
-                const files = data.files || [];
-                setImportableFiles(files);
+                setImportableFiles(data.files || []);
 
                 // Atualiza informações das pastas se disponível
                 if (data.folders) {
@@ -287,27 +261,6 @@ export default function ContaboStoragePage() {
 
                 // Automaticamente detecta arquivos existentes após carregar importáveis
                 await detectExistingFiles();
-
-                // Verificar duplicatas automaticamente se houver arquivos
-                if (files.length > 0) {
-                    console.log('🔄 Chamando verificação de duplicatas para', files.length, 'arquivos');
-                    await checkDuplicatesForImportableFiles(files);
-                } else {
-                    // Limpar estatísticas se não há arquivos
-                    setDuplicateStats(null);
-                }
-
-                // Atualizar estatísticas de duplicatas com base nos arquivos existentes detectados
-                if (existingStats && typeof existingStats.existingCount === 'number' && existingStats.existingCount > 0) {
-                    const updatedStats = {
-                        totalFiles: files.length,
-                        uniqueFiles: files.length - existingStats.existingCount,
-                        duplicateGroups: existingStats.existingCount,
-                        sizeSaved: 0 // Será calculado se necessário
-                    };
-                    setDuplicateStats(updatedStats);
-                    console.log('📊 Estatísticas atualizadas com base em arquivos existentes:', updatedStats);
-                }
             } else {
                 showMessage(data.error || 'Erro ao analisar arquivos', 'error');
             }
@@ -319,112 +272,8 @@ export default function ContaboStoragePage() {
         }
     };
 
-    const checkDuplicatesForImportableFiles = async (files: ImportableFile[]) => {
-        try {
-            console.log('🔍 Verificando duplicatas para', files.length, 'arquivos');
-
-            // Se já temos estatísticas de arquivos existentes, usar elas primeiro
-            if (existingStats && typeof existingStats.existingCount === 'number' && existingStats.existingCount > 0) {
-                console.log('📊 Usando estatísticas de arquivos existentes detectados:', existingStats);
-                const stats = {
-                    totalFiles: files.length,
-                    uniqueFiles: files.length - existingStats.existingCount,
-                    duplicateGroups: existingStats.existingCount,
-                    sizeSaved: 0 // Será calculado se necessário
-                };
-                setDuplicateStats(stats);
-                setLastDuplicateCheck(new Date());
-                showMessage(`📊 ${existingStats.existingCount} arquivos já existem no banco de dados`, 'success');
-                return;
-            }
-
-            // Preparar dados para verificação
-            const tracksToCheck = files.map(item => ({
-                songName: item.importData.songName,
-                artist: item.importData.artist,
-                previewUrl: item.file.url,
-                downloadUrl: item.file.url
-            }));
-
-            console.log('📤 Dados para verificação:', tracksToCheck.slice(0, 3));
-
-            const response = await fetch('/api/tracks/check-duplicates', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(tracksToCheck)
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                console.log('✅ Resultado da verificação:', result);
-
-                // Atualizar estatísticas de duplicatas
-                const stats = {
-                    totalFiles: files.length,
-                    uniqueFiles: result.summary.unique,
-                    duplicateGroups: result.summary.duplicates,
-                    sizeSaved: 0 // Será calculado se necessário
-                };
-
-                console.log('📊 Estatísticas atualizadas:', stats);
-                setDuplicateStats(stats);
-                setLastDuplicateCheck(new Date());
-                console.log('✅ Estado duplicateStats atualizado');
-
-                if (result.summary.duplicates > 0) {
-                    showMessage(`⚠️ ${result.summary.duplicates} de ${files.length} músicas já existem no banco de dados`, 'error');
-                } else {
-                    showMessage(`✅ Verificação atualizada: ${result.summary.unique} músicas únicas encontradas`, 'success');
-                }
-            } else {
-                console.error('❌ Erro na resposta da API:', response.status, response.statusText);
-            }
-        } catch (error) {
-            console.error('❌ Erro ao verificar duplicatas:', error);
-        }
-    };
-
     const handleLoadImportableFiles = () => {
         loadImportableFiles();
-    };
-
-    const refreshDuplicateCheck = async () => {
-        if (importableFiles.length > 0) {
-            console.log('🔄 Atualizando verificação de duplicatas manualmente');
-            await checkDuplicatesForImportableFiles(importableFiles);
-        }
-    };
-
-    const syncWithDatabase = async () => {
-        setMessage('🔄 Sincronizando com banco de dados...');
-        try {
-            console.log('🔄 Iniciando sincronização manual...');
-
-            // Primeiro detecta arquivos existentes
-            console.log('📊 Detectando arquivos existentes...');
-            await detectExistingFiles();
-
-            // Aguarda um momento para garantir que o estado foi atualizado
-            console.log('⏳ Aguardando atualização do estado...');
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // Verifica se a detecção funcionou
-            if (existingStats && existingStats.existingCount > 0) {
-                console.log('✅ Arquivos existentes detectados:', existingStats);
-            } else {
-                console.log('ℹ️ Nenhum arquivo existente detectado');
-            }
-
-            // Depois recarrega arquivos importáveis
-            console.log('🔄 Recarregando arquivos importáveis...');
-            await loadImportableFiles(selectedFolder);
-
-            console.log('✅ Sincronização manual concluída');
-            showMessage('✅ Sincronização concluída!', 'success');
-        } catch (error) {
-            console.error('❌ Erro na sincronização:', error);
-            showMessage('❌ Erro na sincronização', 'error');
-        }
     };
 
     const loadFolders = async () => {
@@ -1457,6 +1306,27 @@ export default function ContaboStoragePage() {
         }
     };
 
+    // Função para sincronizar com o banco de dados
+    const syncWithDatabase = async () => {
+        try {
+            setMessage('🔄 Sincronizando com o banco de dados...');
+
+            // Recarrega arquivos importáveis para verificar duplicatas
+            await loadImportableFiles(selectedFolder);
+
+            // Detecta arquivos existentes novamente
+            await detectExistingFiles();
+
+            // Recarrega estilos do banco
+            await loadStylesFromDatabase();
+
+            showMessage('✅ Sincronização concluída!', 'success');
+        } catch (error) {
+            console.error('❌ Erro na sincronização:', error);
+            showMessage('❌ Erro na sincronização', 'error');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-black text-white">
             <div className="container mx-auto px-6 py-8">
@@ -1952,65 +1822,7 @@ export default function ContaboStoragePage() {
                                                 - Pasta: {selectedFolder}
                                             </span>
                                         )}
-                                        {existingStats && existingStats.existingCount > 0 && (
-                                            <span className="text-sm text-yellow-400 ml-2 px-2 py-1 bg-yellow-900/20 border border-yellow-700/50 rounded">
-                                                ⚠️ {existingStats.existingCount} já existem
-                                            </span>
-                                        )}
                                     </h3>
-
-                                    {/* Mensagem de Status */}
-                                    {existingStats && existingStats.existingCount > 0 && (
-                                        <div className="px-4 py-2 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
-                                            <div className="flex items-center gap-2 text-yellow-200 text-sm">
-                                                <AlertTriangle className="w-4 h-4" />
-                                                <span>
-                                                    ⚠️ <strong>{existingStats.existingCount}</strong> arquivos já existem no banco de dados.
-                                                    Clique em <strong>"Sincronizar"</strong> para atualizar a lista.
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Status de Sincronização */}
-                                    <div className="px-4 py-2 bg-blue-900/20 border border-blue-700/50 rounded-lg">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2 text-blue-200 text-sm">
-                                                <Database className="w-4 h-4" />
-                                                <span>
-                                                    💡 <strong>Dica:</strong> Se as músicas continuam aparecendo após importar em <code className="bg-blue-800/50 px-1 rounded">/admin/add-music</code>,
-                                                    use <strong>"Forçar Sincronização"</strong> para limpar o cache e reconectar.
-                                                </span>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={syncWithDatabase}
-                                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors"
-                                                >
-                                                    <RefreshCw className="w-3 h-3 inline mr-1" />
-                                                    Sincronizar
-                                                </button>
-                                                <button
-                                                    onClick={async () => {
-                                                        setMessage('🔄 Forçando sincronização completa...');
-                                                        try {
-                                                            setExistingStats(null);
-                                                            setDuplicateStats(null);
-                                                            await syncWithDatabase();
-                                                            showMessage('✅ Sincronização forçada concluída!', 'success');
-                                                        } catch (error) {
-                                                            console.error('❌ Erro na sincronização forçada:', error);
-                                                            showMessage('❌ Erro na sincronização forçada', 'error');
-                                                        }
-                                                    }}
-                                                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors"
-                                                >
-                                                    <Zap className="w-3 h-3 inline mr-1" />
-                                                    Forçar
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
 
                                     <div className="flex gap-2 flex-wrap items-center">
                                         {/* Seletor de Pasta */}
@@ -2153,37 +1965,6 @@ export default function ContaboStoragePage() {
                                             {detectingExisting ? 'Detectando...' : 'Detectar Existentes'}
                                         </button>
                                         <button
-                                            onClick={syncWithDatabase}
-                                            className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                                            title="Sincronizar com o estado atual do banco de dados"
-                                        >
-                                            <RefreshCw className="w-4 h-4" />
-                                            Sincronizar
-                                        </button>
-                                        <button
-                                            onClick={async () => {
-                                                setMessage('🔄 Forçando sincronização completa...');
-                                                try {
-                                                    // Limpa estados antigos
-                                                    setExistingStats(null);
-                                                    setDuplicateStats(null);
-
-                                                    // Força uma sincronização completa
-                                                    await syncWithDatabase();
-
-                                                    showMessage('✅ Sincronização forçada concluída!', 'success');
-                                                } catch (error) {
-                                                    console.error('❌ Erro na sincronização forçada:', error);
-                                                    showMessage('❌ Erro na sincronização forçada', 'error');
-                                                }
-                                            }}
-                                            className="inline-flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                                            title="Forçar sincronização completa (limpa cache e reconecta)"
-                                        >
-                                            <Zap className="w-4 h-4" />
-                                            Forçar Sincronização
-                                        </button>
-                                        <button
                                             onClick={importSelectedFiles}
                                             disabled={importing || selectedFiles.length === 0}
                                             className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
@@ -2212,71 +1993,10 @@ export default function ContaboStoragePage() {
                                         </div>
 
                                         <button
-                                            onClick={async () => {
+                                            onClick={() => {
                                                 const selected = importableFiles.filter(item => selectedFiles.includes(item.file.key));
-
-                                                // Verificar duplicatas antes de gerar os dados
-                                                try {
-                                                    setMessage('Verificando duplicatas...');
-
-                                                    // Preparar dados para verificação
-                                                    const tracksToCheck = selected.map(item => ({
-                                                        songName: item.importData.songName,
-                                                        artist: item.importData.artist,
-                                                        previewUrl: item.file.url,
-                                                        downloadUrl: item.file.url
-                                                    }));
-
-                                                    const response = await fetch('/api/tracks/check-duplicates', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify(tracksToCheck)
-                                                    });
-
-                                                    if (response.ok) {
-                                                        const result = await response.json();
-
-                                                        if (result.summary.duplicates > 0) {
-                                                            // Filtrar apenas músicas únicas
-                                                            const uniqueTracks = result.unique;
-                                                            const uniqueSelected = selected.filter(item => {
-                                                                const trackKey = `${item.importData.artist} - ${item.importData.songName}`.toLowerCase();
-                                                                return uniqueTracks.some((unique: { artist: string; songName: string }) =>
-                                                                    `${unique.artist} - ${unique.songName}`.toLowerCase() === trackKey
-                                                                );
-                                                            });
-
-                                                            if (uniqueSelected.length === 0) {
-                                                                showMessage(`❌ Todas as ${selected.length} músicas selecionadas já existem no banco de dados!`, 'error');
-                                                                return;
-                                                            }
-
-                                                            const text = uniqueSelected.map(item => `${item.importData.songName} - ${item.importData.artist}\n${item.file.url}`).join('\n\n');
-                                                            await navigator.clipboard.writeText(text);
-
-                                                            showMessage(`✅ ${uniqueSelected.length} músicas únicas copiadas! ${result.summary.duplicates} duplicatas filtradas.`, 'success');
-                                                        } else {
-                                                            // Todas são únicas
-                                                            const text = selected.map(item => `${item.importData.songName} - ${item.importData.artist}\n${item.file.url}`).join('\n\n');
-                                                            await navigator.clipboard.writeText(text);
-
-                                                            showMessage(`✅ ${selected.length} músicas copiadas! Todas são únicas.`, 'success');
-                                                        }
-                                                    } else {
-                                                        // Se a verificação falhar, copiar todas mas mostrar aviso
-                                                        const text = selected.map(item => `${item.importData.songName} - ${item.importData.artist}\n${item.file.url}`).join('\n\n');
-                                                        await navigator.clipboard.writeText(text);
-
-                                                        showMessage(`⚠️ ${selected.length} músicas copiadas! Verificação de duplicatas falhou.`, 'error');
-                                                    }
-                                                } catch (error) {
-                                                    console.error('Erro ao verificar duplicatas:', error);
-                                                    // Fallback: copiar todas mas mostrar aviso
-                                                    const text = selected.map(item => `${item.importData.songName} - ${item.importData.artist}\n${item.file.url}`).join('\n\n');
-                                                    await navigator.clipboard.writeText(text);
-
-                                                    showMessage(`⚠️ ${selected.length} músicas copiadas! Erro na verificação de duplicatas.`, 'error');
-                                                }
+                                                const text = selected.map(item => `${item.importData.songName} - ${item.importData.artist}\n${item.file.url}`).join('\n\n');
+                                                navigator.clipboard.writeText(text);
                                             }}
                                             disabled={selectedFiles.length === 0}
                                             className="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg transition-colors disabled:opacity-50"
@@ -2287,17 +2007,13 @@ export default function ContaboStoragePage() {
                                         <button
                                             onClick={async () => {
                                                 const selected = importableFiles.filter(item => selectedFiles.includes(item.file.key));
-
                                                 if (selected.length === 0) {
                                                     showMessage('Nenhuma música selecionada', 'error');
                                                     return;
                                                 }
 
-                                                // Verificar duplicatas antes de gerar o JSON
                                                 try {
                                                     setMessage('Verificando duplicatas e gerando JSON...');
-
-                                                    // Preparar dados para verificação
                                                     const tracksToCheck = selected.map(item => ({
                                                         songName: item.importData.songName,
                                                         artist: item.importData.artist,
@@ -2313,13 +2029,11 @@ export default function ContaboStoragePage() {
 
                                                     if (response.ok) {
                                                         const result = await response.json();
-
                                                         if (result.summary.duplicates > 0) {
-                                                            // Filtrar apenas músicas únicas
                                                             const uniqueTracks = result.unique;
                                                             const uniqueSelected = selected.filter(item => {
                                                                 const trackKey = `${item.importData.artist} - ${item.importData.songName}`.toLowerCase();
-                                                                return uniqueTracks.some((unique: { artist: string; songName: string }) =>
+                                                                return uniqueTracks.some((unique: { artist: any; songName: any; }) =>
                                                                     `${unique.artist} - ${unique.songName}`.toLowerCase() === trackKey
                                                                 );
                                                             });
@@ -2329,7 +2043,6 @@ export default function ContaboStoragePage() {
                                                                 return;
                                                             }
 
-                                                            // Gerar JSON apenas com músicas únicas
                                                             const jsonData = uniqueSelected.map(item => ({
                                                                 songName: item.importData.songName,
                                                                 artist: item.importData.artist,
@@ -2339,16 +2052,14 @@ export default function ContaboStoragePage() {
                                                                 previewUrl: item.file.url,
                                                                 downloadUrl: item.file.url,
                                                                 releaseDate: item.importData.releaseDate,
-                                                                pool: item.importData.pool || item.label || 'Nexor Records',
+                                                                pool: item.importData.pool || item.label || 'NexorRecords',
                                                                 bitrate: item.importData.bitrate
                                                             }));
 
                                                             const jsonText = JSON.stringify(jsonData, null, 2);
                                                             await navigator.clipboard.writeText(jsonText);
-
                                                             showMessage(`✅ JSON gerado com ${uniqueSelected.length} músicas únicas! ${result.summary.duplicates} duplicatas filtradas.`, 'success');
                                                         } else {
-                                                            // Todas são únicas
                                                             const jsonData = selected.map(item => ({
                                                                 songName: item.importData.songName,
                                                                 artist: item.importData.artist,
@@ -2358,17 +2069,15 @@ export default function ContaboStoragePage() {
                                                                 previewUrl: item.file.url,
                                                                 downloadUrl: item.file.url,
                                                                 releaseDate: item.importData.releaseDate,
-                                                                pool: item.importData.pool || item.label || 'Nexor Records',
+                                                                pool: item.importData.pool || item.label || 'NexorRecords',
                                                                 bitrate: item.importData.bitrate
                                                             }));
 
                                                             const jsonText = JSON.stringify(jsonData, null, 2);
                                                             await navigator.clipboard.writeText(jsonText);
-
                                                             showMessage(`✅ JSON gerado com ${selected.length} músicas! Todas são únicas.`, 'success');
                                                         }
                                                     } else {
-                                                        // Se a verificação falhar, gerar JSON com todas mas mostrar aviso
                                                         const jsonData = selected.map(item => ({
                                                             songName: item.importData.songName,
                                                             artist: item.importData.artist,
@@ -2378,18 +2087,16 @@ export default function ContaboStoragePage() {
                                                             previewUrl: item.file.url,
                                                             downloadUrl: item.file.url,
                                                             releaseDate: item.importData.releaseDate,
-                                                            pool: item.importData.pool || item.label || 'Nexor Records',
+                                                            pool: item.importData.pool || item.label || 'NexorRecords',
                                                             bitrate: item.importData.bitrate
                                                         }));
 
                                                         const jsonText = JSON.stringify(jsonData, null, 2);
                                                         await navigator.clipboard.writeText(jsonText);
-
                                                         showMessage(`⚠️ JSON gerado com ${selected.length} músicas! Verificação de duplicatas falhou.`, 'error');
                                                     }
                                                 } catch (error) {
                                                     console.error('Erro ao verificar duplicatas:', error);
-                                                    // Fallback: gerar JSON com todas mas mostrar aviso
                                                     const jsonData = selected.map(item => ({
                                                         songName: item.importData.songName,
                                                         artist: item.importData.artist,
@@ -2405,16 +2112,45 @@ export default function ContaboStoragePage() {
 
                                                     const jsonText = JSON.stringify(jsonData, null, 2);
                                                     await navigator.clipboard.writeText(jsonText);
-
                                                     showMessage(`⚠️ JSON gerado com ${selected.length} músicas! Erro na verificação de duplicatas.`, 'error');
                                                 }
                                             }}
                                             disabled={selectedFiles.length === 0}
                                             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-colors disabled:opacity-50"
                                         >
+                                            <File className="w-4 h-4" />
                                             Gerar JSON
                                         </button>
-                                    </div>
+
+                                        <button
+                                            onClick={syncWithDatabase}
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                                            title="Sincronizar com o estado atual do banco de dados"
+                                        >
+                                            <RefreshCw className="w-4 h-4" />
+                                            Sincronizar
+                                        </button>
+
+                                        <button
+                                            onClick={async () => {
+                                                setMessage('🔄 Forçando sincronização completa...');
+                                                try {
+                                                    setExistingStats(null);
+                                                    setDuplicateStats(null);
+                                                    await syncWithDatabase();
+                                                    showMessage('✅ Sincronização forçada concluída!', 'success');
+                                                } catch (error) {
+                                                    console.error('❌ Erro na sincronização forçada:', error);
+                                                    showMessage('❌ Erro na sincronização forçada', 'error');
+                                                }
+                                            }}
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                                            title="Forçar sincronização completa (limpa cache e reconecta)"
+                                        >
+                                            <Zap className="w-4 h-4" />
+                                            Forçar Sincronização
+                                        </button>
+                                        A                                    </div>
                                 </div>
 
                                 {/* Resumo IA */}
@@ -2730,50 +2466,6 @@ export default function ContaboStoragePage() {
                                                         </span>
                                                     </div>
                                                 </div>
-
-                                                {/* Estatísticas de Duplicatas */}
-                                                {console.log('🔍 Renderizando estatísticas:', duplicateStats)}
-                                                {duplicateStats && (
-                                                    <div className="px-6 py-3 bg-gradient-to-r from-orange-900/20 to-red-900/20 border-b border-orange-600/30">
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="p-2 bg-orange-600/20 rounded-lg">
-                                                                    <AlertTriangle className="w-5 h-5 text-orange-400" />
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="font-semibold text-orange-400">Verificação de Duplicatas</h4>
-                                                                    <p className="text-sm text-gray-300">
-                                                                        {duplicateStats.totalFiles} arquivos analisados • {duplicateStats.uniqueFiles} únicos • {duplicateStats.duplicateGroups} grupos de duplicatas
-                                                                    </p>
-                                                                    {lastDuplicateCheck && (
-                                                                        <p className="text-xs text-orange-200/70 mt-1">
-                                                                            Última verificação: {lastDuplicateCheck.toLocaleTimeString('pt-BR')}
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <button
-                                                                    onClick={refreshDuplicateCheck}
-                                                                    className="px-3 py-1 bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 text-sm rounded-full border border-orange-500/30 transition-colors"
-                                                                    title="Atualizar verificação de duplicatas"
-                                                                >
-                                                                    🔄 Atualizar
-                                                                </button>
-                                                                {duplicateStats.duplicateGroups > 0 && (
-                                                                    <span className="px-3 py-1 bg-red-500/20 text-red-300 text-sm rounded-full border border-red-500/30">
-                                                                        ⚠️ {duplicateStats.duplicateGroups} duplicatas encontradas
-                                                                    </span>
-                                                                )}
-                                                                {duplicateStats.sizeSaved > 0 && (
-                                                                    <span className="px-3 py-1 bg-green-500/20 text-green-300 text-sm rounded-full border border-green-500/30">
-                                                                        💾 {duplicateStats.sizeSaved} MB economizados
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
 
                                                 {/* Músicas da página atual */}
                                                 {currentPageDays.map((day) => (
@@ -3199,24 +2891,6 @@ export default function ContaboStoragePage() {
 
                                 {duplicateStats && (
                                     <div className="px-6 py-4 bg-gray-700/50 border-b border-gray-600">
-                                        <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700/50 rounded-lg">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 text-blue-200">
-                                                    <AlertCircle className="w-4 h-4" />
-                                                    <span className="text-sm">
-                                                        💡 <strong>Dica:</strong> Após importar músicas em <code className="bg-blue-800/50 px-1 rounded">/admin/add-music</code>,
-                                                        clique em <strong>"Sincronizar"</strong> para atualizar esta lista
-                                                    </span>
-                                                </div>
-                                                <button
-                                                    onClick={syncWithDatabase}
-                                                    className="inline-flex items-center gap-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors"
-                                                >
-                                                    <RefreshCw className="w-3 h-3" />
-                                                    Sincronizar
-                                                </button>
-                                            </div>
-                                        </div>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <div className="bg-gray-800/50 rounded-lg p-3">
                                                 <div className="text-sm text-gray-400">Total de Arquivos</div>

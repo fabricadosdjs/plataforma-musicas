@@ -676,14 +676,14 @@ export default function PoolPage() {
 
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
-                                        {filteredTracks.reduce((sum: number, track: Track) => sum + (track.downloadCount || 0), 0)}
+                                        {stats.totalDownloads}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Downloads</div>
                                 </div>
 
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
-                                        {filteredTracks.reduce((sum: number, track: Track) => sum + (track.likeCount || 0), 0)}
+                                        {stats.totalLikes}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Curtidas</div>
                                 </div>

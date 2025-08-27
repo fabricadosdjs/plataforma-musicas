@@ -640,9 +640,9 @@ export default function TrendingPage() {
                                                     <button
                                                         onClick={() => handleDownload(track)}
                                                         disabled={!session?.user?.id}
-                                                        className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-xs font-semibold transition-all duration-300 flex items-center justify-center gap-1 ${!session?.user?.id
-                                                            ? 'bg-[#535353] text-gray-400 cursor-not-allowed opacity-50'
-                                                            : 'bg-[#1db954] hover:bg-[#1ed760] text-white hover:scale-105 shadow-lg'
+                                                        className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-xs font-semibold transition-all duration-300 flex items-center justify-center gap-1 transform hover:scale-105 active:scale-95 ${!session?.user?.id
+                                                            ? 'bg-gradient-to-br from-[#535353] to-[#636363] text-gray-400 cursor-not-allowed opacity-50 shadow-lg shadow-gray-600/20'
+                                                            : 'bg-gradient-to-br from-[#1db954] to-[#1ed760] hover:from-[#1ed760] hover:to-[#1fdf64] text-white shadow-lg shadow-[#1db954]/30 hover:shadow-xl hover:shadow-[#1db954]/40'
                                                             }`}
                                                         title={!session?.user?.id ? 'Faça login para baixar músicas' : 'Baixar música'}
                                                     >
@@ -652,7 +652,9 @@ export default function TrendingPage() {
                                                     <button
                                                         onClick={() => handleLikeClick(track.id)}
                                                         disabled={!session?.user?.id || liking === track.id}
-                                                        className={`bg-[#282828] hover:bg-[#3e3e3e] text-white p-2 rounded-lg transition-all duration-300 flex items-center justify-center ${likedTracksSet.has(track.id) ? 'bg-[#1db954]/80 hover:bg-[#1ed760]/80' : ''
+                                                        className={`p-2 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 active:scale-95 ${likedTracksSet.has(track.id)
+                                                            ? 'bg-gradient-to-br from-[#1db954]/80 to-[#1ed760]/80 hover:from-[#1ed760]/80 hover:to-[#1fdf64]/80 text-white shadow-lg shadow-[#1db954]/30 hover:shadow-xl hover:shadow-[#1db954]/40'
+                                                            : 'bg-gradient-to-br from-[#282828] to-[#3e3e3e] hover:from-[#3e3e3e] hover:to-[#4a4a4a] text-white shadow-lg shadow-gray-600/20 hover:shadow-xl hover:shadow-gray-600/30'
                                                             } ${liking === track.id ? 'opacity-50 cursor-not-allowed' : ''} ${!session?.user?.id ? 'opacity-50 cursor-not-allowed' : ''
                                                             }`}
                                                         title={!session?.user?.id ? 'Faça login para curtir músicas' : likedTracksSet.has(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
