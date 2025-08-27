@@ -1,11 +1,12 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Novidades | Lançamentos Recentes de Música Eletrônica',
-    description: 'Descubra as últimas novidades e lançamentos de música eletrônica. House, Techno, Progressive House, Tech House e muito mais. Downloads diretos e streaming.',
+    title: 'Trending | Músicas Mais Populares e Baixadas',
+    description: 'Descubra as músicas mais populares e baixadas da plataforma. Top hits de House, Techno, Progressive House e outros gêneros eletrônicos em alta.',
     keywords: [
-        'novidades',
-        'lançamentos',
+        'trending',
+        'músicas populares',
+        'top hits',
         'música eletrônica',
         'house',
         'techno',
@@ -13,11 +14,10 @@ export const metadata: Metadata = {
         'tech house',
         'edm',
         'download música',
-        'streaming',
+        'músicas em alta',
         'nexor records',
         'pools',
-        'música nova',
-        'lançamentos recentes'
+        'músicas mais baixadas'
     ],
     authors: [{ name: 'Nexor Records Pools' }],
     creator: 'Nexor Records Pools',
@@ -34,8 +34,8 @@ export const metadata: Metadata = {
         },
     },
     openGraph: {
-        title: 'Novidades | Lançamentos Recentes de Música Eletrônica',
-        description: 'Descubra as últimas novidades e lançamentos de música eletrônica. House, Techno, Progressive House, Tech House e muito mais.',
+        title: 'Trending | Músicas Mais Populares e Baixadas',
+        description: 'Descubra as músicas mais populares e baixadas da plataforma. Top hits de House, Techno, Progressive House e outros gêneros eletrônicos em alta.',
         type: 'website',
         locale: 'pt_BR',
         siteName: 'Nexor Records Pools',
@@ -44,21 +44,21 @@ export const metadata: Metadata = {
                 url: '/images/cover-picture_l.webp',
                 width: 1200,
                 height: 630,
-                alt: 'Novidades - Lançamentos Recentes de Música Eletrônica',
+                alt: 'Trending - Músicas Mais Populares e Baixadas',
             },
         ],
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Novidades | Lançamentos Recentes de Música Eletrônica',
-        description: 'Descubra as últimas novidades e lançamentos de música eletrônica. House, Techno, Progressive House, Tech House e muito mais.',
+        title: 'Trending | Músicas Mais Populares e Baixadas',
+        description: 'Descubra as músicas mais populares e baixadas da plataforma. Top hits de House, Techno, Progressive House e outros gêneros eletrônicos em alta.',
         images: ['/images/cover-picture_l.webp'],
         creator: '@nexorrecords',
         site: '@nexorrecords',
     },
     alternates: {
-        canonical: '/new',
+        canonical: '/trending',
     },
     category: 'music',
-    classification: 'music releases',
+    classification: 'trending music',
 };

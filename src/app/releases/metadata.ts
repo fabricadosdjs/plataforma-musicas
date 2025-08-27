@@ -1,11 +1,11 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Novidades | Lançamentos Recentes de Música Eletrônica',
-    description: 'Descubra as últimas novidades e lançamentos de música eletrônica. House, Techno, Progressive House, Tech House e muito mais. Downloads diretos e streaming.',
+    title: 'Lançamentos | Músicas Exclusivas e Novidades',
+    description: 'Descubra os lançamentos mais recentes e exclusivos de música eletrônica. House, Techno, Progressive House e muito mais com downloads diretos.',
     keywords: [
-        'novidades',
         'lançamentos',
+        'músicas exclusivas',
         'música eletrônica',
         'house',
         'techno',
@@ -13,11 +13,10 @@ export const metadata: Metadata = {
         'tech house',
         'edm',
         'download música',
-        'streaming',
         'nexor records',
         'pools',
         'música nova',
-        'lançamentos recentes'
+        'exclusivos'
     ],
     authors: [{ name: 'Nexor Records Pools' }],
     creator: 'Nexor Records Pools',
@@ -34,8 +33,8 @@ export const metadata: Metadata = {
         },
     },
     openGraph: {
-        title: 'Novidades | Lançamentos Recentes de Música Eletrônica',
-        description: 'Descubra as últimas novidades e lançamentos de música eletrônica. House, Techno, Progressive House, Tech House e muito mais.',
+        title: 'Lançamentos | Músicas Exclusivas e Novidades',
+        description: 'Descubra os lançamentos mais recentes e exclusivos de música eletrônica. House, Techno, Progressive House e muito mais.',
         type: 'website',
         locale: 'pt_BR',
         siteName: 'Nexor Records Pools',
@@ -44,20 +43,20 @@ export const metadata: Metadata = {
                 url: '/images/cover-picture_l.webp',
                 width: 1200,
                 height: 630,
-                alt: 'Novidades - Lançamentos Recentes de Música Eletrônica',
+                alt: 'Lançamentos - Músicas Exclusivas e Novidades',
             },
         ],
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Novidades | Lançamentos Recentes de Música Eletrônica',
-        description: 'Descubra as últimas novidades e lançamentos de música eletrônica. House, Techno, Progressive House, Tech House e muito mais.',
+        title: 'Lançamentos | Músicas Exclusivas e Novidades',
+        description: 'Descubra os lançamentos mais recentes e exclusivos de música eletrônica. House, Techno, Progressive House e muito mais.',
         images: ['/images/cover-picture_l.webp'],
         creator: '@nexorrecords',
         site: '@nexorrecords',
     },
     alternates: {
-        canonical: '/new',
+        canonical: '/releases',
     },
     category: 'music',
     classification: 'music releases',

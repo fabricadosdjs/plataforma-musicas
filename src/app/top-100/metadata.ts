@@ -1,11 +1,12 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Novidades | Lançamentos Recentes de Música Eletrônica',
-    description: 'Descubra as últimas novidades e lançamentos de música eletrônica. House, Techno, Progressive House, Tech House e muito mais. Downloads diretos e streaming.',
+    title: 'Top 100 | Ranking das Músicas Mais Populares',
+    description: 'Descubra o Top 100 das músicas mais populares, baixadas e curtidas da plataforma. Ranking atualizado diariamente com House, Techno e mais.',
     keywords: [
-        'novidades',
-        'lançamentos',
+        'top 100',
+        'ranking',
+        'músicas populares',
         'música eletrônica',
         'house',
         'techno',
@@ -13,11 +14,10 @@ export const metadata: Metadata = {
         'tech house',
         'edm',
         'download música',
-        'streaming',
         'nexor records',
         'pools',
-        'música nova',
-        'lançamentos recentes'
+        'ranking musical',
+        'músicas em alta'
     ],
     authors: [{ name: 'Nexor Records Pools' }],
     creator: 'Nexor Records Pools',
@@ -34,8 +34,8 @@ export const metadata: Metadata = {
         },
     },
     openGraph: {
-        title: 'Novidades | Lançamentos Recentes de Música Eletrônica',
-        description: 'Descubra as últimas novidades e lançamentos de música eletrônica. House, Techno, Progressive House, Tech House e muito mais.',
+        title: 'Top 100 | Ranking das Músicas Mais Populares',
+        description: 'Descubra o Top 100 das músicas mais populares, baixadas e curtidas da plataforma. Ranking atualizado diariamente.',
         type: 'website',
         locale: 'pt_BR',
         siteName: 'Nexor Records Pools',
@@ -44,21 +44,21 @@ export const metadata: Metadata = {
                 url: '/images/cover-picture_l.webp',
                 width: 1200,
                 height: 630,
-                alt: 'Novidades - Lançamentos Recentes de Música Eletrônica',
+                alt: 'Top 100 - Ranking das Músicas Mais Populares',
             },
         ],
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Novidades | Lançamentos Recentes de Música Eletrônica',
-        description: 'Descubra as últimas novidades e lançamentos de música eletrônica. House, Techno, Progressive House, Tech House e muito mais.',
+        title: 'Top 100 | Ranking das Músicas Mais Populares',
+        description: 'Descubra o Top 100 das músicas mais populares, baixadas e curtidas da plataforma. Ranking atualizado diariamente.',
         images: ['/images/cover-picture_l.webp'],
         creator: '@nexorrecords',
         site: '@nexorrecords',
     },
     alternates: {
-        canonical: '/new',
+        canonical: '/top-100',
     },
     category: 'music',
-    classification: 'music releases',
+    classification: 'music ranking',
 };

@@ -9,6 +9,7 @@ const config: Config = {
     ],
     theme: {
         extend: {
+
             colors: {
                 // Definindo cores para o tema cinza escuro
                 primary: '#ffffff', // Branco para textos e elementos principais

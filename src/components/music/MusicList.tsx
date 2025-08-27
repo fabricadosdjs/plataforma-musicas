@@ -1013,244 +1013,442 @@ export default function MusicList({
             )}
 
             {/* Lista de músicas */}
-            {groupedTracks && Object.keys(groupedTracks).length > 0 ? (
-                <div className="space-y-0 w-full overflow-x-hidden">
-                    {Object.entries(paginatedGroups).map(([dateKey, group], groupIndex) => (
-                        <div key={dateKey} className={`space-y-4 ${groupIndex > 0 ? 'pt-8' : ''}`}>
-                            {/* Cabeçalho de data alinhado com o título "Novidades" */}
-                            <div className="relative mb-6">
-                                <div className="mb-3">
-                                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                                        <div className="flex items-center justify-between lg:justify-start gap-2 lg:gap-4 flex-nowrap">
-                                            <h2 className="text-sm sm:text-lg lg:text-2xl text-white font-sans min-w-0 flex-1 break-words">
-                                                {group.label === 'Hoje' || group.label === 'Em breve' ? (
-                                                    <span className="font-bold">{group.label}</span>
-                                                ) : (
-                                                    <>
-                                                        <span className="font-bold">{group.label.split(',')[0]}</span>
-                                                        <span className="text-xs sm:text-base lg:text-xl">, {group.label.split(',').slice(1).join(',')}</span>
-                                                    </>
-                                                )}
-                                            </h2>
-                                            <span className="text-gray-400 text-xs lg:text-base font-medium bg-gray-800/50 px-2 lg:px-2.5 py-0.5 lg:py-1 rounded-full whitespace-nowrap shrink-0 ml-1 lg:ml-2">
-                                                {group.tracks.length} {group.tracks.length === 1 ? 'música' : 'músicas'}
-                                            </span>
-                                        </div>
+            {showDate ? (
+                // Renderização com agrupamento por data (padrão)
+                groupedTracks && Object.keys(groupedTracks).length > 0 ? (
+                    <div className="space-y-0 w-full overflow-x-hidden">
+                        {Object.entries(paginatedGroups).map(([dateKey, group], groupIndex) => (
+                            <div key={dateKey} className={`space-y-4 ${groupIndex > 0 ? 'pt-8' : ''}`}>
+                                {/* Cabeçalho de data alinhado com o título "Novidades" */}
+                                <div className="relative mb-6">
+                                    <div className="mb-3">
+                                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                                            <div className="flex items-center justify-between lg:justify-start gap-2 lg:gap-4 flex-nowrap">
+                                                <h2 className="text-sm sm:text-lg lg:text-2xl text-white font-sans min-w-0 flex-1 break-words">
+                                                    {group.label === 'Hoje' || group.label === 'Em breve' ? (
+                                                        <span className="font-bold">{group.label}</span>
+                                                    ) : (
+                                                        <>
+                                                            <span className="font-bold">{group.label.split(',')[0]}</span>
+                                                            <span className="text-xs sm:text-base lg:text-xl">, {group.label.split(',').slice(1).join(',')}</span>
+                                                        </>
+                                                    )}
+                                                </h2>
+                                                <span className="text-gray-400 text-xs lg:text-base font-medium bg-gray-800/50 px-2 lg:px-2.5 py-0.5 lg:py-1 rounded-full whitespace-nowrap shrink-0 ml-1 lg:ml-2">
+                                                    {group.tracks.length} {group.tracks.length === 1 ? 'música' : 'músicas'}
+                                                </span>
+                                            </div>
 
-                                        {/* Botões de download em massa responsivos */}
-                                        <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-2 w-full lg:w-auto">
-                                            <button
-                                                onClick={() => {
-                                                    showMobileDownloadConfirmation('new', group.tracks, () => downloadNewTracks(group.tracks));
-                                                }}
-                                                className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white px-2 sm:px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm transition-all duration-200 transform hover:scale-105 shadow-lg border border-blue-400/30 flex items-center justify-center gap-2 w-full sm:w-auto"
-                                                title={`Baixar ${group.tracks.filter(t => !downloadedTrackIds.includes(t.id)).length} músicas novas desta data`}
-                                            >
-                                                <Download className="h-3 w-3 lg:h-4 lg:w-4" />
-                                                <span className="hidden sm:inline">Baixar Novas</span>
-                                                <span className="sm:hidden">Baixar Novas</span>
-                                                ({group.tracks.filter(t => !downloadedTrackIds.includes(t.id)).length})
-                                            </button>
+                                            {/* Botões de download em massa responsivos */}
+                                            <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-2 w-full lg:w-auto">
+                                                <button
+                                                    onClick={() => {
+                                                        showMobileDownloadConfirmation('new', group.tracks, () => downloadNewTracks(group.tracks));
+                                                    }}
+                                                    className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white px-2 sm:px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm transition-all duration-200 transform hover:scale-105 shadow-lg border border-blue-400/30 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                    title={`Baixar ${group.tracks.filter(t => !downloadedTrackIds.includes(t.id)).length} músicas novas desta data`}
+                                                >
+                                                    <Download className="h-3 w-3 lg:h-4 lg:w-4" />
+                                                    <span className="hidden sm:inline">Baixar Novas</span>
+                                                    <span className="sm:hidden">Baixar Novas</span>
+                                                    ({group.tracks.filter(t => !downloadedTrackIds.includes(t.id)).length})
+                                                </button>
 
-                                            <button
-                                                onClick={() => {
-                                                    showMobileDownloadConfirmation('all', group.tracks, () => downloadAllTracks(group.tracks));
-                                                }}
-                                                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-2 sm:px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm transition-all duration-200 transform hover:scale-105 shadow-lg border border-green-400/30 flex items-center justify-center gap-2 w-full sm:w-auto"
-                                                title={`Baixar todas as ${group.tracks.length} músicas desta data`}
-                                            >
-                                                <Download className="h-3 w-3 lg:h-4 lg:w-4" />
-                                                <span className="hidden sm:inline">Baixar Tudo</span>
-                                                <span className="sm:hidden">Baixar Tudo</span>
-                                                ({group.tracks.length})
-                                            </button>
+                                                <button
+                                                    onClick={() => {
+                                                        showMobileDownloadConfirmation('all', group.tracks, () => downloadAllTracks(group.tracks));
+                                                    }}
+                                                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-2 sm:px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm transition-all duration-200 transform hover:scale-105 shadow-lg border border-green-400/30 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                    title={`Baixar todas as ${group.tracks.length} músicas desta data`}
+                                                >
+                                                    <Download className="h-3 w-3 lg:h-4 lg:w-4" />
+                                                    <span className="hidden sm:inline">Baixar Tudo</span>
+                                                    <span className="sm:hidden">Baixar Tudo</span>
+                                                    ({group.tracks.length})
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
+
+                                    {/* Linha verde sutil */}
+                                    <div className="h-px bg-green-500/40 rounded-full"></div>
                                 </div>
 
-                                {/* Linha verde sutil */}
-                                <div className="h-px bg-green-500/40 rounded-full"></div>
-                            </div>
+                                {/* Lista de músicas */}
+                                <div className="">
+                                    {/* Mobile: Grid de cards */}
+                                    <div className="block sm:hidden">
+                                        <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                                            {group.tracks.map((track, index) => {
+                                                const { initials, colors } = generateThumbnail(track);
+                                                const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
 
-                            {/* Lista de músicas */}
-                            <div className="">
-                                {/* Mobile: Grid de cards */}
-                                <div className="block sm:hidden">
-                                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-                                        {group.tracks.map((track, index) => {
-                                            const { initials, colors } = generateThumbnail(track);
-                                            const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
+                                                return (
+                                                    <div key={track.id} className="">
+                                                        <div className="group mb-3">
+                                                            <div className="bg-black border border-white/10 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 group relative overflow-hidden">
+                                                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                                            return (
-                                                <div key={track.id} className="">
-                                                    <div className="group mb-3">
-                                                        <div className="bg-black border border-white/10 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 group relative overflow-hidden">
-                                                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                                                <div className="relative mb-2 sm:mb-2">
+                                                                    {/* Thumbnail responsivo */}
+                                                                    <div className="w-full aspect-square bg-black border border-gray-700 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden relative">
+                                                                        <OptimizedImage
+                                                                            track={track}
+                                                                            className="w-full h-full object-cover rounded-lg sm:rounded-xl"
+                                                                            fallbackClassName={`w-full h-full bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-lg shadow-lg border border-gray-700 rounded-lg sm:rounded-xl`}
+                                                                            fallbackContent={initials}
+                                                                        />
 
-                                                            <div className="relative mb-2 sm:mb-2">
-                                                                {/* Thumbnail responsivo */}
-                                                                <div className="w-full aspect-square bg-black border border-gray-700 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden relative">
-                                                                    <OptimizedImage
-                                                                        track={track}
-                                                                        className="w-full h-full object-cover rounded-lg sm:rounded-xl"
-                                                                        fallbackClassName={`w-full h-full bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-lg shadow-lg border border-gray-700 rounded-lg sm:rounded-xl`}
-                                                                        fallbackContent={initials}
-                                                                    />
+                                                                        {/* Player sempre visível na thumbnail - Mobile */}
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                if (!session) {
+                                                                                    showToast('🔐 Ative um plano', 'warning');
+                                                                                    return;
+                                                                                }
+                                                                                handlePlayPause(track);
+                                                                            }}
+                                                                            disabled={testingAudio.has(track.id)}
+                                                                            className="absolute inset-0 bg-black/50 rounded-lg sm:rounded-xl opacity-100 flex items-center justify-center transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed z-20 hover:bg-black/70"
+                                                                            title={testingAudio.has(track.id) ? 'Testando compatibilidade...' : isCurrentlyPlaying ? 'Pausar' : 'Tocar'}
+                                                                        >
+                                                                            {testingAudio.has(track.id) ? (
+                                                                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                                            ) : isCurrentlyPlaying ? (
+                                                                                <Pause className="h-8 w-8 text-white drop-shadow-lg" />
+                                                                            ) : (
+                                                                                <Play className="h-8 w-8 text-white drop-shadow-lg ml-1" />
+                                                                            )}
+                                                                        </button>
 
-                                                                    {/* Player sempre visível na thumbnail - Mobile */}
+                                                                        {/* Overlay preto com 70% de opacidade quando tocando - Mobile */}
+                                                                        {currentTrack?.id === track.id && isPlaying && (
+                                                                            <div className="absolute inset-0 bg-black/70 rounded-lg sm:rounded-xl z-20"></div>
+                                                                        )}
+
+                                                                        {/* Efeito de ondas sonoras quando tocando - Mobile */}
+                                                                        {currentTrack?.id === track.id && isPlaying && (
+                                                                            <div className="absolute inset-0 z-40 flex items-center justify-center">
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1s' }}></div>
+                                                                                    <div className="w-1 h-3 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1s' }}></div>
+                                                                                    <div className="w-1 h-1.5 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1s' }}></div>
+                                                                                    <div className="w-1 h-4 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '1s' }}></div>
+                                                                                    <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.8s', animationDuration: '1s' }}></div>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Badge do estilo da música */}
+                                                                        <div className="absolute top-1.5 left-1.5 z-40">
+                                                                            <button
+                                                                                onClick={() => handleStyleClick(track.style)}
+                                                                                disabled={!track.style || track.style === 'N/A'}
+                                                                                className={`px-0.5 text-white text-[9px] font-bold rounded-sm backdrop-blur-sm border transition-all duration-200 shadow-sm ${track.style && track.style !== 'N/A'
+                                                                                    ? 'bg-emerald-500/90 border-emerald-400/50 cursor-pointer hover:bg-emerald-500 hover:scale-105 hover:shadow-md'
+                                                                                    : 'bg-gray-600/90 border-gray-400/50 cursor-not-allowed opacity-60'
+                                                                                    }`}
+                                                                                title={track.style && track.style !== 'N/A' ? `Filtrar por estilo: ${track.style}` : 'Estilo não disponível'}
+                                                                            >
+                                                                                {track.style || 'N/A'}
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Informações da música - Nome, Artista e Folder com espaçamento igual */}
+                                                                <div className="space-y-1.5 sm:space-y-2">
+                                                                    <div className="overflow-hidden">
+                                                                        <h3
+                                                                            className="font-black text-white text-xs sm:text-base truncate cursor-pointer transition-all duration-500 ease-in-out tracking-tight"
+                                                                            title={track.songName}
+                                                                            onClick={() => {
+                                                                                const element = event?.target as HTMLElement;
+                                                                                if (element) {
+                                                                                    element.classList.remove('truncate');
+                                                                                    element.classList.add('whitespace-nowrap', 'animate-scroll-text');
+                                                                                    element.style.animationDuration = '3s';
+
+                                                                                    // Reset após a animação com cleanup
+                                                                                    const timeoutId = setTimeout(() => {
+                                                                                        if (element && element.parentNode) {
+                                                                                            element.classList.remove('whitespace-nowrap', 'animate-scroll-text');
+                                                                                            element.classList.add('truncate');
+                                                                                            element.style.animationDuration = '';
+                                                                                        }
+                                                                                    }, 3000);
+
+                                                                                    // Cleanup se o componente for desmontado
+                                                                                    return () => clearTimeout(timeoutId);
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            {track.songName}
+                                                                        </h3>
+                                                                        <div className="text-xs sm:text-sm text-gray-300 font-medium truncate">
+                                                                            {track.artist}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Informações adicionais - Mobile */}
                                                                     <button
                                                                         onClick={() => {
-                                                                            if (!session) {
-                                                                                showToast('🔐 Ative um plano', 'warning');
-                                                                                return;
-                                                                            }
-                                                                            handlePlayPause(track);
+                                                                            const folderName = track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt);
+                                                                            router.push(`/folder/${encodeURIComponent(folderName)}`);
                                                                         }}
-                                                                        disabled={testingAudio.has(track.id)}
-                                                                        className="absolute inset-0 bg-black/50 rounded-lg sm:rounded-xl opacity-100 flex items-center justify-center transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed z-20 hover:bg-black/70"
-                                                                        title={testingAudio.has(track.id) ? 'Testando compatibilidade...' : isCurrentlyPlaying ? 'Pausar' : 'Tocar'}
+                                                                        className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer w-full relative z-50"
+                                                                        title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
                                                                     >
-                                                                        {testingAudio.has(track.id) ? (
-                                                                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                                                        ) : isCurrentlyPlaying ? (
-                                                                            <Pause className="h-8 w-8 text-white drop-shadow-lg" />
-                                                                        ) : (
-                                                                            <Play className="h-8 w-8 text-white drop-shadow-lg ml-1" />
-                                                                        )}
+                                                                        <span className="text-purple-400 text-xs">📁</span>
+                                                                        <span className="text-gray-200 text-[10px] sm:text-xs font-medium truncate text-center">
+                                                                            {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
+                                                                        </span>
                                                                     </button>
 
-                                                                    {/* Overlay preto com 70% de opacidade quando tocando - Mobile */}
-                                                                    {currentTrack?.id === track.id && isPlaying && (
-                                                                        <div className="absolute inset-0 bg-black/70 rounded-lg sm:rounded-xl z-20"></div>
-                                                                    )}
-
-                                                                    {/* Efeito de ondas sonoras quando tocando - Mobile */}
-                                                                    {currentTrack?.id === track.id && isPlaying && (
-                                                                        <div className="absolute inset-0 z-40 flex items-center justify-center">
-                                                                            <div className="flex items-center gap-1">
-                                                                                <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1s' }}></div>
-                                                                                <div className="w-1 h-3 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1s' }}></div>
-                                                                                <div className="w-1 h-1.5 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1s' }}></div>
-                                                                                <div className="w-1 h-4 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '1s' }}></div>
-                                                                                <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.8s', animationDuration: '1s' }}></div>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-
-                                                                    {/* Badge do estilo da música */}
-                                                                    <div className="absolute top-1.5 left-1.5 z-40">
+                                                                    {/* Botões de ação - Mobile */}
+                                                                    <div className="flex flex-col gap-2 mt-1 relative z-50">
+                                                                        {/* Botão Download */}
                                                                         <button
-                                                                            onClick={() => handleStyleClick(track.style)}
-                                                                            disabled={!track.style || track.style === 'N/A'}
-                                                                            className={`px-0.5 text-white text-[9px] font-bold rounded-sm backdrop-blur-sm border transition-all duration-200 shadow-sm ${track.style && track.style !== 'N/A'
-                                                                                ? 'bg-emerald-500/90 border-emerald-400/50 cursor-pointer hover:bg-emerald-500 hover:scale-105 hover:shadow-md'
-                                                                                : 'bg-gray-600/90 border-gray-400/50 cursor-not-allowed opacity-60'
-                                                                                }`}
-                                                                            title={track.style && track.style !== 'N/A' ? `Filtrar por estilo: ${track.style}` : 'Estilo não disponível'}
+                                                                            onClick={() => handleDownload(track)}
+                                                                            disabled={downloadingTracks.has(track.id) || isDownloaded(track) || !session}
+                                                                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 w-full transform hover:scale-105 active:scale-95 ${isDownloaded(track)
+                                                                                ? 'bg-gradient-to-br from-green-500/30 to-green-600/40 text-green-400 border border-green-500/50 cursor-not-allowed shadow-lg shadow-green-500/20'
+                                                                                : !session
+                                                                                    ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
+                                                                                    : 'bg-gradient-to-br from-blue-600/60 to-blue-700/70 text-white border border-blue-500/60 hover:from-blue-500/70 hover:to-blue-600/80 hover:border-blue-400/70 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40'
+                                                                                } font-sans`}
+                                                                            title={isDownloaded(track) ? 'Música já baixada' : !session ? 'Ative um plano' : 'Baixar música'}
                                                                         >
-                                                                            {track.style || 'N/A'}
+                                                                            {downloadingTracks.has(track.id) ? (
+                                                                                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                                                            ) : (
+                                                                                <Download className="h-3 w-3" />
+                                                                            )}
+                                                                            <span>
+                                                                                {isDownloaded(track) ? 'Baixado' : !session ? 'Login' : 'Download'}
+                                                                            </span>
+                                                                        </button>
+
+                                                                        {/* Botão Like */}
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                if (!session) {
+                                                                                    showToast('🔐 Ative um plano', 'warning');
+                                                                                    return;
+                                                                                }
+                                                                                handleLike(track);
+                                                                            }}
+                                                                            disabled={!session}
+                                                                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 w-full transform hover:scale-105 active:scale-95 ${!session
+                                                                                ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
+                                                                                : isLiked(track)
+                                                                                    ? 'bg-gradient-to-br from-red-500/30 to-red-600/40 text-red-400 border border-red-500/50 shadow-lg shadow-red-500/20'
+                                                                                    : 'bg-gradient-to-br from-pink-600/60 to-pink-700/70 text-white border border-pink-500/60 hover:from-pink-500/70 hover:to-pink-600/80 hover:border-pink-400/70 shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40'
+                                                                                } font-sans`}
+                                                                            title={!session ? 'Ative um plano' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                                                                        >
+                                                                            <Heart className={`h-3 w-3 ${isLiked(track) ? 'fill-current' : ''}`} />
+                                                                            <span>
+                                                                                {!session ? 'Login' : isLiked(track) ? 'Curtido' : 'Curtir'}
+                                                                            </span>
                                                                         </button>
                                                                     </div>
                                                                 </div>
                                                             </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
 
-                                                            {/* Informações da música - Nome, Artista e Folder com espaçamento igual */}
-                                                            <div className="space-y-1.5 sm:space-y-2">
-                                                                <div className="overflow-hidden">
-                                                                    <h3
-                                                                        className="font-black text-white text-xs sm:text-base truncate cursor-pointer transition-all duration-500 ease-in-out tracking-tight"
-                                                                        title={track.songName}
-                                                                        onClick={() => {
-                                                                            const element = event?.target as HTMLElement;
-                                                                            if (element) {
-                                                                                element.classList.remove('truncate');
-                                                                                element.classList.add('whitespace-nowrap', 'animate-scroll-text');
-                                                                                element.style.animationDuration = '3s';
+                                    {/* Desktop: Lista original */}
+                                    <div className="hidden sm:block">
+                                        {group.tracks.map((track, index) => {
+                                            const { initials, colors } = generateThumbnail(track);
+                                            const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
+                                            const isDownloadedTrack = isDownloaded(track);
 
-                                                                                // Reset após a animação com cleanup
-                                                                                const timeoutId = setTimeout(() => {
-                                                                                    if (element && element.parentNode) {
-                                                                                        element.classList.remove('whitespace-nowrap', 'animate-scroll-text');
-                                                                                        element.classList.add('truncate');
-                                                                                        element.style.animationDuration = '';
-                                                                                    }
-                                                                                }, 3000);
+                                            return (
+                                                <div key={track.id} className="overflow-x-hidden">
+                                                    {/* Linha separadora sutil */}
+                                                    {index > 0 && (
+                                                        <div className="w-full h-px bg-white/15 mb-1 mt-0"></div>
+                                                    )}
+                                                    <div className="group py-1">
+                                                        <div className="flex items-start gap-2 min-h-16 sm:min-h-20">
+                                                            {/* Thumbnail responsivo */}
+                                                            <div className="flex-shrink-0 relative h-16 w-16 sm:h-20 sm:w-20">
+                                                                <ImageErrorBoundary
+                                                                    fallback={
+                                                                        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg border border-red-500/30`}>
+                                                                            {initials}
+                                                                        </div>
+                                                                    }
+                                                                >
+                                                                    <OptimizedImage
+                                                                        track={track}
+                                                                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg border border-red-500/30 z-10"
+                                                                        fallbackClassName={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg border border-red-500/30`}
+                                                                        fallbackContent={initials}
+                                                                        style={{ position: 'absolute', inset: 0 }}
+                                                                    />
+                                                                </ImageErrorBoundary>
 
-                                                                                // Cleanup se o componente for desmontado
-                                                                                return () => clearTimeout(timeoutId);
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        {track.songName}
-                                                                    </h3>
-                                                                    <div className="text-xs sm:text-sm text-gray-300 font-medium truncate">
-                                                                        {track.artist}
+
+
+                                                                {/* Overlay preto com 70% de opacidade quando tocando */}
+                                                                {currentTrack?.id === track.id && isPlaying && (
+                                                                    <div className="absolute inset-0 bg-black/70 rounded-lg sm:rounded-xl z-20"></div>
+                                                                )}
+
+                                                                {/* Efeito de ondas sonoras quando tocando */}
+                                                                {currentTrack?.id === track.id && isPlaying && (
+                                                                    <div className="absolute inset-0 z-40 flex items-center justify-center">
+                                                                        <div className="flex items-center gap-1">
+                                                                            <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1s' }}></div>
+                                                                            <div className="w-1 h-4 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1s' }}></div>
+                                                                            <div className="w-1 h-3 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1s' }}></div>
+                                                                            <div className="w-1 h-5 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '1s' }}></div>
+                                                                            <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.8s', animationDuration: '1s' }}></div>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
+                                                                )}
 
-                                                                {/* Informações adicionais - Mobile */}
+                                                                {/* Botão Play/Pause responsivo */}
                                                                 <button
                                                                     onClick={() => {
-                                                                        const folderName = track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt);
-                                                                        router.push(`/folder/${encodeURIComponent(folderName)}`);
+                                                                        if (!session) {
+                                                                            showToast('🔐 Ative um plano', 'warning');
+                                                                            return;
+                                                                        }
+                                                                        handlePlayPause(track);
                                                                     }}
-                                                                    className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer w-full relative z-50"
-                                                                    title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
+                                                                    disabled={testingAudio.has(track.id)}
+                                                                    className="absolute inset-0 bg-red-900/60 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed z-30"
+                                                                    title={testingAudio.has(track.id) ? 'Testando compatibilidade...' : isCurrentlyPlaying ? 'Pausar' : 'Tocar'}
                                                                 >
-                                                                    <span className="text-purple-400 text-xs">📁</span>
-                                                                    <span className="text-gray-200 text-[10px] sm:text-xs font-medium truncate text-center">
-                                                                        {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
+                                                                    {testingAudio.has(track.id) ? (
+                                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                                    ) : isCurrentlyPlaying ? (
+                                                                        <Pause className="h-5 w-5 sm:h-6 sm:w-6 text-white drop-shadow-lg" />
+                                                                    ) : (
+                                                                        <Play className="h-5 w-5 sm:h-6 sm:w-6 text-white drop-shadow-lg ml-0.5" />
+                                                                    )}
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Informações da música responsivas */}
+                                                            <div className="flex-1 min-w-0 pt-1">
+                                                                <div className="flex items-center gap-2 mb-0.5 mt-0">
+                                                                    <h3 className="text-white font-bold text-xs sm:text-sm truncate tracking-wide font-sans">
+                                                                        {track.songName}
+                                                                    </h3>
+
+                                                                </div>
+
+                                                                <div className="text-gray-300 text-xs sm:text-sm font-medium mb-0.5 font-sans">
+                                                                    {renderArtists(track.artist)}
+                                                                </div>
+
+                                                                {/* Estilo, Pool e Folder - Responsivos */}
+                                                                <div className="hidden sm:flex items-center gap-1 lg:gap-1.5">
+                                                                    <button
+                                                                        onClick={() => handleStyleClick(track.style)}
+                                                                        disabled={!track.style || track.style === 'N/A'}
+                                                                        className={`flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 ${track.style && track.style !== 'N/A'
+                                                                            ? 'bg-emerald-500/20 border border-emerald-500/30 cursor-pointer'
+                                                                            : 'bg-gray-600/20 border border-gray-600/30 cursor-not-allowed opacity-50'
+                                                                            }`}
+                                                                        title={track.style && track.style !== 'N/A' ? `Filtrar por estilo: ${track.style}` : 'Estilo não disponível'}
+                                                                    >
+                                                                        <span className="text-emerald-400 text-xs">🎭</span>
+                                                                        <span className="text-gray-200 text-xs font-medium">
+                                                                            {track.style || 'N/A'}
+                                                                        </span>
+                                                                    </button>
+
+                                                                    <button
+                                                                        onClick={() => handlePoolClick(track.pool)}
+                                                                        disabled={!track.pool || track.pool === 'N/A'}
+                                                                        className={`flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 ${track.pool && track.pool !== 'N/A'
+                                                                            ? 'bg-amber-500/20 border border-amber-500/30 cursor-pointer'
+                                                                            : 'bg-gray-600/20 border border-gray-600/30 cursor-not-allowed opacity-50'
+                                                                            }`}
+                                                                        title={track.pool && track.pool !== 'N/A' ? `Filtrar por pool: ${track.pool}` : 'Pool não disponível'}
+                                                                    >
+                                                                        <span className="text-amber-500 text-xs">🏷️</span>
+                                                                        <span className="text-gray-200 text-xs font-medium">
+                                                                            {track.pool || 'N/A'}
+                                                                        </span>
+                                                                    </button>
+
+                                                                    {/* Nova coluna Folder */}
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const folderName = track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt);
+                                                                            router.push(`/folder/${encodeURIComponent(folderName)}`);
+                                                                        }}
+                                                                        className="flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer"
+                                                                        title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
+                                                                    >
+                                                                        <span className="text-purple-400 text-xs">📁</span>
+                                                                        <span className="text-gray-200 text-[10px] sm:text-xs font-medium">
+                                                                            {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
+                                                                        </span>
+                                                                    </button>
+
+
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Botões de ação responsivos */}
+                                                            <div className="flex items-start gap-1 sm:gap-2 pt-1">
+                                                                <button
+                                                                    onClick={() => handleDownload(track)}
+                                                                    disabled={downloadingTracks.has(track.id) || isDownloadedTrack || !session}
+                                                                    className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-300 justify-center transform hover:scale-105 active:scale-95 ${isDownloadedTrack
+                                                                        ? 'bg-gradient-to-br from-green-500/30 to-green-600/40 text-green-400 border border-green-500/50 cursor-not-allowed shadow-lg shadow-green-500/20'
+                                                                        : !session
+                                                                            ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
+                                                                            : 'bg-gradient-to-br from-blue-600/60 to-blue-700/70 text-white border border-blue-500/60 hover:from-blue-500/70 hover:to-blue-600/80 hover:border-blue-400/70 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40'
+                                                                        } font-sans`}
+                                                                    title={isDownloadedTrack ? 'Música já baixada' : !session ? 'Ative um plano' : 'Baixar música'}
+                                                                >
+                                                                    {downloadingTracks.has(track.id) ? (
+                                                                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                                                    ) : (
+                                                                        <span className="flex justify-center w-full"><Download className="h-3 w-3" /></span>
+                                                                    )}
+                                                                    <span className="hidden sm:inline">
+                                                                        {isDownloadedTrack ? 'Baixado' : !session ? 'Login' : 'Download'}
                                                                     </span>
                                                                 </button>
 
-                                                                {/* Botões de ação - Mobile */}
-                                                                <div className="flex flex-col gap-2 mt-1 relative z-50">
-                                                                    {/* Botão Download */}
-                                                                    <button
-                                                                        onClick={() => handleDownload(track)}
-                                                                        disabled={downloadingTracks.has(track.id) || isDownloaded(track) || !session}
-                                                                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 w-full transform hover:scale-105 active:scale-95 ${isDownloaded(track)
-                                                                            ? 'bg-gradient-to-br from-green-500/30 to-green-600/40 text-green-400 border border-green-500/50 cursor-not-allowed shadow-lg shadow-green-500/20'
-                                                                            : !session
-                                                                                ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
-                                                                                : 'bg-gradient-to-br from-blue-600/60 to-blue-700/70 text-white border border-blue-500/60 hover:from-blue-500/70 hover:to-blue-600/80 hover:border-blue-400/70 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40'
-                                                                            } font-sans`}
-                                                                        title={isDownloaded(track) ? 'Música já baixada' : !session ? 'Ative um plano' : 'Baixar música'}
-                                                                    >
-                                                                        {downloadingTracks.has(track.id) ? (
-                                                                            <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                                                                        ) : (
-                                                                            <Download className="h-3 w-3" />
-                                                                        )}
-                                                                        <span>
-                                                                            {isDownloaded(track) ? 'Baixado' : !session ? 'Login' : 'Download'}
-                                                                        </span>
-                                                                    </button>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if (!session) {
+                                                                            showToast('🔐 Ative um plano', 'warning');
+                                                                            return;
+                                                                        }
+                                                                        handleLike(track);
+                                                                    }}
+                                                                    disabled={!session}
+                                                                    className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 ${!session
+                                                                        ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
+                                                                        : isLiked(track)
+                                                                            ? 'bg-gradient-to-br from-red-500/30 to-red-600/40 text-red-400 border border-red-500/50 shadow-lg shadow-red-500/20'
+                                                                            : 'bg-gradient-to-br from-pink-600/60 to-pink-700/70 text-white border border-pink-500/60 hover:from-pink-500/70 hover:to-pink-600/80 hover:border-pink-400/70 shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40'
+                                                                        } font-sans`}
+                                                                    title={!session ? 'Ative um plano' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                                                                >
+                                                                    <span className="flex justify-center w-full"><Heart className={`h-3 w-3 ${isLiked(track) ? 'fill-current' : ''}`} /></span>
+                                                                    <span className="text-xs sm:text-sm">
+                                                                        {!session ? 'Login' : isLiked(track) ? 'Curtido' : 'Curtir'}
+                                                                    </span>
+                                                                </button>
 
-                                                                    {/* Botão Like */}
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            if (!session) {
-                                                                                showToast('🔐 Ative um plano', 'warning');
-                                                                                return;
-                                                                            }
-                                                                            handleLike(track);
-                                                                        }}
-                                                                        disabled={!session}
-                                                                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 w-full transform hover:scale-105 active:scale-95 ${!session
-                                                                            ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
-                                                                            : isLiked(track)
-                                                                                ? 'bg-gradient-to-br from-red-500/30 to-red-600/40 text-red-400 border border-red-500/50 shadow-lg shadow-red-500/20'
-                                                                                : 'bg-gradient-to-br from-pink-600/60 to-pink-700/70 text-white border border-pink-500/60 hover:from-pink-500/70 hover:to-pink-600/80 hover:border-pink-400/70 shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40'
-                                                                            } font-sans`}
-                                                                        title={!session ? 'Ative um plano' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                                                                    >
-                                                                        <Heart className={`h-3 w-3 ${isLiked(track) ? 'fill-current' : ''}`} />
-                                                                        <span>
-                                                                            {!session ? 'Login' : isLiked(track) ? 'Curtido' : 'Curtir'}
-                                                                        </span>
-                                                                    </button>
-                                                                </div>
+
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1260,60 +1458,202 @@ export default function MusicList({
                                     </div>
                                 </div>
 
-                                {/* Desktop: Lista original */}
-                                <div className="hidden sm:block">
-                                    {group.tracks.map((track, index) => {
-                                        const { initials, colors } = generateThumbnail(track);
-                                        const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
-                                        const isDownloadedTrack = isDownloaded(track);
 
-                                        return (
-                                            <div key={track.id} className="overflow-x-hidden">
-                                                {/* Linha separadora sutil */}
-                                                {index > 0 && (
-                                                    <div className="w-full h-px bg-white/15 mb-1 mt-0"></div>
-                                                )}
-                                                <div className="group py-1">
-                                                    <div className="flex items-start gap-2 min-h-16 sm:min-h-20">
+                            </div>
+                        ))}
+
+                        {/* Elemento de loading para infinite scroll */}
+                        {enableInfiniteScroll && hasMore && (
+                            <div
+                                ref={loadingRef}
+                                className="text-center py-8 px-4"
+                            >
+                                <div className="inline-flex items-center gap-3 px-4 sm:px-6 py-4 bg-gray-800/40 border border-gray-700/50 rounded-xl">
+                                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                    <span className="text-gray-300 text-sm font-medium">
+                                        {infiniteScrollLoading || isLoadingMore ? 'Carregando mais músicas...' : 'Role para carregar mais'}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Indicador de mais conteúdo responsivo - apenas para paginação tradicional */}
+                        {!enableInfiniteScroll && currentPage < totalPages && (
+                            <div className="text-center py-8 px-4">
+                                <div className="inline-flex items-center gap-3 px-4 sm:px-6 py-4 bg-gray-800/40 border border-gray-700/50 rounded-xl">
+                                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                                    <span className="text-gray-300 text-sm font-medium">
+                                        Há mais {totalPages - currentPage} página(s) com músicas
+                                    </span>
+                                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Controles de paginação responsivos - ocultos quando infinite scroll está ativo */}
+                        {!enableInfiniteScroll && totalPages > 1 && (
+                            <div className="mt-8 mb-4 px-4">
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <div className="text-gray-400 text-sm text-center sm:text-left">
+                                        Página {currentPage} de {totalPages} • {Object.keys(paginatedGroups).length} de {Object.keys(groupedTracks).length} grupos
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={goToFirstPage}
+                                            disabled={currentPage === 1}
+                                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage === 1
+                                                ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
+                                                : 'bg-gray-700/60 text-gray-300 hover:bg-gray-600/60 hover:text-gray-200'
+                                                }`}
+                                            title="Primeira página"
+                                        >
+                                            Primeira
+                                        </button>
+
+                                        <button
+                                            onClick={goToPreviousPage}
+                                            disabled={currentPage === 1}
+                                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage === 1
+                                                ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
+                                                : 'bg-gray-700/60 text-gray-300 hover:bg-gray-600/60 hover:text-gray-200'
+                                                }`}
+                                            title="Página anterior"
+                                        >
+                                            Anterior
+                                        </button>
+
+                                        <span className="px-4 py-2 bg-gray-800/60 text-gray-300 text-sm font-medium rounded-lg">
+                                            {currentPage}
+                                        </span>
+
+                                        <button
+                                            onClick={loadMoreGroups}
+                                            disabled={currentPage >= totalPages || isLoadingMore}
+                                            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${currentPage >= totalPages
+                                                ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
+                                                : isLoadingMore
+                                                    ? 'bg-gray-600/60 text-gray-400 cursor-not-allowed'
+                                                    : 'bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white shadow-lg'
+                                                }`}
+                                            title="Carregar mais grupos"
+                                        >
+                                            {currentPage >= totalPages ? 'Última' : isLoadingMore ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                                    Carregando...
+                                                </div>
+                                            ) : 'Carregar Mais'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Modal de Confirmação para Downloads Mobile */}
+                        {showMobileConfirmModal && (
+                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+                                <div className="bg-[#282828] border border-[#3e3e3e] rounded-xl p-5 max-w-sm w-full mx-3">
+                                    {/* Ícone de Aviso */}
+                                    <div className="flex justify-center mb-4">
+                                        <div className="w-14 h-14 bg-yellow-500/20 border-2 border-yellow-500/30 rounded-full flex items-center justify-center">
+                                            <svg className="w-7 h-7 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    {/* Título */}
+                                    <h3 className="text-white text-lg font-bold text-center mb-4">
+                                        Aviso de Download
+                                    </h3>
+
+                                    {/* Mensagem */}
+                                    <div className="text-gray-300 text-sm text-center mb-6 space-y-3">
+                                        <p className="font-medium">
+                                            {pendingDownloadAction?.type === 'new'
+                                                ? `Baixar ${pendingDownloadAction.tracks.filter(t => !finalDownloadedTrackIds.includes(t.id)).length} músicas novas?`
+                                                : `Baixar todas as ${pendingDownloadAction?.tracks.length} músicas?`
+                                            }
+                                        </p>
+
+                                        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+                                            <p className="text-yellow-400 font-medium text-xs">
+                                                ⚠️ Celulares podem não suportar muitos downloads simultâneos.
+                                            </p>
+                                            <p className="text-gray-300 text-xs mt-1">
+                                                Recomendamos usar um computador para downloads em massa.
+                                            </p>
+                                        </div>
+
+                                        <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
+                                            <p className="text-purple-300 font-medium text-xs">
+                                                💎 Para uma experiência premium, acesse nossa plataforma VIP!
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Botões de Ação */}
+                                    <div className="flex flex-col gap-3">
+                                        <button
+                                            onClick={confirmMobileDownload}
+                                            className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg text-sm"
+                                        >
+                                            Continuar no Celular
+                                        </button>
+
+                                        <button
+                                            onClick={() => window.open('https://plataformavip.nexorrecords.com.br/atualizacoes', '_blank')}
+                                            className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg border border-purple-400/30 text-sm"
+                                        >
+                                            <div className="flex items-center justify-center gap-2">
+                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                                </svg>
+                                                Acessar Plataforma VIP
+                                            </div>
+                                        </button>
+
+                                        <button
+                                            onClick={cancelMobileDownload}
+                                            className="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 text-sm"
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : null
+            ) : (
+                // Renderização sem agrupamento por data (para community)
+                tracks && tracks.length > 0 ? (
+                    <div className="space-y-0 w-full overflow-x-hidden">
+                        {/* Mobile: Grid de cards */}
+                        <div className="block sm:hidden">
+                            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                                {tracks.map((track, index) => {
+                                    const { initials, colors } = generateThumbnail(track);
+                                    const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
+
+                                    return (
+                                        <div key={track.id} className="">
+                                            <div className="group mb-3">
+                                                <div className="bg-black border border-white/10 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 group relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                                                    <div className="relative mb-2 sm:mb-2">
                                                         {/* Thumbnail responsivo */}
-                                                        <div className="flex-shrink-0 relative h-16 w-16 sm:h-20 sm:w-20">
-                                                            <ImageErrorBoundary
-                                                                fallback={
-                                                                    <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg border border-red-500/30`}>
-                                                                        {initials}
-                                                                    </div>
-                                                                }
-                                                            >
-                                                                <OptimizedImage
-                                                                    track={track}
-                                                                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg border border-red-500/30 z-10"
-                                                                    fallbackClassName={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg border border-red-500/30`}
-                                                                    fallbackContent={initials}
-                                                                    style={{ position: 'absolute', inset: 0 }}
-                                                                />
-                                                            </ImageErrorBoundary>
+                                                        <div className="w-full aspect-square bg-black border border-gray-700 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden relative">
+                                                            <OptimizedImage
+                                                                track={track}
+                                                                className="w-full h-full object-cover rounded-lg sm:rounded-xl"
+                                                                fallbackClassName={`w-full h-full bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-lg shadow-lg border border-gray-700 rounded-lg sm:rounded-xl`}
+                                                                fallbackContent={initials}
+                                                            />
 
-
-
-                                                            {/* Overlay preto com 70% de opacidade quando tocando */}
-                                                            {currentTrack?.id === track.id && isPlaying && (
-                                                                <div className="absolute inset-0 bg-black/70 rounded-lg sm:rounded-xl z-20"></div>
-                                                            )}
-
-                                                            {/* Efeito de ondas sonoras quando tocando */}
-                                                            {currentTrack?.id === track.id && isPlaying && (
-                                                                <div className="absolute inset-0 z-40 flex items-center justify-center">
-                                                                    <div className="flex items-center gap-1">
-                                                                        <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1s' }}></div>
-                                                                        <div className="w-1 h-4 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1s' }}></div>
-                                                                        <div className="w-1 h-3 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1s' }}></div>
-                                                                        <div className="w-1 h-5 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '1s' }}></div>
-                                                                        <div className="w-1 h-2 bg-gradient-to-t from-red-400 to-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.8s', animationDuration: '1s' }}></div>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* Botão Play/Pause responsivo */}
+                                                            {/* Player sempre visível na thumbnail - Mobile */}
                                                             <button
                                                                 onClick={() => {
                                                                     if (!session) {
@@ -1323,307 +1663,171 @@ export default function MusicList({
                                                                     handlePlayPause(track);
                                                                 }}
                                                                 disabled={testingAudio.has(track.id)}
-                                                                className="absolute inset-0 bg-red-900/60 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed z-30"
+                                                                className="absolute inset-0 bg-black/50 rounded-lg sm:rounded-xl opacity-100 flex items-center justify-center transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed z-20 hover:bg-black/70"
                                                                 title={testingAudio.has(track.id) ? 'Testando compatibilidade...' : isCurrentlyPlaying ? 'Pausar' : 'Tocar'}
                                                             >
                                                                 {testingAudio.has(track.id) ? (
-                                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                                                 ) : isCurrentlyPlaying ? (
-                                                                    <Pause className="h-5 w-5 sm:h-6 sm:w-6 text-white drop-shadow-lg" />
+                                                                    <Pause className="w-6 h-6 text-white" />
                                                                 ) : (
-                                                                    <Play className="h-5 w-5 sm:h-6 sm:w-6 text-white drop-shadow-lg ml-0.5" />
+                                                                    <Play className="w-6 h-6 text-white ml-1" />
                                                                 )}
                                                             </button>
                                                         </div>
 
-                                                        {/* Informações da música responsivas */}
-                                                        <div className="flex-1 min-w-0 pt-1">
-                                                            <div className="flex items-center gap-2 mb-0.5 mt-0">
-                                                                <h3 className="text-white font-bold text-xs sm:text-sm truncate tracking-wide font-sans">
-                                                                    {track.songName}
-                                                                </h3>
-
+                                                        {/* Informações da música */}
+                                                        <div className="px-1 sm:px-2">
+                                                            <div className="text-white font-medium text-xs sm:text-sm truncate mb-1">
+                                                                {track.songName}
                                                             </div>
-
-                                                            <div className="text-gray-300 text-xs sm:text-sm font-medium mb-0.5 font-sans">
-                                                                {renderArtists(track.artist)}
-                                                            </div>
-
-                                                            {/* Estilo, Pool e Folder - Responsivos */}
-                                                            <div className="hidden sm:flex items-center gap-1 lg:gap-1.5">
-                                                                <button
-                                                                    onClick={() => handleStyleClick(track.style)}
-                                                                    disabled={!track.style || track.style === 'N/A'}
-                                                                    className={`flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 ${track.style && track.style !== 'N/A'
-                                                                        ? 'bg-emerald-500/20 border border-emerald-500/30 cursor-pointer'
-                                                                        : 'bg-gray-600/20 border border-gray-600/30 cursor-not-allowed opacity-50'
-                                                                        }`}
-                                                                    title={track.style && track.style !== 'N/A' ? `Filtrar por estilo: ${track.style}` : 'Estilo não disponível'}
-                                                                >
-                                                                    <span className="text-emerald-400 text-xs">🎭</span>
-                                                                    <span className="text-gray-200 text-xs font-medium">
-                                                                        {track.style || 'N/A'}
-                                                                    </span>
-                                                                </button>
-
-                                                                <button
-                                                                    onClick={() => handlePoolClick(track.pool)}
-                                                                    disabled={!track.pool || track.pool === 'N/A'}
-                                                                    className={`flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 ${track.pool && track.pool !== 'N/A'
-                                                                        ? 'bg-amber-500/20 border border-amber-500/30 cursor-pointer'
-                                                                        : 'bg-gray-600/20 border border-gray-600/30 cursor-not-allowed opacity-50'
-                                                                        }`}
-                                                                    title={track.pool && track.pool !== 'N/A' ? `Filtrar por pool: ${track.pool}` : 'Pool não disponível'}
-                                                                >
-                                                                    <span className="text-amber-500 text-xs">🏷️</span>
-                                                                    <span className="text-gray-200 text-xs font-medium">
-                                                                        {track.pool || 'N/A'}
-                                                                    </span>
-                                                                </button>
-
-                                                                {/* Nova coluna Folder */}
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const folderName = track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt);
-                                                                        router.push(`/folder/${encodeURIComponent(folderName)}`);
-                                                                    }}
-                                                                    className="flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer"
-                                                                    title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
-                                                                >
-                                                                    <span className="text-purple-400 text-xs">📁</span>
-                                                                    <span className="text-gray-200 text-[10px] sm:text-xs font-medium">
-                                                                        {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
-                                                                    </span>
-                                                                </button>
-
-
+                                                            <div className="text-gray-400 text-xs truncate">
+                                                                {track.artist}
                                                             </div>
                                                         </div>
 
-                                                        {/* Botões de ação responsivos */}
-                                                        <div className="flex items-start gap-1 sm:gap-2 pt-1">
+                                                        {/* Botões de ação */}
+                                                        <div className="flex items-center justify-between gap-1 mt-2 px-1 sm:px-2">
                                                             <button
                                                                 onClick={() => handleDownload(track)}
-                                                                disabled={downloadingTracks.has(track.id) || isDownloadedTrack || !session}
-                                                                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-300 justify-center transform hover:scale-105 active:scale-95 ${isDownloadedTrack
-                                                                    ? 'bg-gradient-to-br from-green-500/30 to-green-600/40 text-green-400 border border-green-500/50 cursor-not-allowed shadow-lg shadow-green-500/20'
-                                                                    : !session
-                                                                        ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
-                                                                        : 'bg-gradient-to-br from-blue-600/60 to-blue-700/70 text-white border border-blue-500/60 hover:from-blue-500/70 hover:to-blue-600/80 hover:border-blue-400/70 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40'
-                                                                    } font-sans`}
-                                                                title={isDownloadedTrack ? 'Música já baixada' : !session ? 'Ative um plano' : 'Baixar música'}
+                                                                disabled={downloadingTracks.has(track.id)}
+                                                                className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                                                title={downloadedTrackIds.includes(track.id) ? 'Já baixada' : 'Baixar música'}
                                                             >
                                                                 {downloadingTracks.has(track.id) ? (
-                                                                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                                                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                                                ) : downloadedTrackIds.includes(track.id) ? (
+                                                                    '✅'
                                                                 ) : (
-                                                                    <span className="flex justify-center w-full"><Download className="h-3 w-3" /></span>
+                                                                    <Download className="w-3 h-3 mx-auto" />
                                                                 )}
-                                                                <span className="hidden sm:inline">
-                                                                    {isDownloadedTrack ? 'Baixado' : !session ? 'Login' : 'Download'}
-                                                                </span>
                                                             </button>
 
                                                             <button
-                                                                onClick={() => {
-                                                                    if (!session) {
-                                                                        showToast('🔐 Ative um plano', 'warning');
-                                                                        return;
-                                                                    }
-                                                                    handleLike(track);
-                                                                }}
-                                                                disabled={!session}
-                                                                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 ${!session
-                                                                    ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
-                                                                    : isLiked(track)
-                                                                        ? 'bg-gradient-to-br from-red-500/30 to-red-600/40 text-red-400 border border-red-500/50 shadow-lg shadow-red-500/20'
-                                                                        : 'bg-gradient-to-br from-pink-600/60 to-pink-700/70 text-white border border-pink-500/60 hover:from-pink-500/70 hover:to-pink-600/80 hover:border-pink-400/70 shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40'
-                                                                    } font-sans`}
-                                                                title={!session ? 'Ative um plano' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                                                                onClick={() => handleLike(track)}
+                                                                disabled={liking === track.id}
+                                                                className="flex-1 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                                                title={likedTrackIds.includes(track.id) ? 'Descurtir' : 'Curtir música'}
                                                             >
-                                                                <span className="flex justify-center w-full"><Heart className={`h-3 w-3 ${isLiked(track) ? 'fill-current' : ''}`} /></span>
-                                                                <span className="text-xs sm:text-sm">
-                                                                    {!session ? 'Login' : isLiked(track) ? 'Curtido' : 'Curtir'}
-                                                                </span>
+                                                                {liking === track.id ? (
+                                                                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                                                ) : likedTrackIds.includes(track.id) ? (
+                                                                    '❤️'
+                                                                ) : (
+                                                                    <Heart className="w-3 h-3 mx-auto" />
+                                                                )}
                                                             </button>
-
-
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-
-                        </div>
-                    ))}
-
-                    {/* Elemento de loading para infinite scroll */}
-                    {enableInfiniteScroll && hasMore && (
-                        <div
-                            ref={loadingRef}
-                            className="text-center py-8 px-4"
-                        >
-                            <div className="inline-flex items-center gap-3 px-4 sm:px-6 py-4 bg-gray-800/40 border border-gray-700/50 rounded-xl">
-                                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                                <span className="text-gray-300 text-sm font-medium">
-                                    {infiniteScrollLoading || isLoadingMore ? 'Carregando mais músicas...' : 'Role para carregar mais'}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Indicador de mais conteúdo responsivo - apenas para paginação tradicional */}
-                    {!enableInfiniteScroll && currentPage < totalPages && (
-                        <div className="text-center py-8 px-4">
-                            <div className="inline-flex items-center gap-3 px-4 sm:px-6 py-4 bg-gray-800/40 border border-gray-700/50 rounded-xl">
-                                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                                <span className="text-gray-300 text-sm font-medium">
-                                    Há mais {totalPages - currentPage} página(s) com músicas
-                                </span>
-                                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Controles de paginação responsivos - ocultos quando infinite scroll está ativo */}
-                    {!enableInfiniteScroll && totalPages > 1 && (
-                        <div className="mt-8 mb-4 px-4">
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div className="text-gray-400 text-sm text-center sm:text-left">
-                                    Página {currentPage} de {totalPages} • {Object.keys(paginatedGroups).length} de {Object.keys(groupedTracks).length} grupos
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={goToFirstPage}
-                                        disabled={currentPage === 1}
-                                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage === 1
-                                            ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
-                                            : 'bg-gray-700/60 text-gray-300 hover:bg-gray-600/60 hover:text-gray-200'
-                                            }`}
-                                        title="Primeira página"
-                                    >
-                                        Primeira
-                                    </button>
-
-                                    <button
-                                        onClick={goToPreviousPage}
-                                        disabled={currentPage === 1}
-                                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage === 1
-                                            ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
-                                            : 'bg-gray-700/60 text-gray-300 hover:bg-gray-600/60 hover:text-gray-200'
-                                            }`}
-                                        title="Página anterior"
-                                    >
-                                        Anterior
-                                    </button>
-
-                                    <span className="px-4 py-2 bg-gray-800/60 text-gray-300 text-sm font-medium rounded-lg">
-                                        {currentPage}
-                                    </span>
-
-                                    <button
-                                        onClick={loadMoreGroups}
-                                        disabled={currentPage >= totalPages || isLoadingMore}
-                                        className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${currentPage >= totalPages
-                                            ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
-                                            : isLoadingMore
-                                                ? 'bg-gray-600/60 text-gray-400 cursor-not-allowed'
-                                                : 'bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white shadow-lg'
-                                            }`}
-                                        title="Carregar mais grupos"
-                                    >
-                                        {currentPage >= totalPages ? 'Última' : isLoadingMore ? (
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                                                Carregando...
-                                            </div>
-                                        ) : 'Carregar Mais'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Modal de Confirmação para Downloads Mobile */}
-                    {showMobileConfirmModal && (
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
-                            <div className="bg-[#282828] border border-[#3e3e3e] rounded-xl p-5 max-w-sm w-full mx-3">
-                                {/* Ícone de Aviso */}
-                                <div className="flex justify-center mb-4">
-                                    <div className="w-14 h-14 bg-yellow-500/20 border-2 border-yellow-500/30 rounded-full flex items-center justify-center">
-                                        <svg className="w-7 h-7 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                        </svg>
-                                    </div>
-                                </div>
-
-                                {/* Título */}
-                                <h3 className="text-white text-lg font-bold text-center mb-4">
-                                    Aviso de Download
-                                </h3>
-
-                                {/* Mensagem */}
-                                <div className="text-gray-300 text-sm text-center mb-6 space-y-3">
-                                    <p className="font-medium">
-                                        {pendingDownloadAction?.type === 'new'
-                                            ? `Baixar ${pendingDownloadAction.tracks.filter(t => !finalDownloadedTrackIds.includes(t.id)).length} músicas novas?`
-                                            : `Baixar todas as ${pendingDownloadAction?.tracks.length} músicas?`
-                                        }
-                                    </p>
-
-                                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
-                                        <p className="text-yellow-400 font-medium text-xs">
-                                            ⚠️ Celulares podem não suportar muitos downloads simultâneos.
-                                        </p>
-                                        <p className="text-gray-300 text-xs mt-1">
-                                            Recomendamos usar um computador para downloads em massa.
-                                        </p>
-                                    </div>
-
-                                    <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
-                                        <p className="text-purple-300 font-medium text-xs">
-                                            💎 Para uma experiência premium, acesse nossa plataforma VIP!
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Botões de Ação */}
-                                <div className="flex flex-col gap-3">
-                                    <button
-                                        onClick={confirmMobileDownload}
-                                        className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg text-sm"
-                                    >
-                                        Continuar no Celular
-                                    </button>
-
-                                    <button
-                                        onClick={() => window.open('https://plataformavip.nexorrecords.com.br/atualizacoes', '_blank')}
-                                        className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg border border-purple-400/30 text-sm"
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                                            </svg>
-                                            Acessar Plataforma VIP
                                         </div>
-                                    </button>
-
-                                    <button
-                                        onClick={cancelMobileDownload}
-                                        className="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 text-sm"
-                                    >
-                                        Cancelar
-                                    </button>
-                                </div>
+                                    );
+                                })}
                             </div>
                         </div>
-                    )}
-                </div>
-            ) : null}
+
+                        {/* Desktop: Lista horizontal */}
+                        <div className="hidden sm:block">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                                {tracks.map((track, index) => {
+                                    const { initials, colors } = generateThumbnail(track);
+                                    const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
+
+                                    return (
+                                        <div key={track.id} className="group">
+                                            <div className="bg-black border border-white/10 rounded-xl p-3 group relative overflow-hidden">
+                                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                                                <div className="relative">
+                                                    {/* Thumbnail */}
+                                                    <div className="w-full aspect-square bg-black border border-gray-700 rounded-lg flex items-center justify-center overflow-hidden relative mb-3">
+                                                        <OptimizedImage
+                                                            track={track}
+                                                            className="w-full h-full object-cover rounded-lg"
+                                                            fallbackClassName={`w-full h-full bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-lg shadow-lg border border-gray-700 rounded-lg`}
+                                                            fallbackContent={initials}
+                                                        />
+
+                                                        {/* Player sempre visível na thumbnail - Desktop */}
+                                                        <button
+                                                            onClick={() => {
+                                                                if (!session) {
+                                                                    showToast('🔐 Ative um plano', 'warning');
+                                                                    return;
+                                                                }
+                                                                handlePlayPause(track);
+                                                            }}
+                                                            disabled={testingAudio.has(track.id)}
+                                                            className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed z-20 hover:bg-black/70"
+                                                            title={testingAudio.has(track.id) ? 'Testando compatibilidade...' : isCurrentlyPlaying ? 'Pausar' : 'Tocar'}
+                                                        >
+                                                            {testingAudio.has(track.id) ? (
+                                                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                            ) : isCurrentlyPlaying ? (
+                                                                <Pause className="w-6 h-6 text-white" />
+                                                            ) : (
+                                                                <Play className="w-6 h-6 text-white ml-1" />
+                                                            )}
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Informações da música */}
+                                                    <div className="mb-3">
+                                                        <div className="text-white font-medium text-sm truncate mb-1">
+                                                            {track.songName}
+                                                        </div>
+                                                        <div className="text-gray-400 text-xs truncate">
+                                                            {track.artist}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Botões de ação */}
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => handleDownload(track)}
+                                                            disabled={downloadingTracks.has(track.id)}
+                                                            className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                                            title={downloadedTrackIds.includes(track.id) ? 'Já baixada' : 'Baixar música'}
+                                                        >
+                                                            {downloadingTracks.has(track.id) ? (
+                                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                                            ) : downloadedTrackIds.includes(track.id) ? (
+                                                                '✅ Já baixada'
+                                                            ) : (
+                                                                <Download className="w-4 h-4 mx-auto" />
+                                                            )}
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleLike(track)}
+                                                            disabled={liking === track.id}
+                                                            className="flex-1 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                                            title={likedTrackIds.includes(track.id) ? 'Descurtir' : 'Curtir música'}
+                                                        >
+                                                            {liking === track.id ? (
+                                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                                            ) : likedTrackIds.includes(track.id) ? (
+                                                                '❤️ Curtida'
+                                                            ) : (
+                                                                <Heart className="w-4 h-4 mx-auto" />
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center py-16">
+                        <div className="text-gray-400 text-lg">Nenhuma música encontrada</div>
+                    </div>
+                )
+            )}
         </div>
     );
 }

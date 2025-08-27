@@ -610,7 +610,7 @@ export default function GenrePage() {
             <div className="pt-12 lg:pt-16">
                 {/* Header do Gênero */}
                 <div
-                    className={`w-full bg-gradient-to-b from-[#1db954]/20 to-transparent ${decodedGenreName.toLowerCase() === 'brazilian funk' || decodedGenreName.toLowerCase() === 'progressive house' || decodedGenreName.toLowerCase() === 'house' || decodedGenreName.toLowerCase() === 'hip hop' || decodedGenreName.toLowerCase() === 'tech house'
+                    className={`w-full bg-gradient-to-b from-[#1db954]/20 to-transparent ${decodedGenreName.toLowerCase() === 'brazilian funk' || decodedGenreName.toLowerCase() === 'progressive house' || decodedGenreName.toLowerCase() === 'house' || decodedGenreName.toLowerCase() === 'hip hop' || decodedGenreName.toLowerCase() === 'tech house' || decodedGenreName.toLowerCase() === 'electronic' || decodedGenreName.toLowerCase() === 'dance' || decodedGenreName.toLowerCase() === 'techno'
                         ? 'relative overflow-hidden'
                         : ''
                         }`}
@@ -650,7 +650,28 @@ export default function GenrePage() {
                                                 backgroundPosition: 'center',
                                                 backgroundRepeat: 'no-repeat'
                                             }
-                                            : {}
+                                            : decodedGenreName.toLowerCase() === 'electronic'
+                                                ? {
+                                                    backgroundImage: `url('https://i.ibb.co/SXvZJspL/20250827-0645-Noite-de-M-sica-Eletr-nica-simple-compose-01k3nek6mffnmv8vvjrzr4tma6.png')`,
+                                                    backgroundSize: 'cover',
+                                                    backgroundPosition: 'center',
+                                                    backgroundRepeat: 'no-repeat'
+                                                }
+                                                : decodedGenreName.toLowerCase() === 'dance'
+                                                    ? {
+                                                        backgroundImage: `url('https://i.ibb.co/VytnbXM/Gemini-Generated-Image-nior1jnior1jnior.png')`,
+                                                        backgroundSize: 'cover',
+                                                        backgroundPosition: 'center',
+                                                        backgroundRepeat: 'no-repeat'
+                                                    }
+                                                    : decodedGenreName.toLowerCase() === 'techno'
+                                                        ? {
+                                                            backgroundImage: `url('https://i.ibb.co/2GD2rkt/Gemini-Generated-Image-4zj1ih4zj1ih4zj1.png')`,
+                                                            backgroundSize: 'cover',
+                                                            backgroundPosition: 'center',
+                                                            backgroundRepeat: 'no-repeat'
+                                                        }
+                                                        : {}
                     }
                 >
                     {/* Overlay escuro para Brazilian Funk */}
@@ -673,7 +694,19 @@ export default function GenrePage() {
                     {decodedGenreName.toLowerCase() === 'tech house' && (
                         <div className="absolute inset-0 bg-black/70"></div>
                     )}
-                    <div className={`w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 ${decodedGenreName.toLowerCase() === 'brazilian funk' || decodedGenreName.toLowerCase() === 'progressive house' || decodedGenreName.toLowerCase() === 'house' || decodedGenreName.toLowerCase() === 'hip hop' || decodedGenreName.toLowerCase() === 'tech house'
+                    {/* Overlay escuro para Electronic */}
+                    {decodedGenreName.toLowerCase() === 'electronic' && (
+                        <div className="absolute inset-0 bg-black/70"></div>
+                    )}
+                    {/* Overlay escuro para Dance */}
+                    {decodedGenreName.toLowerCase() === 'dance' && (
+                        <div className="absolute inset-0 bg-black/70"></div>
+                    )}
+                    {/* Overlay escuro para Techno */}
+                    {decodedGenreName.toLowerCase() === 'techno' && (
+                        <div className="absolute inset-0 bg-black/70"></div>
+                    )}
+                    <div className={`w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 ${decodedGenreName.toLowerCase() === 'brazilian funk' || decodedGenreName.toLowerCase() === 'progressive house' || decodedGenreName.toLowerCase() === 'house' || decodedGenreName.toLowerCase() === 'hip hop' || decodedGenreName.toLowerCase() === 'tech house' || decodedGenreName.toLowerCase() === 'electronic' || decodedGenreName.toLowerCase() === 'dance' || decodedGenreName.toLowerCase() === 'techno'
                         ? 'relative z-10 py-4 sm:py-6'
                         : 'py-8 sm:py-12'
                         }`}>
@@ -695,7 +728,7 @@ export default function GenrePage() {
                             {/* Informações Adicionais do Gênero */}
                             <div className="max-w-3xl mx-auto mb-8">
                                 <div className="bg-[#181818] rounded-xl p-6 border border-[#282828] mb-6">
-                                    <div className={`text-[#b3b3b3] text-sm leading-relaxed ${decodedGenreName.toLowerCase() === 'brazilian funk' || decodedGenreName.toLowerCase() === 'progressive house' || decodedGenreName.toLowerCase() === 'house' || decodedGenreName.toLowerCase() === 'hip hop' || decodedGenreName.toLowerCase() === 'tech house' ? 'text-justify' : ''
+                                    <div className={`text-[#b3b3b3] text-sm leading-relaxed ${decodedGenreName.toLowerCase() === 'brazilian funk' || decodedGenreName.toLowerCase() === 'progressive house' || decodedGenreName.toLowerCase() === 'house' || decodedGenreName.toLowerCase() === 'hip hop' || decodedGenreName.toLowerCase() === 'tech house' || decodedGenreName.toLowerCase() === 'electronic' || decodedGenreName.toLowerCase() === 'dance' || decodedGenreName.toLowerCase() === 'techno' ? 'text-justify' : ''
                                         }`}>
                                         {decodedGenreName.toLowerCase() === 'brazilian funk' ? (
                                             'O Brazilian Funk (ou Funk Carioca) é um gênero musical originado nas favelas do Rio de Janeiro nos anos 1980, inspirado principalmente pelo Miami Bass e pelo hip hop. Com batidas marcantes de 808, letras diretas e refrões repetitivos, o funk brasileiro ganhou identidade própria, abordando temas do cotidiano, festas, danças e também questões sociais. Com o tempo, o gênero se diversificou em vários estilos, como o funk proibidão, funk consciente, funk melody e o funk rave, alcançando enorme popularidade dentro e fora do Brasil. Hoje, o Brazilian Funk é reconhecido mundialmente como um dos sons mais autênticos e energéticos da música urbana, marcado pelo ritmo envolvente do tamborzão e pelo papel central na cultura jovem e nas pistas de dança.'
@@ -707,6 +740,12 @@ export default function GenrePage() {
                                             'O Hip Hop é um movimento cultural que surgiu nos anos 1970 no Bronx, em Nova Iorque, unindo música, dança, arte e estilo de vida. No aspecto musical, o gênero é marcado por batidas fortes, rimas faladas (rap) e técnicas como o sampling e o DJing. Muito além de um ritmo, o hip hop se tornou uma forma de expressão social, dando voz a comunidades marginalizadas e abordando temas como desigualdade, identidade e resistência. Hoje, é um dos estilos mais influentes do mundo, moldando tendências musicais, moda e comportamento.'
                                         ) : decodedGenreName.toLowerCase() === 'tech house' ? (
                                             'O Tech House é um subgênero da música eletrônica que combina elementos do techno com a energia e groove do house. Surgido nos anos 1990, é marcado por batidas minimalistas em 4/4, linhas de baixo profundas e repetitivas, além de sons sintéticos que criam uma atmosfera envolvente e hipnótica. Muito popular em clubes e festivais, o tech house se destaca pela fluidez e pela capacidade de manter a pista em constante movimento, equilibrando intensidade e elegância em suas produções.'
+                                        ) : decodedGenreName.toLowerCase() === 'electronic' ? (
+                                            'A Electronic Music (ou simplesmente música eletrônica) é um gênero amplo que engloba produções criadas principalmente com sintetizadores, drum machines e softwares digitais. Surgida a partir das experiências sonoras do século XX, ganhou força nos anos 1980 e se tornou a base de inúmeros estilos como house, techno, trance, drum and bass e muitos outros. Caracteriza-se pela diversidade de batidas, atmosferas e texturas, indo de sons dançantes de clubes e festivais a produções experimentais. É hoje um dos pilares da música contemporânea, influenciando desde o pop até trilhas sonoras de cinema e games.'
+                                        ) : decodedGenreName.toLowerCase() === 'dance' ? (
+                                            'O Dance é um gênero musical voltado para as pistas, que ganhou força nos anos 1980 e 1990 misturando elementos do pop com a música eletrônica. Com batidas em 4/4, refrões marcantes e melodias fáceis de acompanhar, o estilo é feito para ser dançante, vibrante e acessível. Muito popular em rádios, clubes e festivais, o Dance ajudou a levar a música eletrônica para o grande público, influenciando artistas de diferentes estilos e se mantendo até hoje como sinônimo de energia e diversão.'
+                                        ) : decodedGenreName.toLowerCase() === 'techno' ? (
+                                            'O Techno é um gênero da música eletrônica que surgiu em Detroit nos anos 1980, caracterizado por batidas em 4/4, linhas repetitivas e atmosferas futuristas. Criado a partir da fusão entre funk, electro e experimentações com sintetizadores, o techno tem como essência a repetição hipnótica e a evolução gradual das camadas sonoras. Com seu caráter minimalista e intenso, tornou-se um dos estilos mais influentes das pistas de dança, especialmente em clubes underground e grandes festivais ao redor do mundo.'
                                         ) : (
                                             getGenreInfo(decodedGenreName, stats)
                                         )}
@@ -1117,7 +1156,13 @@ export default function GenrePage() {
                                         ? "O Hip Hop é um movimento cultural que surgiu nos anos 1970 no Bronx, em Nova Iorque, unindo música, dança, arte e estilo de vida."
                                         : decodedGenreName.toLowerCase() === 'tech house'
                                             ? "O Tech House é um subgênero da música eletrônica que combina elementos do techno com a energia e groove do house."
-                                            : `Gênero musical ${decodedGenreName} com músicas, downloads e estatísticas.`,
+                                            : decodedGenreName.toLowerCase() === 'electronic'
+                                                ? "A Electronic Music é um gênero amplo que engloba produções criadas com sintetizadores, drum machines e softwares digitais."
+                                                : decodedGenreName.toLowerCase() === 'dance'
+                                                    ? "O Dance é um gênero musical voltado para as pistas que mistura pop com música eletrônica."
+                                                    : decodedGenreName.toLowerCase() === 'techno'
+                                                        ? "O Techno é um gênero da música eletrônica que surgiu em Detroit nos anos 1980."
+                                                        : `Gênero musical ${decodedGenreName} com músicas, downloads e estatísticas.`,
                         "url": `https://plataformamusicas.com/genre/${encodeURIComponent(decodedGenreName)}`,
                         "genre": decodedGenreName,
                         "numberOfTracks": filteredTracks.length,

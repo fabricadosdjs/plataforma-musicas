@@ -376,19 +376,28 @@ export default function CommunityPage() {
 
             {/* Conteúdo Principal - Tela Cheia */}
             <div className="pt-12 lg:pt-16">
-                {/* Header da página Community */}
-                <div className="w-full bg-gradient-to-b from-[#1db954]/20 to-transparent">
-                    <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8 sm:py-12">
-                        {/* Informações da página Community */}
+                {/* Header da página Community - Hero com Imagem */}
+                <div
+                    className="w-full relative bg-cover bg-center bg-no-repeat"
+                    style={{
+                        backgroundImage: `url(https://i.ibb.co/6RzGTrYt/Gemini-Generated-Image-f672sif672sif672.png)`,
+                        minHeight: '400px'
+                    }}
+                >
+                    {/* Overlay escuro */}
+                    <div className="absolute inset-0 bg-black/70"></div>
+
+                    {/* Conteúdo do Hero */}
+                    <div className="relative z-10 w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-16 sm:py-20">
                         <div className="text-center">
-                            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
-                                Community
+                            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6 leading-tight">
+                                COMUNIDADE
                             </h1>
 
                             {/* Seção Hero - Descrição da página Community */}
                             <div className="max-w-4xl mx-auto mb-8">
-                                <div className="bg-[#181818] rounded-xl p-6 border border-[#282828] mb-6">
-                                    <div className="text-[#b3b3b3] text-sm sm:text-base leading-relaxed space-y-4">
+                                <div className="bg-[#181818]/90 backdrop-blur-sm rounded-xl p-6 border border-[#282828] mb-6">
+                                    <div className="text-[#b3b3b3] text-sm sm:text-base leading-relaxed space-y-4 text-justify">
                                         <p>
                                             Bem-vindo à Community, o coração pulsante da música eletrônica brasileira. Aqui você encontra produções exclusivas de DJs e produtores da nossa comunidade, compartilhando suas criações mais inovadoras.
                                         </p>
@@ -401,37 +410,39 @@ export default function CommunityPage() {
                                             🌟 Nossa comunidade é construída por produtores apaixonados que compartilham suas visões musicais. Aqui você encontra desde deep house até techno pesado, sempre com a qualidade e originalidade que caracteriza a cena brasileira.
                                         </p>
 
-                                        <p className="text-[#1db954] font-semibold text-base sm:text-lg">
+                                        <p className="text-[#1db954] font-semibold text-base sm:text-lg text-center">
                                             Junte-se à comunidade e faça parte da revolução musical!
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
+
+
                             {/* Estatísticas */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-2xl mx-auto">
-                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                <div className="bg-[#181818]/90 backdrop-blur-sm rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
                                         {stats.totalTracks}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Músicas</div>
                                 </div>
 
-                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                <div className="bg-[#181818]/90 backdrop-blur-sm rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
                                         {stats.totalDownloads.toLocaleString()}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Downloads</div>
                                 </div>
 
-                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                <div className="bg-[#181818]/90 backdrop-blur-sm rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
                                         {stats.totalLikes.toLocaleString()}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Curtidas</div>
                                 </div>
 
-                                <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
+                                <div className="bg-[#181818]/90 backdrop-blur-sm rounded-xl p-4 border border-[#282828]">
                                     <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
                                         {stats.activeUsers}
                                     </div>
@@ -486,23 +497,48 @@ export default function CommunityPage() {
                     </div>
                 )}
 
-                {/* Seção de Busca */}
+
+
+                {/* Seção de Busca e Filtros */}
                 <div className="w-full max-w-[95%] mx-auto px-3 sm:px-6 md:px-8 mb-8">
                     <div className="bg-[#181818] rounded-xl p-6 border border-[#282828]">
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
-                            <button
-                                onClick={() => performSearch(searchQuery)}
-                                disabled={searchLoading || !searchQuery.trim()}
-                                className="px-4 py-2 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition h-10 w-full sm:w-auto min-w-[120px] text-sm sm:text-base font-medium shadow-lg"
-                            >
-                                {searchLoading ? "Buscando..." : "Buscar"}
-                            </button>
-                            <button
-                                onClick={() => setShowFiltersModal(true)}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#282828] text-white rounded-lg hover:bg-[#3e3e3e] transition h-10 w-full sm:w-auto min-w-[120px] text-sm sm:text-base border border-[#3e3e3e]"
-                            >
-                                <Filter size={18} /> Filtros
-                            </button>
+                        <div className="flex flex-col gap-4 w-full">
+                            {/* Campo de Busca */}
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar músicas da comunidade..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && performSearch(searchQuery)}
+                                    className="w-full px-4 py-3 bg-[#282828] text-white rounded-lg border border-[#3e3e3e] focus:border-[#1db954] focus:outline-none transition-colors placeholder-[#b3b3b3] text-base"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={clearSearch}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#b3b3b3] hover:text-white transition-colors"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Botões de Ação */}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+                                <button
+                                    onClick={() => performSearch(searchQuery)}
+                                    disabled={searchLoading || !searchQuery.trim()}
+                                    className="px-4 py-3 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition h-12 w-full sm:w-auto min-w-[120px] text-sm sm:text-base font-medium shadow-lg"
+                                >
+                                    {searchLoading ? "Buscando..." : "Buscar"}
+                                </button>
+                                <button
+                                    onClick={() => setShowFiltersModal(true)}
+                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-[#282828] text-white rounded-lg hover:bg-[#3e3e3e] transition h-12 w-full sm:w-auto min-w-[120px] text-sm sm:text-base border border-[#3e3e3e]"
+                                >
+                                    <Filter size={18} /> Filtros
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
