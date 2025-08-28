@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 import DynamicGradientBackground from '@/components/layout/DynamicGradientBackground';
 import { GlobalPlayerProvider } from '@/context/GlobalPlayerContext';
+import { GlobalDownloadProvider } from '@/context/GlobalDownloadContext';
 import MusicRouteHandler from '@/components/layout/MusicRouteHandler';
 import AudioPlayerRoot from '@/components/player/AudioPlayerRoot';
 import FooterPlayerNew from '@/components/player/FooterPlayerNew';
@@ -22,6 +23,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import { TrackingProvider } from '@/context/TrackingContext';
 import BrowserExtensionHandler from '@/components/layout/BrowserExtensionHandler';
 import { GlobalImageErrorInterceptor } from '@/components/ui/ImageErrorBoundary';
+import GlobalDownloadProgress from '@/components/download/GlobalDownloadProgress';
 
 // Configura a fonte Inter como a fonte principal
 const inter = Inter({
@@ -134,17 +136,21 @@ export default function RootLayout({
               <TrackingProvider>
                 <LoadingProvider>
                   <GlobalPlayerProvider>
-                    <BrowserExtensionHandler />
-                    <MusicRouteHandler />
-                    <ExtensionDetector />
-                    <GlobalToastManager />
-                    <GlobalImageErrorInterceptor />
-                    <DynamicGradientBackground />
-                    <PageTransitionLoading>
-                      {children}
-                    </PageTransitionLoading>
-                    {/* Player global sempre renderizado */}
-                    <FooterPlayerNew />
+                    <GlobalDownloadProvider>
+                      <BrowserExtensionHandler />
+                      <MusicRouteHandler />
+                      <ExtensionDetector />
+                      <GlobalToastManager />
+                      <GlobalImageErrorInterceptor />
+                      <DynamicGradientBackground />
+                      <PageTransitionLoading>
+                        {children}
+                      </PageTransitionLoading>
+                      {/* Player global sempre renderizado */}
+                      <FooterPlayerNew />
+                      {/* Progresso global de downloads */}
+                      <GlobalDownloadProgress />
+                    </GlobalDownloadProvider>
                   </GlobalPlayerProvider>
                 </LoadingProvider>
               </TrackingProvider>

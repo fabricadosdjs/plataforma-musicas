@@ -11,6 +11,7 @@ import MusicList from '@/components/music/MusicList';
 import InlineDownloadProgress from '@/components/music/InlineDownloadProgress';
 import { Track } from '@/types/track';
 import { Download, Heart, Play, TrendingUp, Users, Calendar, X, RefreshCw, ArrowLeft } from 'lucide-react';
+import BatchDownloadButtons from '@/components/download/BatchDownloadButtons';
 
 import { useToastContext } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
@@ -791,43 +792,18 @@ export default function GenrePage() {
                                 </div>
                             </div>
 
-                            {/* Botões de Download */}
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-                                <button
-                                    onClick={() => {
-                                        if (session) {
-                                            showMobileDownloadConfirmation('all', filteredTracks, () => downloadTracksInBatches(filteredTracks));
-                                        } else {
-                                            showToast('👑 Para baixar músicas em lote, você precisa estar logado. Ative um plano VIP!', 'error');
-                                        }
-                                    }}
-                                    disabled={isBatchDownloading || filteredTracks.length === 0 || !session}
-                                    className="flex items-center justify-center gap-3 px-8 py-3 bg-[#1db954] text-white rounded-xl hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
-                                >
-                                    <Download className="w-5 h-5" />
-                                    Baixar Todas ({filteredTracks.length})
-                                </button>
-
-                                <button
-                                    onClick={() => {
-                                        if (session) {
-                                            const availableTracks = getAvailableTracks();
-                                            if (availableTracks.length > 0) {
-                                                showMobileDownloadConfirmation('new', availableTracks, () => downloadTracksInBatches(availableTracks));
-                                            } else {
-                                                showToast('✅ Todas as músicas já foram baixadas!', 'success');
-                                            }
-                                        } else {
-                                            showToast('👑 Para baixar músicas novas, você precisa estar logado. Ative um plano VIP!', 'error');
-                                        }
-                                    }}
-                                    disabled={isBatchDownloading || availableTracksCount === 0 || !session}
-                                    className="flex items-center justify-center gap-3 px-8 py-3 bg-[#282828] text-white rounded-xl hover:bg-[#3e3e3e] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg border border-[#3e3e3e] shadow-lg hover:shadow-xl"
-                                >
-                                    <RefreshCw className="w-5 h-5" />
-                                    Baixar Novas ({availableTracksCount})
-                                </button>
-                            </div>
+                            {/* Botões de Download em Massa */}
+                            <BatchDownloadButtons
+                                tracks={filteredTracks}
+                                downloadedTrackIds={downloadedTrackIds}
+                                batchName={`Gênero ${decodedGenreName}`}
+                                sourcePageName={`Gênero ${decodedGenreName}`}
+                                isGlobal={true}
+                                showNewTracksOnly={true}
+                                showAllTracks={true}
+                                showStyleDownload={false}
+                                className="mt-6"
+                            />
 
                             {/* Indicador de Progresso do Download */}
                             {isBatchDownloading && (

@@ -695,6 +695,11 @@ export default function MusicList({
             downloadsCache.markAsDownloaded(track.id);
             showToast('✅ Download concluído!', 'success');
 
+            // Disparar evento customizado para notificar o contexto global
+            window.dispatchEvent(new CustomEvent('trackDownloaded', {
+                detail: { trackId: track.id, status: 'completed' }
+            }));
+
             // Adicionar notificação de download com dados da música para push nativo
             addMusicNotification(
                 'Download Concluído',
@@ -711,6 +716,15 @@ export default function MusicList({
         } catch (error) {
             console.error('❌ Erro no download:', error);
             showToast(`❌ ${error instanceof Error ? error.message : 'Erro ao baixar arquivo'}`, 'error');
+
+            // Disparar evento customizado para notificar o contexto global sobre falha
+            window.dispatchEvent(new CustomEvent('trackDownloaded', {
+                detail: {
+                    trackId: track.id,
+                    status: 'failed',
+                    error: error instanceof Error ? error.message : 'Erro desconhecido'
+                }
+            }));
         } finally {
             setDownloadingTracks(prev => {
                 const newSet = new Set(prev);

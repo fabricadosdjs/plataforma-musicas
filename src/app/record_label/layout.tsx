@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Comunidade - Nexor Records | Conecte-se com Produtores Musicais',
-    description: 'Junte-se à comunidade musical da Nexor Records. Conecte-se com outros produtores, compartilhe suas músicas e descubra novos talentos da música eletrônica brasileira.',
-    keywords: 'comunidade musical, produtores, música eletrônica, deep house, techno, colaboração, networking, nexor records',
+    title: 'Record Label - Nexor Records | Gravadora de Música Eletrônica',
+    description: 'Nexor Records é uma gravadora especializada em música eletrônica. Descubra nossos artistas, produções exclusivas e serviços de gravação profissional.',
+    keywords: 'nexor records, gravadora, música eletrônica, deep house, techno, gravação profissional, distribuição musical, spotify, apple music',
     authors: [{ name: 'Nexor Records' }],
     creator: 'Nexor Records',
     publisher: 'Nexor Records',
@@ -14,25 +14,25 @@ export const metadata: Metadata = {
     },
     metadataBase: new URL('https://nexorrecords.com.br'),
     openGraph: {
-        title: 'Comunidade - Nexor Records | Conecte-se com Produtores Musicais',
-        description: 'Junte-se à comunidade musical da Nexor Records. Conecte-se com outros produtores, compartilhe suas músicas e descubra novos talentos da música eletrônica brasileira.',
+        title: 'Record Label - Nexor Records | Gravadora de Música Eletrônica',
+        description: 'Nexor Records é uma gravadora especializada em música eletrônica. Descubra nossos artistas, produções exclusivas e serviços de gravação profissional.',
         type: 'website',
         locale: 'pt_BR',
         siteName: 'Nexor Records',
-        url: 'https://nexorrecords.com.br/community',
+        url: 'https://nexorrecords.com.br/record_label',
         images: [
             {
                 url: 'https://i.ibb.co/6RzGTrYt/Gemini-Generated-Image-f672sif672sif672.png',
                 width: 1200,
                 height: 630,
-                alt: 'Comunidade Musical - Nexor Records',
+                alt: 'Nexor Records - Gravadora de Música Eletrônica',
             },
         ],
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Comunidade - Nexor Records | Conecte-se com Produtores Musicais',
-        description: 'Junte-se à comunidade musical da Nexor Records. Conecte-se com outros produtores, compartilhe suas músicas e descubra novos talentos da música eletrônica brasileira.',
+        title: 'Record Label - Nexor Records | Gravadora de Música Eletrônica',
+        description: 'Nexor Records é uma gravadora especializada em música eletrônica. Descubra nossos artistas, produções exclusivas e serviços de gravação profissional.',
         images: ['https://i.ibb.co/6RzGTrYt/Gemini-Generated-Image-f672sif672sif672.png'],
         creator: '@nexorrecords',
         site: '@nexorrecords',
@@ -49,17 +49,18 @@ export const metadata: Metadata = {
         },
     },
     alternates: {
-        canonical: 'https://nexorrecords.com.br/community',
+        canonical: 'https://nexorrecords.com.br/record_label',
         languages: {
-            'pt-BR': 'https://nexorrecords.com.br/community',
+            'pt-BR': 'https://nexorrecords.com.br/record_label',
         },
     },
 };
 
-export default function CommunityLayout({
+export default function RecordLabelLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
     return <>{children}</>;
 }
+

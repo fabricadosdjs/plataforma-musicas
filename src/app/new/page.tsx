@@ -19,6 +19,7 @@ import Link from "next/link";
 import Header from "@/components/layout/Header";
 import FiltersModal from "@/components/music/FiltersModal";
 import MusicList from "@/components/music/MusicList";
+import BatchDownloadButtons from "@/components/download/BatchDownloadButtons";
 
 import { useAppContext } from "@/context/AppContext";
 import { useGlobalPlayer } from "@/context/GlobalPlayerContext";
@@ -1111,6 +1112,23 @@ const NewPage = () => {
             )}
           </div>
         </div>
+
+        {/* Botões de Download em Massa */}
+        {!tracksLoading && !searchLoading && displayTracks.length > 0 && (
+          <div className="w-full max-w-[95%] mx-auto mb-4 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
+            <BatchDownloadButtons
+              tracks={displayTracks}
+              downloadedTrackIds={downloadsCache.downloadedTrackIds}
+              batchName="Novidades"
+              sourcePageName="Novidades"
+              isGlobal={true}
+              showNewTracksOnly={true}
+              showAllTracks={true}
+              showStyleDownload={false}
+              className="w-full"
+            />
+          </div>
+        )}
 
         {/* LISTA DE MÚSICAS - Mobile First */}
         <div className="w-full max-w-[95%] mx-auto pb-4 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">

@@ -12,6 +12,7 @@ import { Track } from '@/types/track';
 import { Download, Heart, Play, TrendingUp, Users, Calendar, X, RefreshCw, ArrowLeft, Folder } from 'lucide-react';
 import { useToastContext } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
+import BatchDownloadButtons from '@/components/download/BatchDownloadButtons';
 
 // Função para obter informações sobre o folder baseada em dados reais
 const getFolderInfo = (folderName: string, tracks: Track[], selectedStyle: string | null): string => {
@@ -486,92 +487,18 @@ export default function FolderPage() {
                                 </div>
                             </div>
 
-                            {/* Botões de Download */}
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-                                <button
-                                    onClick={() => {
-                                        if (session) {
-                                            showMobileDownloadConfirmation('all', filteredTracks, () => downloadTracksInBatches(filteredTracks));
-                                        } else {
-                                            showToast('👑 Para baixar músicas em lote, você precisa estar logado. Ative um plano VIP!', 'warning');
-                                        }
-                                    }}
-                                    disabled={isBatchDownloading || filteredTracks.length === 0 || !session}
-                                    className="flex items-center justify-center gap-3 px-8 py-3 bg-[#8b5cf6] text-white rounded-xl hover:bg-[#9333ea] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
-                                >
-                                    <Download className="w-5 h-5" />
-                                    Baixar Todas ({filteredTracks.length})
-                                </button>
-
-                                <button
-                                    onClick={() => {
-                                        if (session) {
-                                            const availableTracks = getAvailableTracks();
-                                            if (availableTracks.length > 0) {
-                                                showMobileDownloadConfirmation('new', availableTracks, () => downloadTracksInBatches(availableTracks));
-                                            } else {
-                                                showToast('✅ Todas as músicas já foram baixadas!', 'info');
-                                            }
-                                        } else {
-                                            showToast('👑 Para baixar músicas em lote, você precisa estar logado. Ative um plano VIP!', 'warning');
-                                        }
-                                    }}
-                                    disabled={isBatchDownloading || availableTracksCount === 0 || !session}
-                                    className="flex items-center justify-center gap-3 px-8 py-3 bg-[#282828] text-white rounded-xl hover:bg-[#3e3e3e] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg border border-[#3e3e3e] shadow-lg hover:shadow-xl"
-                                >
-                                    <RefreshCw className="w-5 h-5" />
-                                    Baixar Novas ({availableTracksCount})
-                                </button>
-                            </div>
-
-                            {/* Indicador de Progresso do Download */}
-                            {isBatchDownloading && (
-                                <div className="mt-6 max-w-md mx-auto">
-                                    <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-[#b3b3b3] text-sm font-medium">
-                                                Baixando músicas...
-                                            </span>
-                                            <span className="text-[#8b5cf6] text-sm font-bold">
-                                                {batchProgress.downloaded}/{batchProgress.total}
-                                            </span>
-                                        </div>
-
-                                        {/* Barra de Progresso */}
-                                        <div className="w-full bg-[#282828] rounded-full h-2 mb-3">
-                                            <div
-                                                className="bg-[#8b5cf6] h-2 rounded-full transition-all duration-300"
-                                                style={{
-                                                    width: `${batchProgress.total > 0 ? (batchProgress.downloaded / batchProgress.total) * 100 : 0}%`
-                                                }}
-                                            ></div>
-                                        </div>
-
-                                        {/* Música Atual */}
-                                        {batchProgress.currentTrack && (
-                                            <p className="text-[#b3b3b3] text-xs text-center mb-3">
-                                                {batchProgress.currentTrack}
-                                            </p>
-                                        )}
-
-                                        {/* Estatísticas do Download */}
-                                        <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
-                                            <div className="text-center">
-                                                <div className="text-[#8b5cf6] font-bold">{batchProgress.downloaded}</div>
-                                                <div className="text-[#b3b3b3]">Baixadas</div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-yellow-500 font-bold">{batchProgress.failed}</div>
-                                                <div className="text-[#b3b3b3]">Falharam</div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-[#535353] font-bold">{batchProgress.skipped}</div>
-                                                <div className="text-[#b3b3b3]">Puladas</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            {/* Botões de Download em Massa */}
+                            <BatchDownloadButtons
+                                tracks={filteredTracks}
+                                downloadedTrackIds={downloadedTrackIds}
+                                batchName={`Folder ${folderName}`}
+                                sourcePageName={`Folder ${folderName}`}
+                                isGlobal={true}
+                                showNewTracksOnly={true}
+                                showAllTracks={true}
+                                showStyleDownload={false}
+                                className="mt-8"
+                            />
                         </div>
                     </div>
                 </div>

@@ -10,10 +10,11 @@ import MainLayout from '@/components/layout/MainLayout';
 import MusicList from '@/components/music/MusicList';
 import FooterSpacer from '@/components/layout/FooterSpacer';
 import { Track } from '@/types/track';
-import { Download, Heart, Play, TrendingUp, Users, Calendar, X, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Download, Heart, Play, TrendingUp, Users, Calendar, X, RefreshCw, ArrowLeft, Music } from 'lucide-react';
 import { useBatchDownload } from '@/hooks/useBatchDownload';
 import { useToastContext } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
+import BatchDownloadButtons from '@/components/download/BatchDownloadButtons';
 
 // Função para obter informações sobre artistas baseada em dados reais
 const getArtistInfo = (artistName: string, stats: any): string | null => {
@@ -305,98 +306,19 @@ export default function ArtistPage() {
                             </div>
 
                             {/* Botões de Download */}
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-                                <button
-                                    onClick={handleBatchDownload}
-                                    disabled={isBatchDownloading || tracks.length === 0 || !session}
-                                    className="flex items-center justify-center gap-3 px-8 py-3 bg-[#1db954] text-white rounded-xl hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
-                                >
-                                    <Download className="w-5 h-5" />
-                                    Baixar Todas ({tracks.length})
-                                </button>
+                            <BatchDownloadButtons
+                                tracks={tracks}
+                                downloadedTrackIds={downloadedTrackIds}
+                                batchName={`Artista ${artistName}`}
+                                sourcePageName={`Artista ${artistName}`}
+                                isGlobal={true}
+                                showNewTracksOnly={true}
+                                showAllTracks={true}
+                                showStyleDownload={false}
+                                className="mt-8"
+                            />
 
-                                <button
-                                    onClick={handleDownloadNewTracks}
-                                    disabled={isBatchDownloading || availableTracksCount === 0 || !session}
-                                    className="flex items-center justify-center gap-3 px-8 py-3 bg-[#282828] text-white rounded-xl hover:bg-[#3e3e3e] disabled:bg-[#535353] disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg border border-[#3e3e3e] shadow-lg hover:shadow-xl"
-                                >
-                                    <RefreshCw className="w-5 h-5" />
-                                    Baixar Novas ({availableTracksCount})
-                                </button>
-                            </div>
 
-                            {/* Indicador de Progresso do Download */}
-                            {isBatchDownloading && (
-                                <div className="mt-6 max-w-md mx-auto">
-                                    <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-[#b3b3b3] text-sm font-medium">
-                                                Baixando músicas...
-                                            </span>
-                                            <span className="text-[#1db954] text-sm font-bold">
-                                                {batchProgress.downloaded}/{batchProgress.total}
-                                            </span>
-                                        </div>
-
-                                        {/* Barra de Progresso */}
-                                        <div className="w-full bg-[#282828] rounded-full h-2 mb-3">
-                                            <div
-                                                className="bg-[#1db954] h-2 rounded-full transition-all duration-300"
-                                                style={{
-                                                    width: `${batchProgress.total > 0 ? (batchProgress.downloaded / batchProgress.total) * 100 : 0}%`
-                                                }}
-                                            ></div>
-                                        </div>
-
-                                        {/* Música Atual */}
-                                        {batchProgress.currentTrack && (
-                                            <p className="text-[#b3b3b3] text-xs text-center mb-3">
-                                                {batchProgress.currentTrack}
-                                            </p>
-                                        )}
-
-                                        {/* Controles */}
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={pauseDownload}
-                                                disabled={!batchState.isActive}
-                                                className="flex-1 px-3 py-2 bg-[#282828] text-white rounded-lg hover:bg-[#3e3e3e] disabled:bg-[#535353] disabled:cursor-not-allowed transition-colors text-sm"
-                                            >
-                                                Pausar
-                                            </button>
-                                            <button
-                                                onClick={resumeDownload}
-                                                disabled={batchState.isActive}
-                                                className="flex-1 px-3 py-2 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition-colors text-sm"
-                                            >
-                                                Continuar
-                                            </button>
-                                            <button
-                                                onClick={cancelDownload}
-                                                className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                                            >
-                                                Cancelar
-                                            </button>
-                                        </div>
-
-                                        {/* Estatísticas do Download */}
-                                        <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
-                                            <div className="text-center">
-                                                <div className="text-[#1db954] font-bold">{batchProgress.downloaded}</div>
-                                                <div className="text-[#b3b3b3]">Baixadas</div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-yellow-500 font-bold">{batchProgress.failed}</div>
-                                                <div className="text-[#b3b3b3]">Falharam</div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-[#535353] font-bold">{batchProgress.skipped}</div>
-                                                <div className="text-[#b3b3b3]">Puladas</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>

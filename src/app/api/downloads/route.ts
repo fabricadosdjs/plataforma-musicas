@@ -171,6 +171,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: "Música não encontrada.", userId: String(user.id) }, { status: 404 });
             }
 
+            console.log('🔍 API /downloads: Track encontrada:', {
+                id: track.id,
+                songName: track.songName,
+                artist: track.artist,
+                downloadUrl: track.downloadUrl
+            });
+
             // Buscar todos os downloads do usuários
             const userDownloads = await prisma.download.findMany({
                 where: { userId: String(user.id) },
@@ -178,6 +185,7 @@ export async function POST(req: NextRequest) {
             });
 
             console.log('✅ API /downloads: Download processado com sucesso');
+            console.log('🔗 URL de download retornada:', track.downloadUrl);
             return NextResponse.json({
                 success: true,
                 message: 'Download autorizado!',
