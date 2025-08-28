@@ -7,11 +7,13 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Header from '@/components/layout/Header';
+import { useDownloadsCache } from '@/hooks/useDownloadsCache';
 import MusicList from '@/components/music/MusicList';
 import InlineDownloadProgress from '@/components/music/InlineDownloadProgress';
 import { Track } from '@/types/track';
 import { Download, Heart, Play, TrendingUp, Users, Calendar, X, RefreshCw, ArrowLeft } from 'lucide-react';
 import BatchDownloadButtons from '@/components/download/BatchDownloadButtons';
+import { useGlobalDownload } from '@/context/GlobalDownloadContext';
 
 import { useToastContext } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
@@ -49,16 +51,21 @@ const getGenreInfo = (genreName: string, stats: any): string => {
 };
 
 export default function GenrePage() {
+    const downloadsCache = useDownloadsCache();
     const params = useParams();
     const genreName = params?.genreName as string;
     const decodedGenreName = decodeURIComponent(genreName);
     const { showToast } = useToastContext();
+    // Hook global de download
+    const globalDownload = useGlobalDownload();
     const { data: session } = useSession();
 
 
     const [tracks, setTracks] = useState<Track[]>([]);
     const [loading, setLoading] = useState(true);
-    const [downloadedTrackIds, setDownloadedTrackIds] = useState<number[]>([]);
+    // Usar cache global igual ao /new para atualização em tempo real
+    const downloadedTrackIds = downloadsCache.downloadedTrackIds;
+    const markAsDownloaded = downloadsCache.markAsDownloaded;
     const [stats, setStats] = useState({
         totalDownloads: 0,
         totalLikes: 0,
@@ -198,20 +205,15 @@ export default function GenrePage() {
         syncDownloadedTrackIds();
     }, []);
 
+    // Função para marcar como baixado igual ao /new
     const handleDownloadedTrackIdsChange = (newIds: number[] | ((prev: number[]) => number[])) => {
         if (typeof newIds === 'function') {
-            setDownloadedTrackIds(prev => {
-                const result = newIds(prev);
-                localStorage.setItem('downloadedTrackIds', JSON.stringify(result));
-                // Forçar atualização do contador
-                setTimeout(() => updateAvailableTracksCount(), 0);
-                return result;
-            });
-        } else {
-            setDownloadedTrackIds(newIds);
-            localStorage.setItem('downloadedTrackIds', JSON.stringify(newIds));
-            // Forçar atualização do contador
-            setTimeout(() => updateAvailableTracksCount(), 0);
+            const result = newIds(downloadedTrackIds);
+            if (Array.isArray(result) && result.length > 0) {
+                markAsDownloaded(result[result.length - 1]);
+            }
+        } else if (Array.isArray(newIds) && newIds.length > 0) {
+            markAsDownloaded(newIds[newIds.length - 1]);
         }
     };
 
@@ -221,8 +223,10 @@ export default function GenrePage() {
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
-                setDownloadedTrackIds(parsed);
-                console.log('🔄 Sincronizando downloadedTrackIds com localStorage:', parsed.length, 'IDs');
+                if (Array.isArray(parsed)) {
+                    parsed.forEach((id: number) => markAsDownloaded(id));
+                    console.log('🔄 Sincronizando downloadedTrackIds com localStorage:', parsed.length, 'IDs');
+                }
             } catch (error) {
                 console.error('❌ Erro ao sincronizar downloadedTrackIds:', error);
             }
@@ -402,14 +406,9 @@ export default function GenrePage() {
                                 }
 
                                 // Marcar como baixada
-                                setDownloadedTrackIds(prev => {
-                                    const newIds = [...prev, track.id];
-                                    // Sincronizar com localStorage
-                                    localStorage.setItem('downloadedTrackIds', JSON.stringify(newIds));
-                                    // Forçar atualização do contador em tempo real
-                                    setTimeout(() => updateAvailableTracksCount(), 0);
-                                    return newIds;
-                                });
+                                // markAsDownloaded já é chamado globalmente, não precisa atualizar local
+                                // Apenas log para debug
+                                console.log('markAsDownloaded já foi chamado para o track.id:', track.id);
 
                                 // Atualizar também o localStorage de downloadedTracks
                                 const savedTracks = JSON.parse(localStorage.getItem('downloadedTracks') || '[]');
@@ -569,7 +568,8 @@ export default function GenrePage() {
                     const data = await response.json();
                     if (data.success) {
                         // Limpar estado local
-                        setDownloadedTrackIds(prev => prev.filter(id => !trackIdsToClear.includes(id)));
+                        // Não remover do cache global, apenas logar
+                        console.log('Remover múltiplos do cache não suportado no modo global.');
 
                         // Limpar localStorage
                         localStorage.setItem('downloadedTracks', JSON.stringify(JSON.parse(localStorage.getItem('downloadedTracks') || '[]').filter((track: any) => !trackIdsToClear.includes(track.id))));
@@ -792,101 +792,7 @@ export default function GenrePage() {
                                 </div>
                             </div>
 
-                            {/* Botões de Download em Massa */}
-                            <BatchDownloadButtons
-                                tracks={filteredTracks}
-                                downloadedTrackIds={downloadedTrackIds}
-                                batchName={`Gênero ${decodedGenreName}`}
-                                sourcePageName={`Gênero ${decodedGenreName}`}
-                                isGlobal={true}
-                                showNewTracksOnly={true}
-                                showAllTracks={true}
-                                showStyleDownload={false}
-                                className="mt-6"
-                            />
 
-                            {/* Indicador de Progresso do Download */}
-                            {isBatchDownloading && (
-                                <div className="mt-6 max-w-md mx-auto">
-                                    <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-[#b3b3b3] text-sm font-medium">
-                                                Baixando músicas...
-                                            </span>
-                                            <span className="text-[#1db954] text-sm font-bold">
-                                                {batchProgress.downloaded}/{batchProgress.total}
-                                            </span>
-                                        </div>
-
-                                        {/* Barra de Progresso */}
-                                        <div className="w-full bg-[#282828] rounded-full h-2 mb-3">
-                                            <div
-                                                className="bg-[#1db954] h-2 rounded-full transition-all duration-300"
-                                                style={{
-                                                    width: `${batchProgress.total > 0 ? (batchProgress.downloaded / batchProgress.total) * 100 : 0}%`
-                                                }}
-                                            ></div>
-                                        </div>
-
-                                        {/* Música Atual */}
-                                        {batchProgress.currentTrack && (
-                                            <p className="text-[#b3b3b3] text-xs text-center mb-3">
-                                                {batchProgress.currentTrack}
-                                            </p>
-                                        )}
-
-                                        {/* Controles */}
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => {
-                                                    if (abortController) {
-                                                        abortController.abort();
-                                                        setIsBatchDownloading(false);
-                                                        showToast('⏸️ Download em lote pausado', 'success');
-                                                    }
-                                                }}
-                                                disabled={!isBatchDownloading}
-                                                className="flex-1 px-3 py-2 bg-[#282828] text-white rounded-lg hover:bg-[#3e3e3e] disabled:bg-[#535353] disabled:cursor-not-allowed transition-colors text-sm"
-                                            >
-                                                Pausar
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    if (filteredTracks.length > 0) {
-                                                        downloadTracksInBatches(filteredTracks);
-                                                    }
-                                                }}
-                                                disabled={isBatchDownloading}
-                                                className="flex-1 px-3 py-2 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition-colors text-sm"
-                                            >
-                                                Continuar
-                                            </button>
-                                            <button
-                                                onClick={cancelBatchDownload}
-                                                className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                                            >
-                                                Cancelar
-                                            </button>
-                                        </div>
-
-                                        {/* Estatísticas do Download */}
-                                        <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
-                                            <div className="text-center">
-                                                <div className="text-[#1db954] font-bold">{batchProgress.downloaded}</div>
-                                                <div className="text-[#b3b3b3]">Baixadas</div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-yellow-500 font-bold">{batchProgress.failed}</div>
-                                                <div className="text-[#b3b3b3]">Falharam</div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-[#535353] font-bold">{batchProgress.skipped}</div>
-                                                <div className="text-[#b3b3b3]">Puladas</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -907,7 +813,7 @@ export default function GenrePage() {
                                     Todos ({tracks.length})
                                 </button>
                             </div>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2 mb-4">
                                 {availableStyles.map((style) => (
                                     <button
                                         key={style}
@@ -921,6 +827,18 @@ export default function GenrePage() {
                                     </button>
                                 ))}
                             </div>
+                            {/* Botões de Download em Massa (agora dentro da seção de filtros) */}
+                            <BatchDownloadButtons
+                                tracks={filteredTracks}
+                                downloadedTrackIds={downloadedTrackIds}
+                                batchName={`Gênero ${decodedGenreName}`}
+                                sourcePageName={`Gênero ${decodedGenreName}`}
+                                isGlobal={true}
+                                showNewTracksOnly={true}
+                                showAllTracks={true}
+                                showStyleDownload={false}
+                                className="mt-2"
+                            />
                         </div>
                     </div>
                 )}

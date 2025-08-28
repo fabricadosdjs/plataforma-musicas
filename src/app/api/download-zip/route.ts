@@ -9,12 +9,17 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+
+    // ...existing code...
+    // ...existing code...
+    // Diagnóstico: logar tracks recebidas
+    const { trackIds, filename } = await request.json();
+    console.log('[API /download-zip] trackIds recebidos:', trackIds);
     const session = await getServerSession(authOptions);
     if (!session?.user) {
         return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 401 });
     }
 
-    const { trackIds, filename } = await request.json();
     if (!trackIds || !Array.isArray(trackIds) || trackIds.length === 0) {
         return new Response(JSON.stringify({ error: 'IDs de músicas inválidos' }), { status: 400 });
     }
@@ -29,8 +34,26 @@ export async function POST(request: NextRequest) {
             downloadUrl: true,
         }
     });
-    if (tracks.length === 0) {
-        return new Response(JSON.stringify({ error: 'Nenhuma música encontrada' }), { status: 404 });
+    console.log(`[API /download-zip] tracks encontrados no banco: ${tracks.length}`);
+    if (tracks.length > 0) {
+        console.log('[API /download-zip] Exemplos de tracks:', tracks.slice(0, 3));
+    }
+
+    // Tracks não encontradas (após buscar tracks)
+    const notFoundIds: any[] = trackIds.filter((id: any) => !tracks.some((t: any) => t.id === id));
+    let notFoundText = '';
+    if (notFoundIds.length > 0) {
+        notFoundText = 'Músicas não encontradas no banco de dados:\n';
+        notFoundIds.forEach((id: any) => {
+            notFoundText += `ID: ${id} - Motivo: Não encontrada no banco\n`;
+        });
+    }
+    if (!tracks || tracks.length === 0) {
+        console.log('[API /download-zip] Nenhuma música encontrada para baixar. Retornando 404.');
+        return new Response(JSON.stringify({ error: 'Nenhuma música encontrada para baixar' }), { status: 404 });
+    }
+    if (tracks.length < trackIds.length) {
+        console.log(`[API /download-zip] Atenção: ${trackIds.length - tracks.length} músicas não encontradas, mas gerando ZIP com as restantes.`);
     }
 
     // Streaming ZIP direto para o cliente
@@ -38,7 +61,10 @@ export async function POST(request: NextRequest) {
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
 
+    let zipHasContent = false;
+
     archive.on('data', (chunk) => {
+        zipHasContent = true;
         writer.write(chunk);
     });
     archive.on('end', () => {
@@ -85,15 +111,18 @@ export async function POST(request: NextRequest) {
                 if (i >= tracks.length) return;
                 const track = tracks[i];
                 try {
+                    // Pasta principal: nome do artista (ou "Sem Artista" se não houver)
+                    const mainFolder = (track.artist || 'Sem Artista').replace(/[<>:"/\\|?*]/g, '_').toUpperCase();
+                    // Subpasta: estilo
                     const styleFolder = (track.style || 'Sem Estilo').replace(/[<>:"/\\|?*]/g, '_').toUpperCase();
                     const fileName = `${track.artist} - ${track.songName}.mp3`;
                     const audioResponse = await fetchWithRetry(track.downloadUrl);
                     if (audioResponse && audioResponse.ok && audioResponse.body) {
                         const nodeStream = Readable.fromWeb(audioResponse.body as any);
-                        archive.append(nodeStream, { name: `${styleFolder}/${fileName}` });
+                        archive.append(nodeStream, { name: `${mainFolder}/${styleFolder}/${fileName}` });
                     } else {
                         const placeholder = `Música indisponível para download.\nID: ${track.id}\nNome: ${track.songName}\nArtista: ${track.artist}`;
-                        archive.append(placeholder, { name: `${styleFolder}/${track.artist} - ${track.songName} (indisponível).txt` });
+                        archive.append(placeholder, { name: `${mainFolder}/${styleFolder}/${track.artist} - ${track.songName} (indisponível).txt` });
                     }
                 } catch {
                     // erro ao baixar música
@@ -102,6 +131,15 @@ export async function POST(request: NextRequest) {
         }
         // Inicia workers concorrentes
         await Promise.all(Array(concurrency).fill(0).map(worker));
+
+        // Sempre adiciona o .txt ao ZIP se houver tracks não encontradas
+        if (notFoundText) {
+            archive.append(notFoundText, { name: 'MUSICAS_NAO_ENCONTRADAS.txt' });
+        }
+        // Se não houver nenhuma música baixada com sucesso, adiciona um placeholder para evitar ZIP vazio
+        if (!zipHasContent) {
+            archive.append('Nenhuma música pôde ser baixada. Veja o arquivo de erros.', { name: 'README.txt' });
+        }
     }
 
     (async () => {
@@ -111,18 +149,33 @@ export async function POST(request: NextRequest) {
         }
     })();
 
-    // Registrar downloads no banco (não aguarda)
+    // Registrar downloads no banco (não aguarda) - só se houver tracks
     const userId = (session as any).user.id;
-    tracks.forEach((track: any) => {
-        prisma.download.create({
-            data: {
-                trackId: track.id,
-                userId: userId,
-                downloadedAt: new Date(),
-            },
-        }).catch(() => { });
-    });
+    if (tracks.length > 0) {
+        tracks.forEach((track: any) => {
+            prisma.download.upsert({
+                where: {
+                    userId_trackId: {
+                        userId: userId,
+                        trackId: track.id
+                    }
+                },
+                update: {
+                    downloadedAt: new Date(),
+                },
+                create: {
+                    trackId: track.id,
+                    userId: userId,
+                    downloadedAt: new Date(),
+                },
+            }).catch(() => { });
+        });
+    }
 
+    // Só retorna o ZIP se houver conteúdo
+    if (!zipHasContent) {
+        return new Response(JSON.stringify({ error: 'Nenhuma música válida para baixar' }), { status: 404 });
+    }
     return new Response(readable, {
         headers: {
             'Content-Type': 'application/zip',

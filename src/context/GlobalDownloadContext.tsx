@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Track } from '@/types/track';
 import { useSession } from 'next-auth/react';
+import { useDownloadsCache } from '@/hooks/useDownloadsCache';
 import { useToastContext } from '@/context/ToastContext';
 
 interface DownloadItem {
@@ -46,10 +47,13 @@ const GlobalDownloadContext = createContext<GlobalDownloadContextType | undefine
 export const GlobalDownloadProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { data: session } = useSession();
     const { showToast } = useToastContext();
+    const downloadsCache = useDownloadsCache();
 
     const [activeDownloads, setActiveDownloads] = useState<DownloadBatch[]>([]);
     const [downloadQueue, setDownloadQueue] = useState<DownloadItem[]>([]);
     const [cancelledBatches, setCancelledBatches] = useState<Set<string>>(new Set());
+        // Map to store AbortControllers for each batch
+        const batchAbortControllers = React.useRef<{ [batchId: string]: AbortController[] }>({});
 
     const isAnyDownloadActive = activeDownloads.some(d => d.status === 'active');
 
@@ -71,6 +75,11 @@ export const GlobalDownloadProvider: React.FC<{ children: React.ReactNode }> = (
         ));
 
         console.log('🔄 GlobalDownloadContext: Batch cancelado com sucesso');
+            // Abort all ongoing downloads for this batch
+            if (batchAbortControllers.current[batchId]) {
+                batchAbortControllers.current[batchId].forEach(controller => controller.abort());
+                delete batchAbortControllers.current[batchId];
+            }
         showToast('Download cancelado com sucesso', 'info');
     }, [showToast, activeDownloads]);
 
@@ -153,6 +162,13 @@ export const GlobalDownloadProvider: React.FC<{ children: React.ReactNode }> = (
             return;
         }
 
+        // Criar um AbortController para este download
+        const controller = new AbortController();
+        if (!batchAbortControllers.current[batchId]) {
+            batchAbortControllers.current[batchId] = [];
+        }
+        batchAbortControllers.current[batchId].push(controller);
+
         try {
             console.log('Iniciando download da track:', track.songName);
             console.log('URL de download da track:', track.downloadUrl);
@@ -185,7 +201,8 @@ export const GlobalDownloadProvider: React.FC<{ children: React.ReactNode }> = (
                 body: JSON.stringify({
                     trackId: track.id,
                     confirmReDownload: true
-                })
+                }),
+                signal: controller.signal
             });
 
             if (!response.ok) {
@@ -202,7 +219,7 @@ export const GlobalDownloadProvider: React.FC<{ children: React.ReactNode }> = (
 
             console.log('Fazendo download do arquivo de:', downloadData.downloadUrl);
 
-            const fileResponse = await fetch(downloadData.downloadUrl);
+            const fileResponse = await fetch(downloadData.downloadUrl, { signal: controller.signal });
 
             if (!fileResponse.ok) {
                 throw new Error(`Erro ao baixar arquivo: ${fileResponse.status}`);
@@ -222,7 +239,6 @@ export const GlobalDownloadProvider: React.FC<{ children: React.ReactNode }> = (
             console.log('Iniciando download com nome:', a.download);
             document.body.appendChild(a);
             a.click();
-
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
             console.log('Download concluido e limpeza feita');
@@ -248,39 +264,59 @@ export const GlobalDownloadProvider: React.FC<{ children: React.ReactNode }> = (
                     : batch
             ));
 
-            showToast(`${track.songName} baixada com sucesso!`, 'success');
+            // Atualizar cache local para refletir em tempo real
+            if (downloadsCache && typeof downloadsCache.markAsDownloaded === 'function') {
+                downloadsCache.markAsDownloaded(track.id);
+            }
         } catch (error) {
-            console.error('Erro ao baixar track:', error);
-
-            // Atualizar status para failed
-            setDownloadQueue(prev => prev.map(item =>
-                item.track.id === track.id
-                    ? {
-                        ...item,
-                        status: 'failed',
-                        error: error instanceof Error ? error.message : 'Erro desconhecido',
-                        progress: 0
-                    }
-                    : item
-            ));
-
-            // Atualizar contadores do batch
-            setActiveDownloads(prev => prev.map(batch =>
-                batch.id === batchId
-                    ? {
-                        ...batch,
-                        progress: {
-                            ...batch.progress,
-                            failed: batch.progress.failed + 1,
-                            downloading: Math.max(0, batch.progress.downloading - 1)
+            if (controller.signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
+                console.log('Download abortado para:', track.songName);
+                // Atualizar status para failed/cancelled
+                setDownloadQueue(prev => prev.map(item =>
+                    item.track.id === track.id
+                        ? { ...item, status: 'failed', error: 'Cancelado pelo usuário', progress: 0 }
+                        : item
+                ));
+                window.dispatchEvent(new CustomEvent('trackDownloaded', {
+                    detail: { trackId: track.id, status: 'failed', error: 'Cancelado pelo usuário' }
+                }));
+            } else {
+                console.error('Erro ao baixar track:', error);
+                // Atualizar status para failed
+                setDownloadQueue(prev => prev.map(item =>
+                    item.track.id === track.id
+                        ? {
+                            ...item,
+                            status: 'failed',
+                            error: error instanceof Error ? error.message : 'Erro desconhecido',
+                            progress: 0
                         }
-                    }
-                    : batch
-            ));
-
-            showToast(`Erro ao baixar ${track.songName}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`, 'error');
+                        : item
+                ));
+                setActiveDownloads(prev => prev.map(batch =>
+                    batch.id === batchId
+                        ? {
+                            ...batch,
+                            progress: {
+                                ...batch.progress,
+                                failed: batch.progress.failed + 1,
+                                downloading: Math.max(0, batch.progress.downloading - 1)
+                            }
+                        }
+                        : batch
+                ));
+                showToast(`Erro ao baixar ${track.songName}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`, 'error');
+            }
+        } finally {
+            // Remover o controller deste batch
+            if (batchAbortControllers.current[batchId]) {
+                batchAbortControllers.current[batchId] = batchAbortControllers.current[batchId].filter(c => c !== controller);
+                if (batchAbortControllers.current[batchId].length === 0) {
+                    delete batchAbortControllers.current[batchId];
+                }
+            }
         }
-    }, [showToast, cancelledBatches]);
+    }, [showToast, cancelledBatches, downloadsCache]);
 
     const startBatchDownload = useCallback(async (
         tracks: Track[],
@@ -331,20 +367,17 @@ export const GlobalDownloadProvider: React.FC<{ children: React.ReactNode }> = (
 
         showToast(`Iniciando download de ${tracks.length} musicas...`, 'info');
 
-        for (let i = 0; i < tracks.length; i++) {
-            const track = tracks[i];
-
-            // Verificar se foi cancelado antes de cada download
+        // Baixar em lotes de 10 em paralelo
+        const batchSize = 10;
+        for (let i = 0; i < tracks.length; i += batchSize) {
             if (cancelledBatches.has(batchId)) {
                 console.log('Batch cancelado, parando downloads');
                 break;
             }
-
-            await downloadSingleTrack(track, batchId);
-
-            if (i < tracks.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
+            const batchTracks = tracks.slice(i, i + batchSize);
+            await Promise.all(
+                batchTracks.map(track => downloadSingleTrack(track, batchId))
+            );
         }
 
         // Marcar como concluído apenas se não foi cancelado
