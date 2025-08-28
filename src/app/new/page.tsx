@@ -951,74 +951,7 @@ const NewPage = () => {
 
                 </div>
 
-                {/* MENSAGEM DE BOAS-VINDAS PARA USUÁRIOS NÃO LOGADOS */}
-                {!session?.user && (
-                    <div className="w-full max-w-[95%] mx-auto mb-6 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-                        <div className="bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-pink-900/20 rounded-2xl p-6 border border-blue-500/30 backdrop-blur-sm relative overflow-hidden">
-                            {/* Background Pattern */}
-                            <div className="absolute inset-0 opacity-5">
-                                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-400 to-purple-500"></div>
-                            </div>
 
-                            <div className="relative z-10 text-center">
-                                <div className="flex items-center justify-center mb-4">
-                                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full mr-3 shadow-lg">
-                                        <Music className="h-6 w-6 text-white" />
-                                    </div>
-                                    <h2 className="text-2xl font-bold text-white">Bem-vindo ao DJ Pools! 🎶</h2>
-                                </div>
-
-                                <p className="text-gray-300 text-lg mb-4">
-                                    Você está prestes a entrar no universo mais completo de packs exclusivos, remixes raros e faixas selecionadas para DJs que não param nunca. 🚀
-                                </p>
-
-                                <p className="text-gray-300 mb-4">
-                                    👉 Para ter acesso ilimitado a todos os conteúdos e aproveitar o que há de melhor na cena eletrônica, assine um dos nossos planos hoje mesmo e faça parte dessa comunidade que vive e respira música.
-                                </p>
-
-                                <div className="bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-xl p-4 border border-purple-500/30 mb-4">
-                                    <h3 className="text-lg font-bold text-purple-300 mb-3">💎 Benefícios de assinar:</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left text-sm">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
-                                            <span className="text-gray-300">Acesso imediato a milhares de tracks exclusivas</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
-                                            <span className="text-gray-300">Downloads ilimitados direto do nosso drive</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
-                                            <span className="text-gray-300">Packs atualizados toda semana</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
-                                            <span className="text-gray-300">Conteúdos pensados para elevar o nível dos seus sets</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <p className="text-gray-300 text-sm mb-4">
-                                    Não fique de fora da batida. 🔥<br />
-                                    👉 Assine agora e seja parte do DJ Pools!
-                                </p>
-
-                                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                    <Link href="/plans">
-                                        <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-sm">
-                                            Ver Planos
-                                        </button>
-                                    </Link>
-                                    <Link href="/auth/sign-in">
-                                        <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-sm">
-                                            Fazer Login
-                                        </button>
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* BARRA DE BUSCA E FILTROS - Mobile First */}
                 <div className="w-full max-w-[95%] mx-auto mb-4 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">

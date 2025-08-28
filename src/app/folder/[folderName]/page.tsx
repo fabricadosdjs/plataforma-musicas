@@ -14,25 +14,12 @@ import { useToastContext } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BatchDownloadButtons from '@/components/download/BatchDownloadButtons';
+import { useHeaderHeight } from '@/hooks/useHeaderHeight';
 
 // Função para detectar se é um folder de agosto de 2025
 const isAugust2025Folder = (folderName: string): boolean => {
-    // Verificar se o nome do folder contém "agosto" ou "august" (case insensitive)
-    const folderLower = folderName.toLowerCase();
-
-    // Padrões para detectar folders de agosto de 2025
-    const augustPatterns = [
-        'agosto',
-        'august',
-        'ago',
-        '08',
-        '8'
-    ];
-
-    // Verificar se contém padrão de agosto
-    const hasAugust = augustPatterns.some(pattern => folderLower.includes(pattern));
-
-    return hasAugust;
+    // Como todas as pastas até hoje são de agosto, sempre retornar true
+    return true;
 };
 
 // Função para obter informações sobre o folder baseada em dados reais
@@ -75,6 +62,13 @@ export default function FolderPage() {
     const folderName = decodeURIComponent(params.folderName as string);
     const { showToast } = useToastContext();
     const { data: session } = useSession();
+    const { paddingClasses } = useHeaderHeight();
+
+    // Função para detectar se é um folder de agosto de 2025
+    const isAugust2025Folder = (folderName: string): boolean => {
+        // Como todas as pastas até hoje são de agosto, sempre retornar true
+        return true;
+    };
 
     // URL para o botão da Plataforma VIP
     const googleDriveUrl = "https://plataformavip.nexorrecords.com.br/atualizacoes/agosto-2025";
@@ -660,7 +654,7 @@ export default function FolderPage() {
             <Header />
 
             {/* Conteúdo Principal - Tela Cheia */}
-            <div className="pt-12 lg:pt-16">
+            <div className={paddingClasses}>
                 {/* Header do Folder */}
                 <div className="w-full bg-gradient-to-b from-[#8b5cf6]/20 to-transparent">
                     <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8 sm:py-12">
@@ -784,6 +778,8 @@ export default function FolderPage() {
 
 
 
+
+
                             {/* Botões de Download em Massa */}
                             <BatchDownloadButtons
                                 tracks={filteredTracks}
@@ -795,7 +791,7 @@ export default function FolderPage() {
                                 showAllTracks={true}
                                 showStyleDownload={false}
                                 showGoogleDriveButton={isAugust2025Folder(folderName)}
-                                googleDriveUrl="https://plataformavip.nexorrecords.com.br/atualizacoes/agosto-2025"
+                                googleDriveUrl={googleDriveUrl}
                                 className="mt-8"
                             />
 

@@ -59,6 +59,8 @@ export default function PoolPage() {
     // Verificar se deve iniciar download automático
     const [shouldAutoDownload, setShouldAutoDownload] = useState(false);
 
+
+
     const [tracks, setTracks] = useState<Track[]>([]);
     const [filteredTracks, setFilteredTracks] = useState<Track[]>([]);
     const [loading, setLoading] = useState(true);

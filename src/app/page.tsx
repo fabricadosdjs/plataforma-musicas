@@ -835,77 +835,7 @@ function HomePageContent() {
             </div>
           </div>
 
-          {/* MENSAGEM DE BOAS-VINDAS PARA USUÁRIOS NÃO LOGADOS */}
-          {!session?.user && (
-            <div className="mb-20">
-              <div className="bg-gradient-to-br from-blue-900/30 via-purple-900/30 to-pink-900/30 rounded-3xl p-10 border border-blue-500/30 backdrop-blur-sm relative overflow-hidden">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-5">
-                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-400 to-purple-500"></div>
-                </div>
 
-                <div className="relative z-10 text-center">
-                  <div className="mb-8">
-                    <div className="flex items-center justify-center mb-6">
-                      <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-full mr-4 shadow-lg">
-                        <Music className="h-10 w-10 text-white" />
-                      </div>
-                      <h2 className="text-4xl font-bold text-white">Bem-vindo ao DJ Pools! 🎶</h2>
-                    </div>
-                    <p className="text-gray-300 max-w-4xl mx-auto text-xl leading-relaxed">
-                      Você está prestes a entrar no universo mais completo de packs exclusivos, remixes raros e faixas selecionadas para DJs que não param nunca. 🚀
-                    </p>
-                  </div>
-
-                  <div className="mb-8">
-                    <p className="text-gray-300 text-lg mb-6">
-                      👉 Para ter acesso ilimitado a todos os conteúdos e aproveitar o que há de melhor na cena eletrônica, assine um dos nossos planos hoje mesmo e faça parte dessa comunidade que vive e respira música.
-                    </p>
-
-                    <div className="bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-2xl p-6 border border-purple-500/30 mb-6">
-                      <h3 className="text-2xl font-bold text-purple-300 mb-4">💎 Benefícios de assinar:</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                          <span className="text-gray-300">Acesso imediato a milhares de tracks exclusivas</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                          <span className="text-gray-300">Downloads ilimitados direto do nosso drive</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                          <span className="text-gray-300">Packs atualizados toda semana</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                          <span className="text-gray-300">Conteúdos pensados para elevar o nível dos seus sets</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-gray-300 text-lg mb-6">
-                      Não fique de fora da batida. 🔥<br />
-                      👉 Assine agora e seja parte do DJ Pools!
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                      <Link href="/plans">
-                        <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
-                          Ver Planos
-                        </button>
-                      </Link>
-                      <Link href="/auth/sign-in">
-                        <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
-                          Fazer Login
-                        </button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Call to Action */}
           <div className="text-center py-12 relative">

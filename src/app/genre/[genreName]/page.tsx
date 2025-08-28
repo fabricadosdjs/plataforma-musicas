@@ -61,6 +61,8 @@ export default function GenrePage() {
     const { data: session } = useSession();
 
 
+
+
     const [tracks, setTracks] = useState<Track[]>([]);
     const [loading, setLoading] = useState(true);
     // Usar cache global igual ao /new para atualização em tempo real

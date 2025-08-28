@@ -87,6 +87,25 @@ const Header = ({ }: HeaderProps) => {
 
   return (
     <header className="fixed top-0 left-0 w-full z-[9998] bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-md shadow-lg border-b border-gray-700/30 py-2">
+      {/* Mensagem para usuários não logados */}
+      {!session?.user && (
+        <div className="fixed top-[49px] left-0 w-full z-[9997] bg-gradient-to-r from-pink-500 via-pink-600 to-black py-3 shadow-lg">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-center text-center text-white">
+              <span className="text-sm font-medium">
+                Ouça músicas ou{' '}
+                <Link
+                  href="/auth/sign-in"
+                  className="underline hover:text-pink-200 transition-colors font-semibold"
+                >
+                  faça login
+                </Link>
+                {' '}para ter uma experiência personalizada.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center space-x-4 md:space-x-6">
           {/* Mobile menu button */}
@@ -461,10 +480,10 @@ const Header = ({ }: HeaderProps) => {
             </div>
           ) : (
             <div className="flex items-center space-x-3">
-              <Link href="/plans" className="px-4 py-2.5 bg-gradient-to-r from-yellow-600 to-yellow-700 text-white rounded-lg font-semibold hover:from-yellow-700 hover:to-yellow-800 transition-all shadow-lg text-sm">
+              <Link href="/plans" className="px-3 py-2 bg-gradient-to-r from-yellow-600 to-yellow-700 text-white rounded-lg font-semibold hover:from-yellow-700 hover:to-yellow-800 transition-all shadow-lg text-xs">
                 ASSINAR
               </Link>
-              <Link href="/auth/sign-in" className="px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transition-all shadow-lg text-sm">
+              <Link href="/auth/sign-in" className="px-3 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transition-all shadow-lg text-xs">
                 ENTRAR
               </Link>
             </div>
