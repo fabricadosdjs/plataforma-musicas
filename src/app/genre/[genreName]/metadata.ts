@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 
-export async function generateMetadata({ params }: { params: { genreName: string } }): Promise<Metadata> {
-    const decodedGenreName = decodeURIComponent(params.genreName);
+export async function generateMetadata({ params }: { params: Promise<{ genreName: string }> }): Promise<Metadata> {
+    const { genreName } = await params;
+    const decodedGenreName = decodeURIComponent(genreName);
 
     // SEO otimizado baseado no gênero
     const genreSeoData = {
@@ -231,7 +232,7 @@ export async function generateMetadata({ params }: { params: { genreName: string
             site: '@plataformamusicas',
         },
         alternates: {
-            canonical: `https://plataformamusicas.com/genre/${params.genreName}`,
+            canonical: `https://plataformamusicas.com/genre/${genreName}`,
         },
         category: 'music',
         classification: 'music genre',

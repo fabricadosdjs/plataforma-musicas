@@ -68,6 +68,17 @@ export default function MusicList({
     // Hook para cache de downloads
     const downloadsCache = useDownloadsCache();
 
+    // Função para forçar sincronização
+    const handleForceSync = async () => {
+        try {
+            await downloadsCache.forceSync();
+            showToast('🔄 Cache sincronizado com sucesso!', 'success');
+        } catch (error) {
+            console.error('❌ Erro ao sincronizar cache:', error);
+            showToast('❌ Erro ao sincronizar cache', 'error');
+        }
+    };
+
     // Estados para funcionalidades
     const [downloadingTracks, setDownloadingTracks] = useState<Set<number>>(new Set());
     const [liking, setLiking] = useState<number | null>(null);
@@ -692,7 +703,7 @@ export default function MusicList({
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
 
-            downloadsCache.markAsDownloaded(track.id);
+            await downloadsCache.markAsDownloaded(track.id);
             showToast('✅ Download concluído!', 'success');
 
             // Disparar evento customizado para notificar o contexto global
@@ -1026,6 +1037,31 @@ export default function MusicList({
                 </div>
             )}
 
+            {/* Banner de Sincronização de Cache */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-4 mb-4 rounded-lg shadow-lg">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                            <span className="text-lg">🔄</span>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-sm sm:text-base">Sincronização de Downloads</h3>
+                            <p className="text-green-100 text-xs sm:text-sm">
+                                Seus downloads estão sincronizados com o banco de dados
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleForceSync}
+                            className="px-4 py-2 bg-white text-green-600 rounded-lg font-medium text-sm hover:bg-green-50 transition-colors"
+                        >
+                            Sincronizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Lista de músicas */}
             {showDate ? (
                 // Renderização com agrupamento por data (padrão)
@@ -1048,9 +1084,18 @@ export default function MusicList({
                                                         </>
                                                     )}
                                                 </h2>
-                                                <span className="text-gray-400 text-xs lg:text-base font-medium bg-gray-800/50 px-2 lg:px-2.5 py-0.5 lg:py-1 rounded-full whitespace-nowrap shrink-0 ml-1 lg:ml-2">
-                                                    {group.tracks.length} {group.tracks.length === 1 ? 'música' : 'músicas'}
-                                                </span>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <span className="text-gray-400 text-xs lg:text-base font-medium bg-gray-800/50 px-2 lg:px-2.5 py-0.5 lg:py-1 rounded-full whitespace-nowrap">
+                                                        {group.tracks.length} {group.tracks.length === 1 ? 'música' : 'músicas'}
+                                                    </span>
+                                                    {/* Indicador de sincronização com Google Drive */}
+                                                    <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-800/30 px-2 py-1 rounded-full border border-gray-700/50">
+                                                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                                                        </svg>
+                                                        <span className="hidden sm:inline">Google Drive</span>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             {/* Botões de download em massa responsivos */}
@@ -1086,6 +1131,8 @@ export default function MusicList({
 
                                     {/* Linha verde sutil */}
                                     <div className="h-px bg-green-500/40 rounded-full"></div>
+
+
                                 </div>
 
                                 {/* Lista de músicas */}
@@ -1644,6 +1691,15 @@ export default function MusicList({
                 // Renderização sem agrupamento por data (para community)
                 tracks && tracks.length > 0 ? (
                     <div className="space-y-0 w-full overflow-x-hidden">
+                        {/* Indicador de sincronização com Google Drive */}
+                        <div className="flex items-center justify-center py-4 mb-6">
+                            <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-800/30 px-3 py-1.5 rounded-full border border-gray-700/50">
+                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                                </svg>
+                                <span>Sincronizado com Google Drive</span>
+                            </div>
+                        </div>
                         {/* Mobile: Grid de cards */}
                         <div className="block sm:hidden">
                             <div className="grid grid-cols-2 gap-1.5 sm:gap-2">

@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 type Props = {
-    params: { artistName: string };
+    params: Promise<{ artistName: string }>;
 };
 
 // Função para buscar dados do artista via API
@@ -23,7 +23,8 @@ async function getArtistData(artistName: string) {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const artistName = decodeURIComponent(params.artistName);
+    const { artistName: artistNameParam } = await params;
+    const artistName = decodeURIComponent(artistNameParam);
 
     // Buscar dados reais do artista
     const artistData = await getArtistData(artistName);

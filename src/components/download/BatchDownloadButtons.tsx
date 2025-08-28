@@ -15,9 +15,10 @@ interface BatchDownloadButtonsProps {
     className?: string;
     showNewTracksOnly?: boolean;
     showAllTracks?: boolean;
-
     showStyleDownload?: boolean;
     selectedStyle?: string;
+    showGoogleDriveButton?: boolean;
+    googleDriveUrl?: string;
 }
 
 export default function BatchDownloadButtons({
@@ -30,8 +31,12 @@ export default function BatchDownloadButtons({
     showNewTracksOnly,
     showAllTracks,
     showStyleDownload,
-    selectedStyle
+    selectedStyle,
+    showGoogleDriveButton = false,
+    googleDriveUrl = ''
 }: BatchDownloadButtonsProps) {
+
+
 
     // Global download context
     const {
@@ -60,6 +65,8 @@ export default function BatchDownloadButtons({
 
     // Active batch for this page
     const activeBatch = getBatchBySourcePage ? getBatchBySourcePage(pathname) : undefined;
+
+
 
     // Escutar eventos de download individual para atualizar em tempo real
     useEffect(() => {
@@ -142,7 +149,7 @@ export default function BatchDownloadButtons({
             {/* Botões de Download */}
             {!activeBatch && (
                 <div className="bg-[#181818]/80 backdrop-blur-sm rounded-xl p-6 border border-[#282828]/50 shadow-2xl">
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <div className="flex flex-col sm:flex-row lg:flex-wrap gap-3 justify-center items-center">
                         {/* Download de Novas Músicas */}
                         {showNewTracksOnly && (
                             <button
@@ -165,6 +172,21 @@ export default function BatchDownloadButtons({
                                 <Download className="w-5 h-5" />
                                 <span>Baixar Todas ({realTimeCounts.allTracks})</span>
                             </button>
+                        )}
+
+                        {/* Botão Plataforma VIP */}
+                        {showGoogleDriveButton && googleDriveUrl && (
+                            <a
+                                href={googleDriveUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 min-w-[200px]"
+                            >
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                                </svg>
+                                <span>PLATAFORMA VIP</span>
+                            </a>
                         )}
                     </div>
                 </div>

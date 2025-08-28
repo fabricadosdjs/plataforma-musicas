@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 type Props = {
-    params: { folderName: string };
+    params: Promise<{ folderName: string }>;
 };
 
 // Função para buscar dados do folder via API
@@ -43,7 +43,8 @@ const getSpecificFolderData = (folderName: string) => {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const folderName = decodeURIComponent(params.folderName);
+    const { folderName: folderNameParam } = await params;
+    const folderName = decodeURIComponent(folderNameParam);
 
     // Buscar dados específicos do folder primeiro
     const specificFolderData = getSpecificFolderData(folderName);

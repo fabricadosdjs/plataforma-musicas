@@ -15,6 +15,26 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BatchDownloadButtons from '@/components/download/BatchDownloadButtons';
 
+// Função para detectar se é um folder de agosto de 2025
+const isAugust2025Folder = (folderName: string): boolean => {
+    // Verificar se o nome do folder contém "agosto" ou "august" (case insensitive)
+    const folderLower = folderName.toLowerCase();
+
+    // Padrões para detectar folders de agosto de 2025
+    const augustPatterns = [
+        'agosto',
+        'august',
+        'ago',
+        '08',
+        '8'
+    ];
+
+    // Verificar se contém padrão de agosto
+    const hasAugust = augustPatterns.some(pattern => folderLower.includes(pattern));
+
+    return hasAugust;
+};
+
 // Função para obter informações sobre o folder baseada em dados reais
 const getFolderInfo = (folderName: string, tracks: Track[], selectedStyle: string | null): string => {
     // Se não há tracks, mostrar mensagem padrão
@@ -55,6 +75,9 @@ export default function FolderPage() {
     const folderName = decodeURIComponent(params.folderName as string);
     const { showToast } = useToastContext();
     const { data: session } = useSession();
+
+    // URL para o botão da Plataforma VIP
+    const googleDriveUrl = "https://plataformavip.nexorrecords.com.br/atualizacoes/agosto-2025";
 
     const [tracks, setTracks] = useState<Track[]>([]);
     const [loading, setLoading] = useState(true);
@@ -759,6 +782,8 @@ export default function FolderPage() {
                                 </div>
                             </div>
 
+
+
                             {/* Botões de Download em Massa */}
                             <BatchDownloadButtons
                                 tracks={filteredTracks}
@@ -769,6 +794,8 @@ export default function FolderPage() {
                                 showNewTracksOnly={true}
                                 showAllTracks={true}
                                 showStyleDownload={false}
+                                showGoogleDriveButton={isAugust2025Folder(folderName)}
+                                googleDriveUrl="https://plataformavip.nexorrecords.com.br/atualizacoes/agosto-2025"
                                 className="mt-8"
                             />
 

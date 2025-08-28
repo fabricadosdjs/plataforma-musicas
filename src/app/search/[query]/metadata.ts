@@ -1,11 +1,12 @@
 import { Metadata } from 'next';
 
 type Props = {
-    params: { query: string };
+    params: Promise<{ query: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const query = decodeURIComponent(params.query);
+    const { query: queryParam } = await params;
+    const query = decodeURIComponent(queryParam);
 
     // Metadata baseada na query de busca
     const title = `Buscar: ${query} - Músicas Eletrônicas | Nexor Records`;

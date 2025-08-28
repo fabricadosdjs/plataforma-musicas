@@ -19,11 +19,12 @@ interface UseDownloadsCacheReturn {
     isLoading: boolean;
     error: string | null;
     refreshCache: () => Promise<void>;
-    markAsDownloaded: (trackId: number) => void;
+    markAsDownloaded: (trackId: number) => Promise<void>;
     markAsLiked: (trackId: number) => void;
     markAsUnliked: (trackId: number) => void;
     isDownloaded: (trackId: number) => boolean;
     isLiked: (trackId: number) => boolean;
+    forceSync: () => Promise<void>;
 }
 
 export const useDownloadsCache = (): UseDownloadsCacheReturn => {
@@ -73,6 +74,8 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
 
         try {
             console.log('🔄 Atualizando cache de downloads...');
+
+            // Primeiro, buscar dados básicos do usuário
             const response = await fetch('/api/tracks');
 
             console.log('🔄 Resposta da API:', response.status, response.statusText);
@@ -91,8 +94,35 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
                 throw new Error('Estrutura de dados inválida: userData não encontrado');
             }
 
+            // Depois, buscar downloads recentes para sincronização
+            let recentDownloads: number[] = [];
+            try {
+                const downloadsResponse = await fetch('/api/tracks/check-downloads', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        trackIds: data.userData.downloadedTrackIds || []
+                    })
+                });
+
+                if (downloadsResponse.ok) {
+                    const downloadsData = await downloadsResponse.json();
+                    // Converter o objeto de downloads para array de IDs
+                    recentDownloads = Object.keys(downloadsData.downloadedTrackIds || {})
+                        .map(id => parseInt(id))
+                        .filter(id => downloadsData.downloadedTrackIds[id]);
+
+                    console.log('🔄 Downloads recentes sincronizados:', recentDownloads.length);
+                }
+            } catch (downloadsError) {
+                console.warn('⚠️ Erro ao sincronizar downloads recentes:', downloadsError);
+                // Continuar com os dados básicos se falhar
+            }
+
             const newCacheData: DownloadsCacheData = {
-                downloadedTrackIds: data.userData.downloadedTrackIds || [],
+                downloadedTrackIds: recentDownloads.length > 0 ? recentDownloads : (data.userData.downloadedTrackIds || []),
                 likedTrackIds: data.userData.likedTrackIds || [],
                 isVip: data.userData.isVip || false,
                 downloadsLeft: data.userData.downloadsLeft || 15,
@@ -122,7 +152,8 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
     }, [session?.user?.id]);
 
     // Função para marcar música como baixada
-    const markAsDownloaded = useCallback((trackId: number) => {
+    const markAsDownloaded = useCallback(async (trackId: number) => {
+        // Atualizar estado local imediatamente
         setCacheData(prev => {
             if (prev.downloadedTrackIds.includes(trackId)) return prev;
 
@@ -143,6 +174,30 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
 
             return newData;
         });
+
+        // Sincronizar com o banco de dados (opcional, para garantir consistência)
+        if (session?.user?.id) {
+            try {
+                // Verificar se o download já está registrado no banco
+                const checkResponse = await fetch('/api/tracks/check-downloads', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ trackIds: [trackId] })
+                });
+
+                if (checkResponse.ok) {
+                    const checkData = await checkResponse.json();
+                    // Se não está no banco, pode ser um problema de sincronização
+                    if (!checkData.downloadedTrackIds[trackId]) {
+                        console.warn('⚠️ Download marcado localmente mas não encontrado no banco:', trackId);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Erro ao verificar sincronização com banco:', error);
+            }
+        }
     }, [session?.user?.id]);
 
     // Função para marcar música como curtida
@@ -200,6 +255,14 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
         return cacheData.likedTrackIds.includes(trackId);
     }, [cacheData.likedTrackIds]);
 
+    // Função para forçar sincronização com o banco
+    const forceSync = useCallback(async () => {
+        if (!session?.user?.id) return;
+
+        console.log('🔄 Forçando sincronização com banco de dados...');
+        await refreshCache();
+    }, [session?.user?.id, refreshCache]);
+
     return {
         downloadedTrackIds: cacheData.downloadedTrackIds,
         likedTrackIds: cacheData.likedTrackIds,
@@ -213,6 +276,7 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
         markAsLiked,
         markAsUnliked,
         isDownloaded,
-        isLiked
+        isLiked,
+        forceSync
     };
 };
