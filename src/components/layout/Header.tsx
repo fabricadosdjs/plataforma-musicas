@@ -6,7 +6,7 @@ function isValidDate(val: unknown): val is Date {
 }
 // src/components/layout/Header.tsx
 
-import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, UserCircle, Users, Home } from 'lucide-react';
+import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, UserCircle, Users, Home, Music } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { SafeImage } from '@/components/ui/SafeImage';
 import Link from 'next/link';
@@ -463,6 +463,14 @@ const Header = ({ }: HeaderProps) => {
                       >
                         <UserCircle className="h-5 w-5" />
                         Meu Perfil
+                      </Link>
+                      <Link
+                        href="/mymusic"
+                        className="flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 rounded-lg transition-colors font-medium"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        <Music className="h-5 w-5" />
+                        Minhas Músicas
                       </Link>
                       <button
                         className="flex items-center gap-3 w-full text-left px-4 py-3 text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium"

@@ -1,3 +1,4 @@
+import PWAInstaller from '@/components/PWAInstaller';
 // src/app/layout.tsx
 import DynamicGradientBackground from '@/components/layout/DynamicGradientBackground';
 import { GlobalPlayerProvider } from '@/context/GlobalPlayerContext';
@@ -146,6 +147,8 @@ export default function RootLayout({
                       <PageTransitionLoading>
                         {children}
                       </PageTransitionLoading>
+                      {/* Botão de instalação PWA global */}
+                      <PWAInstaller />
                       {/* Player global sempre renderizado */}
                       <FooterPlayerNew />
                       {/* Progresso global de downloads */}

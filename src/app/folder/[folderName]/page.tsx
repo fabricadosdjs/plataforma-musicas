@@ -717,8 +717,12 @@ export default function FolderPage() {
                             {/* Informações Adicionais do Folder */}
                             <div className="max-w-3xl mx-auto mb-8">
                                 <div className="bg-[#181818] rounded-xl p-6 border border-[#282828] mb-6">
-                                    <div className="text-[#b3b3b3] text-sm leading-relaxed">
-                                        {getFolderInfo(folderName, filteredTracks, selectedStyle)}
+                                    <div className="text-[#b3b3b3] text-sm leading-relaxed text-justify">
+                                        {folderName === 'The Mashup' ? (
+                                            'TheMashup é uma record pool — uma plataforma de distribuição voltada para DJs e profissionais da indústria musical. Seu foco principal é disponibilizar músicas para fins promocionais, incluindo mashups, edições, remixes, acapellas, transições, entre outros formatos criativos.'
+                                        ) : (
+                                            getFolderInfo(folderName, filteredTracks, selectedStyle)
+                                        )}
                                     </div>
                                 </div>
                             </div>

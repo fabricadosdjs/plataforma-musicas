@@ -1,16 +1,21 @@
 {
-    "name": "DJ Pool Platform",
-    "short_name": "DJ Pool",
-    "description": "Plataforma de músicas para DJs profissionais",
+    "name": "Plataforma de Músicas",
+    "short_name": "Plataforma",
+    "description": "Baixe músicas, playlists e acompanhe novidades!",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#0f172a",
-    "theme_color": "#1e40af",
+    "background_color": "#121212",
+    "theme_color": "#1db954",
     "icons": [
         {
-            "src": "/favicon.ico",
-            "sizes": "any",
-            "type": "image/x-icon"
+            "src": "/icon-192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "/icon-512.png",
+            "type": "image/png",
+            "sizes": "512x512"
         }
     ]
 }

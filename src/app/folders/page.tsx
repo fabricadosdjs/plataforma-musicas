@@ -5,11 +5,11 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Music, Download, Users, TrendingUp, Calendar } from "lucide-react";
+import { ArrowLeft, Folder, Music, Download, Users, TrendingUp, Calendar } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Link from "next/link";
 
-interface Style {
+interface Folder {
     name: string;
     trackCount: number;
     downloadCount: number;
@@ -18,47 +18,47 @@ interface Style {
     imageUrl?: string | null;
 }
 
-export default function StylesPage() {
+export default function FoldersPage() {
     const router = useRouter();
-    const [styles, setStyles] = useState<Style[]>([]);
+    const [folders, setFolders] = useState<Folder[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
 
-    // Buscar todos os estilos
-    const fetchStyles = async () => {
+    // Buscar todas as pastas
+    const fetchFolders = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/tracks/styles/most-downloaded');
+            const response = await fetch('/api/tracks/folders/most-downloaded');
 
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    setStyles(data.styles);
+                    setFolders(data.folders);
                 }
             }
         } catch (error) {
-            console.error('Erro ao buscar estilos:', error);
+            console.error('Erro ao buscar pastas:', error);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchStyles();
+        fetchFolders();
     }, []);
 
-    // Filtrar estilos baseado na busca
-    const filteredStyles = styles.filter(style =>
-        style.name.toLowerCase().includes(searchQuery.toLowerCase())
+    // Filtrar pastas baseado na busca
+    const filteredFolders = folders.filter(folder =>
+        folder.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Função para verificar se o estilo foi atualizado hoje
-    const isUpdatedToday = (style: Style): boolean => {
-        if (style.hasUpdatesToday) return true;
+    // Função para verificar se a pasta foi atualizada hoje
+    const isUpdatedToday = (folder: Folder): boolean => {
+        if (folder.hasUpdatesToday) return true;
 
-        if (style.lastUpdated) {
+        if (folder.lastUpdated) {
             const today = new Date();
-            const lastUpdate = new Date(style.lastUpdated);
+            const lastUpdate = new Date(folder.lastUpdated);
             return today.toDateString() === lastUpdate.toDateString();
         }
 
@@ -76,8 +76,8 @@ export default function StylesPage() {
 
             {/* Conteúdo Principal - Tela Cheia */}
             <div className="pt-12 lg:pt-16">
-                {/* Header dos Estilos */}
-                <div className="w-full bg-gradient-to-b from-[#1db954]/20 to-transparent">
+                {/* Header das Pastas */}
+                <div className="w-full bg-gradient-to-b from-[#8b5cf6]/20 to-transparent">
                     <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8 sm:py-12">
                         {/* Botão Voltar */}
                         <button
@@ -88,18 +88,18 @@ export default function StylesPage() {
                             Voltar
                         </button>
 
-                        {/* Informações dos Estilos */}
+                        {/* Informações das Pastas */}
                         <div className="text-center">
                             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
-                                Todos os Estilos
+                                Todas as Pastas
                             </h1>
 
                             {/* Informações Adicionais */}
                             <div className="max-w-3xl mx-auto mb-8">
                                 <div className="bg-[#181818] rounded-xl p-6 border border-[#282828] mb-6">
                                     <div className="text-[#b3b3b3] text-sm leading-relaxed">
-                                        Explore todos os estilos musicais disponíveis em nossa plataforma. Descubra novos gêneros,
-                                        artistas e músicas que combinam com seu gosto musical. Cada estilo oferece uma experiência
+                                        Explore todas as pastas musicais disponíveis em nossa plataforma. Descubra novas coleções,
+                                        artistas e músicas organizadas por temas específicos. Cada pasta oferece uma experiência
                                         única e diversificada para expandir seu repertório musical.
                                     </div>
                                 </div>
@@ -108,33 +108,33 @@ export default function StylesPage() {
                             {/* Estatísticas */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-3xl mx-auto">
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
-                                    <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
-                                        {filteredStyles.length}
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#8b5cf6] mb-1">
+                                        {filteredFolders.length}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">
-                                        {filteredStyles.length === 1 ? 'Estilo' : 'Estilos'}
+                                        {filteredFolders.length === 1 ? 'Pasta' : 'Pastas'}
                                     </div>
                                 </div>
 
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
-                                    <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
-                                        {filteredStyles.reduce((sum, style) => sum + style.trackCount, 0)}
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#8b5cf6] mb-1">
+                                        {filteredFolders.reduce((sum, folder) => sum + folder.trackCount, 0)}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Músicas</div>
                                 </div>
 
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
-                                    <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
-                                        {filteredStyles.reduce((sum, style) => sum + style.downloadCount, 0)}
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#8b5cf6] mb-1">
+                                        {filteredFolders.reduce((sum, folder) => sum + folder.downloadCount, 0)}
                                     </div>
                                     <div className="text-[#b3b3b3] text-sm">Downloads</div>
                                 </div>
 
                                 <div className="bg-[#181818] rounded-xl p-4 border border-[#282828]">
-                                    <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
-                                        {Math.round(filteredStyles.reduce((sum, style) => sum + style.downloadCount, 0) / Math.max(filteredStyles.length, 1))}
+                                    <div className="text-2xl sm:text-3xl font-bold text-[#8b5cf6] mb-1">
+                                        {Math.round(filteredFolders.reduce((sum, folder) => sum + folder.downloadCount, 0) / Math.max(filteredFolders.length, 1))}
                                     </div>
-                                    <div className="text-[#b3b3b3] text-sm">Média/Estilo</div>
+                                    <div className="text-[#b3b3b3] text-sm">Média/Pasta</div>
                                 </div>
                             </div>
 
@@ -143,46 +143,46 @@ export default function StylesPage() {
                                 <div className="relative">
                                     <input
                                         type="text"
-                                        placeholder="Buscar estilos..."
+                                        placeholder="Buscar pastas..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         onFocus={(e) => e.target.select()}
-                                        className="w-full pl-12 pr-4 py-3 bg-[#181818] border border-[#282828] rounded-xl text-white placeholder-[#b3b3b3] focus:outline-none focus:ring-2 focus:ring-[#1db954]/50 focus:border-[#1db954]/50 transition-all duration-300 z-10 relative"
+                                        className="w-full pl-12 pr-4 py-3 bg-[#181818] border border-[#282828] rounded-xl text-white placeholder-[#b3b3b3] focus:outline-none focus:ring-2 focus:ring-[#8b5cf6]/50 focus:border-[#8b5cf6]/50 transition-all duration-300 z-10 relative"
                                     />
-                                    <Music className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#b3b3b3] pointer-events-none" />
+                                    <Folder className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#b3b3b3] pointer-events-none" />
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Lista de Estilos */}
+                {/* Lista de Pastas */}
                 <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8">
                     {loading ? (
                         <div className="flex items-center justify-center py-16">
                             <div className="text-center">
-                                <div className="animate-spin w-12 h-12 border-4 border-[#1db954] border-t-transparent rounded-full mx-auto mb-4"></div>
+                                <div className="animate-spin w-12 h-12 border-4 border-[#8b5cf6] border-t-transparent rounded-full mx-auto mb-4"></div>
                                 <p className="text-[#b3b3b3] text-lg">
-                                    Carregando estilos musicais...
+                                    Carregando pastas musicais...
                                 </p>
                             </div>
                         </div>
-                    ) : filteredStyles.length === 0 ? (
+                    ) : filteredFolders.length === 0 ? (
                         <div className="text-center py-16">
                             <div className="bg-[#181818] rounded-2xl p-8 max-w-md mx-auto border border-[#282828]">
-                                <div className="text-6xl mb-4">🎵</div>
+                                <div className="text-6xl mb-4">📁</div>
                                 <h3 className="text-xl font-bold text-white mb-2">
-                                    Nenhum estilo encontrado
+                                    Nenhuma pasta encontrada
                                 </h3>
                                 <p className="text-[#b3b3b3] mb-6">
                                     {searchQuery
-                                        ? `Não encontramos estilos que correspondam a "${searchQuery}".`
-                                        : 'Não encontramos estilos musicais disponíveis.'
+                                        ? `Não encontramos pastas que correspondam a "${searchQuery}".`
+                                        : 'Não encontramos pastas musicais disponíveis.'
                                     }
                                 </p>
                                 <button
                                     onClick={goBack}
-                                    className="px-6 py-2 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] transition-colors font-medium"
+                                    className="px-6 py-2 bg-[#8b5cf6] text-white rounded-lg hover:bg-[#9333ea] transition-colors font-medium"
                                 >
                                     Voltar
                                 </button>
@@ -190,20 +190,20 @@ export default function StylesPage() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                            {filteredStyles.map((style, index) => (
+                            {filteredFolders.map((folder, index) => (
                                 <div
-                                    key={style.name}
-                                    className="group bg-[#181818] rounded-xl border border-[#282828] p-4 hover:scale-105 transition-all duration-300 hover:border-[#1db954]/50 hover:shadow-lg hover:shadow-[#1db954]/10 cursor-pointer relative"
+                                    key={folder.name}
+                                    className="group bg-[#181818] rounded-xl border border-[#282828] p-4 hover:scale-105 transition-all duration-300 hover:border-[#8b5cf6]/50 hover:shadow-lg hover:shadow-[#8b5cf6]/10 cursor-pointer relative"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        router.push(`/genre/${encodeURIComponent(style.name)}`);
+                                        router.push(`/folder/${encodeURIComponent(folder.name)}`);
                                     }}
                                 >
-                                    {/* Badge de posição para top estilos */}
+                                    {/* Badge de posição para top pastas */}
                                     {index < 10 && (
                                         <div
-                                            className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-full flex items-center justify-center shadow-lg pointer-events-none"
+                                            className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-[#8b5cf6] to-[#9333ea] rounded-full flex items-center justify-center shadow-lg pointer-events-none"
                                         >
                                             <span className="text-white text-xs font-bold">
                                                 {index + 1}
@@ -212,19 +212,19 @@ export default function StylesPage() {
                                     )}
 
                                     {/* Badge de "ATUALIZADO HOJE" */}
-                                    {isUpdatedToday(style) && (
+                                    {isUpdatedToday(folder) && (
                                         <div className="absolute -top-2 -left-2 w-6 h-6 bg-gradient-to-br from-[#ff6b35] to-[#f7931e] rounded-full flex items-center justify-center shadow-lg pointer-events-none">
                                             <span className="text-white text-xs font-bold">🔥</span>
                                         </div>
                                     )}
 
-                                    {/* Imagem do estilo */}
+                                    {/* Imagem da pasta */}
                                     <div className="w-10 h-10 mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
-                                        {style.imageUrl ? (
+                                        {folder.imageUrl ? (
                                             <>
                                                 <img
-                                                    src={style.imageUrl}
-                                                    alt={`${style.name} cover`}
+                                                    src={folder.imageUrl}
+                                                    alt={`${folder.name} cover`}
                                                     className="w-10 h-10 rounded-lg object-cover mx-auto"
                                                     onError={(e) => {
                                                         // Fallback para ícone se a imagem falhar
@@ -234,44 +234,44 @@ export default function StylesPage() {
                                                     }}
                                                 />
                                                 <div
-                                                    className="w-10 h-10 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-lg flex items-center justify-center mx-auto hidden"
+                                                    className="w-10 h-10 bg-gradient-to-br from-[#8b5cf6] to-[#9333ea] rounded-lg flex items-center justify-center mx-auto hidden"
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
-                                                        router.push(`/genre/${encodeURIComponent(style.name)}`);
+                                                        router.push(`/folder/${encodeURIComponent(folder.name)}`);
                                                     }}
                                                 >
-                                                    <Music className="h-5 w-5 text-white" />
+                                                    <Folder className="h-5 w-5 text-white" />
                                                 </div>
                                             </>
                                         ) : (
                                             <div
-                                                className="w-10 h-10 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-lg flex items-center justify-center mx-auto"
+                                                className="w-10 h-10 bg-gradient-to-br from-[#8b5cf6] to-[#9333ea] rounded-lg flex items-center justify-center mx-auto"
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
-                                                    router.push(`/genre/${encodeURIComponent(style.name)}`);
+                                                    router.push(`/folder/${encodeURIComponent(folder.name)}`);
                                                 }}
                                             >
-                                                <Music className="h-5 w-5 text-white" />
+                                                <Folder className="h-5 w-5 text-white" />
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Nome do estilo */}
+                                    {/* Nome da pasta */}
                                     <h3 className="text-white text-sm font-bold mb-2 text-center">
-                                        {style.name}
+                                        {folder.name}
                                     </h3>
 
                                     {/* Estatísticas */}
                                     <div className="space-y-1 text-center">
-                                        <div className="flex items-center justify-center gap-1 text-[#1db954] text-xs font-semibold">
+                                        <div className="flex items-center justify-center gap-1 text-[#8b5cf6] text-xs font-semibold">
                                             <Music className="w-3 h-3" />
-                                            <span>{style.trackCount} músicas</span>
+                                            <span>{folder.trackCount} músicas</span>
                                         </div>
                                         <div className="flex items-center justify-center gap-1 text-[#b3b3b3] text-xs">
                                             <Download className="w-3 h-3" />
-                                            <span>{style.downloadCount} downloads</span>
+                                            <span>{folder.downloadCount} downloads</span>
                                         </div>
                                     </div>
 
@@ -281,8 +281,8 @@ export default function StylesPage() {
                                             {[...Array(5)].map((_, i) => (
                                                 <div
                                                     key={i}
-                                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${i < Math.min(5, Math.ceil((style.downloadCount / Math.max(...styles.map(s => s.downloadCount))) * 5))
-                                                        ? 'bg-[#1db954]'
+                                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${i < Math.min(5, Math.ceil((folder.downloadCount / Math.max(...folders.map(f => f.downloadCount))) * 5))
+                                                        ? 'bg-[#8b5cf6]'
                                                         : 'bg-[#535353]'
                                                         }`}
                                                 />
@@ -291,19 +291,19 @@ export default function StylesPage() {
                                     </div>
 
                                     {/* Indicador de última atualização */}
-                                    {style.lastUpdated && (
+                                    {folder.lastUpdated && (
                                         <div className="mt-2 text-center">
-                                            <div className={`text-xs font-medium ${isUpdatedToday(style)
+                                            <div className={`text-xs font-medium ${isUpdatedToday(folder)
                                                 ? 'text-[#ff6b35]'
                                                 : 'text-[#b3b3b3]'
                                                 }`}>
-                                                {isUpdatedToday(style) ? '🔥 Atualizado hoje' : `Atualizado: ${new Date(style.lastUpdated).toLocaleDateString('pt-BR')}`}
+                                                {isUpdatedToday(folder) ? '🔥 Atualizado hoje' : `Atualizado: ${new Date(folder.lastUpdated).toLocaleDateString('pt-BR')}`}
                                             </div>
                                         </div>
                                     )}
 
                                     {/* Hover effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#1db954]/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#8b5cf6]/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                 </div>
                             ))}
                         </div>

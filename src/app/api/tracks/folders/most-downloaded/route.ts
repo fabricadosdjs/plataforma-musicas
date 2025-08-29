@@ -5,15 +5,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        console.log('🎭 API Styles Most Downloaded: Carregando todos os estilos...');
+        console.log('📁 API Folders Most Downloaded: Carregando todas as pastas...');
 
-        // Buscar todos os estilos disponíveis com contagem de tracks
-        const allStyles = await prisma.track.groupBy({
-            by: ['style'],
+        // Buscar todas as pastas disponíveis com contagem de tracks
+        const allFolders = await prisma.track.groupBy({
+            by: ['folder'],
             where: {
                 AND: [
-                    { style: { not: null } },
-                    { style: { not: 'N/A' } }
+                    { folder: { not: null } },
+                    { folder: { not: 'N/A' } }
                 ]
             },
             _count: {
@@ -35,25 +35,25 @@ export async function GET() {
             downloadMap.set(download.trackId, download._count._all);
         });
 
-        // Buscar tracks com seus estilos para calcular downloads por estilo e datas
+        // Buscar tracks com suas pastas para calcular downloads por pasta e datas
         const tracksWithDetails = await prisma.track.findMany({
             where: {
                 AND: [
-                    { style: { not: null } },
-                    { style: { not: 'N/A' } }
+                    { folder: { not: null } },
+                    { folder: { not: 'N/A' } }
                 ]
             },
             select: {
                 id: true,
-                style: true,
+                folder: true,
                 updatedAt: true,
                 createdAt: true,
                 imageUrl: true
             }
         });
 
-        // Calcular downloads por estilo e datas
-        const styleData: {
+        // Calcular downloads por pasta e datas
+        const folderData: {
             [key: string]: {
                 trackCount: number;
                 downloadCount: number;
@@ -64,11 +64,11 @@ export async function GET() {
         } = {};
 
         tracksWithDetails.forEach(track => {
-            const style = track.style!;
+            const folder = track.folder!;
             const downloadCount = downloadMap.get(track.id) || 0;
 
-            if (!styleData[style]) {
-                styleData[style] = {
+            if (!folderData[folder]) {
+                folderData[folder] = {
                     trackCount: 0,
                     downloadCount: 0,
                     lastUpdated: track.updatedAt || track.createdAt || new Date(),
@@ -77,38 +77,38 @@ export async function GET() {
                 };
             }
 
-            styleData[style].trackCount++;
-            styleData[style].downloadCount += downloadCount;
+            folderData[folder].trackCount++;
+            folderData[folder].downloadCount += downloadCount;
 
             // Atualizar data mais recente se necessário
             const trackDate = track.updatedAt || track.createdAt;
-            if (trackDate && trackDate > styleData[style].lastUpdated) {
-                styleData[style].lastUpdated = trackDate;
+            if (trackDate && trackDate > folderData[folder].lastUpdated) {
+                folderData[folder].lastUpdated = trackDate;
             }
 
-            // Definir imagem do estilo (primeira imagem encontrada)
-            if (!styleData[style].imageUrl && track.imageUrl) {
-                styleData[style].imageUrl = track.imageUrl;
+            // Definir imagem da pasta (primeira imagem encontrada)
+            if (!folderData[folder].imageUrl && track.imageUrl) {
+                folderData[folder].imageUrl = track.imageUrl;
             }
         });
 
-        // Verificar quais estilos foram atualizados hoje
+        // Verificar quais pastas foram atualizadas hoje
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        Object.keys(styleData).forEach(styleName => {
-            const styleDate = new Date(styleData[styleName].lastUpdated);
-            styleDate.setHours(0, 0, 0, 0);
-            styleData[styleName].hasUpdatesToday = styleDate.getTime() === today.getTime();
+        Object.keys(folderData).forEach(folderName => {
+            const folderDate = new Date(folderData[folderName].lastUpdated);
+            folderDate.setHours(0, 0, 0, 0);
+            folderData[folderName].hasUpdatesToday = folderDate.getTime() === today.getTime();
         });
 
-        // Formatar resultado com todos os estilos
-        const formattedStyles = allStyles
-            .filter(style => style.style && style.style !== 'N/A')
-            .map(style => {
-                const data = styleData[style.style!];
+        // Formatar resultado com todas as pastas
+        const formattedFolders = allFolders
+            .filter(folder => folder.folder && folder.folder !== 'N/A')
+            .map(folder => {
+                const data = folderData[folder.folder!];
                 return {
-                    name: style.style!,
+                    name: folder.folder!,
                     trackCount: data.trackCount,
                     downloadCount: data.downloadCount,
                     lastUpdated: data.lastUpdated.toISOString(),
@@ -117,7 +117,7 @@ export async function GET() {
                 };
             })
             .sort((a, b) => {
-                // Primeiro: estilos atualizados hoje
+                // Primeiro: pastas atualizadas hoje
                 if (a.hasUpdatesToday && !b.hasUpdatesToday) return -1;
                 if (!a.hasUpdatesToday && b.hasUpdatesToday) return 1;
 
@@ -131,22 +131,22 @@ export async function GET() {
                 return b.downloadCount - a.downloadCount;
             });
 
-        console.log(`✅ ${formattedStyles.length} estilos carregados com dados completos`);
-        console.log('📊 Estilos encontrados:', formattedStyles.map(s => `${s.name}: ${s.downloadCount} downloads, atualizado: ${s.lastUpdated}`));
+        console.log(`✅ ${formattedFolders.length} pastas carregadas com dados completos`);
+        console.log('📊 Pastas encontradas:', formattedFolders.map(f => `${f.name}: ${f.downloadCount} downloads, atualizado: ${f.lastUpdated}`));
 
         return NextResponse.json({
             success: true,
-            styles: formattedStyles,
-            total: formattedStyles.length
+            folders: formattedFolders,
+            total: formattedFolders.length
         });
 
     } catch (error) {
-        console.error('❌ Erro ao carregar estilos:', error);
+        console.error('❌ Erro ao carregar pastas:', error);
         return NextResponse.json(
             {
                 success: false,
                 error: 'Erro interno do servidor',
-                styles: [],
+                folders: [],
                 total: 0
             },
             { status: 500 }

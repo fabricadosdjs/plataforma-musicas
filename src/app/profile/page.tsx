@@ -19,6 +19,7 @@ import {
     Phone,
     TrendingUp,
     ShieldCheck,
+    Shield,
     DollarSign,
     Package,
     ListMusic,
@@ -65,7 +66,8 @@ import {
     UserCircle,
     ChevronRight,
     X,
-    RefreshCw
+    RefreshCw,
+    Settings
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -247,6 +249,129 @@ const ProfilePage = () => {
 
         console.log('🔍 VALOR CALCULADO:', totalValue);
         return totalValue;
+    };
+
+    // Estado para dados dos planos
+    const [plansData, setPlansData] = useState<any>(null);
+    const [plansLoading, setPlansLoading] = useState(false);
+
+    // Função para buscar dados dos planos
+    const fetchPlansData = async () => {
+        try {
+            setPlansLoading(true);
+            const response = await fetch('/api/plans');
+
+            if (response.ok) {
+                const data = await response.json();
+                setPlansData(data);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar dados dos planos:', error);
+        } finally {
+            setPlansLoading(false);
+        }
+    };
+
+    // Buscar dados dos planos quando a página carregar
+    useEffect(() => {
+        if (session?.user) {
+            fetchPlansData();
+        }
+    }, [session?.user]);
+
+    // Função para obter características do plano baseada nos dados reais
+    const getPlanFeatures = (plan: string) => {
+        if (!plansData?.plans?.available) {
+            // Fallback para dados estáticos se a API não estiver disponível
+            return getStaticPlanFeatures(plan);
+        }
+
+        // Mapear o nome do plano para o ID da API
+        const planMapping: { [key: string]: string } = {
+            'VIP FULL': 'COMPLETO',
+            'VIP STANDARD': 'PADRAO',
+            'VIP BÁSICO': 'BASICO',
+            'COMPLETO': 'COMPLETO',
+            'PADRAO': 'PADRAO',
+            'BÁSICO': 'BASICO'
+        };
+
+        const planId = planMapping[plan] || plan;
+        const planInfo = plansData.plans.available.find((p: any) => p.id === planId);
+
+        if (planInfo) {
+            // Converter dados da API para o formato esperado
+            return [
+                { feature: `Downloads: ${planInfo.limits?.dailyDownloads === -1 ? 'Ilimitados' : `${planInfo.limits?.dailyDownloads}/dia`}`, included: true, highlight: planInfo.limits?.dailyDownloads === -1, icon: Download },
+                { feature: 'Acesso ao Drive', included: planInfo.benefits?.driveAccess, highlight: planInfo.benefits?.driveAccess, icon: Database },
+                { feature: `Packs: ${planInfo.limits?.weeklyPackRequests === -1 ? 'Ilimitados' : `${planInfo.limits?.weeklyPackRequests}/semana`}`, included: true, highlight: planInfo.limits?.weeklyPackRequests === -1, icon: Package },
+                { feature: `Playlists: ${planInfo.limits?.weeklyPlaylistDownloads === -1 ? 'Ilimitadas' : `${planInfo.limits?.weeklyPlaylistDownloads}/semana`}`, included: true, highlight: planInfo.limits?.weeklyPlaylistDownloads === -1, icon: ListMusic },
+                { feature: 'Deezer Premium', included: planInfo.benefits?.deezerPremium, highlight: planInfo.benefits?.deezerPremium, icon: Music },
+                { feature: 'Deemix (add-on)', included: true, highlight: false, icon: Headphones },
+                { feature: 'Produção Musical', included: planInfo.benefits?.musicProduction, highlight: planInfo.benefits?.musicProduction, icon: Music2 },
+                { feature: 'Suporte VIP', included: true, highlight: planInfo.id === 'COMPLETO', icon: MessageCircle },
+                { feature: `Curadoria ${planInfo.id === 'COMPLETO' ? 'Completa' : planInfo.id === 'PADRAO' ? 'Padrão' : 'Básica'}`, included: true, highlight: planInfo.id === 'COMPLETO', icon: Star }
+            ];
+        }
+
+        // Fallback para dados estáticos
+        return getStaticPlanFeatures(plan);
+    };
+
+    // Função de fallback com dados estáticos
+    const getStaticPlanFeatures = (plan: string) => {
+        switch (plan) {
+            case 'VIP FULL':
+            case 'COMPLETO':
+                return [
+                    { feature: 'Downloads ilimitados', included: true, highlight: true, icon: Download },
+                    { feature: 'Acesso ao Drive', included: true, highlight: true, icon: Database },
+                    { feature: 'Packs ilimitados', included: true, highlight: true, icon: Package },
+                    { feature: 'Playlists ilimitadas', included: true, highlight: true, icon: ListMusic },
+                    { feature: 'Deezer Premium', included: true, highlight: true, icon: Music },
+                    { feature: 'Deemix (add-on)', included: true, highlight: false, icon: Headphones },
+                    { feature: 'Produção Musical', included: true, highlight: true, icon: Music2 },
+                    { feature: 'Suporte VIP', included: true, highlight: true, icon: MessageCircle },
+                    { feature: 'Curadoria Completa', included: true, highlight: true, icon: Star }
+                ];
+            case 'VIP STANDARD':
+            case 'PADRAO':
+                return [
+                    { feature: '75 Downloads/dia', included: true, highlight: false, icon: Download },
+                    { feature: 'Acesso ao Drive', included: true, highlight: false, icon: Database },
+                    { feature: '6 Packs/semana', included: true, highlight: false, icon: Package },
+                    { feature: '9 Playlists/semana', included: true, highlight: false, icon: ListMusic },
+                    { feature: 'Deezer Premium', included: false, highlight: false, icon: Music },
+                    { feature: 'Deemix (add-on)', included: true, highlight: false, icon: Headphones },
+                    { feature: 'Produção Musical', included: false, highlight: false, icon: Music2 },
+                    { feature: 'Suporte VIP', included: true, highlight: false, icon: MessageCircle },
+                    { feature: 'Curadoria Padrão', included: true, highlight: false, icon: Star }
+                ];
+            case 'VIP BÁSICO':
+            case 'BÁSICO':
+                return [
+                    { feature: '50 Downloads/dia', included: true, highlight: false, icon: Download },
+                    { feature: 'Acesso ao Drive', included: true, highlight: false, icon: Database },
+                    { feature: '4 Packs/semana', included: true, highlight: false, icon: Package },
+                    { feature: '7 Playlists/semana', included: true, highlight: false, icon: ListMusic },
+                    { feature: 'Deemix (add-on)', included: true, highlight: false, icon: Headphones },
+                    { feature: 'Produção Musical', included: false, highlight: false, icon: Music2 },
+                    { feature: 'Suporte VIP', included: true, highlight: false, icon: MessageCircle },
+                    { feature: 'Curadoria Básica', included: true, highlight: false, icon: Star }
+                ];
+            default:
+                return [
+                    { feature: 'Downloads Ilimitados', included: true, highlight: true, icon: Download },
+                    { feature: 'Acesso ao Drive', included: true, highlight: true, icon: Database },
+                    { feature: 'Packs Avulsos', included: true, highlight: true, icon: Package },
+                    { feature: 'Download de Playlists', included: true, highlight: true, icon: ListMusic },
+                    { feature: 'Deezer Premium Grátis', included: false, highlight: false, icon: Music },
+                    { feature: 'Deemix Grátis', included: false, highlight: false, icon: Headphones },
+                    { feature: 'Produção Musical', included: false, highlight: false, icon: Music2 },
+                    { feature: 'Suporte Prioritário', included: true, highlight: true, icon: MessageCircle },
+                    { feature: 'Curadoria Básica', included: true, highlight: false, icon: Star }
+                ];
+        }
     };
 
     // Função para verificar status do Deemix
@@ -2381,6 +2506,401 @@ const ProfilePage = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                );
+
+            case 'plan':
+                return (
+                    <div className="space-y-8">
+                        {/* Header da Seção com Design Melhorado */}
+                        <div className="bg-gradient-to-r from-gray-900/80 via-gray-800/80 to-gray-900/80 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden">
+                            {/* Background Pattern */}
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(234,179,8,0.1),transparent_50%)]"></div>
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(251,146,60,0.1),transparent_50%)]"></div>
+
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center border border-yellow-500/30">
+                                        <Crown className="h-8 w-8 text-yellow-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
+                                            Meu Plano
+                                            <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 text-sm rounded-full border border-yellow-500/30 font-medium">
+                                                {vipStatus.plan}
+                                            </span>
+                                        </h2>
+                                        <p className="text-gray-300 text-lg">Gerencie seu plano VIP, veja benefícios e faça upgrade</p>
+                                    </div>
+                                </div>
+
+                                {/* Status Rápido */}
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                                                <Crown className="h-5 w-5 text-yellow-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-gray-400 text-sm">Plano</p>
+                                                <p className="text-yellow-400 font-bold">{vipStatus.plan}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                                                <CheckCircle className="h-5 w-5 text-green-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-gray-400 text-sm">Status</p>
+                                                <p className={`font-bold ${vipStatus.isVip ? 'text-green-400' : 'text-red-400'}`}>
+                                                    {vipStatus.isVip ? 'ATIVO' : 'INATIVO'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                                <Calendar className="h-5 w-5 text-blue-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-gray-400 text-sm">Vencimento</p>
+                                                <p className="text-blue-400 font-bold">
+                                                    {vipStatus.hasValidVencimento && (session?.user as any)?.vencimento
+                                                        ? new Date((session.user as any).vencimento).toLocaleDateString('pt-BR')
+                                                        : 'Não definido'
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                                                <DollarSign className="h-5 w-5 text-purple-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-gray-400 text-sm">Valor</p>
+                                                <p className="text-purple-400 font-bold">
+                                                    {(session?.user as any)?.valor || 'Não definido'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Status Atual do Plano */}
+                        <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-500">
+                            {/* Background Effects */}
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(234,179,8,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_20%_80%,rgba(234,179,8,0.15),transparent_50%)] transition-all duration-500"></div>
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
+
+                            <div className="relative z-10">
+                                <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-16 h-16 rounded-full flex items-center justify-center ${vipStatus.isVip
+                                            ? 'bg-gradient-to-br from-yellow-500 to-orange-600'
+                                            : 'bg-gradient-to-br from-gray-500 to-slate-600'
+                                            }`}>
+                                            <Crown className="h-8 w-8 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-bold text-white">{vipStatus.plan}</h3>
+                                            <p className="text-gray-400">
+                                                {vipStatus.isVip ? 'Plano ativo' : 'Plano gratuito'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {vipStatus.hasValidVencimento && (
+                                        <div className="text-center lg:text-right">
+                                            <p className="text-gray-400 text-sm">Vencimento</p>
+                                            <p className="text-white font-bold text-lg">
+                                                {new Date((session?.user as any).vencimento).toLocaleDateString('pt-BR')}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Comparação de Planos */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* Plano Atual */}
+                            <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-green-500/30 transition-all duration-500">
+                                {/* Background Effects */}
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(34,197,94,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_20%_80%,rgba(34,197,94,0.15),transparent_50%)] transition-all duration-500"></div>
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-green-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
+
+                                <div className="relative z-10">
+                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                        <Star className="h-5 w-5 text-yellow-400" />
+                                        Seu Plano Atual
+                                        {plansLoading && (
+                                            <div className="ml-2">
+                                                <div className="animate-spin w-4 h-4 border-2 border-yellow-400 border-t-transparent rounded-full"></div>
+                                            </div>
+                                        )}
+                                    </h3>
+
+                                    <div className="space-y-3">
+                                        {getPlanFeatures(vipStatus.plan).map((feature, index) => {
+                                            const Icon = feature.icon;
+                                            return (
+                                                <div key={index} className="flex items-center gap-3">
+                                                    {feature.included ? (
+                                                        <CheckCircle className={`h-5 w-5 ${feature.highlight ? 'text-green-400' : 'text-green-500'}`} />
+                                                    ) : (
+                                                        <XCircle className="h-5 w-5 text-red-500" />
+                                                    )}
+                                                    <div className="flex items-center gap-2">
+                                                        {Icon && (
+                                                            <Icon className="h-4 w-4 text-gray-400" />
+                                                        )}
+                                                        <span className={`text-sm ${feature.included ? 'text-white' : 'text-gray-500'} ${feature.highlight ? 'font-semibold' : ''}`}>
+                                                            {feature.feature}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Próximo Nível */}
+                            <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-blue-500/30 transition-all duration-500">
+                                {/* Background Effects */}
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(59,130,246,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_20%_80%,rgba(59,130,246,0.15),transparent_50%)] transition-all duration-500"></div>
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
+
+                                <div className="relative z-10">
+                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                        <TrendingUp className="h-5 w-5 text-blue-400" />
+                                        Próximo Nível
+                                    </h3>
+
+                                    {vipStatus.plan === 'VIP FULL' || vipStatus.plan === 'COMPLETO' ? (
+                                        <div className="text-center py-8">
+                                            <Award className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
+                                            <p className="text-white font-semibold">Você já tem o melhor plano!</p>
+                                            <p className="text-gray-400 text-sm">Aproveite todos os benefícios</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {plansData?.plans?.available ? (
+                                                plansData.plans.available
+                                                    .filter((plan: any) => {
+                                                        // Mostrar apenas planos superiores ao atual
+                                                        const currentPlanValue = plansData.plans.current?.value || 0;
+                                                        return plan.value > currentPlanValue;
+                                                    })
+                                                    .map((plan: any) => {
+                                                        const getPlanColors = (planId: string) => {
+                                                            switch (planId) {
+                                                                case 'COMPLETO':
+                                                                    return {
+                                                                        from: 'from-yellow-500/10',
+                                                                        to: 'to-orange-500/10',
+                                                                        border: 'border-yellow-500/20',
+                                                                        buttonFrom: 'from-yellow-500',
+                                                                        buttonTo: 'to-orange-600',
+                                                                        hoverFrom: 'hover:from-yellow-600',
+                                                                        hoverTo: 'hover:to-orange-700'
+                                                                    };
+                                                                case 'PADRAO':
+                                                                    return {
+                                                                        from: 'from-purple-500/10',
+                                                                        to: 'to-blue-500/10',
+                                                                        border: 'border-purple-500/20',
+                                                                        buttonFrom: 'from-purple-500',
+                                                                        buttonTo: 'to-blue-600',
+                                                                        hoverFrom: 'hover:from-purple-600',
+                                                                        hoverTo: 'hover:to-blue-700'
+                                                                    };
+                                                                default:
+                                                                    return {
+                                                                        from: 'from-blue-500/10',
+                                                                        to: 'to-cyan-500/10',
+                                                                        border: 'border-blue-500/20',
+                                                                        buttonFrom: 'from-blue-500',
+                                                                        buttonTo: 'to-cyan-600',
+                                                                        hoverFrom: 'hover:from-blue-600',
+                                                                        hoverTo: 'hover:to-cyan-700'
+                                                                    };
+                                                            }
+                                                        };
+
+                                                        const colors = getPlanColors(plan.id);
+                                                        const getPlanDescription = (planId: string) => {
+                                                            switch (planId) {
+                                                                case 'COMPLETO':
+                                                                    return 'Máximo de benefícios e suporte prioritário';
+                                                                case 'PADRAO':
+                                                                    return 'Downloads ilimitados e qualidade alta';
+                                                                default:
+                                                                    return 'Downloads diários e acesso ao Drive';
+                                                            }
+                                                        };
+
+                                                        return (
+                                                            <div key={plan.id} className={`bg-gradient-to-r ${colors.from} ${colors.to} rounded-xl p-4 border ${colors.border}`}>
+                                                                <h4 className="font-semibold text-white mb-2">{plan.name}</h4>
+                                                                <p className="text-gray-400 text-sm mb-3">
+                                                                    {getPlanDescription(plan.id)}
+                                                                </p>
+                                                                <button className={`w-full bg-gradient-to-r ${colors.buttonFrom} ${colors.buttonTo} text-white py-2 px-4 rounded-lg font-medium ${colors.hoverFrom} ${colors.hoverTo} transition-all duration-300`}>
+                                                                    Upgrade por R$ {plan.value}/mês
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })
+                                            ) : (
+                                                // Fallback para dados estáticos
+                                                <>
+                                                    <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-xl p-4 border border-purple-500/20">
+                                                        <h4 className="font-semibold text-white mb-2">VIP PADRÃO</h4>
+                                                        <p className="text-gray-400 text-sm mb-3">75 downloads/dia e acesso ao Drive</p>
+                                                        <button className="w-full bg-gradient-to-r from-purple-500 to-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:from-purple-600 hover:to-blue-700 transition-all duration-300">
+                                                            Upgrade por R$ 42/mês
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl p-4 border border-yellow-500/20">
+                                                        <h4 className="font-semibold text-white mb-2">VIP COMPLETO</h4>
+                                                        <p className="text-gray-400 text-sm mb-3">150 downloads/dia e Deezer Premium</p>
+                                                        <button className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:from-yellow-600 hover:to-orange-700 transition-all duration-300">
+                                                            Upgrade por R$ 60/mês
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Benefícios Detalhados */}
+                        <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-500">
+                            {/* Background Effects */}
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(16,185,129,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_20%_80%,rgba(16,185,129,0.15),transparent_50%)] transition-all duration-500"></div>
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
+
+                            <div className="relative z-10">
+                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                    <Gift className="h-5 w-5 text-emerald-400" />
+                                    Benefícios do Seu Plano
+                                </h3>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Download className="h-5 w-5 text-green-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-white mb-1">Downloads</h4>
+                                            <p className="text-gray-400 text-sm">
+                                                Downloads Ilimitados
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Music className="h-5 w-5 text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-white mb-1">Qualidade</h4>
+                                            <p className="text-gray-400 text-sm">
+                                                320 KBPS
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Shield className="h-5 w-5 text-purple-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-white mb-1">Segurança</h4>
+                                            <p className="text-gray-400 text-sm">
+                                                CDN Cloudflare
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Headphones className="h-5 w-5 text-yellow-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-white mb-1">Suporte</h4>
+                                            <p className="text-gray-400 text-sm">
+                                                {plansData?.plans?.current?.id === 'COMPLETO'
+                                                    ? 'Suporte Prioritário'
+                                                    : plansData?.plans?.current?.id === 'PADRAO'
+                                                        ? 'Suporte Padrão'
+                                                        : plansData?.plans?.current?.id === 'BASICO'
+                                                            ? 'Suporte Básico'
+                                                            : vipStatus.plan === 'VIP FULL'
+                                                                ? 'Suporte Prioritário'
+                                                                : vipStatus.plan === 'VIP STANDARD'
+                                                                    ? 'Suporte Padrão'
+                                                                    : 'Suporte Básico'
+                                                }
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Globe className="h-5 w-5 text-red-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-white mb-1">Anúncios</h4>
+                                            <p className="text-gray-400 text-sm">
+                                                Sem Anúncios
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Users className="h-5 w-5 text-indigo-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-white mb-1">Comunidade</h4>
+                                            <p className="text-gray-400 text-sm">
+                                                {plansData?.plans?.current?.id || vipStatus.isVip
+                                                    ? 'Acesso à comunidade VIP exclusiva'
+                                                    : 'Acesso à comunidade básica'
+                                                }
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Ações */}
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            {vipStatus.plan !== 'VIP FULL' && (
+                                <button className="flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-3 px-8 rounded-xl font-bold hover:from-yellow-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105">
+                                    <Crown className="h-5 w-5" />
+                                    Fazer Upgrade
+                                </button>
+                            )}
+
+                            <button className="flex items-center justify-center gap-2 bg-gray-800 text-white py-3 px-8 rounded-xl font-medium hover:bg-gray-700 transition-all duration-300">
+                                <Settings className="h-5 w-5" />
+                                Gerenciar Plano
+                            </button>
                         </div>
                     </div>
                 );
