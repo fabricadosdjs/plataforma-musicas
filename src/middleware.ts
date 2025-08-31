@@ -2,17 +2,9 @@
 import { getToken } from 'next-auth/jwt';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 
-// Cache do Prisma para o middleware
-let prismaInstance: PrismaClient | null = null;
-
-function getPrismaInstance() {
-  if (!prismaInstance) {
-    prismaInstance = new PrismaClient();
-  }
-  return prismaInstance;
-}
+// Forçar uso do runtime Node.js para compatibilidade
+export const runtime = 'nodejs';
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
@@ -21,12 +13,10 @@ export async function middleware(request: NextRequest) {
   // Rotas que precisam de verificação VIP
   const vipProtectedPaths = [
     '/api/download',
-    // '/api/tracks', // Temporariamente removido para teste
     '/pro',
     '/charts',
     '/trending',
     '/featured',
-    // '/new'  // Temporariamente removido para permitir acesso sem login
   ];
 
   // Rotas que precisam de verificação Deemix
@@ -63,29 +53,10 @@ export async function middleware(request: NextRequest) {
 
   // Verifica acesso VIP baseado no token (admin tem acesso total)
   // Verificar tanto isVip (camelCase do token) quanto is_vip (snake_case do banco)
-  let isVipUser = userFromToken.isVip || userFromToken.is_vip || false;
+  const isVipUser = userFromToken.isVip || userFromToken.is_vip || false;
 
-  // Para rotas críticas como /api/download, fazer verificação em tempo real
-  if (isVipProtected && !isVipUser && !isAdmin && request.nextUrl.pathname.startsWith('/api/download')) {
-    try {
-      console.log('🔍 Middleware: Verificação VIP em tempo real para', userFromToken.email);
-      const prisma = getPrismaInstance();
-      const dbUser = await prisma.user.findUnique({
-        where: { email: userFromToken.email },
-        select: { is_vip: true, email: true }
-      });
-
-      if (dbUser?.is_vip) {
-        console.log('✅ Middleware: Usuário é VIP no banco de dados');
-        isVipUser = true;
-      } else {
-        console.log('❌ Middleware: Usuário não é VIP no banco de dados');
-      }
-    } catch (error) {
-      console.error('❌ Middleware: Erro ao verificar VIP no banco:', error);
-    }
-  }
-
+  // Para rotas críticas, fazer verificação em tempo real na API
+  // O middleware apenas verifica o token, a validação VIP é feita na API
   if (isVipProtected && !isVipUser && !isAdmin) {
     console.log('❌ Middleware: Acesso VIP negado', {
       email: userFromToken.email,

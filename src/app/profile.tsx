@@ -1,13 +1,14 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { Loader2, User, Crown, Mail, Smartphone, DollarSign, Calendar, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
+import type { User } from '@/types/user';
+import { Loader2, User as UserIcon, Crown, Mail, Smartphone, DollarSign, Calendar, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const user = session?.user as any; // 'as any' to allow custom fields from backend
+    const user = session?.user as User | undefined;
 
     if (status === "loading") {
         return (
@@ -50,7 +51,7 @@ export default function ProfilePage() {
                                 {user.image ? (
                                     <img src={user.image} alt="Avatar" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border" />
                                 ) : (
-                                    <User className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+                                    <UserIcon className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
                                 )}
                             </div>
                             <div className="flex-1">

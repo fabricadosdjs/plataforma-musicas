@@ -6,26 +6,18 @@ import { useRouter } from "next/navigation";
 import {
     ArrowLeft,
     Upload,
-    FileText,
     Music,
-    Album,
-    User,
-    Calendar,
-    Tag,
     Star,
-    Crown,
     Globe,
     Instagram,
     Facebook,
     Youtube,
     Save,
-    Trash2,
     Plus,
     Eye,
     EyeOff,
     CheckCircle,
     AlertCircle,
-    Info,
     Users,
     MessageCircle
 } from "lucide-react";
@@ -180,13 +172,16 @@ const AddReleasePage = () => {
     };
 
     // Lidar com mudanças no formulário
-    const handleFormChange = (field: string, value: any) => {
+    const handleFormChange = (
+        field: string,
+        value: string | number | boolean
+    ) => {
         if (field.includes('.')) {
-            const [parent, child] = field.split('.');
+            const [parent, child] = field.split('.') as [keyof ReleaseFormData, string];
             setFormData(prev => ({
                 ...prev,
                 [parent]: {
-                    ...(prev[parent as keyof ReleaseFormData] as any),
+                    ...((prev[parent] as Record<string, string | number | boolean>) ?? {}),
                     [child]: value
                 }
             }));
@@ -280,8 +275,8 @@ const AddReleasePage = () => {
                             <button
                                 onClick={() => setActiveTab("form")}
                                 className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "form"
-                                        ? "bg-purple-600 text-white shadow-lg"
-                                        : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+                                    ? "bg-purple-600 text-white shadow-lg"
+                                    : "text-gray-400 hover:text-white hover:bg-gray-700/50"
                                     }`}
                             >
                                 <div className="flex items-center gap-2 justify-center">
@@ -292,8 +287,8 @@ const AddReleasePage = () => {
                             <button
                                 onClick={() => setActiveTab("json")}
                                 className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "json"
-                                        ? "bg-purple-600 text-white shadow-lg"
-                                        : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+                                    ? "bg-purple-600 text-white shadow-lg"
+                                    : "text-gray-400 hover:text-white hover:bg-gray-700/50"
                                     }`}
                             >
                                 <div className="flex items-center gap-2 justify-center">

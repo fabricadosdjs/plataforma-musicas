@@ -71,9 +71,9 @@ export default function TestTurnstilePage() {
                     <h2 className="text-xl font-semibold mb-4">Instruções</h2>
                     <ol className="list-decimal list-inside space-y-2 text-gray-300">
                         <li>Complete o captcha acima</li>
-                        <li>Verifique se o status muda para "Verificado: ✅ Sim"</li>
-                        <li>Clique em "Testar Verificação" para validar no backend</li>
-                        <li>Use "Resetar" para limpar o estado</li>
+                        <li>Verifique se o status muda para &quot;Verificado: ✅ Sim&quot;</li>
+                        <li>Clique em &quot;Testar Verificação&quot; para validar no backend</li>
+                        <li>Use &quot;Resetar&quot; para limpar o estado</li>
                     </ol>
                 </div>
             </div>

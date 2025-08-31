@@ -20,26 +20,25 @@ import Header from "@/components/layout/Header";
 import FiltersModal from "@/components/music/FiltersModal";
 import MusicList from "@/components/music/MusicList";
 import BatchDownloadButtons from "@/components/download/BatchDownloadButtons";
+import { ProgressiveLoadingBar, LoadMoreButton, ErrorRetryButton } from "@/components/ui/ProgressiveLoadingBar";
 
 import { useAppContext } from "@/context/AppContext";
 import { useGlobalPlayer } from "@/context/GlobalPlayerContext";
 import { usePageLoading } from "@/hooks/usePageLoading";
-import { useTracksFetch } from "@/hooks/useTracksFetch";
+import { useProgressiveTracksFetch } from "@/hooks/useProgressiveTracksFetch";
 import { useDownloadsCache } from "@/hooks/useDownloadsCache";
 import { Track } from "@/types/track";
 import { motion } from "framer-motion";
 
 const NewPage = () => {
-
-
     // Estados para filtros
-    const [tracks, setTracks] = useState<Track[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
     const [showFiltersModal, setShowFiltersModal] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchResults, setSearchResults] = useState<Track[]>([]);
     const [hasSearched, setHasSearched] = useState(false);
+
     // Estados para filtros
     const [selectedGenre, setSelectedGenre] = useState("");
     const [selectedArtist, setSelectedArtist] = useState("");
@@ -51,6 +50,34 @@ const NewPage = () => {
     // Estados para paginação baseada em datas
     const [currentPage, setCurrentPage] = useState(1);
     const [daysPerPage] = useState(3); // Cada página mostra 3 dias de conteúdo
+
+    // Hook para carregamento progressivo das músicas
+    const {
+        tracks,
+        totalCount,
+        loadedCount,
+        isLoading,
+        isComplete,
+        error,
+        retry,
+        loadMore
+    } = useProgressiveTracksFetch({
+        endpoint: '/api/tracks/new',
+        batchSize: 25, // Carregar 25 músicas por vez
+        delayBetweenBatches: 150, // 150ms entre lotes para não sobrecarregar
+        onProgress: (loaded, total) => {
+            console.log(`📊 Progresso: ${loaded}/${total} músicas carregadas`);
+        },
+        onBatchLoaded: (batch, batchIndex) => {
+            console.log(`✅ Lote ${batchIndex + 1} carregado: ${batch.length} músicas`);
+        },
+        onComplete: (allTracks) => {
+            console.log(`🎉 Todas as ${allTracks.length} músicas foram carregadas!`);
+        },
+        onError: (error) => {
+            console.error('❌ Erro no carregamento progressivo:', error);
+        }
+    });
 
     // Extrair dados únicos para filtros - otimizado para evitar re-cálculos desnecessários
     const genres = useMemo(() => {
@@ -488,35 +515,7 @@ const NewPage = () => {
         return () => clearInterval(interval);
     }, [communitySlides.length, isCommunityHovered]);
 
-    // --- Busca de músicas da API usando hook otimizado ---
-    const { data: tracksData, loading: tracksLoading, error: tracksError } = useTracksFetch({
-        endpoint: "/api/tracks/new",
-        onSuccess: (data) => {
-            startLoading("Carregando novidades...");
-
-            // 🔥 Garante que seja array
-            if (Array.isArray(data)) {
-                setTracks(data);
-            } else if (Array.isArray(data.tracks)) {
-                setTracks(data.tracks);
-            } else if (Array.isArray(data.data)) {
-                setTracks(data.data);
-            } else {
-                console.warn("⚠️ API não retornou array de tracks:", data);
-                setTracks([]);
-            }
-
-            stopLoading();
-        },
-        onError: (error) => {
-            console.error("❌ Erro na busca:", error);
-            showAlert("Erro ao carregar músicas");
-            stopLoading();
-        },
-        onLoadingChange: (loading) => {
-            // Estado de loading é gerenciado pelo hook
-        }
-    });
+    // Hook para carregamento progressivo das músicas já está configurado acima
 
     // Função para realizar busca
     const performSearch = async (query: string) => {
@@ -1117,8 +1116,39 @@ const NewPage = () => {
 
                 {/* LISTA DE MÚSICAS - Mobile First */}
                 <div className="w-full max-w-[95%] mx-auto pb-4 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
+                    {/* Barra de Progresso Progressiva */}
+                    {!searchLoading && (
+                        <div className="mb-6">
+                            <ProgressiveLoadingBar
+                                loaded={loadedCount}
+                                total={totalCount}
+                                isLoading={isLoading}
+                                isComplete={isComplete}
+                                error={error}
+                                onRetry={retry}
+                            />
+
+                            {/* Botão de Carregar Mais */}
+                            <LoadMoreButton
+                                onClick={loadMore}
+                                isLoading={isLoading}
+                                isComplete={isComplete}
+                                loaded={loadedCount}
+                                total={totalCount}
+                            />
+
+                            {/* Botão de Retry em caso de erro */}
+                            {error && (
+                                <ErrorRetryButton
+                                    error={error}
+                                    onRetry={retry}
+                                />
+                            )}
+                        </div>
+                    )}
+
                     {/* Estado de loading - Mobile First */}
-                    {(tracksLoading || searchLoading) && (
+                    {(isLoading || searchLoading) && (
                         <div className="flex items-center justify-center py-12 sm:py-16">
                             <div className="text-center">
                                 <div className="animate-spin w-10 h-10 sm:w-12 sm:h-12 border-4 border-[#1db954] border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -1130,7 +1160,7 @@ const NewPage = () => {
                     )}
 
                     {/* Nenhum resultado encontrado - Mobile First */}
-                    {!tracksLoading && !searchLoading && hasSearched && searchResults.length === 0 && (
+                    {!isLoading && !searchLoading && hasSearched && searchResults.length === 0 && (
                         <div className="text-center py-12 sm:py-16">
                             <div className="bg-[#181818] rounded-2xl p-6 sm:p-8 max-w-md mx-auto border border-[#282828]">
                                 <div className="text-5xl sm:text-6xl mb-4">🔍</div>
@@ -1168,7 +1198,7 @@ const NewPage = () => {
                     )}
 
                     {/* Lista de músicas - Mobile First */}
-                    {!tracksLoading && !searchLoading && displayTracks.length > 0 && (
+                    {!isLoading && !searchLoading && displayTracks.length > 0 && (
                         <MusicList
                             tracks={displayTracks}
                             downloadedTrackIds={downloadsCache.downloadedTrackIds}
@@ -1183,13 +1213,13 @@ const NewPage = () => {
                             }}
                             enableInfiniteScroll={false} // Desabilitar infinite scroll para usar paginação baseada em datas
                             hasMore={false}
-                            isLoading={tracksLoading || searchLoading}
+                            isLoading={isLoading || searchLoading}
                             onLoadMore={() => { }}
                         />
                     )}
 
                     {/* Paginação baseada em datas */}
-                    {!tracksLoading && !searchLoading && !hasSearched && totalPages > 1 && (
+                    {!isLoading && !searchLoading && !hasSearched && totalPages > 1 && (
                         <div className="mt-8 sm:mt-12">
                             <div className="bg-[#121212] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg">
                                 {/* Indicador de página atual - Visível em mobile */}
@@ -1317,7 +1347,7 @@ const NewPage = () => {
                             setSelectedMonth("");
                             setSelectedPool("");
                         }}
-                        isLoading={tracksLoading}
+                        isLoading={isLoading}
                         hasActiveFilters={Boolean(selectedGenre || selectedArtist || selectedDateRange || selectedVersion || selectedMonth || selectedPool)}
                     />
                 )}

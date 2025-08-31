@@ -4,9 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import MainLayout from '@/components/layout/MainLayout';
 import {
-  Music, Plus, Search, Filter, Clock, CheckCircle, XCircle,
-  AlertCircle, Star, Heart, Download, Play, Calendar, User,
-  MessageSquare, Send, Trash2, Edit, Eye, TrendingUp
+  Music, Plus, Search, Clock, CheckCircle, XCircle,
+  Star, Trash2, Edit, Eye
 } from 'lucide-react';
 
 interface MusicRequest {
@@ -30,11 +29,17 @@ const SolicitacoesPage = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPriority, setSelectedPriority] = useState('all');
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
-  const [newRequest, setNewRequest] = useState({
+  const [newRequest, setNewRequest] = useState<{
+    songName: string;
+    artist: string;
+    genre: string;
+    priority: 'low' | 'medium' | 'high';
+    notes: string;
+  }>({
     songName: '',
     artist: '',
     genre: '',
-    priority: 'medium' as const,
+    priority: 'medium',
     notes: ''
   });
 
@@ -45,10 +50,10 @@ const SolicitacoesPage = () => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      
+
       // Buscar solicitações via API
       const response = await fetch('/api/requests');
-      
+
       if (response.ok) {
         const data = await response.json();
         setRequests(data.requests || []);
@@ -89,10 +94,10 @@ const SolicitacoesPage = () => {
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.songName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         request.artist.toLowerCase().includes(searchQuery.toLowerCase());
+      request.artist.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = selectedStatus === 'all' || request.status === selectedStatus;
     const matchesPriority = selectedPriority === 'all' || request.priority === selectedPriority;
-    
+
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
@@ -141,7 +146,7 @@ const SolicitacoesPage = () => {
       });
 
       if (response.ok) {
-        setRequests(requests.map(req => 
+        setRequests(requests.map(req =>
           req.id === requestId ? { ...req, status: newStatus } : req
         ));
       } else {
@@ -341,11 +346,11 @@ const SolicitacoesPage = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     {request.notes && (
                       <p className="text-gray-400 text-sm mb-3">{request.notes}</p>
                     )}
-                    
+
                     <div className="flex items-center gap-4 text-sm text-gray-500">
                       <span className="flex items-center gap-1">
                         <User className="h-4 w-4" />
@@ -377,7 +382,7 @@ const SolicitacoesPage = () => {
                         </button>
                       </>
                     )}
-                    
+
                     {request.status === 'approved' && (
                       <button
                         onClick={() => updateRequestStatus(request.id, 'completed')}
@@ -387,7 +392,7 @@ const SolicitacoesPage = () => {
                         <Star className="h-4 w-4" />
                       </button>
                     )}
-                    
+
                     <button
                       onClick={() => deleteRequest(request.id)}
                       className="p-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
@@ -430,46 +435,46 @@ const SolicitacoesPage = () => {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-md">
               <h3 className="text-xl font-bold text-white mb-4">Nova Solicitação</h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-300 text-sm mb-2">Nome da Música</label>
                   <input
                     type="text"
                     value={newRequest.songName}
-                    onChange={(e) => setNewRequest({...newRequest, songName: e.target.value})}
+                    onChange={(e) => setNewRequest({ ...newRequest, songName: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="Ex: Midnight Groove"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-gray-300 text-sm mb-2">Artista</label>
                   <input
                     type="text"
                     value={newRequest.artist}
-                    onChange={(e) => setNewRequest({...newRequest, artist: e.target.value})}
+                    onChange={(e) => setNewRequest({ ...newRequest, artist: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="Ex: DJ Groove Master"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-gray-300 text-sm mb-2">Gênero (opcional)</label>
                   <input
                     type="text"
                     value={newRequest.genre}
-                    onChange={(e) => setNewRequest({...newRequest, genre: e.target.value})}
+                    onChange={(e) => setNewRequest({ ...newRequest, genre: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="Ex: House, Techno, etc."
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-gray-300 text-sm mb-2">Prioridade</label>
                   <select
                     value={newRequest.priority}
-                    onChange={(e) => setNewRequest({...newRequest, priority: e.target.value as any})}
+                    onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value as 'low' | 'medium' | 'high' })}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="low">Baixa</option>
@@ -477,19 +482,19 @@ const SolicitacoesPage = () => {
                     <option value="high">Alta</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-gray-300 text-sm mb-2">Observações (opcional)</label>
                   <textarea
                     value={newRequest.notes}
-                    onChange={(e) => setNewRequest({...newRequest, notes: e.target.value})}
+                    onChange={(e) => setNewRequest({ ...newRequest, notes: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     rows={3}
                     placeholder="Informações adicionais sobre a música..."
                   />
                 </div>
               </div>
-              
+
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setShowNewRequestModal(false)}

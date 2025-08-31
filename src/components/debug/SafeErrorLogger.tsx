@@ -180,10 +180,10 @@ export const SafeErrorLogger: React.FC = () => {
 
             <div className="mt-3 text-xs text-blue-300">
                 <p><strong>Instruções:</strong></p>
-                <p>1. Clique em "▶️ Iniciar" para começar a capturar</p>
+                <p>1. Clique em &quot;▶️ Iniciar&quot; para começar a capturar</p>
                 <p>2. Recarregue a página para capturar erros de carregamento</p>
-                <p>3. Use "📋 Copiar" ou "📱 WhatsApp" para enviar os erros</p>
-                <p>4. Clique em "🛑 Parar" quando terminar</p>
+                <p>3. Use &quot;📋 Copiar&quot; ou &quot;📱 WhatsApp&quot; para enviar os erros</p>
+                <p>4. Clique em &quot;🛑 Parar&quot; quando terminar</p>
             </div>
         </div>
     );

@@ -112,9 +112,9 @@ export const SimpleErrorLogger: React.FC = () => {
             </div>
 
             <div className="mt-3 text-xs text-blue-300">
-                <p>1. Clique em "▶️ Iniciar"</p>
+                <p>1. Clique em &quot;▶️ Iniciar&quot;</p>
                 <p>2. Recarregue a página</p>
-                <p>3. Use "📋 Copiar" ou "📱 WhatsApp"</p>
+                <p>3. Use &quot;📋 Copiar&quot; ou &quot;📱 WhatsApp&quot;</p>
             </div>
         </div>
     );

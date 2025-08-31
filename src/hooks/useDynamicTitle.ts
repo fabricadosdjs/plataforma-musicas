@@ -72,8 +72,15 @@ export function useNotificationTitle(message: string, duration: number = 3000) {
         if (typeof document === 'undefined' || !message) return;
 
         const originalTitle = document.title;
-        let interval: NodeJS.Timeout;
-        let timeout: NodeJS.Timeout;
+        const interval: NodeJS.Timeout = setInterval(() => {
+            document.title = document.title === originalTitle ? message : originalTitle;
+        }, 1000);
+
+        // Restaurar após duração especificada
+        const timeout: NodeJS.Timeout = setTimeout(() => {
+            clearInterval(interval);
+            document.title = originalTitle;
+        }, duration);
 
         // Piscar o título
         interval = setInterval(() => {

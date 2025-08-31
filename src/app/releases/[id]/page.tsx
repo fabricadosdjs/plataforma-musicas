@@ -7,41 +7,20 @@ import {
     ArrowLeft,
     Music,
     Play,
-    Pause,
     Heart,
     Download,
     Share2,
     Star,
     Crown,
-    Calendar,
-    MapPin,
     Instagram,
     Facebook,
     Youtube,
-    Award,
-    Mic,
-    Disc3,
-    Headphones,
-    Radio,
     Album,
     Disc,
-    Zap,
-    Sparkles,
-    Target,
     Globe,
-    Music2,
-    Disc2,
-    Volume2,
-    MessageCircle,
-    Mail,
-    ExternalLink,
     Edit,
     Trash2,
-    Clock,
-    User,
-    Building,
-    Users,
-    Tag
+    Clock
 } from "lucide-react";
 import Image from "next/image";
 import MainLayout from "@/components/layout/MainLayout";
@@ -565,8 +544,8 @@ const ReleaseDetailPage = () => {
                                                         <button
                                                             onClick={() => handlePlayTrack(track)}
                                                             className={`p-3 rounded-xl transition-colors ${isPlaying && currentTrack?.id === track.id
-                                                                    ? 'bg-red-600/20 text-red-400 border border-red-600/30'
-                                                                    : 'bg-green-600/20 text-green-400 border border-green-600/30 hover:bg-green-600/30'
+                                                                ? 'bg-red-600/20 text-red-400 border border-red-600/30'
+                                                                : 'bg-green-600/20 text-green-400 border border-green-600/30 hover:bg-green-600/30'
                                                                 }`}
                                                             title={isPlaying && currentTrack?.id === track.id ? 'Pausar' : 'Tocar'}
                                                         >

@@ -64,3 +64,4 @@ O sistema gera logs detalhados para debug:
 - 📁 Criação de diretórios
 - 💾 Salvamento de arquivos
 - ✅ Sucesso ou ❌ erro
+

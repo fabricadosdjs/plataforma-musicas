@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Music, Download, Users, TrendingUp, Calendar } from "lucide-react";
+import { ArrowLeft, Music, Download } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Link from "next/link";
 

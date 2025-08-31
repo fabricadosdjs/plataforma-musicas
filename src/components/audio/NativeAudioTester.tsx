@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNativeAudio } from '@/hooks/useNativeAudio';
+import type { Track } from '@/types/track';
 
 export const NativeAudioTester: React.FC = () => {
     const { capabilities, playWithWebAudio, playWithMediaSession, requestMicrophoneAccess, isSupported } = useNativeAudio();
     const [testResults, setTestResults] = useState<{ [key: string]: boolean | string }>({});
     const [isTesting, setIsTesting] = useState(false);
-    const [databaseTracks, setDatabaseTracks] = useState<any[]>([]);
-    const [selectedTrack, setSelectedTrack] = useState<any>(null);
+    const [databaseTracks, setDatabaseTracks] = useState<Track[]>([]);
+    const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
 
     // Buscar tracks do banco para testes
     useEffect(() => {
@@ -221,7 +222,7 @@ export const NativeAudioTester: React.FC = () => {
                     <select
                         value={selectedTrack?.id || ''}
                         onChange={(e) => {
-                            const track = databaseTracks.find(t => t.id === parseInt(e.target.value));
+                            const track = databaseTracks.find(t => t.id === parseInt(e.target.value)) || null;
                             setSelectedTrack(track);
                         }}
                         className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"

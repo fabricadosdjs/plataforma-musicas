@@ -35,5 +35,5 @@ export interface Track {
     albumId?: number;
     labelId?: number;
     // Adicione quaisquer outros campos que você espera do backend
-    [key: string]: any;
+    [key: string]: unknown;
 }

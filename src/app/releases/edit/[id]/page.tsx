@@ -6,26 +6,19 @@ import { useSession } from "next-auth/react";
 import {
     ArrowLeft,
     Save,
-    FileText,
     Music,
-    Album,
     Star,
     Crown,
     Globe,
     Instagram,
     Facebook,
     Youtube,
-    Music2,
-    Disc,
     Users,
     MessageCircle,
     CheckCircle,
     AlertCircle,
-    Info,
     Clock,
-    User,
-    Building,
-    Tag
+    Building
 } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { useToastContext } from "@/context/ToastContext";
@@ -96,31 +89,6 @@ const EditReleasePage = () => {
         }
     });
 
-    // Verificar se o usuário é admin
-    if (!session?.user?.email || !session.user.email.includes('admin')) {
-        return (
-            <MainLayout>
-                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="w-24 h-24 bg-red-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <AlertCircle className="h-12 w-12 text-red-400" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-white mb-4">Acesso Negado</h3>
-                        <p className="text-gray-400 mb-6">
-                            Você precisa ser administrador para acessar esta página.
-                        </p>
-                        <button
-                            onClick={() => router.push('/releases')}
-                            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-                        >
-                            Voltar aos Releases
-                        </button>
-                    </div>
-                </div>
-            </MainLayout>
-        );
-    }
-
     // Carregar dados do release
     useEffect(() => {
         const loadRelease = async () => {
@@ -173,16 +141,44 @@ const EditReleasePage = () => {
         };
 
         loadRelease();
-    }, [params.id]);
+    }, [params.id, showToast]);
+
+    // Verificar se o usuário é admin
+    if (!session?.user?.email || !session.user.email.includes('admin')) {
+        return (
+            <MainLayout>
+                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="w-24 h-24 bg-red-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <AlertCircle className="h-12 w-12 text-red-400" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-white mb-4">Acesso Negado</h3>
+                        <p className="text-gray-400 mb-6">
+                            Você precisa ser administrador para acessar esta página.
+                        </p>
+                        <button
+                            onClick={() => router.push('/releases')}
+                            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+                        >
+                            Voltar aos Releases
+                        </button>
+                    </div>
+                </div>
+            </MainLayout>
+        );
+    }
 
     // Lidar com mudanças no formulário
-    const handleFormChange = (field: string, value: any) => {
+    const handleFormChange = (
+        field: string,
+        value: string | number | boolean
+    ) => {
         if (field.includes('.')) {
-            const [parent, child] = field.split('.');
+            const [parent, child] = field.split('.') as [keyof ReleaseFormData, string];
             setFormData(prev => ({
                 ...prev,
                 [parent]: {
-                    ...(prev[parent as keyof ReleaseFormData] as any),
+                    ...((prev[parent] as Record<string, string | number | boolean>) ?? {}),
                     [child]: value
                 }
             }));

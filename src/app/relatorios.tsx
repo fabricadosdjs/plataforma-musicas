@@ -9,6 +9,14 @@ import {
   ChevronDown, Filter, Search, RefreshCw, Eye, BarChart, Clock
 } from 'lucide-react';
 
+
+interface TrackInfo {
+  songName: string;
+  artist: string;
+  style: string;
+  pool: string;
+}
+
 interface TrackStats {
   totalTracks: number;
   totalDownloads: number;
@@ -17,8 +25,8 @@ interface TrackStats {
   genres: Record<string, number>;
   artists: Record<string, number>;
   pools: Record<string, number>;
-  recentTracks: any[];
-  topTracks: any[];
+  recentTracks: TrackInfo[];
+  topTracks: TrackInfo[];
 }
 
 const RelatoriosPage = () => {

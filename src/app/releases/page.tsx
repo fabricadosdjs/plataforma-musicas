@@ -4,40 +4,15 @@ import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
-    Search,
-    Filter,
     Music,
-    Play,
-    Pause,
-    Heart,
-    Download,
-    Share2,
     Star,
     Crown,
-    TrendingUp,
-    Users,
-    Calendar,
-    MapPin,
     Instagram,
     Facebook,
     Youtube,
-    Award,
-    Mic,
-    Disc3,
-    Headphones,
-    Radio,
     Album,
     Disc,
-    Zap,
-    Sparkles,
-    Target,
     Globe,
-    Music2,
-    Disc2,
-    Volume2,
-    MessageCircle,
-    Mail,
-    ExternalLink,
     Plus,
     Edit,
     Trash2,
@@ -537,7 +512,7 @@ const ReleasesPage = () => {
                             {/* Ordenar por */}
                             <select
                                 value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value as any)}
+                                onChange={(e) => setSortBy(e.target.value as "date" | "title" | "artist" | "popularity")}
                                 className="px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50"
                             >
                                 <option value="date">📅 Data de Lançamento</option>
@@ -644,7 +619,7 @@ const ReleasesPage = () => {
                                                 <Eye className="h-5 w-5" />
                                             </button>
 
-                                            {session?.user && (session.user as any)?.isAdmin && (
+                                            {session?.user && (session.user as import("@/types/user").User)?.isAdmin && (
                                                 <>
                                                     <button
                                                         onClick={() => handleEditRelease(release.id)}

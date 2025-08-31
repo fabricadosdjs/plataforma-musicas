@@ -6,17 +6,19 @@ function isValidDate(val: unknown): val is Date {
 }
 // src/components/layout/Header.tsx
 
-import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, UserCircle, Users, Home, Music } from 'lucide-react';
+import { AlertCircle, CheckCircle, Crown, X, Wrench, Link2, Download, Star, Menu, UserCircle, Users, Home, Music } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
+import type { User as AppUser } from '@/types/user';
 import { SafeImage } from '@/components/ui/SafeImage';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
-import { Filter } from 'lucide-react'; // Certifique-se de que Filter está importado aqui
+// Filter removido pois não está sendo usado
 import { getSignInUrl } from '@/lib/utils';
 
 
 interface HeaderProps {
+  // Props podem ser adicionadas aqui no futuro
 }
 
 const NEW_LOGO_URL = 'https://i.ibb.co/Y7WKPY57/logo-nexor.png';
@@ -174,7 +176,7 @@ const Header = ({ }: HeaderProps) => {
               PLANOS VIP
             </Link>
 
-            {Boolean((session?.user as any)?.isAdmin) && (
+            {Boolean((session?.user as AppUser)?.isAdmin) && (
               <Link
                 href="/admin/users"
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
@@ -296,7 +298,7 @@ const Header = ({ }: HeaderProps) => {
                   PLANOS VIP
                 </Link>
 
-                {Boolean((session?.user as any)?.isAdmin) && (
+                {Boolean((session?.user as AppUser)?.isAdmin) && (
                   <Link
                     href="/admin/users"
                     className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-red-300 hover:scale-[1.02] transform border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
@@ -410,7 +412,7 @@ const Header = ({ }: HeaderProps) => {
                         <div>
                           <div className="font-bold text-lg">{session.user.name || 'Usuário'}</div>
                           <div className="text-gray-400 text-sm">
-                            {typeof (session.user as any).whatsapp === 'string' ? (session.user as any).whatsapp : 'WhatsApp não informado'}
+                            {typeof (session.user as AppUser).whatsapp === 'string' ? (session.user as AppUser).whatsapp : 'WhatsApp não informado'}
                           </div>
                         </div>
                       </div>
@@ -418,7 +420,7 @@ const Header = ({ }: HeaderProps) => {
                       <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${(() => {
                         // Lógica para determinar status VIP real
                         const isVipByField = session.user.is_vip;
-                        const vencimento = (session.user as any).vencimento;
+                        const vencimento = (session.user as AppUser).vencimento;
                         const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
                         const isVipReal = isVipByField || hasValidVencimento;
                         return isVipReal;
@@ -429,13 +431,13 @@ const Header = ({ }: HeaderProps) => {
                         {(() => {
                           // Lógica para determinar status VIP real
                           const isVipByField = session.user.is_vip;
-                          const vencimento = (session.user as any).vencimento;
+                          const vencimento = (session.user as AppUser).vencimento;
                           const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
                           const isVipReal = isVipByField || hasValidVencimento;
 
                           if (isVipReal) {
-                            if ((session.user as any).plan) {
-                              return <><Crown className="h-4 w-4" /> {(session.user as any).plan}</>;
+                            if ((session.user as AppUser).planName) {
+                              return <><Crown className="h-4 w-4" /> {(session.user as AppUser).planName}</>;
                             } else if (hasValidVencimento) {
                               return <><Crown className="h-4 w-4" /> BÁSICO</>;
                             } else {

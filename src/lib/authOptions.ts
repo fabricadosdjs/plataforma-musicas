@@ -1,5 +1,7 @@
 // src/lib/authOptions.ts
 import prisma, { safeQuery } from '@/lib/prisma';
+import { User } from '../types/user';
+import { UserBenefits } from '../types/benefits';
 import bcrypt from 'bcryptjs';
 import { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -17,7 +19,7 @@ const IMAGE_ADMIN_ID = 'admin-image-001';
 const IMAGE_ADMIN_NAME = 'Ederson Leonardo';
 
 // Função para obter benefícios do usuário
-function getUserBenefits(user: any) {
+function getUserBenefits(user: User): UserBenefits {
     const VIP_BENEFITS = {
         'BÁSICO': {
             priceRange: '30-35',
@@ -55,14 +57,24 @@ function getUserBenefits(user: any) {
     };
 
     // Se for valor do Profile, usar a lógica correta
-    const valor = user.profile?.valor || user.valor || 0;
+    const valor = (typeof user === 'object' && 'profile' in user && user.profile && typeof user.profile === 'object' && 'valor' in user.profile ? (user.profile as { valor?: number | string })?.valor : undefined) || user.valor || 0;
     const valorNumerico = typeof valor === 'string' ? parseFloat(valor) : Number(valor);
 
     if (valorNumerico >= 43) return { plan: 'COMPLETO', ...VIP_BENEFITS.COMPLETO };
     if (valorNumerico >= 36) return { plan: 'PADRÃO', ...VIP_BENEFITS.PADRÃO };
     if (valorNumerico >= 30) return { plan: 'BÁSICO', ...VIP_BENEFITS.BÁSICO };
 
-    return { plan: 'GRATUITO', packRequestsPerWeek: 0, playlistsPerWeek: 0, downloadsPerDay: 5 };
+    return {
+        plan: 'GRATUITO',
+        packRequestsPerWeek: 0,
+        playlistsPerWeek: 0,
+        downloadsPerDay: 5,
+        directDownload: false,
+        deemixAccess: false,
+        trackRequest: false,
+        exclusiveGenres: false,
+        prioritySupport: false
+    };
 }
 
 export const authOptions: AuthOptions = {
@@ -85,27 +97,28 @@ export const authOptions: AuthOptions = {
                         console.log('✅ Login como admin master');
                         return {
                             id: ADMIN_ID,
-                            email: ADMIN_EMAIL,
+                            email: ADMIN_EMAIL!,
                             name: ADMIN_NAME,
                             is_vip: true,
-                            valor: '999',
-                            benefits: {
-                                plan: 'ADMIN',
-                                packRequestsPerWeek: 999999,
-                                playlistsPerWeek: 999999,
-                                downloadsPerDay: 999999,
-                                directDownload: true,
-                                deemixAccess: true,
-                                trackRequest: true,
-                                exclusiveGenres: true,
-                                prioritySupport: true,
-                                adminAccess: true
-                            },
+                            valor: 999,
                             status: 'ativo',
                             dailyDownloadCount: 0,
                             weeklyPackRequests: 0,
                             weeklyPlaylistDownloads: 0,
                             vencimento: null,
+                            isAdmin: true,
+                            deemix: true,
+                            deezerPremium: true,
+                            planName: 'ADMIN',
+                            planType: 'ADMIN',
+                            period: 'ADMIN',
+                            customBenefits: undefined,
+                            dataPagamento: null,
+                            lastDownloadReset: null,
+                            lastWeekReset: null,
+                            whatsapp: undefined,
+                            isUploader: false,
+                            dataPrimeiroPagamento: null,
                         };
                     }
 
@@ -117,25 +130,25 @@ export const authOptions: AuthOptions = {
                             email: IMAGE_ADMIN_EMAIL,
                             name: IMAGE_ADMIN_NAME,
                             is_vip: true,
-                            valor: '999',
-                            benefits: {
-                                plan: 'ADMIN',
-                                packRequestsPerWeek: 999999,
-                                playlistsPerWeek: 999999,
-                                downloadsPerDay: 999999,
-                                directDownload: true,
-                                deemixAccess: true,
-                                trackRequest: true,
-                                exclusiveGenres: true,
-                                prioritySupport: true,
-                                adminAccess: true,
-                                imageAdminAccess: true
-                            },
+                            valor: 999,
                             status: 'ativo',
                             dailyDownloadCount: 0,
                             weeklyPackRequests: 0,
                             weeklyPlaylistDownloads: 0,
                             vencimento: null,
+                            isAdmin: true,
+                            deemix: true,
+                            deezerPremium: true,
+                            planName: 'ADMIN',
+                            planType: 'ADMIN',
+                            period: 'ADMIN',
+                            customBenefits: undefined,
+                            dataPagamento: null,
+                            lastDownloadReset: null,
+                            lastWeekReset: null,
+                            whatsapp: undefined,
+                            isUploader: false,
+                            dataPrimeiroPagamento: null,
                         };
                     }
 
@@ -144,8 +157,9 @@ export const authOptions: AuthOptions = {
                         () => prisma.user.findFirst({
                             where: { email: credentials.email }
                         }),
-                        null // You passed null here, ensure safeQuery accepts it for default behavior or adjust.
-                    );
+                        null
+                    ) as User | null;
+
 
                     if (!dbUser) {
                         console.log('❌ Usuário não encontrado no banco');
@@ -156,6 +170,7 @@ export const authOptions: AuthOptions = {
 
                     // Verificar senha
                     const isPasswordValid = dbUser.password && await bcrypt.compare(credentials.password, dbUser.password);
+
                     if (!isPasswordValid) {
                         console.log('❌ Senha incorreta');
                         return null;
@@ -164,8 +179,8 @@ export const authOptions: AuthOptions = {
                     console.log('✅ Senha validada com sucesso');
 
                     // Determinar status VIP baseado no valor da assinatura E vencimento
-                    const userBenefits = getUserBenefits(dbUser);
-                    const hasValidVencimento = dbUser.vencimento && new Date(dbUser.vencimento) > new Date();
+                    const userBenefits = dbUser ? getUserBenefits(dbUser) : { plan: 'GRATUITO', packRequestsPerWeek: 0, playlistsPerWeek: 0, downloadsPerDay: 5, directDownload: false, deemixAccess: false, trackRequest: false, exclusiveGenres: false, prioritySupport: false };
+                    const hasValidVencimento = dbUser?.vencimento && new Date(dbUser.vencimento) > new Date();
                     const isVipByValue = userBenefits.plan !== 'GRATUITO';
                     const isVip = isVipByValue || hasValidVencimento;
 
@@ -186,11 +201,11 @@ export const authOptions: AuthOptions = {
                     });
 
                     // Atualizar o campo is_vip no banco para manter consistência
-                    if (dbUser.is_vip !== isVip) {
+                    if (typeof dbUser.is_vip === 'boolean' && dbUser.is_vip !== isVip) {
                         await safeQuery(
                             () => prisma.user.update({
                                 where: { id: dbUser.id },
-                                data: { is_vip: isVip }
+                                data: { is_vip: !!isVip }
                             }),
                             null
                         );
@@ -198,95 +213,42 @@ export const authOptions: AuthOptions = {
                     }
 
                     // Retornar dados mínimos para sessão
+                    function toDateOrNull(val: unknown): Date | null | undefined {
+                        if (!val) return null;
+                        if (val instanceof Date) return val;
+                        const d = new Date(val as string);
+                        return isNaN(d.getTime()) ? null : d;
+                    }
                     return {
                         id: dbUser.id,
                         email: dbUser.email,
                         name: dbUser.name || dbUser.email.split('@')[0],
-                        is_vip: isVip, // Calculado dinamicamente baseado no valor E vencimento
-                        isAdmin: dbUser.isAdmin, // Adicionar campo isAdmin
-                        // Ensure other properties are included if needed in the session/JWT process from dbUser
+                        is_vip: typeof isVip === 'boolean' ? isVip : !!isVip,
+                        isAdmin: dbUser.isAdmin,
                         valor: dbUser.valor,
                         status: dbUser.status,
-                        deemix: dbUser.deemix, // Assuming this exists in dbUser
+                        deemix: dbUser.deemix,
                         deezerPremium: dbUser.deezerPremium,
                         deezerEmail: dbUser.deezerEmail,
                         deezerPassword: dbUser.deezerPassword,
                         dailyDownloadCount: dbUser.dailyDownloadCount,
-                        lastDownloadReset: dbUser.lastDownloadReset,
+                        lastDownloadReset: toDateOrNull(dbUser.lastDownloadReset),
                         weeklyPackRequests: dbUser.weeklyPackRequests,
                         weeklyPlaylistDownloads: dbUser.weeklyPlaylistDownloads,
-                        lastWeekReset: dbUser.lastWeekReset,
+                        lastWeekReset: toDateOrNull(dbUser.lastWeekReset),
                         customBenefits: dbUser.customBenefits,
-                        vencimento: dbUser.vencimento,
-                        dataPagamento: dbUser.dataPagamento,
-                        whatsapp: dbUser.whatsapp, // Adicionar campo whatsapp
-                        plan: finalPlan, // Plano final considerando vencimento
-                        planName: dbUser.planName, // Adicionar campo planName
-                        planType: dbUser.planType, // Adicionar campo planType
-                        period: dbUser.period, // Adicionar campo period
-                        isUploader: dbUser.isUploader, // Adicionar campo isUploader
+                        vencimento: toDateOrNull(dbUser.vencimento),
+                        dataPagamento: toDateOrNull(dbUser.dataPagamento),
+                        whatsapp: dbUser.whatsapp,
+                        planName: dbUser.planName,
+                        planType: dbUser.planType,
+                        period: dbUser.period,
+                        isUploader: dbUser.isUploader,
+                        dataPrimeiroPagamento: toDateOrNull(dbUser.dataPrimeiroPagamento),
                     };
 
                 } catch (error) {
                     console.error('[AUTH_ERROR]', error);
-                    // Em caso de erro, tentar login como admin se as credenciais conferem
-                    if (credentials?.email === ADMIN_EMAIL && credentials?.password === ADMIN_PASSWORD) {
-                        console.log('✅ Fallback para admin master devido a erro de banco');
-                        return {
-                            id: ADMIN_ID,
-                            email: ADMIN_EMAIL,
-                            name: ADMIN_NAME,
-                            is_vip: true,
-                            valor: '999',
-                            benefits: {
-                                plan: 'ADMIN',
-                                packRequestsPerWeek: 999999,
-                                playlistsPerWeek: 999999,
-                                downloadsPerDay: 999999,
-                                directDownload: true,
-                                deemixAccess: true,
-                                trackRequest: true,
-                                exclusiveGenres: true,
-                                prioritySupport: true,
-                                adminAccess: true
-                            },
-                            status: 'ativo',
-                            dailyDownloadCount: 0,
-                            weeklyPackRequests: 0,
-                            weeklyPlaylistDownloads: 0,
-                            vencimento: null,
-                        };
-                    }
-
-                    // Fallback para admin de imagens
-                    if (credentials?.email === IMAGE_ADMIN_EMAIL && credentials?.password === IMAGE_ADMIN_PASSWORD) {
-                        console.log('✅ Fallback para admin de imagens devido a erro de banco');
-                        return {
-                            id: IMAGE_ADMIN_ID,
-                            email: IMAGE_ADMIN_EMAIL,
-                            name: IMAGE_ADMIN_NAME,
-                            is_vip: true,
-                            valor: '999',
-                            benefits: {
-                                plan: 'ADMIN',
-                                packRequestsPerWeek: 999999,
-                                playlistsPerWeek: 999999,
-                                downloadsPerDay: 999999,
-                                directDownload: true,
-                                deemixAccess: true,
-                                trackRequest: true,
-                                exclusiveGenres: true,
-                                prioritySupport: true,
-                                adminAccess: true,
-                                imageAdminAccess: true
-                            },
-                            status: 'ativo',
-                            dailyDownloadCount: 0,
-                            weeklyPackRequests: 0,
-                            weeklyPlaylistDownloads: 0,
-                            vencimento: null,
-                        };
-                    }
                     return null;
                 }
             },
@@ -297,62 +259,60 @@ export const authOptions: AuthOptions = {
     },
     callbacks: {
         async jwt({ token, user }) {
-            if (user) {
-                token.id = user.id;
-                token.isVip = (user as any).is_vip;
-                token.isAdmin = (user as any).isAdmin; // Adicionar isAdmin ao token
-                token.valor = (user as any).valor;
-                // Get benefits dynamically using the user data from the database or admin master
-                token.benefits = getUserBenefits(user); // Use getUserBenefits to derive benefits
-                token.status = (user as any).status;
-                token.dailyDownloadCount = (user as any).dailyDownloadCount;
-                token.weeklyPackRequests = (user as any).weeklyPackRequests;
-                token.weeklyPlaylistDownloads = (user as any).weeklyPlaylistDownloads;
-                token.vencimento = (user as any).vencimento;
-                // Add any other user data from the database that you need in the token
-                token.deemix = (user as any).deemix;
-                token.deezerPremium = (user as any).deezerPremium;
-                token.deezerEmail = (user as any).deezerEmail;
-                token.deezerPassword = (user as any).deezerPassword;
-                token.lastDownloadReset = (user as any).lastDownloadReset;
-                token.lastWeekReset = (user as any).lastWeekReset;
-                token.customBenefits = (user as any).customBenefits;
-                token.whatsapp = (user as any).whatsapp;
-                token.planName = (user as any).planName; // Adicionar campo planName
-                token.planType = (user as any).planType; // Adicionar campo planType
-                token.period = (user as any).period; // Adicionar campo period
-                token.isUploader = (user as any).isUploader; // Adicionar campo isUploader
-                token.updatedAt = (user as any).updatedAt; // Adicionar campo updatedAt
-
+            if (user && 'id' in user && 'email' in user) {
+                const u = user as User;
+                token.id = u.id;
+                token.isVip = u.is_vip;
+                token.isAdmin = u.isAdmin;
+                token.valor = u.valor;
+                token.benefits = getUserBenefits(u);
+                token.status = u.status;
+                token.dailyDownloadCount = u.dailyDownloadCount;
+                token.weeklyPackRequests = u.weeklyPackRequests;
+                token.weeklyPlaylistDownloads = u.weeklyPlaylistDownloads;
+                token.vencimento = u.vencimento;
+                token.deemix = u.deemix;
+                token.deezerPremium = u.deezerPremium;
+                token.deezerEmail = u.deezerEmail;
+                token.deezerPassword = u.deezerPassword;
+                token.lastDownloadReset = u.lastDownloadReset;
+                token.lastWeekReset = u.lastWeekReset;
+                token.customBenefits = u.customBenefits;
+                token.whatsapp = u.whatsapp;
+                token.planName = u.planName;
+                token.planType = u.planType;
+                token.period = u.period;
+                token.isUploader = u.isUploader;
+                token.updatedAt = u.updatedAt;
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
-                (session.user as any).id = token.id as string;
-                (session.user as any).isVip = token.isVip as boolean;
-                (session.user as any).isAdmin = token.isAdmin as boolean; // Adicionar isAdmin à sessão
-                (session.user as any).valor = token.valor as string;
-                (session.user as any).benefits = token.benefits as any;
-                (session.user as any).status = token.status as string;
-                (session.user as any).dailyDownloadCount = token.dailyDownloadCount as number;
-                (session.user as any).weeklyPackRequests = token.weeklyPackRequests as number;
-                (session.user as any).weeklyPlaylistDownloads = token.weeklyPlaylistDownloads as number;
-                (session.user as any).vencimento = token.vencimento as string;
-                // Ensure these are also correctly typed and passed if needed
-                (session.user as any).deemix = token.deemix as boolean;
-                (session.user as any).deezerPremium = token.deezerPremium as boolean;
-                (session.user as any).deezerEmail = token.deezerEmail as string;
-                (session.user as any).deezerPassword = token.deezerPassword as string;
-                (session.user as any).lastDownloadReset = token.lastDownloadReset as string;
-                (session.user as any).lastWeekReset = token.lastWeekReset as string;
-                (session.user as any).customBenefits = token.customBenefits as any;
-                (session.user as any).whatsapp = token.whatsapp as string;
-                (session.user as any).planName = token.planName as string; // Adicionar campo planName
-                (session.user as any).planType = token.planType as string; // Adicionar campo planType
-                (session.user as any).period = token.period as string; // Adicionar campo period
-                (session.user as any).isUploader = token.isUploader as boolean; // Adicionar campo isUploader
-                (session.user as any).updatedAt = token.updatedAt as string; // Adicionar campo updatedAt
+                const userObj = session.user as Record<string, unknown>;
+                userObj.id = token.id as string;
+                userObj.isVip = token.isVip as boolean;
+                userObj.isAdmin = token.isAdmin as boolean;
+                userObj.valor = token.valor;
+                userObj.benefits = token.benefits;
+                userObj.status = token.status;
+                userObj.dailyDownloadCount = token.dailyDownloadCount;
+                userObj.weeklyPackRequests = token.weeklyPackRequests;
+                userObj.weeklyPlaylistDownloads = token.weeklyPlaylistDownloads;
+                userObj.vencimento = token.vencimento;
+                userObj.deemix = token.deemix;
+                userObj.deezerPremium = token.deezerPremium;
+                userObj.deezerEmail = token.deezerEmail;
+                userObj.deezerPassword = token.deezerPassword;
+                userObj.lastDownloadReset = token.lastDownloadReset;
+                userObj.lastWeekReset = token.lastWeekReset;
+                userObj.customBenefits = token.customBenefits;
+                userObj.whatsapp = token.whatsapp;
+                userObj.planName = token.planName;
+                userObj.planType = token.planType;
+                userObj.period = token.period;
+                userObj.isUploader = token.isUploader;
+                userObj.updatedAt = token.updatedAt;
             }
             return session;
         },

@@ -109,7 +109,7 @@ export default function AudioDebugPanel({ track, className = '' }: AudioDebugPan
 
             <div className="bg-black/50 rounded p-3 max-h-64 overflow-y-auto">
                 {testResults.length === 0 ? (
-                    <p className="text-gray-400 text-sm">Clique em "Testar Tudo" para verificar as fontes de áudio</p>
+                    <p className="text-gray-400 text-sm">Clique em &quot;Testar Tudo&quot; para verificar as fontes de áudio</p>
                 ) : (
                     <div className="space-y-1">
                         {testResults.map((result, index) => (

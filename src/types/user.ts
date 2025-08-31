@@ -1,0 +1,34 @@
+export interface User {
+    id: string;
+    email: string;
+    name?: string;
+    image?: string | null;
+    dailyDownloadCount?: number;
+    lastDownloadReset?: Date | string | null | undefined;
+    createdAt?: Date | string | null | undefined;
+    updatedAt?: Date | string | null | undefined;
+    is_vip?: boolean;
+    status?: string;
+    valor?: number;
+    vencimento?: Date | string | null | undefined;
+    customBenefits?: Record<string, unknown> | undefined;
+    dataPagamento?: Date | string | null | undefined;
+    lastWeekReset?: Date | string | null | undefined;
+    weeklyPackRequests?: number;
+    weeklyPlaylistDownloads?: number;
+    weeklyPackRequestsUsed?: number;
+    weeklyPlaylistDownloadsUsed?: number;
+    whatsapp?: string;
+    deemix?: boolean;
+    deezerPremium?: boolean;
+    deezerEmail?: string;
+    deezerPassword?: string;
+    isPro?: boolean;
+    isAdmin?: boolean;
+    password?: string;
+    isUploader?: boolean;
+    dataPrimeiroPagamento?: Date | string | null | undefined;
+    planName?: string;
+    planType?: string;
+    period?: string;
+}

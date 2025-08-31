@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
-    "build:cloudflare": "prisma generate && copy cloudflare.config.js next.config.js && npx @cloudflare/next-on-pages@1 && copy next.config.ts next.config.js",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "db:seed": "node prisma/seed.js",

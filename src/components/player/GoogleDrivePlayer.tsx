@@ -109,7 +109,7 @@ export default function GoogleDrivePlayer({ fileId, title, onPlay, onPause }: Go
               />
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              💡 Se o áudio não tocar automaticamente, clique no botão play dentro do preview ou use "Abrir no Google Drive"
+              💡 Se o áudio não tocar automaticamente, clique no botão play dentro do preview ou use &quot;Abrir no Google Drive&quot;
             </p>
           </div>
         )}

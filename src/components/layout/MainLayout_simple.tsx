@@ -27,7 +27,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 {children}
             </main>
 
-            <SiteFooter />
+            {/* Footer removido temporariamente */}
         </div>
     );
 }

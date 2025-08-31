@@ -2,6 +2,7 @@
 
 import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, Bell, UserCircle, Users, Home, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
+import type { User as AppUser } from '@/types/user';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
@@ -189,7 +190,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
             ))}
 
             {/* Admin Link */}
-            {Boolean((session?.user as any)?.isAdmin) && (
+            {Boolean((session?.user as AppUser)?.isAdmin) && (
               <Link
                 href="/admin/users"
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold tracking-wide text-xs transition-all duration-300 hover:scale-105 border border-transparent hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/10 hover:shadow-red-500/20"
@@ -308,7 +309,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                       {(() => {
                         // Lógica para determinar status VIP real
                         const isVipByField = session.user.is_vip;
-                        const vencimento = (session.user as any).vencimento;
+                        const vencimento = (session.user as AppUser).vencimento;
                         const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
                         const isVipReal = isVipByField || hasValidVencimento;
 
@@ -323,13 +324,13 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                         {(() => {
                           // Lógica para determinar status VIP real
                           const isVipByField = session.user.is_vip;
-                          const vencimento = (session.user as any).vencimento;
+                          const vencimento = (session.user as AppUser).vencimento;
                           const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
                           const isVipReal = isVipByField || hasValidVencimento;
 
                           if (isVipReal) {
-                            if ((session.user as any).plan) {
-                              return (session.user as any).plan;
+                            if ((session.user as AppUser).planName) {
+                              return (session.user as AppUser).planName;
                             } else if (hasValidVencimento) {
                               return 'BÁSICO';
                             } else {
@@ -353,7 +354,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                             {(() => {
                               // Lógica para determinar status VIP real
                               const isVipByField = session.user.is_vip;
-                              const vencimento = (session.user as any).vencimento;
+                              const vencimento = (session.user as AppUser).vencimento;
                               const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
                               const isVipReal = isVipByField || hasValidVencimento;
 
@@ -365,7 +366,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                           <div>
                             <div className="font-bold text-lg">{session.user.name || 'Usuário'}</div>
                             <div className="text-gray-400 text-sm">
-                              {typeof (session.user as any).whatsapp === 'string' ? (session.user as any).whatsapp : 'WhatsApp não informado'}
+                              {typeof (session.user as AppUser).whatsapp === 'string' ? (session.user as AppUser).whatsapp : 'WhatsApp não informado'}
                             </div>
                           </div>
                         </div>
@@ -374,15 +375,15 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                         {(() => {
                           // Lógica para determinar status VIP real
                           const isVipByField = session.user.is_vip;
-                          const vencimento = (session.user as any).vencimento;
+                          const vencimento = (session.user as AppUser).vencimento;
                           const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
                           const isVipReal = isVipByField || hasValidVencimento;
 
                           // Determinar plano
                           let planDisplay = 'Free';
                           if (isVipReal) {
-                            if ((session.user as any).plan) {
-                              planDisplay = (session.user as any).plan;
+                            if ((session.user as AppUser).planName) {
+                              planDisplay = (session.user as AppUser).planName ?? '';
                             } else if (hasValidVencimento) {
                               planDisplay = 'BÁSICO'; // Plano padrão para vencimento válido
                             } else {
@@ -436,18 +437,23 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
 
                         {/* Informações VIP Detalhadas */}
                         {(() => {
+
                           // Lógica para determinar status VIP real
                           const isVipByField = session.user.is_vip;
-                          const vencimento = (session.user as any).vencimento;
-                          const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
+                          const vencimento = session.user.vencimento as Date | string | null | undefined;
+                          const planName = (session.user as { planName?: string | null }).planName;
+                          let hasValidVencimento = false;
+                          if (vencimento && typeof vencimento !== 'boolean') {
+                            hasValidVencimento = new Date(vencimento) > new Date();
+                          }
                           const isVipReal = isVipByField || hasValidVencimento;
 
                           if (!isVipReal) return null;
 
                           // Determinar plano para exibição
                           let planDisplay = 'VIP';
-                          if ((session.user as any).plan) {
-                            planDisplay = (session.user as any).plan;
+                          if (planName) {
+                            planDisplay = planName;
                           } else if (hasValidVencimento) {
                             planDisplay = 'BÁSICO';
                           }
@@ -478,7 +484,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                                   <div className="flex items-center justify-between">
                                     <span className="text-gray-300">Vencimento:</span>
                                     <span className="text-white font-medium">
-                                      {formatDate(vencimento)}
+                                      {vencimento && typeof vencimento !== 'boolean' ? formatDate(vencimento) : ''}
                                     </span>
                                   </div>
                                 )}
@@ -587,7 +593,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
               ))}
 
               {/* Admin Link Mobile */}
-              {Boolean((session?.user as any)?.isAdmin) && (
+              {Boolean((session?.user as AppUser)?.isAdmin) && (
                 <Link
                   href="/admin/users"
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold tracking-wide text-sm transition-all duration-300 hover:scale-105 border border-transparent hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/10 hover:shadow-red-500/20"

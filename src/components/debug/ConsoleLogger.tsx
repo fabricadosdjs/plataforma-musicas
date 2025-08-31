@@ -26,7 +26,7 @@ export const ConsoleLogger: React.FC = () => {
         };
 
         const captureLog = (type: 'log' | 'warn' | 'error' | 'info') => {
-            return (...args: any[]) => {
+            return (...args: unknown[]) => {
                 // Chamar console original
                 originalConsole[type].apply(console, args);
 
@@ -81,7 +81,7 @@ export const ConsoleLogger: React.FC = () => {
 
     // Exportar logs como texto
     const exportLogs = () => {
-        const logText = filteredLogs.map(log => 
+        const logText = filteredLogs.map(log =>
             `[${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}`
         ).join('\n');
 
@@ -96,7 +96,7 @@ export const ConsoleLogger: React.FC = () => {
 
     // Copiar logs para clipboard
     const copyLogs = async () => {
-        const logText = filteredLogs.map(log => 
+        const logText = filteredLogs.map(log =>
             `[${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}`
         ).join('\n');
 
@@ -132,18 +132,17 @@ export const ConsoleLogger: React.FC = () => {
             <div className="flex flex-wrap gap-4 mb-6">
                 <button
                     onClick={() => setIsCapturing(!isCapturing)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        isCapturing 
-                            ? 'bg-red-600 hover:bg-red-700 text-white' 
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${isCapturing
+                            ? 'bg-red-600 hover:bg-red-700 text-white'
                             : 'bg-green-600 hover:bg-green-700 text-white'
-                    }`}
+                        }`}
                 >
                     {isCapturing ? '🛑 Parar Captura' : '▶️ Iniciar Captura'}
                 </button>
 
                 <select
                     value={filter}
-                    onChange={(e) => setFilter(e.target.value as any)}
+                    onChange={(e) => setFilter(e.target.value as 'all' | 'error' | 'warn' | 'log')}
                     className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 >
                     <option value="all">Todos os Logs</option>
@@ -192,18 +191,16 @@ export const ConsoleLogger: React.FC = () => {
                         {filteredLogs.map((log, index) => (
                             <div
                                 key={index}
-                                className={`p-3 rounded-lg text-sm font-mono ${
-                                    log.type === 'error' ? 'bg-red-900/20 border border-red-500/30' :
-                                    log.type === 'warn' ? 'bg-yellow-900/20 border border-yellow-500/30' :
-                                    'bg-gray-700/50 border border-gray-600/30'
-                                }`}
+                                className={`p-3 rounded-lg text-sm font-mono ${log.type === 'error' ? 'bg-red-900/20 border border-red-500/30' :
+                                        log.type === 'warn' ? 'bg-yellow-900/20 border border-yellow-500/30' :
+                                            'bg-gray-700/50 border border-gray-600/30'
+                                    }`}
                             >
                                 <div className="flex items-start gap-2">
-                                    <span className={`text-xs px-2 py-1 rounded ${
-                                        log.type === 'error' ? 'bg-red-600 text-white' :
-                                        log.type === 'warn' ? 'bg-yellow-600 text-black' :
-                                        'bg-gray-600 text-white'
-                                    }`}>
+                                    <span className={`text-xs px-2 py-1 rounded ${log.type === 'error' ? 'bg-red-600 text-white' :
+                                            log.type === 'warn' ? 'bg-yellow-600 text-black' :
+                                                'bg-gray-600 text-white'
+                                        }`}>
                                         {log.type.toUpperCase()}
                                     </span>
                                     <span className="text-gray-400 text-xs">
@@ -233,10 +230,10 @@ export const ConsoleLogger: React.FC = () => {
             <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
                 <h4 className="font-medium text-blue-300 mb-2">📋 Como Usar:</h4>
                 <ol className="text-sm text-blue-200 space-y-1 list-decimal list-inside">
-                    <li>Clique em "▶️ Iniciar Captura"</li>
+                    <li>Clique em &quot;▶️ Iniciar Captura&quot;</li>
                     <li>Recarregue a página ou execute ações que gerem erros</li>
-                    <li>Use "📥 Exportar TXT" para baixar todos os logs</li>
-                    <li>Ou use "📋 Copiar" para colar aqui na mensagem</li>
+                    <li>Use &quot;📥 Exportar TXT&quot; para baixar todos os logs</li>
+                    <li>Ou use &quot;📋 Copiar&quot; para colar aqui na mensagem</li>
                 </ol>
             </div>
         </div>

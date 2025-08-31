@@ -154,15 +154,8 @@ export const useImageLoader = (options: UseImageLoaderOptions = {}) => {
 
 // Hook específico para imagens de música
 export const useMusicImageLoader = (track: { imageUrl?: string; songName: string; artist: string }) => {
-    // Usar o hook de erro apenas se disponível (para evitar erros quando não há provider)
-    let reportImageError: ((url: string, error: string | Event, trackInfo?: { songName: string; artist: string }) => void) | null = null;
-
-    try {
-        reportImageError = useImageErrorReporter();
-    } catch {
-        // Provider não disponível, usar fallback
-        reportImageError = null;
-    }
+    // Sempre chamar o hook no topo
+    const reportImageError = useImageErrorReporter();
 
     return useImageLoader({
         onError: (error) => {

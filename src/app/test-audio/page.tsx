@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import type { Track } from '@/types/track';
 import { AudioDiagnostics } from '@/components/audio/AudioDiagnostics';
 import { useAudioCompatibility } from '@/hooks/useAudioCompatibility';
 import { NativeAudioTester } from '@/components/audio/NativeAudioTester';
@@ -8,7 +9,7 @@ import { SafeErrorLogger } from '@/components/debug/SafeErrorLogger';
 
 export default function TestAudioPage() {
     const { checkCompatibility, isChecking, lastResult } = useAudioCompatibility();
-    const [databaseTracks, setDatabaseTracks] = useState<any[]>([]);
+    const [databaseTracks, setDatabaseTracks] = useState<Track[]>([]);
     const [isLoadingTracks, setIsLoadingTracks] = useState(false);
 
     // Buscar tracks reais do banco de dados

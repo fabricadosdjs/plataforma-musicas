@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
+import type { User } from '@/types/user';
 
 export const VipStatusDebugger: React.FC = () => {
     const { data: session } = useSession();
@@ -41,7 +42,8 @@ export const VipStatusDebugger: React.FC = () => {
     };
 
     // Só mostrar para administradores
-    if (!session?.user?.id || !(session.user as any).isAdmin) {
+    const user = session?.user as User | undefined;
+    if (!user?.id || !user.isAdmin) {
         return null;
     }
 
@@ -79,8 +81,8 @@ export const VipStatusDebugger: React.FC = () => {
             </div>
 
             <div className="mt-3 text-xs text-gray-400">
-                <p>👤 Admin: {session.user.email}</p>
-                <p>🆔 ID: {session.user.id}</p>
+                <p>👤 Admin: {user?.email}</p>
+                <p>🆔 ID: {user?.id}</p>
             </div>
         </div>
     );

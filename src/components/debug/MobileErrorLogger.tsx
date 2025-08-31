@@ -18,7 +18,7 @@ export const MobileErrorLogger: React.FC = () => {
     const [errors, setErrors] = useState<ErrorLog[]>([]);
     const [isCapturing, setIsCapturing] = useState(false);
     const [filter, setFilter] = useState<'all' | 'error' | 'warn' | 'log'>('all');
-    const [deviceInfo, setDeviceInfo] = useState<any>({});
+    const [deviceInfo, setDeviceInfo] = useState<Record<string, unknown>>({});
 
     // Detectar informações do dispositivo
     useEffect(() => {
@@ -61,7 +61,7 @@ export const MobileErrorLogger: React.FC = () => {
         };
 
         const captureLog = (type: 'log' | 'warn' | 'error' | 'info') => {
-            return (...args: any[]) => {
+            return (...args: unknown[]) => {
                 // Chamar console original
                 originalConsole[type].apply(console, args);
 
@@ -149,15 +149,20 @@ export const MobileErrorLogger: React.FC = () => {
 
     // Gerar relatório completo
     const generateFullReport = () => {
+
+        const screen = deviceInfo.screen as { width?: number; height?: number } | undefined;
+        const win = deviceInfo.window as { innerWidth?: number; innerHeight?: number } | undefined;
+        const location = deviceInfo.location as { href?: string } | undefined;
+
         const report = `🚨 RELATÓRIO COMPLETO DE ERROS - MOBILE
 
 📱 INFORMAÇÕES DO DISPOSITIVO:
 • User Agent: ${deviceInfo.userAgent || 'N/A'}
 • Platform: ${deviceInfo.platform || 'N/A'}
 • Language: ${deviceInfo.language || 'N/A'}
-• Screen: ${deviceInfo.screen?.width || 'N/A'}x${deviceInfo.screen?.height || 'N/A'}
-• Window: ${deviceInfo.window?.innerWidth || 'N/A'}x${deviceInfo.window?.innerHeight || 'N/A'}
-• URL: ${deviceInfo.location?.href || 'N/A'}
+• Screen: ${screen?.width || 'N/A'}x${screen?.height || 'N/A'}
+• Window: ${win?.innerWidth || 'N/A'}x${win?.innerHeight || 'N/A'}
+• URL: ${location?.href || 'N/A'}
 
 📊 ESTATÍSTICAS DOS ERROS:
 • Total de Logs: ${errors.length}
@@ -245,8 +250,8 @@ ${filteredErrors.map((error, index) =>
                 <button
                     onClick={() => setIsCapturing(!isCapturing)}
                     className={`px-3 py-2 rounded-lg text-sm font-medium ${isCapturing
-                            ? 'bg-red-600 hover:bg-red-700 text-white'
-                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        ? 'bg-red-600 hover:bg-red-700 text-white'
+                        : 'bg-green-600 hover:bg-green-700 text-white'
                         }`}
                 >
                     {isCapturing ? '🛑 Parar' : '▶️ Iniciar'}
@@ -254,7 +259,7 @@ ${filteredErrors.map((error, index) =>
 
                 <select
                     value={filter}
-                    onChange={(e) => setFilter(e.target.value as any)}
+                    onChange={(e) => setFilter(e.target.value as 'all' | 'error' | 'warn' | 'log')}
                     className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm"
                 >
                     <option value="all">Todos ({errors.length})</option>
@@ -314,14 +319,14 @@ ${filteredErrors.map((error, index) =>
                             <div
                                 key={index}
                                 className={`p-2 rounded text-xs font-mono ${error.type === 'error' ? 'bg-red-900/20 border border-red-500/30' :
-                                        error.type === 'warn' ? 'bg-yellow-900/20 border border-yellow-500/30' :
-                                            'bg-gray-700/50 border border-gray-600/30'
+                                    error.type === 'warn' ? 'bg-yellow-900/20 border border-yellow-500/30' :
+                                        'bg-gray-700/50 border border-gray-600/30'
                                     }`}
                             >
                                 <div className="flex items-start gap-2">
                                     <span className={`px-1 py-0.5 rounded text-xs ${error.type === 'error' ? 'bg-red-600 text-white' :
-                                            error.type === 'warn' ? 'bg-yellow-600 text-black' :
-                                                'bg-gray-600 text-white'
+                                        error.type === 'warn' ? 'bg-yellow-600 text-black' :
+                                            'bg-gray-600 text-white'
                                         }`}>
                                         {error.type.toUpperCase()}
                                     </span>
@@ -345,10 +350,10 @@ ${filteredErrors.map((error, index) =>
             <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
                 <h4 className="font-medium text-blue-300 mb-2 text-sm">📋 Como Enviar os Erros:</h4>
                 <div className="text-xs text-blue-200 space-y-1">
-                    <p>1. <strong>Clique em "▶️ Iniciar"</strong> para capturar</p>
+                    <p>1. <strong>Clique em &quot;▶️ Iniciar&quot;</strong> para capturar</p>
                     <p>2. <strong>Recarregue a página</strong> ou execute ações</p>
-                    <p>3. <strong>Use "📋 Copiar"</strong> e cole aqui na mensagem</p>
-                    <p>4. <strong>Ou use "📱 WhatsApp"</strong> para enviar direto</p>
+                    <p>3. <strong>Use &quot;📋 Copiar&quot;</strong> e cole aqui na mensagem</p>
+                    <p>4. <strong>Ou use &quot;📱 WhatsApp&quot;</strong> para enviar direto</p>
                 </div>
             </div>
         </div>
