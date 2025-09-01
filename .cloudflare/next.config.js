@@ -4,6 +4,7 @@ const nextConfig = {
     // Desabilitar build estático para componentes client-side
     experimental: {
         isrMemoryCacheSize: 0,
+        nodeMiddleware: true,
     },
 
     // Configurações específicas para Cloudflare Pages

@@ -200,8 +200,6 @@ export default function TestFilterPage() {
                             downloadedTrackIds={downloadedTrackIds}
                             setDownloadedTrackIds={handleDownloadedTrackIdsChange}
                             showDate={true}
-                            hasActiveFilters={selectedGenre !== null}
-                            selectedGenre={selectedGenre || "Test Pool"}
                         />
                     </div>
                 </div>
