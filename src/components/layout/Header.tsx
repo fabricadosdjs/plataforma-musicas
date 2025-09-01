@@ -144,7 +144,7 @@ const Header = ({ }: HeaderProps) => {
             </Link>
 
             <Link
-              href="/new"
+              href="/new#page=1"
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-emerald-400 hover:bg-emerald-500/10 hover:scale-105 border border-transparent hover:border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20"
             >
               <CheckCircle className="h-3.5 w-3.5" />
@@ -262,7 +262,7 @@ const Header = ({ }: HeaderProps) => {
                 </Link>
 
                 <Link
-                  href="/new"
+                  href="/new#page=1"
                   className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-emerald-600/20 hover:to-emerald-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-emerald-300 hover:scale-[1.02] transform border border-transparent hover:border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20"
                   onClick={() => setMobileMenuOpen(false)}
                 >
