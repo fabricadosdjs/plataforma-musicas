@@ -5,8 +5,6 @@ const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
     try {
-        console.log('📁 API: Buscando folders recentes...');
-
         // Primeiro, vamos ver quantas tracks com folders existem
         const totalTracksWithFolders = await prisma.track.count({
             where: {
@@ -16,10 +14,7 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        console.log(`📁 API: Total de tracks com folders: ${totalTracksWithFolders}`);
-
         if (totalTracksWithFolders === 0) {
-            console.log('📁 API: Nenhuma track com folder encontrada');
             return NextResponse.json({
                 success: true,
                 folders: [],
@@ -46,7 +41,7 @@ export async function GET(request: NextRequest) {
             // Remover take para pegar todas
         });
 
-        console.log(`📁 API: Encontradas ${tracksWithFolders.length} tracks com folders`);
+
 
         // Agrupar por folder e pegar as informações mais recentes
         const folderMap = new Map<string, {
@@ -90,12 +85,10 @@ export async function GET(request: NextRequest) {
             .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
             .slice(0, 7); // Pegar os 7 mais recentes
 
-        console.log(`📁 API: Retornando ${folders.length} folders válidos`);
-
-        // Log dos folders encontrados para debug
-        folders.forEach((folder, index) => {
-            console.log(`📁 Folder ${index + 1}: ${folder.name} - ${folder.trackCount} tracks - ${folder.lastUpdated}`);
-        });
+        // Log apenas em desenvolvimento
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`📁 ${folders.length} folders carregados`);
+        }
 
         return NextResponse.json({
             success: true,

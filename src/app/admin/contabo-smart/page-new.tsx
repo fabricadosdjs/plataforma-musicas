@@ -58,19 +58,19 @@ export default function ContaboSmartAdmin() {
     const [importing, setImporting] = useState(false);
     const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
-    
+
     // Estados de configuração
     const [autoDetectEnabled, setAutoDetectEnabled] = useState(true);
     const [showLinks, setShowLinks] = useState(true);
     const [editingTrack, setEditingTrack] = useState<number | null>(null);
     const [allSelected, setAllSelected] = useState(false);
-    
+
     // Estados de filtros
     const [filterStyle, setFilterStyle] = useState('all');
     const [filterPool, setFilterPool] = useState('all');
     const [sortBy, setSortBy] = useState<'filename' | 'size' | 'date' | 'confidence'>('date');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-    
+
     // Estados do player
     const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -114,7 +114,7 @@ export default function ContaboSmartAdmin() {
             if (response.ok) {
                 const result: DetectionResult = await response.json();
                 setDetectionResult(result);
-                
+
                 // Auto-selecionar tracks com alta confiança
                 const updatedTracks = result.newTracks.map(track => ({
                     ...track,
@@ -135,9 +135,9 @@ export default function ContaboSmartAdmin() {
     const smartImport = async () => {
         setImporting(true);
         setImportResult(null);
-        
+
         const selectedTracks = newTracks.filter(track => track.selected);
-        
+
         try {
             const response = await fetch('/api/contabo/smart-import', {
                 method: 'POST',
@@ -150,10 +150,10 @@ export default function ContaboSmartAdmin() {
                     autoDetectPools: true,
                 }),
             });
-            
+
             const result: ImportResult = await response.json();
             setImportResult(result);
-            
+
             if (result.success) {
                 setNewTracks([]);
                 setDetectionResult(null);
@@ -174,16 +174,16 @@ export default function ContaboSmartAdmin() {
     // Função para filtrar e ordenar tracks
     const filteredTracks = newTracks.filter(track => {
         const matchesSearch = track.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            track.preview.artist.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            track.preview.title.toLowerCase().includes(searchTerm.toLowerCase());
-        
+            track.preview.artist.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            track.preview.title.toLowerCase().includes(searchTerm.toLowerCase());
+
         const matchesStyle = filterStyle === 'all' || track.preview.style === filterStyle;
         const matchesPool = filterPool === 'all' || track.preview.pool === filterPool;
-        
+
         return matchesSearch && matchesStyle && matchesPool;
     }).sort((a, b) => {
         let comparison = 0;
-        
+
         switch (sortBy) {
             case 'filename':
                 comparison = a.filename.localeCompare(b.filename);
@@ -198,7 +198,7 @@ export default function ContaboSmartAdmin() {
                 comparison = (a.confidence || 0) - (b.confidence || 0);
                 break;
         }
-        
+
         return sortOrder === 'asc' ? comparison : -comparison;
     });
 
@@ -228,12 +228,12 @@ export default function ContaboSmartAdmin() {
     const saveTrackEdit = (index: number) => {
         const updatedTracks = [...newTracks];
         const track = updatedTracks[index];
-        
+
         if (track.customTitle) track.preview.title = track.customTitle;
         if (track.customVersion) track.preview.version = track.customVersion;
         if (track.customStyle) track.preview.style = track.customStyle;
         if (track.customPool) track.preview.pool = track.customPool;
-        
+
         setNewTracks(updatedTracks);
         setEditingTrack(null);
     };
@@ -409,7 +409,7 @@ export default function ContaboSmartAdmin() {
                                 <div className="flex justify-between">
                                     <span className="text-gray-400">Confiança média:</span>
                                     <span className="font-semibold text-blue-400">
-                                        {newTracks.length > 0 
+                                        {newTracks.length > 0
                                             ? Math.round(newTracks.reduce((acc, t) => acc + (t.confidence || 0), 0) / newTracks.length)
                                             : 0}%
                                     </span>
@@ -452,9 +452,8 @@ export default function ContaboSmartAdmin() {
                                 {filteredTracks.map((track, index) => (
                                     <div
                                         key={index}
-                                        className={`bg-gray-800/50 rounded-xl p-4 border transition-all ${
-                                            track.selected ? 'border-green-500 bg-green-500/10' : 'border-gray-700 hover:border-gray-600'
-                                        }`}
+                                        className={`bg-gray-800/50 rounded-xl p-4 border transition-all ${track.selected ? 'border-green-500 bg-green-500/10' : 'border-gray-700 hover:border-gray-600'
+                                            }`}
                                     >
                                         <div className="flex items-center gap-4">
                                             {/* Checkbox */}
@@ -472,16 +471,15 @@ export default function ContaboSmartAdmin() {
                                                         {track.preview.artist} - {track.preview.title}
                                                     </h4>
                                                     {track.confidence && (
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                                            track.confidence > 80 ? 'bg-green-500/20 text-green-400' :
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${track.confidence > 80 ? 'bg-green-500/20 text-green-400' :
                                                             track.confidence > 60 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                            'bg-red-500/20 text-red-400'
-                                                        }`}>
+                                                                'bg-red-500/20 text-red-400'
+                                                            }`}>
                                                             {track.confidence}% confiança
                                                         </span>
                                                     )}
                                                 </div>
-                                                
+
                                                 <div className="flex items-center gap-4 text-sm text-gray-400">
                                                     <span>Versão: {track.preview.version}</span>
                                                     {track.preview.style && <span>Estilo: {track.preview.style}</span>}
@@ -493,7 +491,7 @@ export default function ContaboSmartAdmin() {
                                                 {/* Player de áudio */}
                                                 <div className="flex items-center gap-2 mt-3">
                                                     <button
-                                                        onClick={() => playTrack(index, track.url)}
+                                                        onClick={() => playTrack(index, (track as any).downloadUrl || track.preview)}
                                                         className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-all"
                                                     >
                                                         {currentPlayingIndex === index && isPlaying ? (
@@ -502,7 +500,7 @@ export default function ContaboSmartAdmin() {
                                                             <Play className="h-4 w-4" />
                                                         )}
                                                     </button>
-                                                    
+
                                                     {currentPlayingIndex === index && (
                                                         <div className="flex items-center gap-2 flex-1">
                                                             <span className="text-xs text-gray-400">{formatTime(currentTime)}</span>
@@ -527,10 +525,10 @@ export default function ContaboSmartAdmin() {
                                                     <Edit className="h-3 w-3" />
                                                     Editar
                                                 </button>
-                                                
+
                                                 {showLinks && (
                                                     <button
-                                                        onClick={() => copyLink(track.url)}
+                                                        onClick={() => copyLink((track as any).downloadUrl || track.preview)}
                                                         className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-lg text-sm transition-all flex items-center gap-1"
                                                     >
                                                         <Copy className="h-3 w-3" />
@@ -626,9 +624,8 @@ export default function ContaboSmartAdmin() {
                         <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}>
                             <div className="bg-gray-900 rounded-2xl p-8 max-w-2xl w-full mx-4 border border-gray-800">
                                 <div className="flex items-center gap-4 mb-6">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                                        importResult.success ? 'bg-green-500/20' : 'bg-red-500/20'
-                                    }`}>
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${importResult.success ? 'bg-green-500/20' : 'bg-red-500/20'
+                                        }`}>
                                         {importResult.success ? (
                                             <CheckCircle className="h-6 w-6 text-green-400" />
                                         ) : (

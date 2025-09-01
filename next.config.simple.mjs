@@ -10,7 +10,7 @@ const nextConfig = {
     },
     // Configurações experimentais para performance
     experimental: {
-        optimizePackageImports: ['lucide-react', 'framer-motion', '@radix-ui/react-icons'],
+        optimizePackageImports: ['lucide-react', 'framer-motion'],
     },
     poweredByHeader: false,
     eslint: {
@@ -20,7 +20,42 @@ const nextConfig = {
     compiler: {
         removeConsole: process.env.NODE_ENV === 'production',
     },
+    // Webpack otimizado (versão simplificada)
+    webpack: (config, { isServer }) => {
+        // Otimizar imports de bibliotecas pesadas
+        if (!isServer) {
+            config.resolve.alias = {
+                ...config.resolve.alias,
+                // Evitar carregar dependências pesadas no frontend
+                'puppeteer': false,
+                '@foobar404/wave': false,
+                'drizzle-orm': false,
+                'cheerio': false,
+                'ffmpeg-static': false,
+                'archiver': false,
+                'jszip': false,
+                'fs-extra': false,
+                'nodemailer': false,
+                'resend': false,
+                'oci-sdk': false,
+                'pg': false,
+                'postgres': false,
+                'bcrypt': false,
+                'bcryptjs': false,
+                'uuid': false,
+                'cookies-next': false,
+                'dotenv': false,
+                'node-fetch': false,
+                'turnstile': false,
+                'wavesurfer.js': false,
+                'react-slick': false,
+                'slick-carousel': false,
+                'embla-carousel-react': false,
+            };
+        }
 
+        return config;
+    },
     // Compressão e otimizações
     compress: true,
     generateEtags: false,
@@ -58,4 +93,5 @@ const nextConfig = {
         ];
     },
 };
+
 export default nextConfig;

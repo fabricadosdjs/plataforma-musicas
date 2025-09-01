@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { X, Music, TrendingUp, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -84,6 +84,13 @@ export default function GenresModal({ isOpen, onClose, genres }: GenresModalProp
         onClose();
     };
 
+    // Função para pré-carregar dados do gênero
+    const prefetchGenre = useCallback((genreName: string) => {
+        const encodedGenre = encodeURIComponent(genreName);
+        // Pré-carregar dados básicos
+        fetch(`/api/tracks/genre/${encodedGenre}?limit=20`).catch(() => { });
+    }, []);
+
     if (!isOpen) return null;
 
     return (
@@ -135,6 +142,7 @@ export default function GenresModal({ isOpen, onClose, genres }: GenresModalProp
                                 <button
                                     key={genre}
                                     onClick={() => handleGenreClick(genre)}
+                                    onMouseEnter={() => prefetchGenre(genre)}
                                     className="group relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-4 text-left hover:border-purple-500/50 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20"
                                 >
                                     {/* Background glow effect */}

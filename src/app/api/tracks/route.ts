@@ -8,17 +8,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 API /tracks: Iniciando requisição GET');
-
     const session = await getServerSession(authOptions);
-    console.log('🔍 API /tracks: Session:', session?.user);
 
     if (!session?.user?.id) {
-      console.log('❌ API /tracks: Usuário não autenticado');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    console.log('🔍 API /tracks: Usuário autenticado, ID:', session.user.id);
 
     // Buscar todas as músicas com informações básicas
     const tracks = await prisma.track.findMany({
@@ -43,10 +37,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    console.log('🔍 API /tracks: Tracks encontradas:', tracks.length);
-
     // Buscar downloads do usuário
-    console.log('🔍 API /tracks: Buscando downloads para usuário:', session.user.id);
     const userDownloads = await prisma.download.findMany({
       where: {
         userId: session.user.id
@@ -58,7 +49,6 @@ export async function GET(request: NextRequest) {
     });
 
     // Buscar likes do usuário
-    console.log('🔍 API /tracks: Buscando likes para usuário:', session.user.id);
     const userLikes = await prisma.like.findMany({
       where: {
         userId: session.user.id
@@ -67,9 +57,6 @@ export async function GET(request: NextRequest) {
         trackId: true
       }
     });
-
-    console.log('🔍 API /tracks: Downloads encontrados:', userDownloads.length);
-    console.log('🔍 API /tracks: Likes encontrados:', userLikes.length);
 
     // Buscar dados do usuário para verificar VIP
     const user = await prisma.user.findUnique({
@@ -120,7 +107,6 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    console.log('✅ API /tracks: Retornando dados com cache');
     return NextResponse.json(response);
 
   } catch (error) {

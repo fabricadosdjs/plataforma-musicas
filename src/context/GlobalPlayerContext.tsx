@@ -38,60 +38,114 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const audioRef = useRef<HTMLAudioElement>(null);
 
     const getSecureAudioUrl = async (track: Track): Promise<string | null> => {
-    let audioUrl: string = String(track.downloadUrl || track.previewUrl || track.url || '');
-        if (!audioUrl || typeof audioUrl !== 'string') {
-            AudioDebugger.log('warn', 'URL de áudio não encontrada ou inválida', {
+        // Usar a API de audio-track para obter a URL de áudio segura (assinada)
+        try {
+            AudioDebugger.log('info', 'Solicitando URL de áudio via audio-track API', {
                 trackId: track.id,
                 songName: track.songName,
-                downloadUrl: track.downloadUrl,
-                previewUrl: track.previewUrl,
-                url: track.url
+                downloadUrl: track.downloadUrl ? (String(track.downloadUrl).substring(0, 50) + '...') : 'N/A',
+                previewUrl: track.previewUrl ? (String(track.previewUrl).substring(0, 50) + '...') : 'N/A'
             });
+
+            const response = await fetch('/api/audio-track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ trackId: track.id }),
+            });
+
+            AudioDebugger.log('info', 'Resposta da API audio-track recebida', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok,
+                trackId: track.id
+            });
+
+            if (!response.ok) {
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (parseError) {
+                    errorData = { error: 'Erro ao parsear resposta da API' };
+                }
+
+                AudioDebugger.log('error', 'Erro ao obter URL de áudio da API audio-track', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    error: errorData.error || 'Erro desconhecido',
+                    trackId: track.id,
+                    songName: track.songName,
+                    responseBody: errorData
+                });
+
+                showToast(`❌ Erro ao obter URL de áudio: ${errorData.error || 'Tente novamente.'}`, 'error');
+                return null;
+            }
+
+            let data;
+            try {
+                data = await response.json();
+                AudioDebugger.log('info', 'Dados da API parseados com sucesso', {
+                    hasAudioUrl: !!data.audioUrl,
+                    audioUrlLength: data.audioUrl?.length || 0,
+                    trackId: track.id,
+                    songName: track.songName
+                });
+            } catch (parseError) {
+                AudioDebugger.log('error', 'Erro ao parsear resposta JSON da API', {
+                    error: parseError instanceof Error ? parseError.message : String(parseError),
+                    trackId: track.id,
+                    songName: track.songName
+                });
+                showToast('❌ Erro ao processar resposta da API.', 'error');
+                return null;
+            }
+
+            if (data && data.audioUrl) {
+                AudioDebugger.log('info', 'URL de áudio obtida com sucesso da API audio-track', {
+                    url: data.audioUrl.substring(0, 100) + '...',
+                    trackId: track.id,
+                    songName: track.songName
+                });
+                return data.audioUrl;
+            } else {
+                AudioDebugger.log('warn', 'API audio-track não retornou URL de áudio válida', {
+                    data: data,
+                    hasData: !!data,
+                    hasAudioUrl: !!(data && data.audioUrl),
+                    trackId: track.id,
+                    songName: track.songName
+                });
+
+                // Fallback: tentar usar URLs diretas se a API falhar
+                AudioDebugger.log('info', 'Tentando fallback com URLs diretas', {
+                    trackId: track.id,
+                    songName: track.songName
+                });
+
+                const fallbackUrl = String(track.downloadUrl || track.previewUrl || '');
+                if (fallbackUrl && fallbackUrl !== '') {
+                    AudioDebugger.log('warn', 'Usando URL direta como fallback', {
+                        url: fallbackUrl.substring(0, 100) + '...',
+                        trackId: track.id,
+                        songName: track.songName
+                    });
+                    showToast('⚠️ Usando URL direta (pode não funcionar em dispositivos móveis)', 'warning');
+                    return fallbackUrl;
+                } else {
+                    showToast('❌ A API não retornou uma URL de áudio válida.', 'error');
+                    return null;
+                }
+            }
+        } catch (error) {
+            AudioDebugger.log('error', 'Erro de rede ao chamar a API audio-track', {
+                error: error instanceof Error ? error.message : String(error),
+                errorName: error instanceof Error ? error.name : 'Unknown',
+                trackId: track.id,
+                songName: track.songName
+            });
+            showToast('❌ Erro de rede ao tentar obter URL de áudio.', 'error');
             return null;
         }
-
-        debugAudioUrl(audioUrl, `Track ${track.id} - ${track.songName}`);
-
-        // Detectar se é dispositivo móvel (apenas no cliente)
-        let isMobile = false;
-        if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
-            isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        }
-
-        // PARA REPRODUÇÃO: sempre usar URL direta da Contabo (sem assinatura)
-        if (audioUrl.includes('contabostorage.com')) {
-            try {
-                // Corrigir qualquer hash/prefixo antes de 'plataforma-de-musicas/'
-                audioUrl = String(audioUrl).replace(/https?:\/\/[^/]*contabostorage\.com\/.*?(plataforma-de-musicas\/)/, 'https://usc1.contabostorage.com/$1');
-                // Se ainda não corrigiu, tentar remover qualquer prefixo antes de 'plataforma-de-musicas/'
-                if (!audioUrl.startsWith('https://usc1.contabostorage.com/plataforma-de-musicas/')) {
-                    const idx = audioUrl.indexOf('plataforma-de-musicas/');
-                    if (idx !== -1) {
-                        audioUrl = 'https://usc1.contabostorage.com/' + audioUrl.substring(idx);
-                    }
-                }
-                AudioDebugger.log('info', 'Convertendo para URL direta da Contabo (sanitizada)', {
-                    sanitized: audioUrl.substring(0, 100) + '...',
-                    isMobile,
-                    trackId: track.id
-                });
-                return audioUrl;
-            } catch (error) {
-                AudioDebugger.log('error', 'Erro ao sanitizar URL direta da Contabo', {
-                    error: error instanceof Error ? error.message : error,
-                    originalUrl: String(audioUrl).substring(0, 100) + '...',
-                    trackId: track.id
-                });
-                return String(audioUrl);
-            }
-        }
-
-        AudioDebugger.log('info', 'Usando URL original (não é Contabo)', {
-            url: audioUrl.substring(0, 100) + '...',
-            trackId: track.id
-        });
-
-        return audioUrl;
     };
 
     const playTrack = async (track: Track, newPlaylist?: Track[], musicList?: Track[]) => {
@@ -100,7 +154,6 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
             songName: track.songName,
             downloadUrl: track.downloadUrl,
             previewUrl: track.previewUrl,
-            url: track.url,
             imageUrl: track.imageUrl,
             musicList: musicList?.length || 0
         });

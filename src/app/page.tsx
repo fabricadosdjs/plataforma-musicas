@@ -18,7 +18,8 @@ import type { Session } from 'next-auth';
 
 // Tipagem NextAuth deve ser feita em um arquivo global.d.ts ou types/next-auth.d.ts
 // Removido bloco duplicado/errado daqui
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 
 function HomePageContent() {
   const { data: session } = useSession();
@@ -39,7 +40,7 @@ function HomePageContent() {
   const [loadingMostDownloaded, setLoadingMostDownloaded] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
 
-  const fetchMostDownloadedTracks = async () => {
+  const fetchMostDownloadedTracks = useCallback(async () => {
     try {
       setLoadingMostDownloaded(true);
 
@@ -70,12 +71,12 @@ function HomePageContent() {
     } finally {
       setLoadingMostDownloaded(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchMostDownloadedTracks();
     setIsVisible(true);
-  }, []);
+  }, [fetchMostDownloadedTracks]);
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
@@ -206,8 +207,6 @@ function HomePageContent() {
               </div>
             </Link>
           </div>
-
-
 
           {/* SEÇÃO - PLANOS PARA USUÁRIOS NÃO LOGADOS */}
           {!session?.user && (

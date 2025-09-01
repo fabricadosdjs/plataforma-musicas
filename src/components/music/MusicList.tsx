@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Track } from '@/types/track';
 import { useToastContext } from '@/context/ToastContext';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
@@ -47,7 +47,7 @@ interface GroupedTracks {
     };
 }
 
-export default function MusicList({
+const MusicList = React.memo(function MusicList({
     tracks,
     itemsPerPage = 20,
     enableInfiniteScroll = false,
@@ -109,6 +109,45 @@ export default function MusicList({
             setShowNotificationPermission(true);
         }
     }, []);
+
+    // Carregar cache em segundo plano e mostrar toast de sucesso
+    const hasShownCacheToast = useRef(false);
+    const isInitialMount = useRef(true);
+
+    useEffect(() => {
+        // Garantir que só execute no mount inicial
+        if (!isInitialMount.current) {
+            console.log('🔄 Componente re-renderizou, pulando carregamento de cache...');
+            return;
+        }
+
+        if (hasShownCacheToast.current) {
+            console.log('🔄 Toast de cache já foi mostrado, pulando...');
+            return; // Evitar múltiplos toasts
+        }
+
+        console.log('🔄 Iniciando carregamento de cache em segundo plano...');
+        isInitialMount.current = false;
+
+        const loadCacheInBackground = async () => {
+            try {
+                // Carregar cache em segundo plano
+                await downloadsCache.forceSync();
+                // Mostrar toast de sucesso apenas uma vez
+                if (!hasShownCacheToast.current) {
+                    hasShownCacheToast.current = true;
+                    console.log('🔄 Mostrando toast de cache sincronizado');
+                    showToast('🔄 Cache sincronizado com sucesso!', 'success');
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar cache em segundo plano:', error);
+                // Não mostrar toast de erro para não poluir a interface
+            }
+        };
+
+        // Executar em segundo plano
+        loadCacheInBackground();
+    }, []); // Executar apenas uma vez ao montar o componente
 
     // Função para solicitar permissão de notificações
     const requestNotificationPermission = useCallback(async () => {
@@ -1037,15 +1076,15 @@ export default function MusicList({
         <div className="w-full">
             {/* Banner de Permissão de Notificações */}
             {showNotificationPermission && (
-                <div className="bg-white text-gray-800 p-4 mb-4 rounded-lg border border-gray-200">
+                <div className="bg-[#181818] text-white p-4 mb-4 rounded-lg border border-[#282828] shadow-lg">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                            <div className="w-8 h-8 bg-[#1db954]/20 rounded-full flex items-center justify-center">
                                 <span className="text-lg">📱</span>
                             </div>
                             <div>
-                                <h3 className="font-semibold text-sm sm:text-base">Ativar Notificações Push</h3>
-                                <p className="text-blue-100 text-xs sm:text-sm">
+                                <h3 className="font-semibold text-sm sm:text-base text-white font-open-sans">Ativar Notificações Push</h3>
+                                <p className="text-[#b3b3b3] text-xs sm:text-sm font-open-sans">
                                     Receba notificações sobre downloads e novas músicas
                                 </p>
                             </div>
@@ -1053,13 +1092,13 @@ export default function MusicList({
                         <div className="flex gap-2">
                             <button
                                 onClick={requestNotificationPermission}
-                                className="px-4 py-2 bg-white text-blue-600 rounded-lg font-medium text-sm hover:bg-blue-50 transition-colors"
+                                className="px-4 py-2 bg-[#1db954] text-white rounded-lg font-medium text-sm hover:bg-[#1ed760] transition-colors shadow-md hover:shadow-lg font-open-sans"
                             >
                                 Ativar
                             </button>
                             <button
                                 onClick={() => setShowNotificationPermission(false)}
-                                className="px-3 py-2 text-blue-100 hover:text-white transition-colors"
+                                className="px-3 py-2 text-[#b3b3b3] hover:text-white transition-colors"
                             >
                                 ✕
                             </button>
@@ -1068,30 +1107,7 @@ export default function MusicList({
                 </div>
             )}
 
-            {/* Banner de Sincronização de Cache */}
-            <div className="bg-white text-gray-800 p-4 mb-4 rounded-lg border border-gray-200">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                            <span className="text-lg">🔄</span>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-sm sm:text-base">Sincronização de Downloads</h3>
-                            <p className="text-green-100 text-xs sm:text-sm">
-                                Seus downloads estão sincronizados com o banco de dados
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={handleForceSync}
-                            className="px-4 py-2 bg-white text-green-600 rounded-lg font-medium text-sm hover:bg-green-50 transition-colors"
-                        >
-                            Sincronizar
-                        </button>
-                    </div>
-                </div>
-            </div>
+
 
             {/* Lista de músicas */}
             {showDate ? (
@@ -1105,7 +1121,7 @@ export default function MusicList({
                                     <div className="mb-3">
                                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                                             <div className="flex items-center justify-between lg:justify-start gap-2 lg:gap-4 flex-nowrap">
-                                                <h2 className="text-sm sm:text-lg lg:text-2xl text-gray-900 font-bold min-w-0 flex-1 break-words">
+                                                <h2 className="text-sm sm:text-lg lg:text-2xl text-white font-bold min-w-0 flex-1 break-words font-open-sans">
                                                     {group.label === 'Hoje' || group.label === 'Em breve' ? (
                                                         <span className="font-bold">{group.label}</span>
                                                     ) : (
@@ -1115,16 +1131,7 @@ export default function MusicList({
                                                         </>
                                                     )}
                                                 </h2>
-                                                <div className="flex items-center gap-2 shrink-0">
-                                                    <span className="text-gray-700 text-xs lg:text-base font-bold bg-white px-3 lg:px-4 py-1 lg:py-1.5 rounded-full whitespace-nowrap border border-gray-300">
-                                                        {group.tracks.length} {group.tracks.length === 1 ? 'música' : 'músicas'}
-                                                    </span>
-                                                    {/* Indicador de sincronização com Google Drive */}
-                                                    <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200">
-                                                        <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
-                                                        <span className="hidden sm:inline font-medium">Google Drive</span>
-                                                    </div>
-                                                </div>
+
                                             </div>
 
                                             {/* Botões de download em massa responsivos */}
@@ -1133,7 +1140,7 @@ export default function MusicList({
                                                     onClick={() => {
                                                         showMobileDownloadConfirmation('new', group.tracks, () => downloadNewTracks(group.tracks));
                                                     }}
-                                                    className="bg-gray-800 hover:bg-gray-700 text-white px-3 sm:px-4 lg:px-5 py-2 rounded-lg font-medium text-xs lg:text-sm transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                    className="bg-gray-800 hover:bg-gray-700 text-white px-3 sm:px-4 lg:px-5 py-2 rounded-lg font-medium text-xs lg:text-sm transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto font-open-sans"
                                                     title={`Baixar ${group.tracks.filter(t => !downloadedTrackIds.includes(t.id)).length} músicas novas desta data`}
                                                 >
                                                     <Download className="h-3 w-3 lg:h-4 lg:w-4" />
@@ -1146,12 +1153,12 @@ export default function MusicList({
                                                     onClick={() => {
                                                         showMobileDownloadConfirmation('all', group.tracks, () => downloadAllTracks(group.tracks));
                                                     }}
-                                                    className="bg-gray-800 hover:bg-gray-700 text-white px-3 sm:px-4 lg:px-5 py-2 rounded-lg font-medium text-xs lg:text-sm transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                    className="bg-gray-800 hover:bg-gray-700 text-white px-3 sm:px-4 lg:px-5 py-2 rounded-lg font-medium text-xs lg:text-sm transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto font-open-sans"
                                                     title={`Baixar todas as ${group.tracks.length} músicas desta data`}
                                                 >
                                                     <Download className="h-3 w-3 lg:h-4 lg:w-4" />
                                                     <span className="hidden sm:inline">Baixar Tudo</span>
-                                                    <span className="sm:hidden">Baixar Tudo</span>
+                                                    <span className="hidden sm:inline">Baixar Tudo</span>
                                                     ({group.tracks.length})
                                                 </button>
                                             </div>
@@ -1159,7 +1166,7 @@ export default function MusicList({
                                     </div>
 
                                     {/* Linha neon EDM */}
-                                    <div className="h-1 bg-gray-200 rounded-full"></div>
+                                    <div className="h-1 bg-[#383838] rounded-full"></div>
 
 
                                 </div>
@@ -1176,7 +1183,7 @@ export default function MusicList({
                                                 return (
                                                     <div key={track.id} className="">
                                                         <div className="group mb-3">
-                                                            <div className="bg-white border border-gray-200 rounded-3xl p-4 group relative overflow-hidden">
+                                                            <div className="bg-[#181818] border border-[#282828] rounded-3xl p-4 group relative overflow-hidden">
                                                                 {/* ...removed overlay EDM ... */}
 
                                                                 <div className="relative mb-2 sm:mb-2">
@@ -1250,7 +1257,7 @@ export default function MusicList({
                                                                 <div className="space-y-1.5 sm:space-y-2">
                                                                     <div className="overflow-hidden">
                                                                         <h3
-                                                                            className="font-medium text-white text-[10px] sm:text-sm truncate cursor-pointer transition-all duration-500 ease-in-out tracking-wide font-sans"
+                                                                            className="font-medium text-white text-xs sm:text-sm truncate cursor-pointer transition-all duration-500 ease-in-out tracking-wide font-open-sans"
                                                                             title={track.songName}
                                                                             onClick={() => {
                                                                                 const element = event?.target as HTMLElement;
@@ -1275,7 +1282,7 @@ export default function MusicList({
                                                                         >
                                                                             {track.songName}
                                                                         </h3>
-                                                                        <div className="text-xs sm:text-sm text-gray-300 font-medium truncate">
+                                                                        <div className="text-[10px] sm:text-sm text-gray-300 font-medium truncate font-open-sans">
                                                                             {track.artist}
                                                                         </div>
                                                                     </div>
@@ -1286,11 +1293,11 @@ export default function MusicList({
                                                                             const folderName = track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt);
                                                                             router.push(`/folder/${encodeURIComponent(folderName)}`);
                                                                         }}
-                                                                        className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer w-full relative z-50"
+                                                                        className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer w-full relative z-50"
                                                                         title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
                                                                     >
                                                                         <span className="text-purple-400 text-xs">📁</span>
-                                                                        <span className="text-gray-200 text-[10px] sm:text-xs font-medium truncate text-center">
+                                                                        <span className="text-gray-200 text-[10px] sm:text-xs font-medium truncate text-center font-open-sans">
                                                                             {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
                                                                         </span>
                                                                     </button>
@@ -1301,7 +1308,7 @@ export default function MusicList({
                                                                         <button
                                                                             onClick={() => handleDownload(track)}
                                                                             disabled={downloadingTracks.has(track.id) || isDownloaded(track) || !session}
-                                                                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 w-full ${isDownloaded(track)
+                                                                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 w-full font-open-sans ${isDownloaded(track)
                                                                                 ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
                                                                                 : !session
                                                                                     ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
@@ -1329,7 +1336,7 @@ export default function MusicList({
                                                                                 handleLike(track);
                                                                             }}
                                                                             disabled={!session}
-                                                                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 w-full ${!session
+                                                                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 w-full font-open-sans ${!session
                                                                                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                                                                                 : isLiked(track)
                                                                                     ? 'bg-gray-600 text-gray-300'
@@ -1363,7 +1370,7 @@ export default function MusicList({
                                                 <div key={track.id} className="overflow-x-hidden">
                                                     {/* Linha separadora sutil */}
                                                     {index > 0 && (
-                                                        <div className="w-full h-px bg-white/15 mb-1 mt-0"></div>
+                                                        <div className="w-full h-px bg-[#383838] mb-1 mt-0"></div>
                                                     )}
                                                     <div className="group py-1">
                                                         <div className="flex items-start gap-2 min-h-16 sm:min-h-20">
@@ -1371,15 +1378,15 @@ export default function MusicList({
                                                             <div className="flex-shrink-0 relative h-16 w-16 sm:h-20 sm:w-20">
                                                                 <ImageErrorBoundary
                                                                     fallback={
-                                                                        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg border border-red-500/30`}>
+                                                                        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg`}>
                                                                             {initials}
                                                                         </div>
                                                                     }
                                                                 >
                                                                     <OptimizedImage
                                                                         track={track}
-                                                                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg border border-red-500/30 z-10"
-                                                                        fallbackClassName={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg border border-red-500/30`}
+                                                                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg z-10"
+                                                                        fallbackClassName={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg`}
                                                                         fallbackContent={initials}
                                                                         style={{ position: 'absolute', inset: 0 }}
                                                                     />
@@ -1431,13 +1438,13 @@ export default function MusicList({
                                                             {/* Informações da música responsivas */}
                                                             <div className="flex-1 min-w-0 pt-1">
                                                                 <div className="flex items-center gap-2 mb-0.5 mt-0">
-                                                                    <h3 className="text-white font-medium text-[10px] sm:text-xs truncate tracking-wide font-sans">
+                                                                    <h3 className="text-white font-medium text-xs sm:text-sm truncate tracking-wide font-open-sans">
                                                                         {track.songName}
                                                                     </h3>
 
                                                                 </div>
 
-                                                                <div className="text-gray-300 text-xs sm:text-sm font-medium mb-0.5 font-sans">
+                                                                <div className="text-gray-300 text-[10px] sm:text-sm font-medium mb-0.5 font-open-sans">
                                                                     {renderArtists(track.artist)}
                                                                 </div>
 
@@ -1447,13 +1454,13 @@ export default function MusicList({
                                                                         onClick={() => handleStyleClick(track.style)}
                                                                         disabled={!track.style || track.style === 'N/A'}
                                                                         className={`flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 ${track.style && track.style !== 'N/A'
-                                                                            ? 'bg-emerald-500/20 border border-emerald-500/30 cursor-pointer'
-                                                                            : 'bg-gray-600/20 border border-gray-600/30 cursor-not-allowed opacity-50'
+                                                                            ? 'bg-emerald-500/20 cursor-pointer'
+                                                                            : 'bg-gray-600/20 cursor-not-allowed opacity-50'
                                                                             }`}
                                                                         title={track.style && track.style !== 'N/A' ? `Filtrar por estilo: ${track.style}` : 'Estilo não disponível'}
                                                                     >
                                                                         <span className="text-emerald-400 text-xs">🎭</span>
-                                                                        <span className="text-gray-200 text-xs font-medium">
+                                                                        <span className="text-gray-200 text-xs font-medium font-open-sans">
                                                                             {track.style || 'N/A'}
                                                                         </span>
                                                                     </button>
@@ -1462,13 +1469,13 @@ export default function MusicList({
                                                                         onClick={() => handlePoolClick(track.pool)}
                                                                         disabled={!track.pool || track.pool === 'N/A'}
                                                                         className={`flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 ${track.pool && track.pool !== 'N/A'
-                                                                            ? 'bg-amber-500/20 border border-amber-500/30 cursor-pointer'
-                                                                            : 'bg-gray-600/20 border border-gray-600/30 cursor-not-allowed opacity-50'
+                                                                            ? 'bg-amber-500/20 cursor-pointer'
+                                                                            : 'bg-gray-600/20 cursor-not-allowed opacity-50'
                                                                             }`}
                                                                         title={track.pool && track.pool !== 'N/A' ? `Filtrar por pool: ${track.pool}` : 'Pool não disponível'}
                                                                     >
                                                                         <span className="text-amber-500 text-xs">🏷️</span>
-                                                                        <span className="text-gray-200 text-xs font-medium">
+                                                                        <span className="text-gray-200 text-xs font-medium font-open-sans">
                                                                             {track.pool || 'N/A'}
                                                                         </span>
                                                                     </button>
@@ -1479,11 +1486,11 @@ export default function MusicList({
                                                                             const folderName = track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt);
                                                                             router.push(`/folder/${encodeURIComponent(folderName)}`);
                                                                         }}
-                                                                        className="flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer"
+                                                                        className="flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer"
                                                                         title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
                                                                     >
                                                                         <span className="text-purple-400 text-xs">📁</span>
-                                                                        <span className="text-gray-200 text-[10px] sm:text-xs font-medium">
+                                                                        <span className="text-gray-200 text-[10px] sm:text-xs font-medium font-open-sans">
                                                                             {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
                                                                         </span>
                                                                     </button>
@@ -1497,7 +1504,7 @@ export default function MusicList({
                                                                 <button
                                                                     onClick={() => handleDownload(track)}
                                                                     disabled={downloadingTracks.has(track.id) || isDownloadedTrack || !session}
-                                                                    className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium transition-colors duration-200 justify-center ${isDownloadedTrack
+                                                                    className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium transition-colors duration-200 justify-center font-open-sans ${isDownloadedTrack
                                                                         ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
                                                                         : !session
                                                                             ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
@@ -1524,7 +1531,7 @@ export default function MusicList({
                                                                         handleLike(track);
                                                                     }}
                                                                     disabled={!session}
-                                                                    className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium transition-colors duration-200 justify-center ${!session
+                                                                    className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium transition-colors duration-200 justify-center font-open-sans ${!session
                                                                         ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                                                                         : isLiked(track)
                                                                             ? 'bg-gray-600 text-gray-300'
@@ -1927,6 +1934,6 @@ export default function MusicList({
             )}
         </div>
     );
-}
+});
 
-
+export default MusicList;

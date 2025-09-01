@@ -1,3 +1,5 @@
+import { isValidImageUrl } from './imageUtils';
+
 /**
  * Utilitários para proteger imagens de extensões do navegador
  * que tentam processar imagens quebradas
@@ -138,18 +140,6 @@ export const interceptImageLoading = (): void => {
 
     // Marcar como interceptado para evitar duplicação
     (document.createElement as any).__imageProtectionIntercepted = true;
-};
-
-// Função para verificar se uma URL de imagem é válida
-const isValidImageUrl = (url: string): boolean => {
-    if (!url || typeof url !== 'string') return false;
-
-    try {
-        const urlObj = new URL(url);
-        return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
-    } catch {
-        return false;
-    }
 };
 
 // Função para limpar todas as imagens quebradas (apenas para extensões)

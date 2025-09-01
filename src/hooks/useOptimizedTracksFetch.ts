@@ -1,40 +1,59 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Track } from '@/types/track';
+
+interface PaginationInfo {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+    limit: number;
+}
 
 interface UseOptimizedTracksFetchOptions {
     endpoint: string;
-    onSuccess?: (data: any) => void;
+    initialPage?: number;
+    pageSize?: number;
+    onSuccess?: (data: { tracks: Track[]; pagination: PaginationInfo }) => void;
     onError?: (error: Error) => void;
     onLoadingChange?: (loading: boolean) => void;
-    cacheKey?: string;
-    cacheDuration?: number; // em milissegundos
+    enableCache?: boolean;
 }
 
-interface CacheEntry {
-    data: any;
-    timestamp: number;
+interface UseOptimizedTracksFetchReturn {
+    tracks: Track[];
+    pagination: PaginationInfo | null;
+    loading: boolean;
+    error: Error | null;
+    hasMore: boolean;
+    loadMore: () => void;
+    refresh: () => void;
+    goToPage: (page: number) => void;
 }
 
-const cache = new Map<string, CacheEntry>();
+// Cache simples em memória
+const tracksCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
-export const useOptimizedTracksFetch = (options: UseOptimizedTracksFetchOptions) => {
-    const [data, setData] = useState<any>(null);
+export const useOptimizedTracksFetch = ({
+    endpoint,
+    initialPage = 1,
+    pageSize = 50,
+    onSuccess,
+    onError,
+    onLoadingChange,
+    enableCache = true
+}: UseOptimizedTracksFetchOptions): UseOptimizedTracksFetchReturn => {
+    const [tracks, setTracks] = useState<Track[]>([]);
+    const [pagination, setPagination] = useState<PaginationInfo | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
+    const [currentPage, setCurrentPage] = useState(initialPage);
+
     const abortControllerRef = useRef<AbortController | null>(null);
     const isMountedRef = useRef(true);
-    const cacheKey = options.cacheKey || options.endpoint;
 
-    const fetchData = useCallback(async () => {
-        // Verificar cache primeiro
-        const cached = cache.get(cacheKey);
-        if (cached && Date.now() - cached.timestamp < (options.cacheDuration || 30000)) {
-            console.log(`🚀 Usando dados do cache para: ${options.endpoint}`);
-            setData(cached.data);
-            options.onSuccess?.(cached.data);
-            setLoading(false);
-            return;
-        }
-
+    const fetchData = useCallback(async (page: number, append = false) => {
         // Cancelar requisição anterior se existir
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
@@ -43,17 +62,40 @@ export const useOptimizedTracksFetch = (options: UseOptimizedTracksFetchOptions)
         // Criar novo controller
         abortControllerRef.current = new AbortController();
 
+        const cacheKey = `${endpoint}?page=${page}&limit=${pageSize}`;
+
+        // Verificar cache
+        if (enableCache && tracksCache.has(cacheKey)) {
+            const cached = tracksCache.get(cacheKey)!;
+            if (Date.now() - cached.timestamp < CACHE_DURATION) {
+                console.log(`📦 Cache hit para ${cacheKey}`);
+                const data = cached.data;
+
+                if (!isMountedRef.current) return;
+
+                if (append) {
+                    setTracks(prev => [...prev, ...data.tracks]);
+                } else {
+                    setTracks(data.tracks);
+                }
+                setPagination(data.pagination);
+                setError(null);
+                onSuccess?.(data);
+                return;
+            } else {
+                tracksCache.delete(cacheKey);
+            }
+        }
+
         setLoading(true);
         setError(null);
+        onLoadingChange?.(true);
 
         try {
-            console.log(`🚀 Fazendo requisição para: ${options.endpoint}`);
+            console.log(`🚀 Fazendo requisição para: ${cacheKey}`);
 
-            const response = await fetch(options.endpoint, {
-                signal: abortControllerRef.current.signal,
-                headers: {
-                    'Cache-Control': 'max-age=30', // Cache de 30 segundos
-                }
+            const response = await fetch(cacheKey, {
+                signal: abortControllerRef.current.signal
             });
 
             if (!response.ok) {
@@ -64,15 +106,23 @@ export const useOptimizedTracksFetch = (options: UseOptimizedTracksFetchOptions)
 
             if (!isMountedRef.current) return;
 
-            // Armazenar no cache
-            cache.set(cacheKey, {
-                data: result,
-                timestamp: Date.now()
-            });
+            // Salvar no cache
+            if (enableCache) {
+                tracksCache.set(cacheKey, {
+                    data: result,
+                    timestamp: Date.now()
+                });
+            }
 
-            setData(result);
-            options.onSuccess?.(result);
-            console.log(`✅ Requisição bem-sucedida para: ${options.endpoint}`);
+            if (append) {
+                setTracks(prev => [...prev, ...result.tracks]);
+            } else {
+                setTracks(result.tracks);
+            }
+            setPagination(result.pagination);
+            setError(null);
+            onSuccess?.(result);
+            console.log(`✅ Requisição bem-sucedida para: ${cacheKey}`);
 
         } catch (err) {
             if (!isMountedRef.current) return;
@@ -84,20 +134,41 @@ export const useOptimizedTracksFetch = (options: UseOptimizedTracksFetchOptions)
 
             const error = err instanceof Error ? err : new Error('Erro desconhecido');
             setError(error);
-            options.onError?.(error);
-            console.error(`❌ Erro na requisição para ${options.endpoint}:`, error);
+            onError?.(error);
+            console.error(`❌ Erro na requisição para ${cacheKey}:`, error);
 
         } finally {
             if (isMountedRef.current) {
                 setLoading(false);
-                options.onLoadingChange?.(false);
+                onLoadingChange?.(false);
             }
         }
-    }, [options.endpoint, cacheKey, options.cacheDuration]);
+    }, [endpoint, pageSize, onSuccess, onError, onLoadingChange, enableCache]);
+
+    const loadMore = useCallback(() => {
+        if (pagination?.hasNextPage && !loading) {
+            const nextPage = currentPage + 1;
+            setCurrentPage(nextPage);
+            fetchData(nextPage, true);
+        }
+    }, [pagination?.hasNextPage, loading, currentPage, fetchData]);
+
+    const refresh = useCallback(() => {
+        setCurrentPage(1);
+        setTracks([]);
+        fetchData(1, false);
+    }, [fetchData]);
+
+    const goToPage = useCallback((page: number) => {
+        if (page !== currentPage && page >= 1) {
+            setCurrentPage(page);
+            fetchData(page, false);
+        }
+    }, [currentPage, fetchData]);
 
     useEffect(() => {
         isMountedRef.current = true;
-        fetchData();
+        fetchData(initialPage, false);
 
         return () => {
             isMountedRef.current = false;
@@ -105,24 +176,16 @@ export const useOptimizedTracksFetch = (options: UseOptimizedTracksFetchOptions)
                 abortControllerRef.current.abort();
             }
         };
-    }, [fetchData]);
-
-    const refetch = useCallback(() => {
-        // Limpar cache antes de refazer a requisição
-        cache.delete(cacheKey);
-        fetchData();
-    }, [fetchData, cacheKey]);
-
-    const clearCache = useCallback(() => {
-        cache.delete(cacheKey);
-    }, [cacheKey]);
+    }, [fetchData, initialPage]);
 
     return {
-        data,
+        tracks,
+        pagination,
         loading,
         error,
-        refetch,
-        clearCache
+        hasMore: pagination?.hasNextPage ?? false,
+        loadMore,
+        refresh,
+        goToPage
     };
 };
-

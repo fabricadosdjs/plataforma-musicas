@@ -1,78 +1,98 @@
 'use client';
 
-import React, { createContext, useContext, useCallback, useRef } from 'react';
+import { createContext, useContext, useCallback, ReactNode, useState } from 'react';
 
-interface ImageError {
+interface ImageErrorData {
     url: string;
-    timestamp: number;
-    error: string;
-    trackInfo?: {
-        songName: string;
-        artist: string;
-    };
+    error: any;
+    metadata?: any;
+    timestamp: Date;
+    count: number;
 }
 
 interface ImageErrorContextType {
-    reportImageError: (error: ImageError) => void;
-    getFailedImages: () => ImageError[];
-    clearErrorHistory: () => void;
+    reportImageError: (url: string, error: any, metadata?: any) => void;
+    getErrorCount: (url: string) => number;
+    clearErrors: () => void;
 }
 
 const ImageErrorContext = createContext<ImageErrorContextType | null>(null);
 
+export const useImageErrorReporter = (): ImageErrorContextType => {
+    const context = useContext(ImageErrorContext);
+    if (!context) {
+        // Fallback implementation
+        return {
+            reportImageError: (url: string, error: any, metadata?: any) => {
+                console.warn('ImageErrorProvider não está disponível. Erro de imagem:', { url, error, metadata });
+            },
+            getErrorCount: () => 0,
+            clearErrors: () => { }
+        };
+    }
+    return context;
+};
+
 interface ImageErrorProviderProps {
-    children: React.ReactNode;
-    maxErrorHistory?: number;
+    children: ReactNode;
+    onError?: (url: string, error: any, metadata?: any) => void;
 }
 
-export const ImageErrorProvider: React.FC<ImageErrorProviderProps> = ({
-    children,
-    maxErrorHistory = 50
-}) => {
-    const errorHistoryRef = useRef<ImageError[]>([]);
+export const ImageErrorProvider: React.FC<ImageErrorProviderProps> = ({ children, onError }) => {
+    const [errors, setErrors] = useState<Map<string, ImageErrorData[]>>(new Map());
 
-    const reportImageError = useCallback((error: ImageError) => {
-        // Evitar duplicatas recentes (últimos 5 minutos)
-        const recentDuplicate = errorHistoryRef.current.find(
-            existingError =>
-                existingError.url === error.url &&
-                Date.now() - existingError.timestamp < 5 * 60 * 1000
-        );
+    const reportImageError = useCallback((url: string, error: any, metadata?: any) => {
+        setErrors(prev => {
+            const newErrors = new Map(prev);
+            const urlErrors: ImageErrorData[] = newErrors.get(url) || [];
 
-        if (recentDuplicate) {
-            return;
-        }
+            const newError: ImageErrorData = {
+                url,
+                error,
+                metadata,
+                timestamp: new Date(),
+                count: 1
+            };
 
-        // Adicionar novo erro
-        errorHistoryRef.current.push(error);
+            // Verificar se já existe um erro similar para esta URL
+            const existingErrorIndex = urlErrors.findIndex(e =>
+                e.error?.message === error?.message ||
+                e.error?.name === error?.name
+            );
 
-        // Manter apenas os últimos N erros
-        if (errorHistoryRef.current.length > maxErrorHistory) {
-            errorHistoryRef.current = errorHistoryRef.current.slice(-maxErrorHistory);
-        }
+            if (existingErrorIndex >= 0) {
+                // Incrementar contador se for o mesmo tipo de erro
+                urlErrors[existingErrorIndex].count++;
+                urlErrors[existingErrorIndex].timestamp = new Date();
+            } else {
+                // Adicionar novo erro
+                urlErrors.push(newError);
+            }
 
-        // Log para desenvolvimento
-        if (process.env.NODE_ENV === 'development') {
-            console.warn('🖼️ Erro de imagem reportado:', {
-                url: error.url,
-                error: error.error,
-                track: error.trackInfo ? `${error.trackInfo.artist} - ${error.trackInfo.songName}` : 'N/A'
-            });
-        }
-    }, [maxErrorHistory]);
+            newErrors.set(url, urlErrors);
 
-    const getFailedImages = useCallback(() => {
-        return [...errorHistoryRef.current];
-    }, []);
+            // Chamar callback personalizado se fornecido
+            if (onError) {
+                onError(url, error, metadata);
+            }
 
-    const clearErrorHistory = useCallback(() => {
-        errorHistoryRef.current = [];
+            return newErrors;
+        });
+    }, [onError]);
+
+    const getErrorCount = useCallback((url: string): number => {
+        const urlErrors = errors.get(url);
+        return urlErrors ? urlErrors.reduce((sum, error) => sum + error.count, 0) : 0;
+    }, [errors]);
+
+    const clearErrors = useCallback(() => {
+        setErrors(new Map());
     }, []);
 
     const contextValue: ImageErrorContextType = {
         reportImageError,
-        getFailedImages,
-        clearErrorHistory
+        getErrorCount,
+        clearErrors
     };
 
     return (
@@ -82,28 +102,10 @@ export const ImageErrorProvider: React.FC<ImageErrorProviderProps> = ({
     );
 };
 
-export const useImageError = (): ImageErrorContextType => {
+export const useImageErrorProvider = () => {
     const context = useContext(ImageErrorContext);
     if (!context) {
-        throw new Error('useImageError deve ser usado dentro de ImageErrorProvider');
+        throw new Error('useImageErrorProvider deve ser usado dentro de um ImageErrorProvider');
     }
     return context;
-};
-
-// Hook para reportar erros de imagem facilmente
-export const useImageErrorReporter = () => {
-    const { reportImageError } = useImageError();
-
-    return useCallback((
-        url: string,
-        error: string | Event,
-        trackInfo?: { songName: string; artist: string }
-    ) => {
-        reportImageError({
-            url,
-            timestamp: Date.now(),
-            error: typeof error === 'string' ? error : 'Erro ao carregar imagem',
-            trackInfo
-        });
-    }, [reportImageError]);
 };

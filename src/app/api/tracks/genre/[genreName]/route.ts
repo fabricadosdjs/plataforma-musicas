@@ -2,7 +2,7 @@ import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
-
+export const revalidate = 300; // Cache por 5 minutos
 
 export async function GET(
     request: Request,
@@ -12,21 +12,35 @@ export async function GET(
         const { genreName } = await params;
         const decodedGenreName = decodeURIComponent(genreName);
 
-        // Paginação
+        // Paginação otimizada
         const { searchParams } = new URL(request.url);
-        const limit = parseInt(searchParams.get('limit') || '100', 10);
-        const offset = parseInt(searchParams.get('offset') || '0', 10);
+        const page = parseInt(searchParams.get('page') || '1', 10);
+        const limit = Math.min(parseInt(searchParams.get('limit') || '60', 10), 200); // Limitar máximo
+        const offset = (page - 1) * limit;
 
-        console.log('🔍 API Genre Tracks chamada para:', decodedGenreName, 'limit:', limit, 'offset:', offset);
+        // Log apenas em desenvolvimento
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`🔍 Genre API: ${decodedGenreName} (page ${page})`);
+        }
 
         try {
             await prisma.$connect();
-            console.log('✅ Conexão com banco estabelecida');
         } catch (dbError) {
             console.error('❌ Erro na conexão com banco:', dbError);
             throw dbError;
         }
 
+        // Primeiro, contar o total de tracks para este gênero
+        const totalCount = await prisma.track.count({
+            where: {
+                style: {
+                    equals: decodedGenreName,
+                    mode: 'insensitive',
+                },
+            },
+        });
+
+        // Depois, buscar as tracks da página atual
         const tracks = await prisma.track.findMany({
             where: {
                 style: {
@@ -56,7 +70,10 @@ export async function GET(
             skip: offset,
         });
 
-        console.log(`📊 Gênero ${decodedGenreName}: ${tracks.length} tracks encontradas`);
+        // Log apenas em desenvolvimento
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`📊 ${decodedGenreName}: ${tracks.length}/${totalCount} tracks`);
+        }
 
         const tracksWithPreview = tracks.map((track: any) => ({
             ...track,
@@ -68,11 +85,21 @@ export async function GET(
             playCount: 0,
         }));
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             tracks: tracksWithPreview,
             genreName: decodedGenreName,
-            totalCount: tracks.length,
+            totalCount: totalCount,
+            currentPage: page,
+            totalPages: Math.ceil(totalCount / limit),
+            hasNextPage: page < Math.ceil(totalCount / limit),
+            hasPreviousPage: page > 1
         });
+
+        // Adicionar headers de cache para melhor performance
+        response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+        response.headers.set('CDN-Cache-Control', 'public, s-maxage=300');
+
+        return response;
     } catch (error) {
         console.error('[GET_GENRE_TRACKS_ERROR]', error);
         return NextResponse.json(

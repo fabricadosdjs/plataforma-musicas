@@ -5,7 +5,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        console.log('🎭 API Styles Most Downloaded: Carregando todos os estilos...');
+        // Log apenas em desenvolvimento
+        if (process.env.NODE_ENV === 'development') {
+            console.log('🎭 Loading styles...');
+        }
 
         // Buscar todos os estilos disponíveis com contagem de tracks
         const allStyles = await prisma.track.groupBy({
@@ -131,8 +134,10 @@ export async function GET() {
                 return b.downloadCount - a.downloadCount;
             });
 
-        console.log(`✅ ${formattedStyles.length} estilos carregados com dados completos`);
-        console.log('📊 Estilos encontrados:', formattedStyles.map(s => `${s.name}: ${s.downloadCount} downloads, atualizado: ${s.lastUpdated}`));
+        // Log apenas em desenvolvimento
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`✅ ${formattedStyles.length} estilos carregados`);
+        }
 
         return NextResponse.json({
             success: true,

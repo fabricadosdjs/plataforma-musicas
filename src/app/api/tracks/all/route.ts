@@ -1,12 +1,17 @@
 // src/app/api/tracks/all/route.ts
 import prisma from '@/lib/prisma';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
-        console.log('📊 API Tracks All chamada - carregando todas as músicas para agrupamento');
+        const { searchParams } = new URL(request.url);
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '50');
+        const offset = (page - 1) * limit;
+
+        console.log(`📊 API Tracks All chamada - página ${page}, limite ${limit}`);
 
         // Verificar conexão com o banco
         try {
@@ -17,30 +22,49 @@ export async function GET() {
             throw dbError;
         }
 
-        // Buscar todas as músicas ordenadas por data
-        const allTracks = await prisma.track.findMany({
-            orderBy: [
-                { releaseDate: 'desc' },
-                { createdAt: 'desc' }
-            ],
-            select: {
-                id: true,
-                songName: true,
-                artist: true,
-                style: true,
-                pool: true,
-                version: true,
-                folder: true,
-                releaseDate: true,
-                createdAt: true,
-                imageUrl: true,
-                downloadUrl: true
+        // Buscar músicas com paginação
+        const [tracks, totalCount] = await Promise.all([
+            prisma.track.findMany({
+                orderBy: [
+                    { releaseDate: 'desc' },
+                    { createdAt: 'desc' }
+                ],
+                select: {
+                    id: true,
+                    songName: true,
+                    artist: true,
+                    style: true,
+                    pool: true,
+                    version: true,
+                    folder: true,
+                    releaseDate: true,
+                    createdAt: true,
+                    imageUrl: true,
+                    downloadUrl: true
+                },
+                skip: offset,
+                take: limit
+            }),
+            prisma.track.count()
+        ]);
+
+        const totalPages = Math.ceil(totalCount / limit);
+        const hasNextPage = page < totalPages;
+        const hasPrevPage = page > 1;
+
+        console.log(`📊 Músicas carregadas: ${tracks.length}/${totalCount} (página ${page}/${totalPages})`);
+
+        return NextResponse.json({
+            tracks,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalCount,
+                hasNextPage,
+                hasPrevPage,
+                limit
             }
         });
-
-        console.log(`📊 Total de músicas carregadas: ${allTracks.length}`);
-
-        return NextResponse.json(allTracks);
 
     } catch (error) {
         console.error("[GET_TRACKS_ALL_ERROR]", error);
@@ -55,7 +79,7 @@ export async function GET() {
         }
 
         return NextResponse.json({
-            error: "Erro interno do servidor ao buscar todas as músicas"
+            error: "Erro interno do servidor ao buscar músicas"
         }, { status: 500 });
     }
 }

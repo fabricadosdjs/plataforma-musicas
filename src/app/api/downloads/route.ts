@@ -8,13 +8,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
     try {
-        console.log('🔍 API /downloads: Iniciando requisição GET');
-
         const session = await getServerSession(authOptions);
-        console.log('🔍 API /downloads: Session:', session?.user);
 
         if (!session?.user?.id) {
-            console.log('❌ API /downloads: Usuário não autenticado');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -31,13 +27,11 @@ export async function GET(request: NextRequest) {
         });
 
         if (!user) {
-            console.log('❌ API /downloads: Usuário não encontrado');
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
         const downloadedTrackIds = user.downloads.map(download => download.trackId);
 
-        console.log('✅ API /downloads: Retornando dados do usuário');
         return NextResponse.json({
             downloads: downloadedTrackIds,
             isVip: user.is_vip,
@@ -53,28 +47,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        console.log('🔍 API /downloads: Iniciando requisição POST');
-
         const session = await getServerSession(authOptions);
-        console.log('🔍 API /downloads: Session:', session?.user);
 
         if (!session?.user?.id) {
-            console.log('❌ API /downloads: Usuário não autenticado');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const { trackId, confirmReDownload } = await req.json();
-        console.log('🔍 API /downloads: Dados recebidos:', { trackId, confirmReDownload });
 
         if (!trackId) {
-            console.log('❌ API /downloads: trackId não fornecido');
             return NextResponse.json({ error: "ID da música é obrigatório" }, { status: 400 });
         }
 
         // Garantir que trackId seja um número
         const numericTrackId = Number(trackId);
         if (isNaN(numericTrackId)) {
-            console.log('❌ API /downloads: trackId inválido:', trackId);
             return NextResponse.json({ error: "ID da música inválido" }, { status: 400 });
         }
 
@@ -101,12 +88,7 @@ export async function POST(req: NextRequest) {
                 }
             });
 
-            console.log('🔍 API /downloads: Dados do usuário do banco:', user);
-            console.log('🔍 API /downloads: session.user.is_vip:', session.user.is_vip);
-            console.log('🔍 API /downloads: user.is_vip do banco:', user?.is_vip);
-
             if (!user) {
-                console.log('❌ API /downloads: Usuário não encontrado');
                 return NextResponse.json({ error: "Utilizador não encontrado" }, { status: 404 });
             }
 
@@ -130,7 +112,6 @@ export async function POST(req: NextRequest) {
             });
 
             if (recentDownload && !confirmReDownload) {
-                console.log('⚠️ API /downloads: Re-download solicitado');
                 return NextResponse.json({
                     needsConfirmation: true,
                     message: `Você já baixou esta música hoje. Deseja baixar novamente?`,
@@ -167,16 +148,8 @@ export async function POST(req: NextRequest) {
             });
 
             if (!track) {
-                console.log('❌ API /downloads: Track não encontrada');
                 return NextResponse.json({ error: "Música não encontrada.", userId: String(user.id) }, { status: 404 });
             }
-
-            console.log('🔍 API /downloads: Track encontrada:', {
-                id: track.id,
-                songName: track.songName,
-                artist: track.artist,
-                downloadUrl: track.downloadUrl
-            });
 
             // Buscar todos os downloads do usuários
             const userDownloads = await prisma.download.findMany({
@@ -184,8 +157,6 @@ export async function POST(req: NextRequest) {
                 select: { trackId: true }
             });
 
-            console.log('✅ API /downloads: Download processado com sucesso');
-            console.log('🔗 URL de download retornada:', track.downloadUrl);
             return NextResponse.json({
                 success: true,
                 message: 'Download autorizado!',

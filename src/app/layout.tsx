@@ -24,6 +24,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import { TrackingProvider } from '@/context/TrackingContext';
 import BrowserExtensionHandler from '@/components/layout/BrowserExtensionHandler';
 import { GlobalImageErrorInterceptor } from '@/components/ui/ImageErrorBoundary';
+import { ImageErrorProvider } from '@/components/providers/ImageErrorProvider';
 import GlobalDownloadProgress from '@/components/download/GlobalDownloadProgress';
 import '@/utils/errorFilter'; // Importar filtro de erros global
 
@@ -139,30 +140,30 @@ export default function RootLayout({
                 <LoadingProvider>
                   <GlobalPlayerProvider>
                     <GlobalDownloadProvider>
-                      <BrowserExtensionHandler />
-                      <MusicRouteHandler />
-                      <ExtensionDetector />
-                      <GlobalToastManager />
-                      <GlobalImageErrorInterceptor />
-                      <DynamicGradientBackground />
-                      <PageTransitionLoading>
-                        {children}
-                      </PageTransitionLoading>
-                      {/* Botão de instalação PWA global */}
-                      <PWAInstaller />
-                      {/* Player global sempre renderizado */}
-                      <FooterPlayerNew />
-                      {/* Progresso global de downloads */}
-                      <GlobalDownloadProgress />
+                      <ImageErrorProvider>
+                        <BrowserExtensionHandler />
+                        <MusicRouteHandler />
+                        <ExtensionDetector />
+                        <GlobalToastManager />
+                        <GlobalImageErrorInterceptor />
+                        <DynamicGradientBackground />
+                        <PageTransitionLoading>
+                          {children}
+                        </PageTransitionLoading>
+                        {/* Botão de instalação PWA global */}
+                        <PWAInstaller />
+                        {/* Player global sempre renderizado */}
+                        <FooterPlayerNew />
+                        {/* Progresso global de downloads */}
+                        <GlobalDownloadProgress />
+                      </ImageErrorProvider>
                     </GlobalDownloadProvider>
                   </GlobalPlayerProvider>
                 </LoadingProvider>
               </TrackingProvider>
             </ToastProvider>
           </AppProvider>
-        </AuthProvider>
-
-        {/* Tawk.to Script com proteção e carga após hydration, neutraliza i18next não existente */}
+        </AuthProvider>        {/* Tawk.to Script com proteção e carga após hydration, neutraliza i18next não existente */}
         <script
           type="text/javascript"
           dangerouslySetInnerHTML={{

@@ -1,3 +1,4 @@
+
 import { Metadata } from 'next';
 import { generateMetadata } from './metadata';
 
@@ -8,5 +9,5 @@ export default function GenreLayout({
 }: {
     children: React.ReactNode;
 }) {
-    return <>{children}</>;
+    return children;
 }

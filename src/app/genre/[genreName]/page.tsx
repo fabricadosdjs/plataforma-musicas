@@ -18,6 +18,7 @@ import { useGlobalDownload } from '@/context/GlobalDownloadContext';
 import { useToastContext } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useSimplePagination } from '@/hooks/useSimplePagination';
 
 // Função para obter informações sobre gêneros baseada em dados reais
 const getGenreInfo = (genreName: string, stats: any): string => {
@@ -61,7 +62,6 @@ export default function GenrePage() {
     const { data: session } = useSession();
 
 
-    const [tracks, setTracks] = useState<Track[]>([]);
     const [loading, setLoading] = useState(true);
     // Usar cache global igual ao /new para atualização em tempo real
     const downloadedTrackIds = downloadsCache.downloadedTrackIds;
@@ -79,6 +79,10 @@ export default function GenrePage() {
     // Estado para filtros
     const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
     const [filteredTracks, setFilteredTracks] = useState<Track[]>([]);
+
+    // Estado de loading inicial para melhor UX
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [quickTracks, setQuickTracks] = useState<Track[]>([]);
 
 
 
@@ -133,19 +137,19 @@ export default function GenrePage() {
 
     // Obter estilos únicos disponíveis
     const availableStyles = useMemo(() => {
-        if (!tracks.length) return [];
-        return Array.from(new Set(tracks.map(track => track.style).filter(Boolean))).sort();
-    }, [tracks]);
+        if (!quickTracks.length) return [];
+        return Array.from(new Set(quickTracks.map(track => track.style).filter(Boolean))).sort();
+    }, [quickTracks]);
 
     // Filtrar tracks baseado no estilo selecionado
     useEffect(() => {
         if (selectedStyle) {
-            const filtered = tracks.filter(track => track.style === selectedStyle);
+            const filtered = quickTracks.filter(track => track.style === selectedStyle);
             setFilteredTracks(filtered);
         } else {
-            setFilteredTracks(tracks);
+            setFilteredTracks(quickTracks);
         }
-    }, [selectedStyle, tracks]);
+    }, [selectedStyle, quickTracks]);
 
     // Estado para contador em tempo real
     const [availableTracksCount, setAvailableTracksCount] = useState(0);
@@ -233,30 +237,71 @@ export default function GenrePage() {
         }
     };
 
+    // Carregamento rápido inicial para melhor performance
     useEffect(() => {
-        const fetchGenreTracks = async () => {
+        const loadQuickData = async () => {
             try {
-                setLoading(true);
+                setInitialLoading(true);
 
-                // Buscar tracks e estatísticas em paralelo
-                const [tracksResponse, statsResponse] = await Promise.all([
-                    fetch(`/api/tracks/genre/${encodeURIComponent(decodedGenreName)}`),
-                    fetch(`/api/tracks/genre/${encodeURIComponent(decodedGenreName)}/stats`)
-                ]);
-
-                if (tracksResponse.ok) {
-                    const tracksData = await tracksResponse.json();
-                    const tracks = Array.isArray(tracksData.tracks) ? tracksData.tracks : [];
-                    setTracks(tracks);
-                    setFilteredTracks(tracks);
-
-                    // Atualizar totalTracks nas estatísticas
-                    setStats(prev => ({ ...prev, totalTracks: tracks.length }));
-                } else {
-                    setTracks([]);
-                    setStats(prev => ({ ...prev, totalTracks: 0 }));
+                // Carregar primeiros 20 resultados rapidamente
+                const quickResponse = await fetch(`/api/tracks/genre/${encodeURIComponent(decodedGenreName)}?page=1&limit=20`);
+                if (quickResponse.ok) {
+                    const quickData = await quickResponse.json();
+                    setQuickTracks(quickData.tracks || []);
+                    setFilteredTracks(quickData.tracks || []);
+                    setInitialLoading(false);
                 }
+            } catch (error) {
+                console.error('❌ Erro no carregamento rápido:', error);
+                setInitialLoading(false);
+            }
+        };
 
+        if (decodedGenreName) {
+            loadQuickData();
+        }
+    }, [decodedGenreName]);
+
+    // Hook para paginação simples das músicas
+    const {
+        tracks,
+        totalCount,
+        currentPage,
+        totalPages,
+        isLoading,
+        error,
+        loadPage,
+        nextPage,
+        previousPage,
+        hasNextPage,
+        hasPreviousPage,
+        forceReload
+    } = useSimplePagination({
+        endpoint: `/api/tracks/genre/${encodeURIComponent(decodedGenreName)}`,
+        pageSize: 60, // 60 músicas por página
+        initialPage: 1,
+        onError: (error) => {
+            console.error('❌ Erro no carregamento da página:', error);
+        },
+        onPageChange: (page) => {
+            // Log apenas em desenvolvimento
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`🔄 Página ${page} do gênero ${decodedGenreName}`);
+            }
+        }
+    });
+
+    // Usar tracks rápidas enquanto carrega a paginação completa
+    const displayTracks = useMemo(() => {
+        if (initialLoading) return quickTracks;
+        if (tracks.length > 0) return tracks;
+        return quickTracks;
+    }, [initialLoading, tracks, quickTracks]);
+
+    useEffect(() => {
+        const fetchGenreStats = async () => {
+            try {
+                const statsResponse = await fetch(`/api/tracks/genre/${encodeURIComponent(decodedGenreName)}/stats`);
                 if (statsResponse.ok) {
                     const statsData = await statsResponse.json();
                     setStats(prev => ({
@@ -271,15 +316,11 @@ export default function GenrePage() {
                     }));
                 }
             } catch (e) {
-                console.error('Erro ao buscar dados do gênero:', e);
-                setTracks([]);
-                setStats(prev => ({ ...prev, totalTracks: 0 }));
-            } finally {
-                setLoading(false);
+                console.error('Erro ao buscar estatísticas do gênero:', e);
             }
         };
-        if (decodedGenreName) fetchGenreTracks();
-    }, [decodedGenreName]);
+        if (decodedGenreName) fetchGenreStats();
+    }, [decodedGenreName, tracks.length]);
 
     // Função para baixar músicas em lote (simplificada)
     const downloadTracksInBatches = async (tracksToDownload: Track[]) => {

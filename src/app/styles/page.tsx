@@ -199,6 +199,11 @@ export default function StylesPage() {
                                         e.stopPropagation();
                                         router.push(`/genre/${encodeURIComponent(style.name)}`);
                                     }}
+                                    onMouseEnter={() => {
+                                        // Pré-carregar dados do gênero
+                                        const encodedGenre = encodeURIComponent(style.name);
+                                        fetch(`/api/tracks/genre/${encodedGenre}?limit=20`).catch(() => { });
+                                    }}
                                 >
                                     {/* Badge de posição para top estilos */}
                                     {index < 10 && (

@@ -758,7 +758,7 @@ export async function POST(request: NextRequest) {
             // Usar tracks fornecidos pela interface
             filesToProcess = tracksWithSpotify.map((track: any) => ({
                 filename: track.filename,
-                url: track.url,
+                url: track.downloadUrl || track.previewUrl,
                 size: track.size,
                 lastModified: track.lastModified,
                 spotifyMetadata: track.spotifyMetadata

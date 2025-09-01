@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 600; // Cache por 10 minutos para estatísticas
 
 export async function GET(
     request: Request,
@@ -11,12 +12,14 @@ export async function GET(
         const { genreName } = await params;
         const decodedGenreName = decodeURIComponent(genreName);
 
-        console.log('📊 API Genre Stats chamada para:', decodedGenreName);
+        // Log apenas em desenvolvimento
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`📊 Stats API: ${decodedGenreName}`);
+        }
 
         // Verificar conexão com o banco
         try {
             await prisma.$connect();
-            console.log('✅ Conexão com banco estabelecida');
         } catch (dbError) {
             console.error('❌ Erro na conexão com banco:', dbError);
             throw dbError;
@@ -97,27 +100,20 @@ export async function GET(
             latestRelease,
         };
 
-        // Logs detalhados para debugging
-        console.log(`📊 Gênero ${decodedGenreName} - Estatísticas detalhadas:`);
-        console.log(`   - Total de músicas: ${totalTracks}`);
-        console.log(`   - Downloads únicos: ${totalDownloads} → Validado: ${validatedDownloads} (usuários únicos que baixaram)`);
-        console.log(`   - Likes únicos: ${totalLikes} → Validado: ${validatedLikes} (usuários únicos que deram like)`);
-        console.log(`   - Plays únicos: ${totalPlays} → Validado: ${validatedPlays} (usuários únicos que tocaram)`);
-        console.log(`   - Artistas únicos: ${uniqueArtists}`);
-        console.log(`   - Pools únicos: ${uniquePools}`);
-
-        // Verificar se houve correções
-        if (totalDownloads !== validatedDownloads) {
-            console.log(`🔧 CORRIGIDO: Downloads de ${totalDownloads} para ${validatedDownloads} (limitado ao total de músicas)`);
-        }
-        if (totalLikes !== validatedLikes) {
-            console.log(`🔧 CORRIGIDO: Likes de ${totalLikes} para ${validatedLikes} (limitado ao total de músicas)`);
-        }
-        if (totalPlays !== validatedPlays) {
-            console.log(`🔧 CORRIGIDO: Plays de ${totalPlays} para ${validatedPlays} (limitado ao total de músicas)`);
+        // Log apenas em desenvolvimento e apenas se houver correções
+        if (process.env.NODE_ENV === 'development') {
+            if (totalDownloads !== validatedDownloads || totalLikes !== validatedLikes || totalPlays !== validatedPlays) {
+                console.log(`🔧 ${decodedGenreName}: Corrigido stats (${validatedDownloads}/${validatedLikes}/${validatedPlays})`);
+            }
         }
 
-        return NextResponse.json(stats);
+        const response = NextResponse.json(stats);
+
+        // Adicionar headers de cache para estatísticas
+        response.headers.set('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=1200');
+        response.headers.set('CDN-Cache-Control', 'public, s-maxage=600');
+
+        return response;
 
     } catch (error) {
         console.error('[GET_GENRE_STATS_ERROR]', error);

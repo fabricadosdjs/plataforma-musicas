@@ -7,17 +7,22 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get('page') || '1');
-        const daysPerPage = 4; // 4 dias por página
-        const offset = (page - 1) * daysPerPage;
+        const limit = parseInt(searchParams.get('limit') || '60');
+        const offset = (page - 1) * limit;
 
-        console.log(`📊 API New Tracks chamada - page: ${page}, daysPerPage: ${daysPerPage}, offset: ${offset}`);
+        console.log(`📊 API New Tracks chamada - page: ${page}, limit: ${limit}, offset: ${offset}`);
 
-        // Buscar todas as músicas ordenadas por data de lançamento
-        const allTracks = await prisma.track.findMany({
+        // Buscar total de músicas para paginação
+        const totalCount = await prisma.track.count();
+
+        // Buscar músicas paginadas ordenadas por data de lançamento
+        const tracks = await prisma.track.findMany({
             orderBy: [
                 { releaseDate: 'desc' },
                 { createdAt: 'desc' }
             ],
+            skip: offset,
+            take: limit,
             select: {
                 id: true,
                 songName: true,
@@ -25,7 +30,7 @@ export async function GET(request: NextRequest) {
                 style: true,
                 pool: true,
                 version: true,
-                folder: true, // Adicionando o campo folder
+                folder: true,
                 releaseDate: true,
                 createdAt: true,
                 imageUrl: true,
@@ -37,101 +42,8 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        console.log(`📊 Total de músicas carregadas: ${allTracks.length}`);
-
-        // Agrupar músicas por data
-        const tracksByDate = new Map<string, any[]>();
-
-        allTracks.forEach(track => {
-            let dateKey: string;
-
-            if (track.releaseDate) {
-                try {
-                    const date = new Date(track.releaseDate);
-                    if (!isNaN(date.getTime())) {
-                        dateKey = date.toISOString().split('T')[0];
-                    } else {
-                        dateKey = 'no-date';
-                    }
-                } catch {
-                    dateKey = 'no-date';
-                }
-            } else if (track.createdAt) {
-                try {
-                    const date = new Date(track.createdAt);
-                    if (!isNaN(date.getTime())) {
-                        dateKey = date.toISOString().split('T')[0];
-                    } else {
-                        dateKey = 'no-date';
-                    }
-                } catch {
-                    dateKey = 'no-date';
-                }
-            } else {
-                dateKey = 'no-date';
-            }
-
-            if (!tracksByDate.has(dateKey)) {
-                tracksByDate.set(dateKey, []);
-            }
-            tracksByDate.get(dateKey)!.push(track);
-        });
-
-        // Ordenar datas (mais recente primeiro)
-        const sortedDates = Array.from(tracksByDate.keys()).sort((a, b) => {
-            if (a === 'no-date') return 1;
-            if (b === 'no-date') return 1;
-            return b.localeCompare(a);
-        });
-
-        console.log(`📊 Datas únicas encontradas: ${sortedDates.length}`);
-        console.log(`📊 Primeiras 5 datas:`, sortedDates.slice(0, 5));
-
-        // Calcular quais datas devem ser exibidas nesta página
-        const startDateIndex = offset;
-        const endDateIndex = Math.min(startDateIndex + daysPerPage, sortedDates.length);
-        const datesForThisPage = sortedDates.slice(startDateIndex, endDateIndex);
-
-        console.log(`📊 Página ${page}: datas ${startDateIndex + 1} a ${endDateIndex} de ${sortedDates.length}`);
-        console.log(`📊 Datas desta página:`, datesForThisPage);
-
-        // Filtrar músicas apenas das datas desta página
-        const tracksForThisPage = allTracks.filter(track => {
-            let trackDate: string;
-
-            if (track.releaseDate) {
-                try {
-                    const date = new Date(track.releaseDate);
-                    if (!isNaN(date.getTime())) {
-                        trackDate = date.toISOString().split('T')[0];
-                    } else {
-                        return false;
-                    }
-                } catch {
-                    return false;
-                }
-            } else if (track.createdAt) {
-                try {
-                    const date = new Date(track.createdAt);
-                    if (!isNaN(date.getTime())) {
-                        trackDate = date.toISOString().split('T')[0];
-                    } else {
-                        return false;
-                    }
-                } catch {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-
-            return datesForThisPage.includes(trackDate);
-        });
-
-        console.log(`📊 Músicas filtradas para esta página: ${tracksForThisPage.length}`);
-
         // Processar tracks para retorno
-        const processedTracks = tracksForThisPage.map((track: any) => ({
+        const processedTracks = tracks.map((track: any) => ({
             ...track,
             previewUrl: track.downloadUrl || '',
             downloadCount: 0,
@@ -139,25 +51,18 @@ export async function GET(request: NextRequest) {
             playCount: 0,
         }));
 
-        // Calcular estatísticas
-        const totalDays = sortedDates.length;
-        const totalPages = Math.ceil(totalDays / daysPerPage);
+        const totalPages = Math.ceil(totalCount / limit);
         const hasMore = page < totalPages;
 
-        console.log(`📊 Estatísticas: ${totalDays} dias total, ${totalPages} páginas, página atual: ${page}, tem mais: ${hasMore}`);
+        console.log(`📊 Estatísticas: ${totalCount} músicas total, ${totalPages} páginas, página atual: ${page}, tem mais: ${hasMore}`);
 
         return NextResponse.json({
             tracks: processedTracks,
+            totalCount,
             page,
-            hasMore,
-            totalDays,
             totalPages,
-            daysPerPage,
-            currentDays: datesForThisPage.length,
-            datesForThisPage,
-            offset,
-            startDateIndex: startDateIndex + 1,
-            endDateIndex
+            hasMore,
+            limit
         });
 
     } catch (error) {
@@ -174,16 +79,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             error: "Erro interno do servidor ao buscar músicas novas",
             tracks: [],
+            totalCount: 0,
             page: 1,
-            hasMore: false,
-            totalDays: 0,
             totalPages: 1,
-            daysPerPage: 4,
-            currentDays: 0,
-            datesForThisPage: [],
-            offset: 0,
-            startDateIndex: 1,
-            endDateIndex: 0
+            hasMore: false,
+            limit: 60
         }, { status: 500 });
     }
 }

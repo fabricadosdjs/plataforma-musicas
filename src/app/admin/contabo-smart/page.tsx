@@ -656,7 +656,7 @@ export default function ContaboSmartAdmin() {
                                                 {/* Player de áudio */}
                                                 <div className="flex items-center gap-2 mt-3">
                                                     <button
-                                                        onClick={() => playTrack(index, track.url)}
+                                                        onClick={() => playTrack(index, (track as any).downloadUrl || track.preview)}
                                                         className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-all"
                                                     >
                                                         {currentPlayingIndex === index && isPlaying ? (
@@ -693,7 +693,7 @@ export default function ContaboSmartAdmin() {
 
                                                 {showLinks && (
                                                     <button
-                                                        onClick={() => copyLink(track.url)}
+                                                        onClick={() => copyLink((track as any).downloadUrl || track.preview)}
                                                         className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-lg text-sm transition-all flex items-center gap-1"
                                                     >
                                                         <Copy className="h-3 w-3" />

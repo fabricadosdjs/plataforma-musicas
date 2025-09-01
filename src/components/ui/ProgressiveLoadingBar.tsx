@@ -26,21 +26,9 @@ export const ProgressiveLoadingBar: React.FC<ProgressiveLoadingBarProps> = ({
     const isIndeterminate = total === 0 && isLoading;
 
     return (
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-4 relative overflow-hidden">
-            {/* Barra de progresso */}
-            <div
-                className={`h-full transition-all duration-500 ease-out ${isIndeterminate
-                        ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 animate-pulse'
-                        : 'bg-gradient-to-r from-blue-500 to-purple-500'
-                    }`}
-                style={{
-                    width: isIndeterminate ? '100%' : `${percentage}%`,
-                    animation: isIndeterminate ? 'shimmer 2s infinite' : 'none'
-                }}
-            />
-
+        <div className="w-full mb-4">
             {/* Indicador de status */}
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex items-center justify-center">
                 {isLoading && !isIndeterminate && (
                     <div className="flex items-center gap-2 text-xs text-white font-medium">
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -52,13 +40,6 @@ export const ProgressiveLoadingBar: React.FC<ProgressiveLoadingBarProps> = ({
                     <div className="flex items-center gap-2 text-xs text-white font-medium">
                         <Loader2 className="w-3 h-3 animate-spin" />
                         <span>Carregando músicas...</span>
-                    </div>
-                )}
-
-                {isComplete && (
-                    <div className="flex items-center gap-2 text-xs text-white font-medium">
-                        <CheckCircle className="w-3 h-3" />
-                        <span>Todas as {total} músicas carregadas!</span>
                     </div>
                 )}
 
@@ -89,8 +70,8 @@ export const LoadMoreButton: React.FC<{
                 onClick={onClick}
                 disabled={isLoading}
                 className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${isLoading
-                        ? 'bg-gray-400 dark:bg-gray-600 text-gray-200 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white hover:shadow-lg transform hover:scale-105'
+                    ? 'bg-gray-400 dark:bg-gray-600 text-gray-200 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white hover:shadow-lg transform hover:scale-105'
                     }`}
             >
                 {isLoading ? (

@@ -66,3 +66,4 @@ O sistema gera logs detalhados para debug:
 - ✅ Sucesso ou ❌ erro
 
 
+

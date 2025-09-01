@@ -32,8 +32,8 @@ interface UseDownloadsCacheReturn {
 const memoryCache = new Map<string, { data: DownloadsCacheData; timestamp: number }>();
 const CACHE_TTL = 2 * 60 * 1000; // 2 minutos
 
-// Função auxiliar para criar fetch com timeout otimizado
-const fetchWithTimeout = async (url: string, options: RequestInit, timeout = 5000) => {
+// Função auxiliar para criar fetch com timeout otimizado e retry
+const fetchWithTimeout = async (url: string, options: RequestInit, timeout = 15000, retries = 1) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -52,8 +52,14 @@ const fetchWithTimeout = async (url: string, options: RequestInit, timeout = 500
         return response;
     } catch (error) {
         clearTimeout(timeoutId);
+
         if (error instanceof Error && error.name === 'AbortError') {
-            throw new Error('Request timeout');
+            // Se ainda há tentativas, tentar novamente com timeout maior
+            if (retries > 0) {
+                console.log(`⏰ Timeout detectado, tentando novamente (${retries} tentativa(s) restante(s))`);
+                return fetchWithTimeout(url, options, timeout * 1.5, retries - 1);
+            }
+            throw new Error(`Request timeout após ${retries + 1} tentativa(s)`);
         }
         throw error;
     }
@@ -113,8 +119,8 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
         refreshCache();
     }, [session?.user?.id]);
 
-    // Função para atualizar cache da API com debounce
-    const refreshCache = useCallback(async () => {
+    // Função para atualizar cache da API com debounce e retry automático
+    const refreshCache = useCallback(async (retryCount = 0): Promise<void> => {
         if (!session?.user?.id) return;
 
         // Evitar múltiplas chamadas simultâneas
@@ -129,8 +135,8 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
             try {
                 console.log('🔄 Atualizando cache de downloads...');
 
-                // Primeiro, buscar dados básicos do usuário com timeout reduzido
-                const response = await fetchWithTimeout('/api/tracks', {}, 5000); // Reduzido de 8s para 5s
+                // Primeiro, buscar dados básicos do usuário com timeout otimizado
+                const response = await fetchWithTimeout('/api/tracks', {}, 20000); // 20 segundos para API principal
 
                 console.log('🔄 Resposta da API:', response.status, response.statusText);
 
@@ -159,7 +165,7 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
                         body: JSON.stringify({
                             trackIds: data.userData.downloadedTrackIds || []
                         })
-                    }, 5000); // Reduzido de 8s para 5s
+                    }, 15000); // 15 segundos para verificação de downloads
 
                     if (downloadsResponse.ok) {
                         const downloadsData = await downloadsResponse.json();
@@ -203,7 +209,22 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
                 console.log('✅ Cache atualizado com sucesso');
             } catch (error) {
                 console.error('❌ Erro ao atualizar cache:', error);
-                setError(error instanceof Error ? error.message : 'Erro desconhecido');
+
+                // Tratamento específico para timeouts com retry automático
+                if (error instanceof Error && error.message.includes('timeout')) {
+                    if (retryCount < 2) { // Máximo 3 tentativas (0, 1, 2)
+                        console.warn(`⏰ Timeout detectado, tentando novamente (${retryCount + 1}/3)...`);
+                        // Aguardar um pouco antes de tentar novamente
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        // Tentar novamente com timeout maior
+                        return refreshCache(retryCount + 1);
+                    } else {
+                        setError(`Timeout persistente: A API não respondeu após 3 tentativas. Verifique sua conexão.`);
+                        console.error('❌ Timeout persistente após 3 tentativas');
+                    }
+                } else {
+                    setError(error instanceof Error ? error.message : 'Erro desconhecido');
+                }
             } finally {
                 setIsLoading(false);
                 refreshPromiseRef.current = null; // Limpar o ref após a conclusão
@@ -250,7 +271,7 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ trackIds: [trackId] })
-                }, 5000); // Reduzido de 8s para 5s
+                }, 15000); // 15 segundos para verificação individual
 
                 if (checkResponse.ok) {
                     const checkData = await checkResponse.json();
@@ -329,24 +350,24 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
         if (!session?.user?.id) return;
 
         console.log('🔄 Forçando sincronização com banco de dados...');
-        await refreshCache();
+        await refreshCache(0); // Resetar contador de tentativas
     }, [session?.user?.id, refreshCache]);
 
     return {
-    downloadedTrackIds: cacheData.downloadedTrackIds,
-    likedTrackIds: cacheData.likedTrackIds,
-    isVip: cacheData.isVip,
-    downloadsLeft: cacheData.downloadsLeft,
-    dailyDownloadCount: cacheData.dailyDownloadCount,
-    lastUpdated: cacheData.lastUpdated,
-    isLoading,
-    error,
-    refreshCache,
-    markAsDownloaded,
-    markAsLiked,
-    markAsUnliked,
-    isDownloaded,
-    isLiked,
-    forceSync
+        downloadedTrackIds: cacheData.downloadedTrackIds,
+        likedTrackIds: cacheData.likedTrackIds,
+        isVip: cacheData.isVip,
+        downloadsLeft: cacheData.downloadsLeft,
+        dailyDownloadCount: cacheData.dailyDownloadCount,
+        lastUpdated: cacheData.lastUpdated,
+        isLoading,
+        error,
+        refreshCache,
+        markAsDownloaded,
+        markAsLiked,
+        markAsUnliked,
+        isDownloaded,
+        isLiked,
+        forceSync
     };
 };

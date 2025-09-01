@@ -160,8 +160,8 @@ export const useMusicImageLoader = (track: { imageUrl?: string; songName: string
     return useImageLoader({
         onError: (error) => {
             // Reportar erro se o sistema estiver disponível
-            if (reportImageError && track.imageUrl) {
-                reportImageError(track.imageUrl, error, {
+            if (reportImageError && typeof reportImageError.reportImageError === 'function' && track.imageUrl) {
+                reportImageError.reportImageError(track.imageUrl, error, {
                     songName: track.songName,
                     artist: track.artist
                 });
