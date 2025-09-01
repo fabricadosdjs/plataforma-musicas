@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
                 secret: process.env.TURNSTILE_SECRET_KEY,
                 response: token,
-                remoteip: request.headers.get('x-forwarded-for') || request.ip || 'unknown'
+                remoteip: request.headers.get('x-forwarded-for') || 'unknown'
             }),
         });
 

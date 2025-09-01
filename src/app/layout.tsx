@@ -25,6 +25,7 @@ import { TrackingProvider } from '@/context/TrackingContext';
 import BrowserExtensionHandler from '@/components/layout/BrowserExtensionHandler';
 import { GlobalImageErrorInterceptor } from '@/components/ui/ImageErrorBoundary';
 import GlobalDownloadProgress from '@/components/download/GlobalDownloadProgress';
+import '@/utils/errorFilter'; // Importar filtro de erros global
 
 // Configura a fonte Inter como a fonte principal
 const inter = Inter({

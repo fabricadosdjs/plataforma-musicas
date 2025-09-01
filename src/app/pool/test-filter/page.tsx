@@ -26,13 +26,12 @@ export default function TestFilterPage() {
                 imageUrl: "",
                 downloadUrl: "",
                 releaseDate: "2025-01-15",
-                createdAt: new Date("2025-01-15"),
+                createdAt: "2025-01-15",
                 previewUrl: "",
                 isCommunity: false,
-                uploadedBy: null,
-                downloadCount: 0,
-                likeCount: 0,
-                playCount: 0
+                uploadedBy: undefined,
+                updatedAt: "2025-01-15",
+                __v: 0
             },
             {
                 id: 2,
@@ -43,13 +42,12 @@ export default function TestFilterPage() {
                 imageUrl: "",
                 downloadUrl: "",
                 releaseDate: "2025-01-14",
-                createdAt: new Date("2025-01-14"),
+                createdAt: "2025-01-14",
                 previewUrl: "",
                 isCommunity: false,
-                uploadedBy: null,
-                downloadCount: 0,
-                likeCount: 0,
-                playCount: 0
+                uploadedBy: undefined,
+                updatedAt: "2025-01-14",
+                __v: 0
             },
             {
                 id: 3,
@@ -60,13 +58,12 @@ export default function TestFilterPage() {
                 imageUrl: "",
                 downloadUrl: "",
                 releaseDate: "2025-01-13",
-                createdAt: new Date("2025-01-13"),
+                createdAt: "2025-01-13",
                 previewUrl: "",
                 isCommunity: false,
-                uploadedBy: null,
-                downloadCount: 0,
-                likeCount: 0,
-                playCount: 0
+                uploadedBy: undefined,
+                updatedAt: "2025-01-13",
+                __v: 0
             }
         ];
 
@@ -106,9 +103,13 @@ export default function TestFilterPage() {
     }, []);
 
     // Salvar IDs de tracks baixadas no localStorage
-    const handleDownloadedTrackIdsChange = (newIds: number[]) => {
-        setDownloadedTrackIds(newIds);
-        localStorage.setItem('downloadedTrackIds', JSON.stringify(newIds));
+    const handleDownloadedTrackIdsChange = (newIds: number[] | ((prev: number[]) => number[])) => {
+        if (typeof newIds === 'function') {
+            setDownloadedTrackIds(newIds);
+        } else {
+            setDownloadedTrackIds(newIds);
+            localStorage.setItem('downloadedTrackIds', JSON.stringify(newIds));
+        }
     };
 
     if (loading) {

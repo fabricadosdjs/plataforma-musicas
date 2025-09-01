@@ -45,10 +45,10 @@ const NewPage = () => {
         if (appliedSearchQuery) {
             const query = appliedSearchQuery.toLowerCase();
             filtered = filtered.filter(track =>
-                track.title.toLowerCase().includes(query) ||
+                track.songName.toLowerCase().includes(query) ||
                 track.artist.toLowerCase().includes(query) ||
-                track.style.toLowerCase().includes(query) ||
-                track.pool.toLowerCase().includes(query)
+                (track.style?.toLowerCase() || '').includes(query) ||
+                (track.pool?.toLowerCase() || '').includes(query)
             );
         }
 
@@ -114,7 +114,7 @@ const NewPage = () => {
 
     const handleDownload = (track: Track) => {
         // Implementar lógica de download
-        console.log('Downloading track:', track.title);
+        console.log('Downloading track:', track.songName);
     };
 
     const downloadAllTracks = (tracksToDownload: Track[]) => {
@@ -123,7 +123,7 @@ const NewPage = () => {
     };
 
     const downloadNewTracks = (tracksToDownload: Track[]) => {
-        const newTracks = tracksToDownload.filter(track => !downloadedTrackIds.includes(track.id));
+        const newTracks = tracksToDownload.filter(track => !downloadedTrackIds.includes(String(track.id)));
         console.log('Downloading new tracks:', newTracks.length);
     };
 
@@ -308,7 +308,7 @@ const NewPage = () => {
                                                 {/* Informações da música */}
                                                 <div className="flex-1 min-w-0">
                                                     <h3 className="text-white font-semibold text-sm sm:text-base mb-1 truncate">
-                                                        {track.title}
+                                                        {track.songName}
                                                     </h3>
                                                     <p className="text-gray-300 text-sm mb-2 truncate">
                                                         {track.artist}
@@ -342,12 +342,12 @@ const NewPage = () => {
                                                 <div className="flex flex-col items-end space-y-2">
                                                     {/* Botão de like */}
                                                     <button
-                                                        onClick={() => handleLikeToggle(track.id)}
-                                                        className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${likedTrackIds.includes(track.id)
+                                                        onClick={() => handleLikeToggle(String(track.id))}
+                                                        className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${likedTrackIds.includes(String(track.id))
                                                             ? 'bg-gradient-to-br from-red-500/30 to-red-600/40 text-red-400 border border-red-500/50 shadow-lg shadow-red-500/20'
                                                             : 'bg-gradient-to-br from-gray-600/30 to-gray-700/40 text-gray-400 border border-gray-600/50 hover:from-gray-500/40 hover:to-gray-600/50 hover:text-gray-300 shadow-lg shadow-gray-600/20 hover:shadow-xl hover:shadow-gray-600/30'
                                                             }`}
-                                                        title={likedTrackIds.includes(track.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                                                        title={likedTrackIds.includes(String(track.id)) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                                     >
                                                         <Heart className="h-4 w-4" />
                                                     </button>
@@ -355,14 +355,14 @@ const NewPage = () => {
                                                     {/* Botão de download */}
                                                     <button
                                                         onClick={() => handleDownload(track)}
-                                                        disabled={downloadedTrackIds.includes(track.id)}
-                                                        className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${downloadedTrackIds.includes(track.id)
+                                                        disabled={downloadedTrackIds.includes(String(track.id))}
+                                                        className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${downloadedTrackIds.includes(String(track.id))
                                                             ? 'bg-gradient-to-br from-green-500/30 to-green-600/40 text-green-400 border border-green-500/50 cursor-not-allowed shadow-lg shadow-green-500/20'
                                                             : 'bg-gradient-to-br from-blue-500/30 to-blue-600/40 text-blue-400 border border-blue-500/50 hover:from-blue-500/40 hover:to-blue-600/50 hover:text-blue-300 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30'
                                                             }`}
-                                                        title={downloadedTrackIds.includes(track.id) ? 'Já baixada' : 'Baixar música'}
+                                                        title={downloadedTrackIds.includes(String(track.id)) ? 'Já baixada' : 'Baixar música'}
                                                     >
-                                                        {downloadedTrackIds.includes(track.id) ? (
+                                                        {downloadedTrackIds.includes(String(track.id)) ? (
                                                             <Check className="h-4 w-4" />
                                                         ) : (
                                                             <Download className="h-4 w-4" />

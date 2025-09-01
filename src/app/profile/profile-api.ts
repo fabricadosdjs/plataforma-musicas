@@ -52,6 +52,6 @@ export async function getProfileData() {
         planIcon: planInfo.icon,
         planName: planInfo.name,
 
-    benefits: (typeof session.user === 'object' && session.user && 'benefits' in session.user ? (session.user as { benefits?: Record<string, unknown> }).benefits : undefined) || {},
+        benefits: (typeof session.user === 'object' && session.user && 'benefits' in session.user ? (session.user as { benefits?: Record<string, unknown> }).benefits : undefined) || {},
     };
 }

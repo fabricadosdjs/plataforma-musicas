@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
         }
 
         // Verificar se o usuário é admin
-        if (!session.user.isAdmin) {
+        const isAdmin = session.user.email === 'edersonleonardo@nexorrecords.com.br';
+        if (!isAdmin) {
             return NextResponse.json(
                 { success: false, error: 'Acesso negado' },
                 { status: 403 }

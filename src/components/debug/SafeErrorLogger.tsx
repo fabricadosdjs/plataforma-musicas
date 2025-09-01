@@ -35,8 +35,8 @@ export const SafeErrorLogger: React.FC = () => {
             };
         }
 
-        const createSafeHandler = (type: 'log' | 'warn' | 'error', originalFn: Function) => {
-            return (...args: any[]) => {
+        const createSafeHandler = (type: 'log' | 'warn' | 'error', originalFn: (...args: unknown[]) => void) => {
+            return (...args: unknown[]) => {
                 // Sempre chamar o console original primeiro
                 originalFn.apply(console, args);
 

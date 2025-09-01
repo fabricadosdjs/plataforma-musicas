@@ -230,10 +230,10 @@ export const ConsoleLogger: React.FC = () => {
             <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
                 <h4 className="font-medium text-blue-300 mb-2">📋 Como Usar:</h4>
                 <ol className="text-sm text-blue-200 space-y-1 list-decimal list-inside">
-                    <li>Clique em &quot;▶️ Iniciar Captura&quot;</li>
+                    <li>Clique em "▶️ Iniciar Captura"</li>
                     <li>Recarregue a página ou execute ações que gerem erros</li>
-                    <li>Use &quot;📥 Exportar TXT&quot; para baixar todos os logs</li>
-                    <li>Ou use &quot;📋 Copiar&quot; para colar aqui na mensagem</li>
+                    <li>Use "📥 Exportar TXT" para baixar todos os logs</li>
+                    <li>Ou use "📋 Copiar" para colar aqui na mensagem</li>
                 </ol>
             </div>
         </div>

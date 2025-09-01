@@ -118,7 +118,7 @@ export default function ContaboSmartAdmin() {
                 // Auto-selecionar tracks com alta confiança
                 const updatedTracks = result.newTracks.map(track => ({
                     ...track,
-                    selected: track.confidence && track.confidence > 70
+                    selected: Boolean(track.confidence && track.confidence > 70)
                 }));
                 setNewTracks(updatedTracks);
             } else {

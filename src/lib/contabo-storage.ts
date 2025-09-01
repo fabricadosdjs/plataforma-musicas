@@ -127,16 +127,38 @@ export class ContaboStorage {
             });
 
             const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
-            console.log('🎵 ContaboStorage: URL assinada gerada com sucesso:', signedUrl.substring(0, 100) + '...');
-            return signedUrl;
+            console.log('🎵 ContaboStorage: URL assinada gerada com sucesso');
+            
+            // Testar se a URL assinada é válida fazendo uma requisição HEAD
+            try {
+                const testResponse = await fetch(signedUrl, { 
+                    method: 'HEAD',
+                    headers: {
+                        'Accept': 'audio/*',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                if (testResponse.ok) {
+                    console.log('🎵 ContaboStorage: URL assinada validada com sucesso');
+                    return signedUrl;
+                } else {
+                    console.warn('🎵 ContaboStorage: URL assinada inválida, status:', testResponse.status);
+                    throw new Error(`URL assinada retornou status ${testResponse.status}`);
+                }
+            } catch (testError) {
+                console.warn('🎵 ContaboStorage: Erro ao validar URL assinada:', testError);
+                throw testError;
+            }
+            
         } catch (error) {
             console.error('🎵 ContaboStorage: Erro ao gerar URL assinada:', {
                 error: error instanceof Error ? error.message : error,
                 key,
                 bucketName: this.bucketName,
-                endpoint: this.endpoint,
-                region: this.s3Client.config.region()
+                endpoint: this.endpoint
             });
+            
             // Fallback para URL pública
             const publicUrl = this.getPublicUrl(key);
             console.log('🎵 ContaboStorage: Usando fallback para URL pública:', publicUrl);

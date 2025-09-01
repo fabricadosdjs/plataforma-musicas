@@ -2,25 +2,29 @@ import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { Track } from '@prisma/client';
 
+
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const folder = searchParams.get('folder');
+        const limit = parseInt(searchParams.get('limit') || '100', 10);
+        const offset = parseInt(searchParams.get('offset') || '0', 10);
 
         if (!folder) {
             return new NextResponse('Parâmetro folder é obrigatório', { status: 400 });
         }
 
-        console.log('🔍 Buscando músicas por folder:', folder);
+        console.log('🔍 Buscando músicas por folder:', folder, 'limit:', limit, 'offset:', offset);
 
         let tracks: Track[] = [];
 
-        // Primeiro, tentar buscar por folder exato usando raw SQL para evitar problemas de tipo
+        // Buscar por folder exato com paginação
         try {
             const exactFolderTracks = await prisma.$queryRaw<Track[]>`
-                SELECT * FROM "Track" 
+                SELECT * FROM "Track"
                 WHERE folder = ${folder}
                 ORDER BY "releaseDate" DESC NULLS LAST, "createdAt" DESC
+                LIMIT ${limit} OFFSET ${offset}
             `;
 
             if (exactFolderTracks && exactFolderTracks.length > 0) {
@@ -31,13 +35,12 @@ export async function GET(request: Request) {
             console.log('⚠️ Erro ao buscar por folder exato, tentando por data...');
         }
 
-        // Se não encontrar por folder exato, tentar buscar por data
+        // Se não encontrar por folder exato, tentar buscar por data (também paginado)
         if (tracks.length === 0) {
             console.log('🔍 Folder não encontrado, tentando buscar por data...');
-            
-            // Tentar diferentes formatos de data
+
             let searchDate: Date | null = null;
-            
+
             // Formato brasileiro: "23 de agosto de 2025"
             const brazilianDateMatch = folder.match(/(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})/);
             if (brazilianDateMatch) {
@@ -46,13 +49,12 @@ export async function GET(request: Request) {
                     'janeiro': 0, 'fevereiro': 1, 'março': 2, 'abril': 3, 'maio': 4, 'junho': 5,
                     'julho': 6, 'agosto': 7, 'setembro': 8, 'outubro': 9, 'novembro': 10, 'dezembro': 11
                 };
-                
                 if (months[month.toLowerCase()] !== undefined) {
                     searchDate = new Date(parseInt(year), months[month.toLowerCase()], parseInt(day));
                     console.log('📅 Data brasileira convertida:', searchDate);
                 }
             }
-            
+
             // Formato DD/MM/YYYY
             const slashDateMatch = folder.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
             if (slashDateMatch && !searchDate) {
@@ -62,10 +64,8 @@ export async function GET(request: Request) {
             }
 
             if (searchDate) {
-                // Buscar músicas criadas ou atualizadas na data específica
                 const startOfDay = new Date(searchDate);
                 startOfDay.setHours(0, 0, 0, 0);
-                
                 const endOfDay = new Date(searchDate);
                 endOfDay.setHours(23, 59, 59, 999);
 
@@ -73,19 +73,18 @@ export async function GET(request: Request) {
 
                 try {
                     const dateTracks = await prisma.$queryRaw<Track[]>`
-                        SELECT * FROM "Track" 
+                        SELECT * FROM "Track"
                         WHERE ("createdAt" >= ${startOfDay} AND "createdAt" <= ${endOfDay})
                            OR ("updatedAt" >= ${startOfDay} AND "updatedAt" <= ${endOfDay})
                            OR ("releaseDate" >= ${startOfDay} AND "releaseDate" <= ${endOfDay})
                         ORDER BY "releaseDate" DESC NULLS LAST, "createdAt" DESC
+                        LIMIT ${limit} OFFSET ${offset}
                     `;
 
                     tracks = dateTracks;
                     console.log(`✅ Encontradas ${tracks.length} músicas na data: ${folder}`);
                 } catch (error) {
                     console.log('⚠️ Erro ao buscar por data, usando método alternativo...');
-                    
-                    // Fallback: buscar usando findMany com campos básicos
                     const fallbackTracks = await prisma.track.findMany({
                         where: {
                             OR: [
@@ -105,9 +104,10 @@ export async function GET(request: Request) {
                         },
                         orderBy: [
                             { createdAt: 'desc' }
-                        ]
+                        ],
+                        take: limit,
+                        skip: offset
                     });
-                    
                     tracks = fallbackTracks;
                     console.log(`✅ Encontradas ${tracks.length} músicas usando fallback: ${folder}`);
                 }

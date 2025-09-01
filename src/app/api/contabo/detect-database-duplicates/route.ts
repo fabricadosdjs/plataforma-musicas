@@ -15,8 +15,8 @@ interface DatabaseDuplicate {
         id: number;
         songName: string;
         artist: string;
-        downloadUrl: string;
-        previewUrl: string;
+        downloadUrl: string | null;
+        previewUrl: string | null;
     };
     matchType: 'url' | 'name' | 'both';
     similarity: number;
@@ -175,7 +175,12 @@ export async function POST(request: NextRequest) {
 
                 if (dbTrack) {
                     duplicates.push({
-                        storageFile,
+                        storageFile: {
+                            ...storageFile,
+                            lastModified: storageFile.lastModified instanceof Date
+                                ? storageFile.lastModified.toISOString()
+                                : String(storageFile.lastModified)
+                        },
                         databaseTrack: dbTrack,
                         matchType: 'url',
                         similarity: 1.0
@@ -197,7 +202,12 @@ export async function POST(request: NextRequest) {
             if (nameIndex.has(storageNormalizedName)) {
                 const matchingTracks = nameIndex.get(storageNormalizedName)!;
                 duplicates.push({
-                    storageFile,
+                    storageFile: {
+                        ...storageFile,
+                        lastModified: storageFile.lastModified instanceof Date
+                            ? storageFile.lastModified.toISOString()
+                            : String(storageFile.lastModified)
+                    },
                     databaseTrack: matchingTracks[0], // Pega o primeiro match
                     matchType: 'name',
                     similarity: 1.0
@@ -229,7 +239,12 @@ export async function POST(request: NextRequest) {
 
                 if (bestMatch) {
                     duplicates.push({
-                        storageFile,
+                        storageFile: {
+                            ...storageFile,
+                            lastModified: storageFile.lastModified instanceof Date
+                                ? storageFile.lastModified.toISOString()
+                                : String(storageFile.lastModified)
+                        },
                         databaseTrack: bestMatch,
                         matchType: 'name',
                         similarity: bestSimilarity

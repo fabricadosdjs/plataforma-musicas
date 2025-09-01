@@ -4,10 +4,11 @@ import { prisma } from '@/utils/prisma';
 // PATCH - Atualizar status da solicitação
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params;
+        const resolvedParams = await params;
+        const { id } = resolvedParams;
         const body = await request.json();
 
         const { status, notes, estimatedCompletion } = body;
@@ -45,10 +46,11 @@ export async function PATCH(
 // DELETE - Deletar solicitação
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params;
+        const resolvedParams = await params;
+        const { id } = resolvedParams;
 
         await prisma.request.delete({
             where: { id }

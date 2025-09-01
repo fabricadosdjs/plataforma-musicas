@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 
-export async function generateMetadata({ params }: { params: { folderName: string } }): Promise<Metadata> {
-    const folderName = decodeURIComponent(params.folderName);
+export async function generateMetadata({ params }: { params: Promise<{ folderName: string }> }): Promise<Metadata> {
+    const { folderName: folderNameParam } = await params;
+    const folderName = decodeURIComponent(folderNameParam);
 
     // SEO especial para "The Mashup"
     if (folderName === 'The Mashup') {

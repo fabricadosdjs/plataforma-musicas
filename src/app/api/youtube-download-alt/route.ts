@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
         // Converter para MP3 e salvar
         const writeStream = fs.createWriteStream(filePath);
 
-        return new Promise((resolve, reject) => {
+        return new Promise<Response>((resolve, reject) => {
             audioStream.pipe(writeStream);
 
             writeStream.on('finish', () => {

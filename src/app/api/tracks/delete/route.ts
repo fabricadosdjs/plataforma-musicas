@@ -55,7 +55,7 @@ export async function DELETE(request: NextRequest) {
 
     try {
       // Tentar excluir do storage se a URL for do Contabo
-      if (track.downloadUrl.includes(process.env.CONTABO_ENDPOINT!)) {
+      if (track.downloadUrl && track.downloadUrl.includes(process.env.CONTABO_ENDPOINT!)) {
         // Extrair a chave do arquivo da URL
         const urlParts = track.downloadUrl.split('/');
         const fileName = urlParts[urlParts.length - 1];

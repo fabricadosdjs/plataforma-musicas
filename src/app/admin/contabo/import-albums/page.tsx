@@ -86,7 +86,7 @@ const ImportAlbumsPage = () => {
             }
 
             const data = await response.json();
-            const filesWithSelection = (data.files || []).map(file => ({ ...file, selected: false }));
+            const filesWithSelection = (data.files || []).map((file: any) => ({ ...file, selected: false }));
             setAlbumFiles(filesWithSelection);
             setFilteredFiles(filesWithSelection);
 

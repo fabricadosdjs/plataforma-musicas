@@ -8,26 +8,19 @@ export async function GET() {
     try {
         const session = await getServerSession(authOptions);
 
+        const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
         console.log('Session in custom-items API:', {
             user: session?.user,
-            isAdmin: session?.user?.isAdmin,
+            isAdmin: isAdmin,
             email: session?.user?.email
         });
 
-        if (!session?.user?.isAdmin) {
+        if (!isAdmin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const customItems = await prisma.customItem.findMany({
-            orderBy: { order: 'asc' },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        email: true
-                    }
-                }
-            }
+            orderBy: { order: 'asc' }
         });
 
         return NextResponse.json({ customItems });
@@ -42,7 +35,8 @@ export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
 
-        if (!session?.user?.isAdmin) {
+        const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
+        if (!isAdmin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -62,14 +56,6 @@ export async function POST(request: NextRequest) {
                 color,
                 order: order || 0,
                 createdBy: session.user.id
-            },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        email: true
-                    }
-                }
             }
         });
 
@@ -85,7 +71,8 @@ export async function PUT(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
 
-        if (!session?.user?.isAdmin) {
+        const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
+        if (!isAdmin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -106,14 +93,6 @@ export async function PUT(request: NextRequest) {
                 color,
                 order,
                 isActive
-            },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        email: true
-                    }
-                }
             }
         });
 
@@ -129,7 +108,8 @@ export async function DELETE(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
 
-        if (!session?.user?.isAdmin) {
+        const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
+        if (!isAdmin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 

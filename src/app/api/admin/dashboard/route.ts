@@ -8,7 +8,8 @@ import os from 'os';
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.user?.isAdmin) {
+        const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
+        if (!isAdmin) {
             return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
         }
 

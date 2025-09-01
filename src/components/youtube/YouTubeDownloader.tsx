@@ -432,9 +432,9 @@ export default function YouTubeDownloader() {
                     </h3>
                     <div className="space-y-3 text-sm text-gray-300">
                         <p>1. Cole a URL do vídeo do YouTube no campo acima</p>
-                        <p>2. Clique em &quot;Verificar&quot; para obter informações</p>
+                        <p>2. Clique em "Verificar" para obter informações</p>
                         <p>3. Selecione a qualidade MP3 (128 ou 320 kbps)</p>
-                        <p>4. Clique em &quot;Baixar MP3&quot; para iniciar o download</p>
+                        <p>4. Clique em "Baixar MP3" para iniciar o download</p>
                         <p>5. Os downloads ficam disponíveis por 5 dias</p>
                     </div>
 

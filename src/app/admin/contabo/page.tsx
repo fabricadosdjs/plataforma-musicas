@@ -55,6 +55,19 @@ interface ImportableFile {
 }
 
 export default function ContaboStoragePage() {
+    // Utilitário para sanitizar URLs do Contabo
+    function sanitizeContaboUrl(url: string): string {
+        if (!url) return url;
+        // Remove qualquer hash/prefixo antes de 'plataforma-de-musicas/'
+        url = String(url).replace(/https?:\/\/[^/]*contabostorage\.com\/.*?(plataforma-de-musicas\/)/, 'https://usc1.contabostorage.com/$1');
+        if (!url.startsWith('https://usc1.contabostorage.com/plataforma-de-musicas/')) {
+            const idx = url.indexOf('plataforma-de-musicas/');
+            if (idx !== -1) {
+                url = 'https://usc1.contabostorage.com/' + url.substring(idx);
+            }
+        }
+        return url;
+    }
     const { data: session, status } = useSession();
     const user = session?.user;
     const isLoaded = status !== 'loading';
@@ -155,7 +168,15 @@ export default function ContaboStoragePage() {
             const data = await response.json();
 
             if (data.success) {
-                setImportableFiles(data.files || []);
+                // Sanitize downloadUrl e previewUrl de todos os arquivos importáveis
+                const sanitizedFiles = (data.files || []).map((item: any) => {
+                    if (item.importData) {
+                        item.importData.downloadUrl = sanitizeContaboUrl(item.importData.downloadUrl);
+                        item.importData.previewUrl = sanitizeContaboUrl(item.importData.previewUrl);
+                    }
+                    return item;
+                });
+                setImportableFiles(sanitizedFiles);
                 showMessage(`${data.importableCount} arquivos prontos para importação`, 'success');
 
                 // Automaticamente detecta arquivos existentes após carregar importáveis

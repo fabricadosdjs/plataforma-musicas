@@ -133,6 +133,18 @@ export async function GET(request: NextRequest) {
                     for (let i = 0; i < tracks.length; i++) {
                         const currentTrack = tracks[i];
                         try {
+                            // Verificar se a track tem URL de download
+                            if (!currentTrack.downloadUrl) {
+                                console.error(`URL de download não disponível para ${currentTrack.songName}`);
+                                const placeholder = `Música indisponível para download.\nID: ${currentTrack.id}\nNome: ${currentTrack.songName}\nArtista: ${currentTrack.artist}`;
+                                const styleFolderName = sanitize(currentTrack.style || 'Sem Estilo').toUpperCase();
+                                const sanitizedSongName = sanitize(currentTrack.songName);
+                                const sanitizedArtist = sanitize(currentTrack.artist);
+                                const fileName = `${sanitizedArtist} - ${sanitizedSongName} (indisponível).txt`;
+                                archive.append(placeholder, { name: `${styleFolderName}/${fileName}` });
+                                continue;
+                            }
+
                             // Buscar o arquivo de áudio
                             const audioResponse = await fetch(currentTrack.downloadUrl);
                             if (!audioResponse.ok) {

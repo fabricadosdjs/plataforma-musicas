@@ -8,6 +8,7 @@ declare module "next-auth" {
       email?: string | null
       image?: string | null
       is_vip?: boolean
+      isAdmin?: boolean
       valor?: number
       vencimento?: Date | null
       deezerPremium?: boolean
@@ -29,6 +30,7 @@ declare module "next-auth" {
     email?: string | null
     image?: string | null
     is_vip?: boolean
+    isAdmin?: boolean
     valor?: number
     vencimento?: Date | null
     deezerPremium?: boolean

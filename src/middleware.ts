@@ -12,7 +12,6 @@ export async function middleware(request: NextRequest) {
 
   // Rotas que precisam de verificação VIP
   const vipProtectedPaths = [
-    '/api/download',
     '/pro',
     '/charts',
     '/trending',
@@ -105,8 +104,6 @@ export const config = {
     '/trending/:path*',
     '/featured/:path*',
     '/new/:path*',
-    '/api/download/:path*',
-    '/api/tracks/:path*',
     '/api/extract/:path*'
   ],
 };

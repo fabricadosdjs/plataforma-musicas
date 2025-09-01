@@ -86,7 +86,8 @@ export default function CustomItemsPage() {
     };
 
     useEffect(() => {
-        if (session?.user?.isAdmin) {
+        const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
+        if (isAdmin) {
             fetchCustomItems();
         }
     }, [session]);

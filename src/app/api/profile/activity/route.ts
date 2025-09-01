@@ -1,5 +1,5 @@
 import { authOptions } from '@/lib/authOptions';
-import prisma, { safeQuery } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { NextResponse } from 'next/server';
 
@@ -39,148 +39,174 @@ export async function GET(req: Request) {
         const yearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
 
         // Estatísticas de Downloads
-        const downloadsToday = await safeQuery(
-            () => prisma.download.count({
+        let downloadsToday = 0;
+        try {
+            downloadsToday = await prisma.download.count({
                 where: {
                     userId: userId,
                     downloadedAt: {
                         gte: today
                     }
                 }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar downloads hoje:', error);
+        }
 
-        const downloadsThisWeek = await safeQuery(
-            () => prisma.download.count({
+        let downloadsThisWeek = 0;
+        try {
+            downloadsThisWeek = await prisma.download.count({
                 where: {
                     userId: userId,
                     downloadedAt: {
                         gte: weekAgo
                     }
                 }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar downloads da semana:', error);
+        }
 
-        const downloadsThisMonth = await safeQuery(
-            () => prisma.download.count({
+        let downloadsThisMonth = 0;
+        try {
+            downloadsThisMonth = await prisma.download.count({
                 where: {
                     userId: userId,
                     downloadedAt: {
                         gte: monthAgo
                     }
                 }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar downloads do mês:', error);
+        }
 
-        const downloadsThisYear = await safeQuery(
-            () => prisma.download.count({
+        let downloadsThisYear = 0;
+        try {
+            downloadsThisYear = await prisma.download.count({
                 where: {
                     userId: userId,
                     downloadedAt: {
                         gte: yearAgo
                     }
                 }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar downloads do ano:', error);
+        }
 
-        const totalDownloads = await safeQuery(
-            () => prisma.download.count({
+        let totalDownloads = 0;
+        try {
+            totalDownloads = await prisma.download.count({
                 where: { userId: userId }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar total de downloads:', error);
+        }
 
         // Estatísticas de Likes
-        const likesToday = await safeQuery(
-            () => prisma.like.count({
+        let likesToday = 0;
+        try {
+            likesToday = await prisma.like.count({
                 where: {
                     userId: userId,
                     createdAt: {
                         gte: today
                     }
                 }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar likes hoje:', error);
+        }
 
-        const likesThisWeek = await safeQuery(
-            () => prisma.like.count({
+        let likesThisWeek = 0;
+        try {
+            likesThisWeek = await prisma.like.count({
                 where: {
                     userId: userId,
                     createdAt: {
                         gte: weekAgo
                     }
                 }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar likes da semana:', error);
+        }
 
-        const likesThisMonth = await safeQuery(
-            () => prisma.like.count({
+        let likesThisMonth = 0;
+        try {
+            likesThisMonth = await prisma.like.count({
                 where: {
                     userId: userId,
                     createdAt: {
                         gte: monthAgo
                     }
                 }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar likes do mês:', error);
+        }
 
-        const likesThisYear = await safeQuery(
-            () => prisma.like.count({
+        let likesThisYear = 0;
+        try {
+            likesThisYear = await prisma.like.count({
                 where: {
                     userId: userId,
                     createdAt: {
                         gte: yearAgo
                     }
                 }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar likes do ano:', error);
+        }
 
-        const totalLikes = await safeQuery(
-            () => prisma.like.count({
+        let totalLikes = 0;
+        try {
+            totalLikes = await prisma.like.count({
                 where: { userId: userId }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar total de likes:', error);
+        }
 
         // Estatísticas de Plays
-        const playsToday = await safeQuery(
-            () => prisma.play.count({
+        let playsToday = 0;
+        try {
+            playsToday = await prisma.play.count({
                 where: {
                     userId: userId,
                     createdAt: {
                         gte: today
                     }
                 }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar plays hoje:', error);
+        }
 
-        const playsThisWeek = await safeQuery(
-            () => prisma.play.count({
+        let playsThisWeek = 0;
+        try {
+            playsThisWeek = await prisma.play.count({
                 where: {
                     userId: userId,
                     createdAt: {
                         gte: weekAgo
                     }
                 }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar plays da semana:', error);
+        }
 
-        const totalPlays = await safeQuery(
-            () => prisma.play.count({
+        let totalPlays = 0;
+        try {
+            totalPlays = await prisma.play.count({
                 where: { userId: userId }
-            }),
-            0
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao contar total de plays:', error);
+        }
 
         // Estatísticas de GB baixados (estimativa)
         // Assumindo que cada música tem em média 10MB
@@ -193,8 +219,9 @@ export async function GET(req: Request) {
             const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
             const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
 
-            const dayDownloads = await safeQuery(
-                () => prisma.download.count({
+            let dayDownloads = 0;
+            try {
+                dayDownloads = await prisma.download.count({
                     where: {
                         userId: userId,
                         downloadedAt: {
@@ -202,12 +229,14 @@ export async function GET(req: Request) {
                             lt: dayEnd
                         }
                     }
-                }),
-                0
-            );
+                });
+            } catch (error) {
+                console.error('Erro ao contar downloads do dia:', error);
+            }
 
-            const dayLikes = await safeQuery(
-                () => prisma.like.count({
+            let dayLikes = 0;
+            try {
+                dayLikes = await prisma.like.count({
                     where: {
                         userId: userId,
                         createdAt: {
@@ -215,9 +244,10 @@ export async function GET(req: Request) {
                             lt: dayEnd
                         }
                     }
-                }),
-                0
-            );
+                });
+            } catch (error) {
+                console.error('Erro ao contar likes do dia:', error);
+            }
 
             dailyStats.push({
                 date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),

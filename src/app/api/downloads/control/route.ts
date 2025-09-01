@@ -83,24 +83,21 @@ export async function GET(request: NextRequest) {
             orderBy: {
                 downloadedAt: 'desc'
             },
-            select: { // Garantir que nextAllowedDownload seja selecionado
+            select: {
                 id: true,
                 trackId: true,
                 userId: true,
                 downloadedAt: true,
                 createdAt: true,
-                nextAllowedDownload: true, // <-- ADICIONADO AQUI
             }
         });
 
-        const canDownload = !download ||
-            !download.nextAllowedDownload ||
-            new Date() >= download.nextAllowedDownload;
+        const canDownload = !download || true; // Sempre permitir download se não houver restrições
 
         return NextResponse.json({
             canDownload,
             hasDownloaded: !!download,
-            nextAllowedDownload: download?.nextAllowedDownload
+            nextAllowedDownload: null
         });
 
     } catch (error) {
@@ -177,26 +174,15 @@ export async function POST(request: NextRequest) {
                 trackId: parseInt(trackId)
             },
             orderBy: { downloadedAt: 'desc' },
-            select: { // Garantir que nextAllowedDownload seja selecionado AQUI TAMBÉM
+            select: {
                 id: true,
                 trackId: true,
                 userId: true,
                 downloadedAt: true,
                 createdAt: true,
-                nextAllowedDownload: true, // <-- ADICIONADO AQUI PARA O POST TAMBÉM
             }
         });
-        const canDownload = !existingDownload || !existingDownload.nextAllowedDownload || now >= existingDownload.nextAllowedDownload;
-        if (!canDownload && !confirm) {
-            return NextResponse.json({
-                error: 'Você precisa aguardar 24 horas para baixar novamente',
-                needsConfirmation: true,
-                nextAllowedDownload: existingDownload?.nextAllowedDownload
-            }, { status: 403 });
-        }
-
-        // Registrar download e incrementar contador (apenas para não-VIP)
-        const nextAllowedDownload = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const canDownload = true; // Sempre permitir download
         const downloadedAt = now;
 
         const download = await prisma.download.upsert({
@@ -207,14 +193,12 @@ export async function POST(request: NextRequest) {
                 }
             },
             update: {
-                downloadedAt: downloadedAt,
-                nextAllowedDownload: nextAllowedDownload
+                downloadedAt: downloadedAt
             },
             create: {
                 userId: user.id,
                 trackId: parseInt(trackId),
-                downloadedAt: downloadedAt,
-                nextAllowedDownload: nextAllowedDownload
+                downloadedAt: downloadedAt
             }
         });
 

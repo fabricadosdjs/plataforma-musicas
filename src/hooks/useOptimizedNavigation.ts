@@ -14,7 +14,7 @@ export const useOptimizedNavigation = (options: UseOptimizedNavigationOptions = 
     const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Função otimizada para navegação
-    const navigateTo = useCallback(async (path: string, options: {
+    const navigateTo = useCallback(async (path: string, navOptions: {
         replace?: boolean;
         scroll?: boolean;
         shallow?: boolean;
@@ -33,7 +33,7 @@ export const useOptimizedNavigation = (options: UseOptimizedNavigationOptions = 
 
         try {
             isNavigatingRef.current = true;
-            options.onNavigateStart?.();
+            if (typeof options.onNavigateStart === 'function') options.onNavigateStart();
 
             // Limpar timeout anterior
             if (navigationTimeoutRef.current) {
@@ -44,13 +44,13 @@ export const useOptimizedNavigation = (options: UseOptimizedNavigationOptions = 
             navigationTimeoutRef.current = setTimeout(() => {
                 console.warn('⚠️ Timeout de navegação - forçando reset');
                 isNavigatingRef.current = false;
-                options.onNavigateError?.(new Error('Timeout de navegação'));
+                if (typeof options.onNavigateError === 'function') options.onNavigateError(new Error('Timeout de navegação'));
             }, 10000); // 10 segundos
 
             console.log(`🚀 Navegando para: ${path}`);
 
             // Usar replace se especificado, senão push
-            if (options.replace) {
+            if (navOptions.replace) {
                 router.replace(path);
             } else {
                 router.push(path);
@@ -127,13 +127,13 @@ export const useOptimizedNavigation = (options: UseOptimizedNavigationOptions = 
 
             setTimeout(() => {
                 isNavigatingRef.current = false;
-                options.onNavigateComplete?.();
+                if (typeof options.onNavigateComplete === 'function') options.onNavigateComplete();
             }, 500);
 
         } catch (error) {
             console.error('❌ Erro ao voltar:', error);
             isNavigatingRef.current = false;
-            options.onNavigateError?.(error as Error);
+            if (typeof options.onNavigateError === 'function') options.onNavigateError(error as Error);
         }
     }, [router, options]);
 

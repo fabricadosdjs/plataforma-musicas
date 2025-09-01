@@ -128,6 +128,14 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        // Verificar se a track tem URL de download
+        if (!track.downloadUrl) {
+            return NextResponse.json(
+                { error: 'URL de download não disponível para esta música' },
+                { status: 404 }
+            );
+        }
+
         // Gerar URL do proxy de download
         const proxyUrl = `/api/download-proxy?key=${encodeURIComponent(track.downloadUrl)}`;
 

@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         );
 
         // Verificar duplicatas
-        const results = {
+        const results: any = {
             totalChecked: tracks.length,
             duplicates: [],
             unique: [],

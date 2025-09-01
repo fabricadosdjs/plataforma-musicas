@@ -53,9 +53,9 @@ export default function ProgressiveHousePage() {
                         const latestRelease = new Date(Math.max(...tracksData.map((t: Track) => new Date(t.releaseDate).getTime())));
 
                         setStats({
-                            totalDownloads: tracksData.reduce((sum: number, t: Track) => sum + (t.downloadCount || 0), 0),
-                            totalLikes: tracksData.reduce((sum: number, t: Track) => sum + (t.likeCount || 0), 0),
-                            totalPlays: tracksData.reduce((sum: number, t: Track) => sum + (t.playCount || 0), 0),
+                            totalDownloads: 0, // Campo não existe no modelo Track
+                            totalLikes: 0, // Campo não existe no modelo Track
+                            totalPlays: 0, // Campo não existe no modelo Track
                             uniqueArtists,
                             uniquePools,
                             latestRelease
@@ -237,7 +237,7 @@ export default function ProgressiveHousePage() {
                                                         <div className="text-gray-500">Likes</div>
                                                     </div>
                                                     <div className="text-center">
-                                                        <div className="text-blue-400 font-bold">{track.playCount || 0}</div>
+                                                        <div className="text-blue-400 font-bold">0</div>
                                                         <div className="text-gray-500">Plays</div>
                                                     </div>
                                                 </div>
@@ -258,8 +258,6 @@ export default function ProgressiveHousePage() {
                             downloadedTrackIds={downloadedTrackIds}
                             setDownloadedTrackIds={handleDownloadedTrackIdsChange}
                             showDate={true}
-                            hasActiveFilters={true}
-                            selectedGenre={genreName}
                         />
                     </div>
                 </div>

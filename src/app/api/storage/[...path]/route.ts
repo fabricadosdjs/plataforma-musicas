@@ -10,10 +10,11 @@ const STORAGE_BASE_PATH = process.env.STORAGE_BASE_PATH || '/var/www/html/storag
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { path: string[] } }
+    { params }: { params: Promise<{ path: string[] }> }
 ) {
     try {
-        const filePath = join(STORAGE_BASE_PATH, ...params.path);
+        const resolvedParams = await params;
+        const filePath = join(STORAGE_BASE_PATH, ...resolvedParams.path);
 
         console.log('📁 Servindo arquivo:', filePath);
 
@@ -53,7 +54,7 @@ export async function GET(
         }
 
         // Retornar o arquivo com headers apropriados
-        return new NextResponse(fileBuffer, {
+        return new NextResponse(new Uint8Array(fileBuffer), {
             headers: {
                 'Content-Type': contentType,
                 'Content-Length': fileBuffer.length.toString(),

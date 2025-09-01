@@ -123,6 +123,54 @@ export default function FolderPage() {
     // Estado para contador em tempo real
     const [availableTracksCount, setAvailableTracksCount] = useState(0);
 
+    // Carregar tracks do folder
+    useEffect(() => {
+        const loadTracks = async () => {
+            try {
+                setLoading(true);
+                console.log('🔍 Carregando tracks para folder:', folderName);
+
+                const response = await fetch(`/api/tracks/by-folder?folder=${encodeURIComponent(folderName)}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Tracks carregadas:', data.tracks?.length || 0);
+                    setTracks(data.tracks || []);
+
+                    // Calcular estatísticas
+                    if (data.tracks && data.tracks.length > 0) {
+                        const tracks = data.tracks;
+                        const totalDownloads = tracks.reduce((sum: number, track: Track) => sum + (track.downloadCount || 0), 0);
+                        const totalLikes = tracks.reduce((sum: number, track: Track) => sum + (track.likeCount || 0), 0);
+                        const totalPlays = tracks.reduce((sum: number, track: Track) => sum + (typeof track.playCount === 'number' ? track.playCount : 0), 0);
+                        const uniqueArtists = new Set(tracks.map((t: Track) => t.artist)).size;
+                        const uniquePools = new Set(tracks.map((t: Track) => t.pool).filter(Boolean)).size;
+                        const latestRelease = tracks[0]?.releaseDate ? new Date(tracks[0].releaseDate) : null;
+
+                        setStats({
+                            totalDownloads,
+                            totalLikes,
+                            totalPlays,
+                            uniqueArtists,
+                            uniquePools,
+                            latestRelease,
+                            totalTracks: tracks.length
+                        });
+                    }
+                } else {
+                    console.error('❌ Erro na resposta da API:', response.status);
+                    showToast('Erro ao carregar músicas do folder', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar tracks:', error);
+                showToast('Erro ao carregar músicas', 'error');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadTracks();
+    }, [folderName, showToast]);
+
     // Obter estilos únicos disponíveis
     const availableStyles = useMemo(() => {
         if (!tracks.length) return [];
@@ -794,8 +842,6 @@ export default function FolderPage() {
                                 showNewTracksOnly={true}
                                 showAllTracks={true}
                                 showStyleDownload={false}
-                                showGoogleDriveButton={isAugust2025Folder(folderName)}
-                                googleDriveUrl={googleDriveUrl}
                                 className="mt-8"
                             />
 

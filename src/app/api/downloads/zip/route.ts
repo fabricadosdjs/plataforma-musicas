@@ -38,6 +38,13 @@ export async function POST(request: NextRequest) {
         // Adicionar cada música ao ZIP
         for (const track of tracks) {
             try {
+                // Verificar se a track tem URL de download
+                if (!track.downloadUrl) {
+                    console.error(`URL de download não disponível para ${track.songName}`);
+                    processedTracks++;
+                    continue;
+                }
+
                 // Buscar o arquivo de áudio
                 const audioResponse = await fetch(track.downloadUrl);
                 if (!audioResponse.ok) {
@@ -82,7 +89,7 @@ export async function POST(request: NextRequest) {
         await Promise.all(downloadPromises);
 
         // Retornar arquivo ZIP
-        return new NextResponse(zipBuffer, {
+        return new NextResponse(new Uint8Array(zipBuffer), {
             headers: {
                 'Content-Type': 'application/zip',
                 'Content-Disposition': `attachment; filename="${filename || 'nexor-records.zip'}"`,

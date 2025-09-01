@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ genreName: string }> }
@@ -11,7 +12,12 @@ export async function GET(
         const { genreName } = await params;
         const decodedGenreName = decodeURIComponent(genreName);
 
-        console.log('🔍 API Genre Tracks chamada para:', decodedGenreName);
+        // Paginação
+        const { searchParams } = new URL(request.url);
+        const limit = parseInt(searchParams.get('limit') || '100', 10);
+        const offset = parseInt(searchParams.get('offset') || '0', 10);
+
+        console.log('🔍 API Genre Tracks chamada para:', decodedGenreName, 'limit:', limit, 'offset:', offset);
 
         try {
             await prisma.$connect();
@@ -34,7 +40,7 @@ export async function GET(
                 artist: true,
                 style: true,
                 pool: true,
-                folder: true, // Adicionando o campo folder
+                folder: true,
                 imageUrl: true,
                 downloadUrl: true,
                 releaseDate: true,
@@ -46,6 +52,8 @@ export async function GET(
             orderBy: [
                 { createdAt: 'desc' },
             ],
+            take: limit,
+            skip: offset,
         });
 
         console.log(`📊 Gênero ${decodedGenreName}: ${tracks.length} tracks encontradas`);

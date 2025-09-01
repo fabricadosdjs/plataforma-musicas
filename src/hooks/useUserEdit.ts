@@ -25,24 +25,26 @@ export const useUserEdit = (): UseUserEditReturn => {
     const { data: session, update } = useSession();
     const [isEditing, setIsEditing] = useState(false);
     const [editingField, setEditingField] = useState<string | null>(null);
+        const user = session && session.user ? (session.user as typeof session.user & { whatsapp?: string }) : undefined;
     const [editedData, setEditedData] = useState<UserData>({
-        name: session?.user?.name || '',
-        email: session?.user?.email || '',
-        whatsapp: session?.user?.whatsapp || '(51) 98108 - 6784'
+        name: user?.name || '',
+        email: user?.email || '',
+        whatsapp: user?.whatsapp || '(51) 98108 - 6784'
     });
 
     console.log('🔧 Estado inicial do editedData:', editedData);
 
     // Atualizar dados quando a sessão mudar
     useEffect(() => {
-        if (session?.user) {
-            const newData = {
-                name: session.user.name || '',
-                email: session.user.email || '',
-                whatsapp: session.user.whatsapp || '(51) 98108 - 6784'
-            };
-            console.log('🔄 Atualizando dados da sessão:', newData);
-            setEditedData(newData);
+            if (session && session.user) {
+                const user = session.user as typeof session.user & { whatsapp?: string };
+                const newData = {
+                    name: user.name || '',
+                    email: user.email || '',
+                    whatsapp: user.whatsapp || '(51) 98108 - 6784'
+                };
+                console.log('🔄 Atualizando dados da sessão:', newData);
+                setEditedData(newData);
         }
     }, [session]);
     const [isLoading, setIsLoading] = useState(false);
@@ -61,7 +63,8 @@ export const useUserEdit = (): UseUserEditReturn => {
         } else if (field === 'email') {
             setEditedData(prev => ({ ...prev, email: session?.user?.email || '' }));
         } else if (field === 'whatsapp') {
-            setEditedData(prev => ({ ...prev, whatsapp: session?.user?.whatsapp || '(51) 98108 - 6784' }));
+                const user = session && session.user ? (session.user as typeof session.user & { whatsapp?: string }) : undefined;
+                setEditedData(prev => ({ ...prev, whatsapp: user?.whatsapp || '(51) 98108 - 6784' }));
         }
     }, [session]);
 
@@ -71,10 +74,11 @@ export const useUserEdit = (): UseUserEditReturn => {
         setError(null);
         setSuccess(null);
         // Restaurar dados originais
+        const user = session && session.user ? (session.user as typeof session.user & { whatsapp?: string }) : undefined;
         setEditedData({
-            name: session?.user?.name || '',
-            email: session?.user?.email || '',
-            whatsapp: session?.user?.whatsapp || '(51) 98108 - 6784'
+            name: user?.name || '',
+            email: user?.email || '',
+            whatsapp: user?.whatsapp || '(51) 98108 - 6784'
         });
     }, [session]);
 

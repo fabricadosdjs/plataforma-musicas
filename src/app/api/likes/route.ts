@@ -1,6 +1,6 @@
 // src/app/api/likes/route.ts
 import { authOptions } from '@/lib/authOptions';
-import prisma, { safeQuery } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { NextResponse } from 'next/server';
 
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const userId = session.user.id;
 
     // Verificar se é um usuário admin especial (usar comportamento especial se necessário)
-    const isAdmin = userId === 'admin-nextor-001' || (session.user as any).benefits?.adminAccess;
+    const isAdmin = userId === 'admin-nextor-001' || (session.user as { benefits?: { adminAccess?: boolean } }).benefits?.adminAccess;
 
     // Verificar se o userId é válido (UUID ou CUID)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -106,7 +106,7 @@ export async function GET(req: Request) {
     const userId = session.user.id;
 
     // Verificar se é um usuário admin especial
-    const isAdmin = userId === 'admin-nextor-001' || (session.user as any).benefits?.adminAccess;
+    const isAdmin = userId === 'admin-nextor-001' || (session.user as { benefits?: { adminAccess?: boolean } }).benefits?.adminAccess;
 
     // Se for admin, retornar array vazio ou comportamento especial
     if (isAdmin) {
@@ -126,19 +126,16 @@ export async function GET(req: Request) {
       );
     }
 
-    const likes = await safeQuery(
-      () => prisma.like.findMany({
-        where: {
-          userId: userId,
-        },
-        select: {
-          trackId: true,
-        },
-      }),
-      []
-    );
+    const likes = await prisma.like.findMany({
+      where: {
+        userId: userId,
+      },
+      select: {
+        trackId: true,
+      },
+    });
 
-    const likedTrackIds = likes.map(like => like.trackId);
+    const likedTrackIds = likes.map((like: { trackId: number }) => like.trackId);
 
     return NextResponse.json({ likedTracks: likedTrackIds });
   } catch (error) {

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useRef, useCallback, useEff
 import { Track } from '@/types/track';
 import { useSession } from 'next-auth/react';
 import { useToastContext } from '@/context/ToastContext';
+import AudioDebugger, { debugAudioUrl } from '@/utils/audioDebugger';
 
 interface GlobalPlayerContextType {
     currentTrack: Track | null;
@@ -37,8 +38,19 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const audioRef = useRef<HTMLAudioElement>(null);
 
     const getSecureAudioUrl = async (track: Track): Promise<string | null> => {
-        const audioUrl = track.downloadUrl || track.previewUrl || track.url;
-        if (!audioUrl) return null;
+    let audioUrl: string = String(track.downloadUrl || track.previewUrl || track.url || '');
+        if (!audioUrl || typeof audioUrl !== 'string') {
+            AudioDebugger.log('warn', 'URL de áudio não encontrada ou inválida', {
+                trackId: track.id,
+                songName: track.songName,
+                downloadUrl: track.downloadUrl,
+                previewUrl: track.previewUrl,
+                url: track.url
+            });
+            return null;
+        }
+
+        debugAudioUrl(audioUrl, `Track ${track.id} - ${track.songName}`);
 
         // Detectar se é dispositivo móvel (apenas no cliente)
         let isMobile = false;
@@ -46,50 +58,38 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
             isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
-        // Em mobile, usar URL direta da Contabo (sem assinatura)
-        if (isMobile && audioUrl.includes('contabostorage.com')) {
-            console.log('🎵 GlobalPlayer: Mobile detectado - usando URL direta da Contabo');
-            return audioUrl;
-        }
-
-        // Se a URL já é uma URL segura (assinada), use-a
-        if (audioUrl.includes('X-Amz-Signature')) {
-            return audioUrl;
-        }
-
-        // Se é uma URL do Contabo e é desktop, tente obter uma URL segura
-        if (audioUrl.includes('contabostorage.com') && !isMobile) {
+        // PARA REPRODUÇÃO: sempre usar URL direta da Contabo (sem assinatura)
+        if (audioUrl.includes('contabostorage.com')) {
             try {
-                // Extrair o caminho completo do arquivo da URL
-                const bucketPattern = 'plataforma-de-musicas/';
-                const bucketIndex = audioUrl.indexOf(bucketPattern);
-                if (bucketIndex !== -1) {
-                    const key = audioUrl.substring(bucketIndex + bucketPattern.length);
-                    console.log('🎵 GlobalPlayer: Desktop - extraindo chave do arquivo:', {
-                        originalUrl: audioUrl,
-                        extractedKey: key,
-                        bucketPattern,
-                        bucketIndex
-                    });
-
-                    const response = await fetch(`/api/audio-url?key=${encodeURIComponent(key)}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log('🎵 GlobalPlayer: URL segura obtida:', data.url);
-                        return data.url;
-                    } else {
-                        console.error('🎵 GlobalPlayer: Erro na API audio-url:', response.status, response.statusText);
-                        return audioUrl;
+                // Corrigir qualquer hash/prefixo antes de 'plataforma-de-musicas/'
+                audioUrl = String(audioUrl).replace(/https?:\/\/[^/]*contabostorage\.com\/.*?(plataforma-de-musicas\/)/, 'https://usc1.contabostorage.com/$1');
+                // Se ainda não corrigiu, tentar remover qualquer prefixo antes de 'plataforma-de-musicas/'
+                if (!audioUrl.startsWith('https://usc1.contabostorage.com/plataforma-de-musicas/')) {
+                    const idx = audioUrl.indexOf('plataforma-de-musicas/');
+                    if (idx !== -1) {
+                        audioUrl = 'https://usc1.contabostorage.com/' + audioUrl.substring(idx);
                     }
-                } else {
-                    console.error('🎵 GlobalPlayer: Padrão do bucket não encontrado na URL:', audioUrl);
-                    return audioUrl;
                 }
-            } catch (error) {
-                console.error('🎵 GlobalPlayer: Erro ao obter URL segura:', error);
+                AudioDebugger.log('info', 'Convertendo para URL direta da Contabo (sanitizada)', {
+                    sanitized: audioUrl.substring(0, 100) + '...',
+                    isMobile,
+                    trackId: track.id
+                });
                 return audioUrl;
+            } catch (error) {
+                AudioDebugger.log('error', 'Erro ao sanitizar URL direta da Contabo', {
+                    error: error instanceof Error ? error.message : error,
+                    originalUrl: String(audioUrl).substring(0, 100) + '...',
+                    trackId: track.id
+                });
+                return String(audioUrl);
             }
         }
+
+        AudioDebugger.log('info', 'Usando URL original (não é Contabo)', {
+            url: audioUrl.substring(0, 100) + '...',
+            trackId: track.id
+        });
 
         return audioUrl;
     };
@@ -167,9 +167,21 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     });
                 }, { once: true });
 
-                audio.addEventListener('error', (error) => {
-                    console.error('🎵 GlobalPlayer: Erro no carregamento do áudio:', error);
+                audio.addEventListener('error', async (error) => {
+                    console.error('🎵 GlobalPlayer: Erro no carregamento do áudio:', error, 'URL:', audio.src);
                     setIsPlaying(false);
+
+                    // Testar conectividade da URL
+                    try {
+                        const resp = await fetch(audio.src, { method: 'HEAD' });
+                        if (!resp.ok) {
+                            showToast(`❌ Erro ao carregar áudio: servidor respondeu ${resp.status}`, 'error');
+                        } else {
+                            showToast('❌ Erro ao carregar áudio, mas a URL está acessível. Verifique o formato do arquivo.', 'error');
+                        }
+                    } catch (err) {
+                        showToast('❌ Erro ao carregar áudio: não foi possível acessar a URL.', 'error');
+                    }
                 });
             } else {
                 console.log('🎵 GlobalPlayer: Nenhum elemento de áudio disponível');
@@ -459,7 +471,6 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 webkit-playsinline="true"
                 x-webkit-airplay="allow"
                 controlsList="nodownload nofullscreen noremoteplayback"
-                disablePictureInPicture
                 onContextMenu={(e) => e.preventDefault()}
             />
         </GlobalPlayerContext.Provider>

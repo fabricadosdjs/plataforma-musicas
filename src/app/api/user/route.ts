@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
                 email: true,
                 is_vip: true,
                 whatsapp: true,
-                created_at: true,
-                updated_at: true
+                createdAt: true,
+                updatedAt: true
             }
         });
 

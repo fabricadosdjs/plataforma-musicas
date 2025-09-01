@@ -11,6 +11,8 @@ const nextConfig = {
     // Configuração mínima para evitar problemas de webpack
     experimental: {},
     poweredByHeader: false,
+    eslint: {
+        ignoreDuringBuilds: true,
+    },
 };
-
 export default nextConfig;

@@ -211,9 +211,9 @@ async function processLikes(
         for (const like of likeData) {
             await prisma.like.upsert({
                 where: {
-                    userId_trackId: {
-                        userId: like.userId,
-                        trackId: like.trackId
+                    trackId_userId: {
+                        trackId: like.trackId,
+                        userId: like.userId
                     }
                 },
                 update: {

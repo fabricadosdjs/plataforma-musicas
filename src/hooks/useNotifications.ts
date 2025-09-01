@@ -598,6 +598,7 @@ export const useNotifications = () => {
         // Nova função para notificações de música
         addMusicNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'> & { musicData: NonNullable<Notification['musicData']> }) => {
             addNotification(notification);
-        }
+        },
+        resetChecks,
     };
 };

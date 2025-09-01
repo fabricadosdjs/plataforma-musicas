@@ -30,8 +30,7 @@ export async function GET(request: NextRequest) {
                 songName: true,
                 artist: true,
                 downloadUrl: true,
-                previewUrl: true,
-                url: true
+                previewUrl: true
             }
         });
 
@@ -42,7 +41,7 @@ export async function GET(request: NextRequest) {
 
         // Verificar cada música no storage
         for (const track of tracks) {
-            const audioUrl = track.downloadUrl || track.previewUrl || track.url;
+            const audioUrl = track.downloadUrl || track.previewUrl;
 
             if (!audioUrl || !audioUrl.includes('contabostorage.com')) {
                 validTracks.push(track);

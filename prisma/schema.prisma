@@ -43,6 +43,8 @@ model User {
   likes                       Like[]
   plays                       Play[]
   requests                    Request[]
+
+  @@index([period])
 }
 
 model Track {

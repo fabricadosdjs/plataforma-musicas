@@ -18,6 +18,7 @@ import { ImageErrorBoundary } from '@/components/ui/ImageErrorBoundary';
 import { generateGradientColors, generateInitials } from '@/utils/imageUtils';
 
 interface MusicListProps {
+    selectedGenre?: string;
     tracks: Track[];
     downloadedTrackIds: number[];
     setDownloadedTrackIds: (ids: number[] | ((prev: number[]) => number[])) => void;
@@ -34,6 +35,8 @@ interface MusicListProps {
     // Props para paginação
     currentPage?: number;
     setCurrentPage?: (page: number | ((prev: number) => number)) => void;
+    // Filtros ativos
+    hasActiveFilters?: boolean;
 }
 
 interface GroupedTracks {
@@ -641,20 +644,32 @@ export default function MusicList({
                 body: JSON.stringify({ trackId: track.id }),
             });
 
+
             console.log('🔍 Response status:', response.status, response.statusText);
 
+            let data;
             if (!response.ok) {
                 let errorMessage = 'Falha no download';
                 try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.error || errorMessage;
+                    data = await response.json();
+                    errorMessage = data.error || errorMessage;
                 } catch (parseError) {
-                    console.error('❌ Erro ao fazer parse da resposta de erro:', parseError);
+                    // Se não for JSON, tente ler como texto e logar
+                    const text = await response.text();
+                    console.error('❌ Erro ao fazer parse da resposta de erro:', parseError, 'Conteúdo:', text);
+                    errorMessage = 'Erro inesperado do servidor (resposta não-JSON)';
                 }
                 throw new Error(errorMessage);
+            } else {
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    const text = await response.text();
+                    console.error('❌ Erro ao fazer parse do JSON da resposta:', parseError, 'Conteúdo:', text);
+                    throw new Error('Resposta do servidor não é JSON válido');
+                }
             }
 
-            const data = await response.json();
             console.log('🔍 Dados da API:', data);
 
             if (!data.downloadUrl) {
@@ -716,7 +731,7 @@ export default function MusicList({
                 'Download Concluído',
                 `"${track.songName}" de ${track.artist} foi baixada com sucesso!`,
                 {
-                    coverUrl: track.imageUrl || track.thumbnailUrl,
+                    coverUrl: (track.imageUrl as string | undefined) || (track.thumbnailUrl as string | undefined),
                     artistName: track.artist,
                     songName: track.songName,
                     trackId: track.id
@@ -918,10 +933,26 @@ export default function MusicList({
                     });
 
                     if (!response.ok) {
-                        throw new Error('Falha no download');
+                        let errorMessage = 'Falha no download';
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.error || errorMessage;
+                        } catch (parseError) {
+                            const text = await response.text();
+                            console.error('❌ Erro ao fazer parse da resposta de erro:', parseError, 'Conteúdo:', text);
+                            errorMessage = 'Erro inesperado do servidor (resposta não-JSON)';
+                        }
+                        throw new Error(errorMessage);
                     }
 
-                    const data = await response.json();
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (parseError) {
+                        const text = await response.text();
+                        console.error('❌ Erro ao fazer parse do JSON da resposta:', parseError, 'Conteúdo:', text);
+                        throw new Error('Resposta do servidor não é JSON válido');
+                    }
                     if (!data.downloadUrl) {
                         throw new Error('URL de download não encontrada');
                     }
@@ -1139,7 +1170,7 @@ export default function MusicList({
                                     <div className="block sm:hidden">
                                         <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                                             {group.tracks.map((track, index) => {
-                                                const { initials } = generateThumbnail(track);
+                                                const { initials, colors } = track ? generateThumbnail(track) : { initials: '?', colors: 'from-gray-500 to-gray-700' };
                                                 const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
 
                                                 return (

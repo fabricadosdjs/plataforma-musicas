@@ -4,10 +4,11 @@ import path from 'path';
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { file: string[] } }
+    { params }: { params: Promise<{ file: string[] }> }
 ) {
     try {
-        const fileName = params.file.join('/');
+        const { file } = await params;
+        const fileName = file.join('/');
         const filePath = path.join(process.cwd(), 'downloads', fileName);
 
         // Verificar se o arquivo existe

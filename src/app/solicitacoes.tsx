@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import MainLayout from '@/components/layout/MainLayout';
 import {
-  Music, Plus, Search, Clock, CheckCircle, XCircle,
-  Star, Trash2, Edit, Eye
+  Music, Plus, Search, Filter, Clock, CheckCircle, XCircle,
+  AlertCircle, Star, Heart, Download, Play, Calendar, User,
+  MessageSquare, Send, Trash2, Edit, Eye, TrendingUp
 } from 'lucide-react';
 
 interface MusicRequest {

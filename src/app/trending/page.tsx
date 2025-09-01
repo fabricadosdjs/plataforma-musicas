@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { TrendingUp, Play, Download, Heart, Clock, Star, Music, Pause, Trophy, Headphones, Disc, ArrowLeft } from 'lucide-react';
+import { TrendingUp, Play, Download, Heart, Clock, Star, Music, Pause, Trophy, Headphones, Disc, ArrowLeft, Zap } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { useToastContext } from '@/context/ToastContext';

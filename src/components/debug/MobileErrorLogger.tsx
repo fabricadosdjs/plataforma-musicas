@@ -350,10 +350,10 @@ ${filteredErrors.map((error, index) =>
             <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
                 <h4 className="font-medium text-blue-300 mb-2 text-sm">📋 Como Enviar os Erros:</h4>
                 <div className="text-xs text-blue-200 space-y-1">
-                    <p>1. <strong>Clique em &quot;▶️ Iniciar&quot;</strong> para capturar</p>
+                    <p>1. <strong>Clique em "▶️ Iniciar"</strong> para capturar</p>
                     <p>2. <strong>Recarregue a página</strong> ou execute ações</p>
-                    <p>3. <strong>Use &quot;📋 Copiar&quot;</strong> e cole aqui na mensagem</p>
-                    <p>4. <strong>Ou use &quot;📱 WhatsApp&quot;</strong> para enviar direto</p>
+                    <p>3. <strong>Use "📋 Copiar"</strong> e cole aqui na mensagem</p>
+                    <p>4. <strong>Ou use "📱 WhatsApp"</strong> para enviar direto</p>
                 </div>
             </div>
         </div>

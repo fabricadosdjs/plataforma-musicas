@@ -12,14 +12,6 @@ export async function GET() {
             },
             orderBy: {
                 createdAt: 'desc'
-            },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        email: true
-                    }
-                }
             }
         });
 
@@ -38,9 +30,10 @@ export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
 
+        const isAdmin = session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
         console.log('Session in admin-messages API:', {
             user: session?.user,
-            isAdmin: session?.user?.isAdmin,
+            isAdmin: isAdmin,
             email: session?.user?.email
         });
 
@@ -80,14 +73,6 @@ export async function POST(request: NextRequest) {
                 title,
                 message,
                 createdBy: adminUser.id
-            },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        email: true
-                    }
-                }
             }
         });
 

@@ -1,5 +1,5 @@
 import { authOptions } from '@/lib/authOptions';
-import prisma, { safeQuery } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { NextResponse } from 'next/server';
 
@@ -32,8 +32,9 @@ export async function GET(req: Request) {
         }
 
         // Buscar likes do usuário com detalhes das músicas
-        const likes = await safeQuery(
-            () => prisma.like.findMany({
+        let likes: any[] = [];
+        try {
+            likes = await prisma.like.findMany({
                 where: {
                     userId: user.id,
                 },
@@ -55,9 +56,11 @@ export async function GET(req: Request) {
                 orderBy: {
                     createdAt: 'desc'
                 }
-            }),
-            []
-        );
+            });
+        } catch (error) {
+            console.error('Erro ao buscar likes:', error);
+            likes = [];
+        }
 
         // Calcular estatísticas
         const totalLikes = likes.length;

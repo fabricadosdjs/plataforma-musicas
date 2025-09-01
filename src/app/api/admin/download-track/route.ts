@@ -63,6 +63,10 @@ export async function POST(request: NextRequest) {
 
                 // Baixar o arquivo do Contabo Storage usando https nativo
                 const fileBuffer = await new Promise<Buffer>((resolve, reject) => {
+                    if (!track.downloadUrl) {
+                        reject(new Error('URL de download é nula'));
+                        return;
+                    }
                     https.get(track.downloadUrl, (response) => {
                         console.log(`📥 Resposta do Contabo: ${response.statusCode} ${response.statusMessage}`);
 
@@ -83,7 +87,7 @@ export async function POST(request: NextRequest) {
                 });
 
                 // Retornar o arquivo para download forçado
-                const response = new NextResponse(fileBuffer, {
+                const response = new Response(new Uint8Array(fileBuffer), {
                     headers: {
                         'Content-Type': 'audio/mpeg',
                         'Content-Disposition': `attachment; filename="${cleanFileName}"; filename*=UTF-8''${encodeURIComponent(cleanFileName)}`,

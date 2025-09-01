@@ -53,14 +53,6 @@ export async function PUT(
                 message,
                 isActive,
                 updatedAt: new Date()
-            },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        email: true
-                    }
-                }
             }
         });
 

@@ -3,6 +3,7 @@ import { useNotificationContext } from '@/context/NotificationContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell, Crown, Shield, Download, Star, Zap } from 'lucide-react';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export const NotificationTest: React.FC = () => {
     const {
@@ -134,7 +135,6 @@ export const NotificationTest: React.FC = () => {
                     <Button
                         onClick={testNotifications}
                         className="bg-blue-600 hover:bg-blue-700 text-white"
-                        size="sm"
                     >
                         <Bell className="w-4 h-4 mr-2" />
                         Testar Todas
@@ -143,7 +143,6 @@ export const NotificationTest: React.FC = () => {
                     <Button
                         onClick={testVipExpiration}
                         className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                        size="sm"
                     >
                         <Crown className="w-4 h-4 mr-2" />
                         VIP Vencendo
@@ -152,7 +151,6 @@ export const NotificationTest: React.FC = () => {
                     <Button
                         onClick={testVipExpired}
                         className="bg-red-600 hover:bg-red-700 text-white"
-                        size="sm"
                     >
                         <Crown className="w-4 h-4 mr-2" />
                         VIP Expirado
@@ -161,7 +159,6 @@ export const NotificationTest: React.FC = () => {
                     <Button
                         onClick={testWelcome}
                         className="bg-green-600 hover:bg-green-700 text-white"
-                        size="sm"
                     >
                         <Zap className="w-4 h-4 mr-2" />
                         Bem-vindo
@@ -170,7 +167,6 @@ export const NotificationTest: React.FC = () => {
                     <Button
                         onClick={testSecurity}
                         className="bg-orange-600 hover:bg-orange-700 text-white"
-                        size="sm"
                     >
                         <Shield className="w-4 h-4 mr-2" />
                         Segurança
@@ -179,7 +175,6 @@ export const NotificationTest: React.FC = () => {
                     <Button
                         onClick={testFeature}
                         className="bg-purple-600 hover:bg-purple-700 text-white"
-                        size="sm"
                     >
                         <Star className="w-4 h-4 mr-2" />
                         Recursos
@@ -190,7 +185,6 @@ export const NotificationTest: React.FC = () => {
                     <Button
                         onClick={resetChecks}
                         className="bg-gray-600 hover:bg-gray-700 text-white"
-                        size="sm"
                     >
                         <Zap className="w-4 h-4 mr-2" />
                         Resetar Verificações

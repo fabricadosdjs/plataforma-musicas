@@ -47,9 +47,9 @@ const NewPage = () => {
     const [selectedMonth, setSelectedMonth] = useState("");
     const [selectedPool, setSelectedPool] = useState("");
 
-    // Estados para paginação baseada em datas
-    const [currentPage, setCurrentPage] = useState(1);
-    const [daysPerPage] = useState(3); // Cada página mostra 3 dias de conteúdo
+    // Estados para scroll infinito
+    const [visibleTracksCount, setVisibleTracksCount] = useState(50); // Mostrar 50 músicas inicialmente
+    const TRACKS_PER_SCROLL = 25; // Carregar 25 músicas por vez ao fazer scroll
 
     // Hook para carregamento progressivo das músicas
     const {
@@ -83,22 +83,22 @@ const NewPage = () => {
     const genres = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.style).filter((v): v is string => Boolean(v))));
-    }, [tracks.length]); // Depende apenas do tamanho, não do conteúdo completo
+    }, [tracks.length, isComplete]); // Recalcular apenas quando necessário
 
     const artists = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.artist).filter((v): v is string => Boolean(v))));
-    }, [tracks.length]);
+    }, [tracks.length, isComplete]);
 
     const versions = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.version).filter((v): v is string => Boolean(v))));
-    }, [tracks.length]);
+    }, [tracks.length, isComplete]);
 
     const pools = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.pool).filter((v): v is string => Boolean(v))));
-    }, [tracks.length]);
+    }, [tracks.length, isComplete]);
 
     const monthOptions = useMemo(() => {
         if (tracks.length === 0) return [];
@@ -196,7 +196,7 @@ const NewPage = () => {
         } finally {
             setStylesLoading(false);
         }
-    }, [tracks]);
+    }, []); // Remover tracks das dependências para evitar re-execução constante
 
     // Buscar folders recentes
     const fetchRecentFolders = useCallback(async () => {
@@ -350,15 +350,15 @@ const NewPage = () => {
         } finally {
             setFoldersLoading(false);
         }
-    }, [tracks]);
+    }, []); // Remover tracks das dependências para evitar re-execução constante
 
-    // Carregar estilos e folders quando as tracks carregarem
+    // Carregar estilos e folders apenas uma vez quando há tracks suficientes
     useEffect(() => {
-        if (tracks.length > 0) {
+        if (tracks.length > 20) { // Aguardar pelo menos 20 tracks antes de buscar estilos/folders
             fetchStyles();
             fetchRecentFolders();
         }
-    }, [fetchStyles, fetchRecentFolders]);
+    }, [tracks.length]); // Depender apenas do length, não do array completo
 
     const { data: session } = useSession();
     const { showAlert } = useAppContext();
@@ -369,7 +369,7 @@ const NewPage = () => {
     // Hook para cache de downloads
     const downloadsCache = useDownloadsCache();
 
-    // Função para agrupar tracks por data
+    // Função para agrupar tracks por data - otimizada para evitar recálculos desnecessários
     const groupedTracksByDate = useMemo(() => {
         if (tracks.length === 0) return {};
 
@@ -391,90 +391,51 @@ const NewPage = () => {
         return Object.fromEntries(
             Object.entries(groups).sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
         );
-    }, [tracks]);
+    }, [tracks.length, isComplete]); // Recalcular apenas quando o tamanho muda ou carregamento completa
 
-    // Calcular páginas baseadas em datas
-    const dateKeys = Object.keys(groupedTracksByDate);
-    const totalPages = Math.ceil(dateKeys.length / daysPerPage);
+    // Para scroll infinito, mostramos todas as tracks ordenadas por data
+    const allTracksSorted = useMemo(() => {
+        const dateKeys = Object.keys(groupedTracksByDate);
+        return dateKeys.flatMap(dateKey => groupedTracksByDate[dateKey] || []);
+    }, [groupedTracksByDate]);
 
-    // Obter datas para a página atual
-    const currentPageDates = useMemo(() => {
-        const startIndex = (currentPage - 1) * daysPerPage;
-        const endIndex = startIndex + daysPerPage;
-        return dateKeys.slice(startIndex, endIndex);
-    }, [dateKeys, currentPage, daysPerPage]);
+    // Tracks visíveis baseadas no scroll infinito
+    const visibleTracks = useMemo(() => {
+        return allTracksSorted.slice(0, visibleTracksCount);
+    }, [allTracksSorted, visibleTracksCount]);
 
-    // Obter tracks para a página atual
-    const currentPageTracks = useMemo(() => {
-        return currentPageDates.flatMap(dateKey => groupedTracksByDate[dateKey] || []);
-    }, [currentPageDates, groupedTracksByDate]);
-
-    // Função para navegar para uma página específica
-    const goToPage = (page: number) => {
-        if (page >= 1 && page <= totalPages) {
-            setCurrentPage(page);
-            // Atualizar URL com hash
-            window.location.hash = `#/page=${page}`;
-        }
-    };
-
-    // Função para ir para a próxima página
-    const goToNextPage = () => {
-        if (currentPage < totalPages) {
-            goToPage(currentPage + 1);
-        }
-    };
-
-    // Função para ir para a página anterior
-    const goToPreviousPage = () => {
-        if (currentPage > 1) {
-            goToPage(currentPage - 1);
-        }
-    };
-
-    // Função para ir para a primeira página
-    const goToFirstPage = () => {
-        goToPage(1);
-    };
-
-    // Função para ir para a última página
-    const goToLastPage = () => {
-        goToPage(totalPages);
-    };
-
-    // Efeito para sincronizar com hash da URL
+    // Hook para detectar scroll infinito - otimizado
     useEffect(() => {
-        const hash = window.location.hash;
-        const pageMatch = hash.match(/#\/page=(\d+)/);
+        let timeoutId: NodeJS.Timeout;
+        
+        const handleScroll = () => {
+            // Usar throttle para melhor performance
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const windowHeight = window.innerHeight;
+                const documentHeight = document.documentElement.offsetHeight;
+                
+                // Carregar mais quando estiver a 200px do final
+                if (scrollTop + windowHeight >= documentHeight - 200) {
+                    // Se chegou ao final e ainda há tracks para carregar
+                    if (visibleTracksCount < allTracksSorted.length) {
+                        setVisibleTracksCount(prev => {
+                            const newCount = Math.min(prev + TRACKS_PER_SCROLL, allTracksSorted.length);
+                            console.log(`📜 Scroll infinito: Carregando mais ${TRACKS_PER_SCROLL} tracks. Total visível: ${newCount}/${allTracksSorted.length}`);
+                            return newCount;
+                        });
+                    }
+                }
+            }, 100); // Throttle de 100ms
+        };
 
-        if (pageMatch) {
-            const page = parseInt(pageMatch[1]);
-            if (page >= 1 && page <= totalPages) {
-                setCurrentPage(page);
-            }
-        } else {
-            // Se não há hash, definir como página 1 e adicionar #/page=1
-            setCurrentPage(1);
-            window.location.hash = '#/page=1';
-        }
-    }, [totalPages]);
-
-    // Efeito para sincronizar com parâmetros de pesquisa da URL
-    useEffect(() => {
-        const searchParams = new URLSearchParams(window.location.search);
-        const query = searchParams.get('q');
-
-        if (query && query.trim()) {
-            setSearchQuery(query);
-            performSearch(query);
-        }
-    }, []); // Executar apenas uma vez ao carregar a página
-
-    // Efeito para atualizar hash quando a página muda
-    useEffect(() => {
-        // Sempre manter o hash, mesmo para a primeira página
-        window.location.hash = `#/page=${currentPage}`;
-    }, [currentPage]);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            clearTimeout(timeoutId);
+        };
+    }, [visibleTracksCount, allTracksSorted.length, TRACKS_PER_SCROLL]);
 
     // --- SLIDES DA COMUNIDADE ---
     const communitySlides = [
@@ -536,7 +497,7 @@ const NewPage = () => {
                 // Atualizar URL com a pesquisa
                 const searchParams = new URLSearchParams(window.location.search);
                 searchParams.set('q', query);
-                const newUrl = `${window.location.pathname}?${searchParams.toString()}#/page=1`;
+                const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
                 window.history.pushState({}, '', newUrl);
             } else {
                 setSearchResults([]);
@@ -562,11 +523,19 @@ const NewPage = () => {
         setSearchResults([]);
         setAppliedSearchQuery("");
         setHasSearched(false);
+        setVisibleTracksCount(50); // Reset scroll infinito
 
         // Limpar URL da pesquisa
-        const newUrl = `${window.location.pathname}#/page=1`;
+        const newUrl = `${window.location.pathname}`;
         window.history.pushState({}, '', newUrl);
     };
+
+    // Reset do scroll infinito quando há mudanças nas tracks
+    useEffect(() => {
+        if (tracks.length > 0 && !hasSearched) {
+            setVisibleTracksCount(50); // Reset para 50 tracks iniciais
+        }
+    }, [tracks.length, hasSearched]);
 
     // --- Determinar quais músicas mostrar ---
     const displayTracks = useMemo(() => {
@@ -574,9 +543,9 @@ const NewPage = () => {
         if (hasSearched) {
             return searchResults;
         }
-        // Caso contrário, mostrar músicas normais
-        return currentPageTracks;
-    }, [hasSearched, searchResults, currentPageTracks]);
+        // Caso contrário, mostrar músicas visíveis do scroll infinito
+        return visibleTracks;
+    }, [hasSearched, searchResults, visibleTracks]);
 
 
 
@@ -1218,98 +1187,41 @@ const NewPage = () => {
                         />
                     )}
 
-                    {/* Paginação baseada em datas */}
-                    {!isLoading && !searchLoading && !hasSearched && totalPages > 1 && (
+                    {/* Indicador de scroll infinito */}
+                    {!isLoading && !searchLoading && !hasSearched && visibleTracksCount < allTracksSorted.length && (
                         <div className="mt-8 sm:mt-12">
-                            <div className="bg-[#121212] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg">
-                                {/* Indicador de página atual - Visível em mobile */}
-                                <div className="text-center mb-4 sm:hidden">
-                                    <span className="text-[#1db954] font-bold text-lg">
-                                        Página {currentPage} de {totalPages}
+                            <div className="bg-[#121212] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg text-center">
+                                <div className="flex items-center justify-center gap-3">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#1db954]"></div>
+                                    <span className="text-[#b3b3b3]">
+                                        Carregando mais músicas... ({visibleTracksCount} de {allTracksSorted.length})
                                     </span>
                                 </div>
-
-                                {/* Controles de paginação */}
-                                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-                                    {/* Primeira página */}
-                                    <button
-                                        onClick={goToFirstPage}
-                                        disabled={currentPage === 1}
-                                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage === 1
-                                            ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
-                                            : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
-                                            }`}
-                                        title="Primeira página"
-                                    >
-                                        <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z" />
-                                        </svg>
-                                        Primeira
-                                    </button>
-
-                                    {/* Página anterior */}
-                                    <button
-                                        onClick={goToPreviousPage}
-                                        disabled={currentPage === 1}
-                                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage === 1
-                                            ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
-                                            : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
-                                            }`}
-                                        title="Página anterior"
-                                    >
-                                        <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-                                        </svg>
-                                        Anterior
-                                    </button>
-
-                                    {/* Navegação rápida por páginas - Ocultar em mobile para economizar espaço */}
-                                    <div className="hidden sm:flex flex-wrap items-center justify-center gap-2">
-                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                            <button
-                                                key={page}
-                                                onClick={() => goToPage(page)}
-                                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${page === currentPage
-                                                    ? 'bg-[#1db954] text-white shadow-lg'
-                                                    : 'bg-[#282828] text-[#b3b3b3] hover:bg-[#3e3e3e] hover:text-white'
-                                                    }`}
-                                            >
-                                                {page.toString().padStart(2, '0')}
-                                            </button>
-                                        ))}
+                                <div className="mt-3">
+                                    <div className="w-full bg-[#282828] rounded-full h-2">
+                                        <div 
+                                            className="bg-[#1db954] h-2 rounded-full transition-all duration-300"
+                                            style={{
+                                                width: `${(visibleTracksCount / allTracksSorted.length) * 100}%`
+                                            }}
+                                        ></div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-                                    {/* Próxima página */}
-                                    <button
-                                        onClick={goToNextPage}
-                                        disabled={currentPage >= totalPages}
-                                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage >= totalPages
-                                            ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
-                                            : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
-                                            }`}
-                                        title="Próxima página"
-                                    >
-                                        Próxima
-                                        <svg className="w-4 h-4 inline ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z" />
-                                        </svg>
-                                    </button>
-
-                                    {/* Última página */}
-                                    <button
-                                        onClick={goToLastPage}
-                                        disabled={currentPage >= totalPages}
-                                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${currentPage >= totalPages
-                                            ? 'bg-[#535353] text-[#b3b3b3] cursor-not-allowed'
-                                            : 'bg-[#1db954] text-white hover:bg-[#1ed760] hover:scale-105 shadow-lg'
-                                            }`}
-                                        title="Última página"
-                                    >
-                                        <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M5.59 7.41L10.18 12l-4.59 4.59L12 18l6-6-6-6-1.41 1.41z" />
-                                        </svg>
-                                        Última
-                                    </button>
+                    {/* Indicador de todas as músicas carregadas */}
+                    {!isLoading && !searchLoading && !hasSearched && visibleTracksCount >= allTracksSorted.length && allTracksSorted.length > 0 && (
+                        <div className="mt-8 sm:mt-12">
+                            <div className="bg-[#121212] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg text-center">
+                                <div className="flex items-center justify-center gap-3">
+                                    <svg className="w-5 h-5 text-[#1db954]" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                    </svg>
+                                    <span className="text-[#1db954] font-medium">
+                                        ✨ Todas as {allTracksSorted.length} músicas foram carregadas!
+                                    </span>
                                 </div>
                             </div>
                         </div>

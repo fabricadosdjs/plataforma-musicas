@@ -65,3 +65,4 @@ O sistema gera logs detalhados para debug:
 - 💾 Salvamento de arquivos
 - ✅ Sucesso ou ❌ erro
 
+

@@ -147,7 +147,11 @@ const FooterPlayer = () => {
     const toggleMute = useCallback(() => setIsMuted(prev => !prev), []);
     const handlePrevious = useCallback(() => {
         if (!audioRef.current) return;
-        (audioRef.current.currentTime > 3) ? handleSeek(0) : previousTrack();
+        if (audioRef.current.currentTime > 3) {
+            handleSeek(0);
+        } else {
+            previousTrack();
+        }
     }, [audioRef, previousTrack, handleSeek]);
 
     if (!currentTrack) return null;

@@ -1,5 +1,5 @@
 // src/lib/authOptions.ts
-import prisma, { safeQuery } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { User } from '../types/user';
 import { UserBenefits } from '../types/benefits';
 import bcrypt from 'bcryptjs';
@@ -153,12 +153,9 @@ export const authOptions: AuthOptions = {
                     }
 
                     // Buscar usuário no banco de dados (tabela User, sem profile)
-                    const dbUser = await safeQuery(
-                        () => prisma.user.findFirst({
-                            where: { email: credentials.email }
-                        }),
-                        null
-                    ) as User | null;
+                    const dbUser = await prisma.user.findFirst({
+                        where: { email: credentials.email }
+                    }) as User | null;
 
 
                     if (!dbUser) {
@@ -202,13 +199,10 @@ export const authOptions: AuthOptions = {
 
                     // Atualizar o campo is_vip no banco para manter consistência
                     if (typeof dbUser.is_vip === 'boolean' && dbUser.is_vip !== isVip) {
-                        await safeQuery(
-                            () => prisma.user.update({
-                                where: { id: dbUser.id },
-                                data: { is_vip: !!isVip }
-                            }),
-                            null
-                        );
+                        await prisma.user.update({
+                            where: { id: dbUser.id },
+                            data: { is_vip: !!isVip }
+                        });
                         console.log('🔄 Campo is_vip atualizado no banco:', isVip);
                     }
 

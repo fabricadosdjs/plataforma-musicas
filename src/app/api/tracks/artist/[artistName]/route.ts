@@ -3,10 +3,11 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { artistName: string } }
+    { params }: { params: Promise<{ artistName: string }> }
 ) {
     try {
-        const artistName = decodeURIComponent(params.artistName);
+        const resolvedParams = await params;
+        const artistName = decodeURIComponent(resolvedParams.artistName);
 
         if (!artistName) {
             return NextResponse.json(

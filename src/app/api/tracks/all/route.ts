@@ -25,20 +25,15 @@ export async function GET() {
             ],
             select: {
                 id: true,
-                title: true,
+                songName: true,
                 artist: true,
                 style: true,
                 pool: true,
                 version: true,
-                folder: true, // Adicionando o campo folder
+                folder: true,
                 releaseDate: true,
                 createdAt: true,
-                duration: true,
-                bpm: true,
-                key: true,
-                price: true,
                 imageUrl: true,
-                audioUrl: true,
                 downloadUrl: true
             }
         });

@@ -109,7 +109,7 @@ const SearchPage = () => {
                         </h1>
 
                         <p className="text-gray-400">
-                            Buscando por: <span className="text-purple-400 font-semibold">&quot;{query}&quot;</span>
+                            Buscando por: <span className="text-purple-400 font-semibold">"{query}"</span>
                         </p>
                     </div>
 
@@ -133,7 +133,7 @@ const SearchPage = () => {
                         <div className="text-center py-12">
                             <Music className="h-20 w-20 text-gray-400 mx-auto mb-4" />
                             <h3 className="text-xl font-bold text-white mb-2">
-                                Nenhuma música encontrada para &quot;{query}&quot;
+                                Nenhuma música encontrada para "{query}"
                             </h3>
                             <p className="text-gray-400 mb-6">
                                 Tente usar termos diferentes ou ajustar os filtros

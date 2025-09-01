@@ -13,15 +13,15 @@ export async function GET() {
             prisma.track.count(),
             prisma.track.groupBy({
                 by: ['style'],
-                where: { style: { not: null } }
+                where: { style: { not: '' } }
             }),
             prisma.track.groupBy({
                 by: ['pool'],
-                where: { pool: { not: null } }
+                where: { pool: { not: '' } }
             }),
             prisma.track.groupBy({
                 by: ['artist'],
-                where: { artist: { not: null } }
+                where: { artist: { not: '' } }
             })
         ]);
 

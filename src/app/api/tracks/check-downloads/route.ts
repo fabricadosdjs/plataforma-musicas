@@ -14,7 +14,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Usuário não autenticado' }, { status: 401 });
         }
 
-        const { trackIds } = await request.json();
+        let trackIds;
+        try {
+            const body = await request.json();
+            trackIds = body.trackIds;
+        } catch {
+            return NextResponse.json({ error: 'Corpo da requisição inválido ou ausente' }, { status: 400 });
+        }
         if (!trackIds || !Array.isArray(trackIds)) {
             return NextResponse.json({ error: 'trackIds deve ser um array' }, { status: 400 });
         }

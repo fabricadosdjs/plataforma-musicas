@@ -59,7 +59,9 @@ async function detectDuplicates(request: NextRequest) {
                 key: file.key,
                 url: file.url,
                 size: file.size,
-                lastModified: file.lastModified,
+                lastModified: file.lastModified instanceof Date
+                    ? file.lastModified.toISOString()
+                    : String(file.lastModified),
                 filename: file.filename
             });
         }

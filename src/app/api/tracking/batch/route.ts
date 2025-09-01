@@ -32,37 +32,43 @@ export async function POST(request: NextRequest) {
         }, {} as Record<string, any>);
 
         // Processar cada grupo de eventos
-        const updatePromises = Object.values(eventGroups).map(async (group) => {
+        const updatePromises = Object.values(eventGroups).map(async (group: any) => {
             const { songId, event, count } = group;
 
             try {
                 if (event === 'download') {
-                    await prisma.track.update({
-                        where: { id: songId },
-                        data: {
-                            downloads: {
-                                increment: count
+                    // Para downloads, criar registros individuais
+                    for (let i = 0; i < count; i++) {
+                        await prisma.download.create({
+                            data: {
+                                trackId: songId,
+                                userId: '1', // Usuário padrão para tracking
+                                downloadedAt: new Date()
                             }
-                        }
-                    });
+                        });
+                    }
                 } else if (event === 'play') {
-                    await prisma.track.update({
-                        where: { id: songId },
-                        data: {
-                            plays: {
-                                increment: count
+                    // Para plays, criar registros individuais
+                    for (let i = 0; i < count; i++) {
+                        await prisma.play.create({
+                            data: {
+                                trackId: songId,
+                                userId: '1', // Usuário padrão para tracking
+                                createdAt: new Date()
                             }
-                        }
-                    });
+                        });
+                    }
                 } else if (event === 'like') {
-                    await prisma.track.update({
-                        where: { id: songId },
-                        data: {
-                            likes: {
-                                increment: count
+                    // Para likes, criar registros individuais
+                    for (let i = 0; i < count; i++) {
+                        await prisma.like.create({
+                            data: {
+                                trackId: songId,
+                                userId: '1', // Usuário padrão para tracking
+                                createdAt: new Date()
                             }
-                        }
-                    });
+                        });
+                    }
                 }
                 // Adicionar outros tipos de eventos conforme necessário
             } catch (error) {
@@ -73,16 +79,6 @@ export async function POST(request: NextRequest) {
 
         // Executar todas as atualizações
         await Promise.all(updatePromises);
-
-        // Registrar o lote processado (opcional)
-        await prisma.trackingBatch.create({
-            data: {
-                batchSize,
-                eventsCount: events.length,
-                processedAt: new Date(),
-                status: 'SUCCESS'
-            }
-        });
 
         console.log(`✅ Lote processado com sucesso: ${events.length} eventos`);
 
@@ -96,20 +92,8 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('❌ Erro ao processar lote:', error);
 
-        // Registrar erro do lote
-        try {
-            await prisma.trackingBatch.create({
-                data: {
-                    batchSize: 0,
-                    eventsCount: 0,
-                    processedAt: new Date(),
-                    status: 'ERROR',
-                    errorMessage: error instanceof Error ? error.message : 'Erro desconhecido'
-                }
-            });
-        } catch (dbError) {
-            console.error('❌ Erro ao registrar falha do lote:', dbError);
-        }
+        // Log do erro
+        console.error('❌ Erro ao processar lote:', error);
 
         return NextResponse.json(
             { error: 'Erro interno do servidor' },

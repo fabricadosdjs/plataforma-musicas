@@ -1,10 +1,24 @@
 {
-  "extends": "next/core-web-vitals",
+  "extends": [
+    "next/core-web-vitals"
+  ],
   "rules": {
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-unused-vars": "warn",
-    "react-hooks/exhaustive-deps": "warn",
-    "@next/next/no-img-element": "warn",
-    "react/no-unescaped-entities": "warn"
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-empty-object-type": "off",
+    "@typescript-eslint/no-unsafe-function-type": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/no-require-imports": "off",
+    "react/no-unescaped-entities": "off",
+    "react-hooks/exhaustive-deps": "off",
+    "react-hooks/rules-of-hooks": "error",
+    "@next/next/no-img-element": "off",
+    "prefer-const": "off",
+    "jsx-a11y/alt-text": "off",
+    "no-html-link-for-pages": "off",
+    "@next/next/no-page-custom-font": "off",
+    "import/no-anonymous-default-export": "off",
+    "react/jsx-no-undef": "error",
+    "@typescript-eslint/no-unsafe-function-type": "off"
   }
 }

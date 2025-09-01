@@ -18,6 +18,7 @@ interface UseDownloadsCacheReturn {
     dailyDownloadCount: number;
     isLoading: boolean;
     error: string | null;
+    lastUpdated: string;
     refreshCache: () => Promise<void>;
     markAsDownloaded: (trackId: number) => Promise<void>;
     markAsLiked: (trackId: number) => void;
@@ -332,19 +333,20 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
     }, [session?.user?.id, refreshCache]);
 
     return {
-        downloadedTrackIds: cacheData.downloadedTrackIds,
-        likedTrackIds: cacheData.likedTrackIds,
-        isVip: cacheData.isVip,
-        downloadsLeft: cacheData.downloadsLeft,
-        dailyDownloadCount: cacheData.dailyDownloadCount,
-        isLoading,
-        error,
-        refreshCache,
-        markAsDownloaded,
-        markAsLiked,
-        markAsUnliked,
-        isDownloaded,
-        isLiked,
-        forceSync
+    downloadedTrackIds: cacheData.downloadedTrackIds,
+    likedTrackIds: cacheData.likedTrackIds,
+    isVip: cacheData.isVip,
+    downloadsLeft: cacheData.downloadsLeft,
+    dailyDownloadCount: cacheData.dailyDownloadCount,
+    lastUpdated: cacheData.lastUpdated,
+    isLoading,
+    error,
+    refreshCache,
+    markAsDownloaded,
+    markAsLiked,
+    markAsUnliked,
+    isDownloaded,
+    isLiked,
+    forceSync
     };
 };

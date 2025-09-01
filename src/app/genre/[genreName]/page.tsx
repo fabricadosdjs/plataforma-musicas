@@ -103,7 +103,7 @@ export default function GenrePage() {
     } | null>(null);
 
     // Verificar se o usuário é VIP (simples)
-    const isVip = true; // Por enquanto, sempre true para teste
+    const isVip = true;
 
     // Função para mostrar modal de confirmação mobile
     const showMobileDownloadConfirmation = (type: 'new' | 'all', tracks: Track[], callback: () => void) => {

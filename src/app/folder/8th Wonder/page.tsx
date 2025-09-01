@@ -57,7 +57,7 @@ export default function EighthWonderPage() {
     });
 
     // Verificar se o usuário é VIP
-    const isVip = session?.user?.role === 'vip' || session?.user?.role === 'admin';
+    const isVip = session?.user?.is_vip || session?.user?.email === 'edersonleonardo@nexorrecords.com.br';
 
     // Carregar tracks do folder
     useEffect(() => {
@@ -134,7 +134,7 @@ export default function EighthWonderPage() {
         });
 
         for (const track of tracksToDownload) {
-            setBatchProgress(prev => ({ ...prev, currentTrack: track.title }));
+            setBatchProgress(prev => ({ ...prev, currentTrack: track.songName }));
 
             try {
                 // Simular download
@@ -151,7 +151,7 @@ export default function EighthWonderPage() {
                         ...prev,
                         failed: prev.failed + 1,
                         failedDetails: [...prev.failedDetails, {
-                            trackName: track.title,
+                            trackName: track.songName,
                             reason: 'Erro de conexão'
                         }]
                     }));
@@ -161,7 +161,7 @@ export default function EighthWonderPage() {
                     ...prev,
                     failed: prev.failed + 1,
                     failedDetails: [...prev.failedDetails, {
-                        trackName: track.title,
+                        trackName: track.songName,
                         reason: 'Erro desconhecido'
                     }]
                 }));

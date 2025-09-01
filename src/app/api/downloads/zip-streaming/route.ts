@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
                                             style: track.style,
                                             id: track.id,
                                             note: 'Música não disponível para download',
-                                            error: downloadError.message
+                                            error: downloadError instanceof Error ? downloadError.message : String(downloadError)
                                         },
                                         isAudio: false
                                     }) + '\n'));

@@ -151,7 +151,7 @@ export default function AdminMessagesDisplay({ showAdminControls = false }: Admi
                     </div>
                 </div>
 
-                {showAdminControls && session?.user?.isAdmin && (
+                {showAdminControls && (session && session.user && (session.user as typeof session.user & { isAdmin?: boolean }).isAdmin) && (
                     <button
                         onClick={() => setShowForm(true)}
                         className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 flex items-center gap-2"
@@ -163,7 +163,7 @@ export default function AdminMessagesDisplay({ showAdminControls = false }: Admi
             </div>
 
             {/* Formulário para criar/editar recado */}
-            {showForm && showAdminControls && session?.user?.isAdmin && (
+            {showForm && showAdminControls && session && session.user && (session.user as typeof session.user & { isAdmin?: boolean }).isAdmin && (
                 <div className="bg-black/20 rounded-xl p-6 mb-6">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-xl font-bold text-white">
@@ -251,7 +251,7 @@ export default function AdminMessagesDisplay({ showAdminControls = false }: Admi
                                     </p>
                                 </div>
 
-                                {showAdminControls && session?.user?.isAdmin && (
+                                {showAdminControls && session && session.user && (session.user as typeof session.user & { isAdmin?: boolean }).isAdmin && (
                                     <div className="flex gap-2 ml-4">
                                         <button
                                             onClick={() => handleEdit(message)}

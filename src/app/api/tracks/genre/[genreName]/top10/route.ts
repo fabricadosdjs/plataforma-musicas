@@ -5,10 +5,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
     request: Request,
-    { params }: { params: { genreName: string } }
+    { params }: { params: Promise<{ genreName: string }> }
 ) {
     try {
-        const { genreName } = params;
+        const { genreName } = await params;
         const decodedGenreName = decodeURIComponent(genreName);
 
         console.log('🔍 API Genre Top 10 chamada para:', decodedGenreName);

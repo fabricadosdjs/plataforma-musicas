@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         const cached = cache.get(cacheKey);
         if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
             console.log('📋 Cache hit para:', fileKey);
-            return new NextResponse(cached.data, {
+            return new NextResponse(new Uint8Array(cached.data), {
                 status: 200,
                 headers: {
                     'Content-Type': cached.contentType,
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
 
         console.log('✅ Arquivo servido com sucesso:', fileKey, `(${(buffer.length / 1024 / 1024).toFixed(2)}MB)`);
 
-        return new NextResponse(buffer, {
+        return new NextResponse(new Uint8Array(buffer), {
             status: 200,
             headers: {
                 'Content-Type': contentType,

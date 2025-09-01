@@ -110,18 +110,9 @@ async function detectNewFiles(request: NextRequest) {
             return result;
         });
 
-        // Calcular estatísticas
-        const styleStats = previewTracks.reduce((acc, track) => {
-            const style = track.preview.style || 'Desconhecido';
-            acc[style] = (acc[style] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-
-        const poolStats = previewTracks.reduce((acc, track) => {
-            const pool = track.preview.pool || 'Desconhecido';
-            acc[pool] = (acc[pool] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
+        // Calcular estatísticas básicas
+        const styleStats = { 'Desconhecido': previewTracks.length };
+        const poolStats = { 'Desconhecido': previewTracks.length };
 
         const result = {
             success: true,

@@ -44,7 +44,7 @@ const RelatoriosPage = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      
+
       // Buscar estatísticas via API
       const response = await fetch('/api/stats?' + new URLSearchParams({
         period: selectedPeriod,

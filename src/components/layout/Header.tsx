@@ -6,19 +6,18 @@ function isValidDate(val: unknown): val is Date {
 }
 // src/components/layout/Header.tsx
 
-import { AlertCircle, CheckCircle, Crown, X, Wrench, Link2, Download, Star, Menu, UserCircle, Users, Home, Music } from 'lucide-react';
+import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, UserCircle, Users, Home, Music } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import type { User as AppUser } from '@/types/user';
 import { SafeImage } from '@/components/ui/SafeImage';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
-// Filter removido pois não está sendo usado
+import { Filter } from 'lucide-react'; // Certifique-se de que Filter está importado aqui
 import { getSignInUrl } from '@/lib/utils';
 
 
 interface HeaderProps {
-  // Props podem ser adicionadas aqui no futuro
 }
 
 const NEW_LOGO_URL = 'https://i.ibb.co/Y7WKPY57/logo-nexor.png';
