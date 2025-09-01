@@ -505,7 +505,7 @@ export default function FiltersSidebar({
                         <span>Filtros Ativos</span>
                     </div>
                     <p className="text-xs text-red-300 mt-2">
-                        Clique em &quot;Aplicar Filtros&quot; para ver os resultados filtrados
+                        Clique em "Aplicar Filtros" para ver os resultados filtrados
                     </p>
                 </div>
             )}

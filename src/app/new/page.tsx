@@ -1,15 +1,21 @@
 "use client";
 
+// Força renderização dinâmica para evitar erro de pré-renderização
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
     Search,
     Filter,
+    Sparkles,
     ChevronLeft,
     ChevronRight,
     Music,
-    RefreshCw,
+    Download,
+    Heart,
+    Play,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,25 +28,13 @@ import { ProgressiveLoadingBar, LoadMoreButton, ErrorRetryButton } from "@/compo
 import { useAppContext } from "@/context/AppContext";
 import { useGlobalPlayer } from "@/context/GlobalPlayerContext";
 import { usePageLoading } from "@/hooks/usePageLoading";
-import { useSimplePagination } from "@/hooks/useSimplePagination";
+import { useProgressiveTracksFetch } from "@/hooks/useProgressiveTracksFetch";
 import { useDownloadsCache } from "@/hooks/useDownloadsCache";
 import { Track } from "@/types/track";
-import dynamicImport from "next/dynamic";
-
-// Code splitting para Framer Motion
-const MotionDiv = dynamicImport(() => import("framer-motion").then(mod => ({ default: mod.motion.div })), {
-    ssr: false,
-    loading: () => <div className="animate-pulse bg-gray-200 rounded" />
-});
-
-// Força renderização dinâmica para evitar erro de pré-renderização
-export const dynamic = 'force-dynamic';
+import { motion } from "framer-motion";
 
 const NewPage = () => {
-    const router = useRouter();
-    const pathname = usePathname();
-
-    // Estado para hidratação
+    // Estado para controlar hidratação (evitar hydration mismatch)
     const [isHydrated, setIsHydrated] = useState(false);
     const [starPositions, setStarPositions] = useState<Array<{
         left: string;
@@ -49,7 +43,7 @@ const NewPage = () => {
         animationDuration: string;
     }>>([]);
 
-    // Estados para busca e filtros
+    // Estados para filtros
     const [searchQuery, setSearchQuery] = useState("");
     const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
     const [showFiltersModal, setShowFiltersModal] = useState(false);
@@ -65,124 +59,58 @@ const NewPage = () => {
     const [selectedMonth, setSelectedMonth] = useState("");
     const [selectedPool, setSelectedPool] = useState("");
 
-    // Função para extrair número da página da URL
-    const getPageFromUrl = useCallback(() => {
-        if (typeof window !== 'undefined') {
-            const hash = window.location.hash;
-            const match = hash.match(/#\/page=(\d+)/);
-            return match ? parseInt(match[1], 10) : 1;
-        }
-        return 1;
-    }, []);
+    // Estados para scroll infinito
+    const [visibleTracksCount, setVisibleTracksCount] = useState(50); // Mostrar 50 músicas inicialmente
+    const TRACKS_PER_SCROLL = 25; // Carregar 25 músicas por vez ao fazer scroll
 
-    // Função para atualizar a URL com a página atual
-    const updateUrlWithPage = useCallback((page: number) => {
-        if (typeof window !== 'undefined') {
-            const newHash = `#/page=${page}`;
-            if (window.location.hash !== newHash) {
-                window.location.hash = newHash;
-            }
-        }
-    }, []);
-
-    // Hook para paginação simples das músicas
+    // Hook para carregamento progressivo das músicas
     const {
         tracks,
         totalCount,
-        currentPage,
-        totalPages,
+        loadedCount,
         isLoading,
+        isComplete,
         error,
-        loadPage,
-        nextPage,
-        previousPage,
-        hasNextPage,
-        hasPreviousPage,
-        forceReload
-    } = useSimplePagination({
+        retry,
+        loadMore
+    } = useProgressiveTracksFetch({
         endpoint: '/api/tracks/new',
-        pageSize: 60, // 60 músicas por página
-        initialPage: getPageFromUrl(), // Usar página da URL
-        onError: (error) => {
-            console.error('❌ Erro no carregamento da página:', error);
+        batchSize: 25, // Carregar 25 músicas por vez
+        delayBetweenBatches: 150, // 150ms entre lotes para não sobrecarregar
+        onProgress: (loaded, total) => {
+            console.log(`📊 Progresso: ${loaded}/${total} músicas carregadas`);
         },
-        onPageChange: (page) => {
-            // Atualizar URL quando a página muda
-            updateUrlWithPage(page);
+        onBatchLoaded: (batch, batchIndex) => {
+            console.log(`✅ Lote ${batchIndex + 1} carregado: ${batch.length} músicas`);
+        },
+        onComplete: (allTracks) => {
+            console.log(`🎉 Todas as ${allTracks.length} músicas foram carregadas!`);
+        },
+        onError: (error) => {
+            console.error('❌ Erro no carregamento progressivo:', error);
         }
     });
-
-    // Sincronizar com mudanças na URL (navegação manual)
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-
-        const handleHashChange = () => {
-            const newPage = getPageFromUrl();
-            if (newPage !== currentPage && newPage >= 1 && newPage <= totalPages) {
-                loadPage(newPage);
-            }
-        };
-
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
-    }, [currentPage, totalPages, loadPage, getPageFromUrl]);
-
-    // Atualizar URL inicial se não houver hash
-    useEffect(() => {
-        if (typeof window !== 'undefined' && !window.location.hash && currentPage === 1) {
-            updateUrlWithPage(1);
-        }
-    }, [currentPage, updateUrlWithPage]);
-
-    // Detectar quando a página volta do histórico e recarregar se necessário
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-
-        const handlePageShow = (event: PageTransitionEvent) => {
-            // Se a página foi carregada do cache do navegador (back/forward)
-            if (event.persisted && tracks.length === 0) {
-                console.log('🔄 Página voltou do cache do navegador sem dados, recarregando...');
-                setTimeout(() => forceReload(), 100);
-            }
-        };
-
-        const handlePopState = () => {
-            // Se não há músicas carregadas, forçar reload
-            if (tracks.length === 0) {
-                console.log('🔄 Navegação de volta detectada sem dados, recarregando...');
-                setTimeout(() => forceReload(), 100);
-            }
-        };
-
-        window.addEventListener('pageshow', handlePageShow);
-        window.addEventListener('popstate', handlePopState);
-
-        return () => {
-            window.removeEventListener('pageshow', handlePageShow);
-            window.removeEventListener('popstate', handlePopState);
-        };
-    }, [tracks.length, forceReload]);
 
     // Extrair dados únicos para filtros - otimizado para evitar re-cálculos desnecessários
     const genres = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.style).filter((v): v is string => Boolean(v))));
-    }, [tracks.length]); // Recalcular apenas quando necessário
+    }, [tracks.length, isComplete]); // Recalcular apenas quando necessário
 
     const artists = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.artist).filter((v): v is string => Boolean(v))));
-    }, [tracks.length]);
+    }, [tracks.length, isComplete]);
 
     const versions = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.version).filter((v): v is string => Boolean(v))));
-    }, [tracks.length]);
+    }, [tracks.length, isComplete]);
 
     const pools = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.pool).filter((v): v is string => Boolean(v))));
-    }, [tracks.length]);
+    }, [tracks.length, isComplete]);
 
     const monthOptions = useMemo(() => {
         if (tracks.length === 0) return [];
@@ -194,7 +122,7 @@ const NewPage = () => {
             })
             .filter((v): v is string => Boolean(v));
         return Array.from(new Set(months)).map(m => ({ value: m, label: m }));
-    }, [tracks]);
+    }, [tracks.length]);
 
     // Estados para estilos mais baixados
     const [styles, setStyles] = useState<Array<{ name: string; trackCount: number; downloadCount: number }>>([]);
@@ -280,7 +208,7 @@ const NewPage = () => {
         } finally {
             setStylesLoading(false);
         }
-    }, [tracks]); // Incluir tracks nas dependências para usar dados atualizados
+    }, []); // Remover tracks das dependências para evitar re-execução constante
 
     // Buscar folders recentes
     const fetchRecentFolders = useCallback(async () => {
@@ -434,7 +362,7 @@ const NewPage = () => {
         } finally {
             setFoldersLoading(false);
         }
-    }, [tracks]); // Incluir tracks nas dependências para usar dados atualizados
+    }, []); // Remover tracks das dependências para evitar re-execução constante
 
     // Gerar posições das estrelas após hidratação (evitar hydration mismatch)
     useEffect(() => {
@@ -450,16 +378,17 @@ const NewPage = () => {
 
     // Carregar estilos e folders apenas uma vez quando há tracks suficientes
     useEffect(() => {
-        if (tracks.length > 20 && !styles.length && !recentFolders.length) { // Carregar apenas uma vez
+        if (tracks.length > 20) { // Aguardar pelo menos 20 tracks antes de buscar estilos/folders
             fetchStyles();
             fetchRecentFolders();
         }
-    }, [tracks.length, styles.length, recentFolders.length, fetchStyles, fetchRecentFolders]); // Incluir fetchStyles e fetchRecentFolders nas dependências
+    }, [tracks.length]); // Depender apenas do length, não do array completo
 
     const { data: session } = useSession();
     const { showAlert } = useAppContext();
     const { currentTrack, isPlaying, playTrack } = useGlobalPlayer();
     const { startLoading, stopLoading } = usePageLoading();
+    const router = useRouter();
 
     // Hook para cache de downloads
     const downloadsCache = useDownloadsCache();
@@ -486,9 +415,51 @@ const NewPage = () => {
         return Object.fromEntries(
             Object.entries(groups).sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
         );
-    }, [tracks.length]); // Recalcular apenas quando o tamanho muda
+    }, [tracks.length, isComplete]); // Recalcular apenas quando o tamanho muda ou carregamento completa
 
+    // Para scroll infinito, mostramos todas as tracks ordenadas por data
+    const allTracksSorted = useMemo(() => {
+        const dateKeys = Object.keys(groupedTracksByDate);
+        return dateKeys.flatMap(dateKey => groupedTracksByDate[dateKey] || []);
+    }, [groupedTracksByDate]);
 
+    // Tracks visíveis baseadas no scroll infinito
+    const visibleTracks = useMemo(() => {
+        return allTracksSorted.slice(0, visibleTracksCount);
+    }, [allTracksSorted, visibleTracksCount]);
+
+    // Hook para detectar scroll infinito - otimizado
+    useEffect(() => {
+        let timeoutId: NodeJS.Timeout;
+        
+        const handleScroll = () => {
+            // Usar throttle para melhor performance
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const windowHeight = window.innerHeight;
+                const documentHeight = document.documentElement.offsetHeight;
+                
+                // Carregar mais quando estiver a 200px do final
+                if (scrollTop + windowHeight >= documentHeight - 200) {
+                    // Se chegou ao final e ainda há tracks para carregar
+                    if (visibleTracksCount < allTracksSorted.length) {
+                        setVisibleTracksCount(prev => {
+                            const newCount = Math.min(prev + TRACKS_PER_SCROLL, allTracksSorted.length);
+                            console.log(`📜 Scroll infinito: Carregando mais ${TRACKS_PER_SCROLL} tracks. Total visível: ${newCount}/${allTracksSorted.length}`);
+                            return newCount;
+                        });
+                    }
+                }
+            }, 100); // Throttle de 100ms
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            clearTimeout(timeoutId);
+        };
+    }, [visibleTracksCount, allTracksSorted.length, TRACKS_PER_SCROLL]);
 
     // --- SLIDES DA COMUNIDADE ---
     const communitySlides = [
@@ -527,7 +498,7 @@ const NewPage = () => {
             setCurrentCommunitySlide((prev) => (prev + 1) % communitySlides.length);
         }, 5000);
         return () => clearInterval(interval);
-    }, [isCommunityHovered]); // communitySlides.length é constante
+    }, [communitySlides.length, isCommunityHovered]);
 
     // Hook para carregamento progressivo das músicas já está configurado acima
 
@@ -576,14 +547,19 @@ const NewPage = () => {
         setSearchResults([]);
         setAppliedSearchQuery("");
         setHasSearched(false);
-        loadPage(1); // Reset para primeira página
+        setVisibleTracksCount(50); // Reset scroll infinito
 
         // Limpar URL da pesquisa
         const newUrl = `${window.location.pathname}`;
         window.history.pushState({}, '', newUrl);
     };
 
-
+    // Reset do scroll infinito quando há mudanças nas tracks
+    useEffect(() => {
+        if (tracks.length > 0 && !hasSearched) {
+            setVisibleTracksCount(50); // Reset para 50 tracks iniciais
+        }
+    }, [tracks.length, hasSearched]);
 
     // --- Determinar quais músicas mostrar ---
     const displayTracks = useMemo(() => {
@@ -591,9 +567,9 @@ const NewPage = () => {
         if (hasSearched) {
             return searchResults;
         }
-        // Caso contrário, mostrar músicas da página atual
-        return tracks;
-    }, [hasSearched, searchResults, tracks]);
+        // Caso contrário, mostrar músicas visíveis do scroll infinito
+        return visibleTracks;
+    }, [hasSearched, searchResults, visibleTracks]);
 
 
 
@@ -621,73 +597,97 @@ const NewPage = () => {
 
             {/* Conteúdo Principal - Tela Cheia */}
             <div className="pt-16 lg:pt-20 relative z-10">
-                {/* SLIDE SECTION - Substituindo as estatísticas */}
+                {/* HERO SECTION - Estatísticas em Tempo Real */}
                 <div className="w-full max-w-[95%] mx-auto mt-4 sm:mt-6 mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-                    <MotionDiv
+                    <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                         className="bg-gradient-to-br from-[#1db954]/10 via-[#181818]/80 to-[#282828]/50 rounded-3xl p-6 sm:p-8 border border-[#1db954]/20 backdrop-blur-xl shadow-2xl"
                     >
                         <div className="text-center mb-6">
-                            <div className="flex items-center justify-center gap-4 mb-2">
-                                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-transparent bg-gradient-to-r from-[#1db954] via-[#1ed760] to-[#00d4aa] bg-clip-text">
-                                    NOVIDADES DA SEMANA
-                                </h1>
-                                {tracks.length === 0 && !isLoading && (
-                                    <button
-                                        onClick={forceReload}
-                                        className="px-4 py-2 bg-[#1db954] text-white rounded-lg font-medium text-sm hover:bg-[#1ed760] transition-colors shadow-md hover:shadow-lg flex items-center gap-2"
-                                        title="Recarregar músicas"
-                                    >
-                                        <RefreshCw className="w-4 h-4" />
-                                        Recarregar
-                                    </button>
-                                )}
-                            </div>
-                            <p className="text-[#b3b3b3] text-sm sm:text-base">As melhores faixas eletrônicas recém-lançadas</p>
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-transparent bg-gradient-to-r from-[#1db954] via-[#1ed760] to-[#00d4aa] bg-clip-text mb-2">
+                                LATEST DROPS
+                            </h1>
+                            <p className="text-[#b3b3b3] text-sm sm:text-base">Descobra as novidades da música eletrônica</p>
+                        </div>
+                        
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <motion.div 
+                                whileHover={{ scale: 1.05 }}
+                                className="bg-[#181818]/60 rounded-xl p-4 text-center border border-[#282828]/50"
+                            >
+                                <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
+                                    {loadedCount.toLocaleString()}
+                                </div>
+                                <div className="text-xs sm:text-sm text-[#b3b3b3] uppercase tracking-wider">
+                                    Novas Faixas
+                                </div>
+                            </motion.div>
+                            
+                            <motion.div 
+                                whileHover={{ scale: 1.05 }}
+                                className="bg-[#181818]/60 rounded-xl p-4 text-center border border-[#282828]/50"
+                            >
+                                <div className="text-2xl sm:text-3xl font-bold text-[#ff6b6b] mb-1">
+                                    {genres.length}
+                                </div>
+                                <div className="text-xs sm:text-sm text-[#b3b3b3] uppercase tracking-wider">
+                                    Gêneros
+                                </div>
+                            </motion.div>
+                            
+                            <motion.div 
+                                whileHover={{ scale: 1.05 }}
+                                className="bg-[#181818]/60 rounded-xl p-4 text-center border border-[#282828]/50"
+                            >
+                                <div className="text-2xl sm:text-3xl font-bold text-[#4ecdc4] mb-1">
+                                    {artists.length}
+                                </div>
+                                <div className="text-xs sm:text-sm text-[#b3b3b3] uppercase tracking-wider">
+                                    Artistas
+                                </div>
+                            </motion.div>
+                            
+                            <motion.div 
+                                whileHover={{ scale: 1.05 }}
+                                className="bg-[#181818]/60 rounded-xl p-4 text-center border border-[#282828]/50"
+                            >
+                                <div className="text-2xl sm:text-3xl font-bold text-[#ffd93d] mb-1">
+                                    {pools.length}
+                                </div>
+                                <div className="text-xs sm:text-sm text-[#b3b3b3] uppercase tracking-wider">
+                                    Labels
+                                </div>
+                            </motion.div>
                         </div>
 
-                        {/* Slide de destaque */}
-                        <div className="bg-[#181818]/60 rounded-2xl p-6 border border-[#282828]/50">
-                            <div className="flex flex-col md:flex-row items-center gap-6">
-                                <div className="flex-1 text-center md:text-left">
-                                    <h2 className="text-xl md:text-2xl font-bold text-white mb-3">
-                                        ✨ Destaque da Semana
-                                    </h2>
-                                    <p className="text-[#b3b3b3] text-sm md:text-base leading-relaxed">
-                                        Descubra as faixas mais quentes que acabaram de chegar na plataforma.
-                                        Música eletrônica de qualidade, sempre atualizada com os últimos lançamentos.
-                                    </p>
-                                    <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-2">
-                                        <span className="px-3 py-1 bg-[#1db954]/20 text-[#1db954] text-xs rounded-full border border-[#1db954]/30">
-                                            House
-                                        </span>
-                                        <span className="px-3 py-1 bg-[#1db954]/20 text-[#1db954] text-xs rounded-full border border-[#1db954]/30">
-                                            Techno
-                                        </span>
-                                        <span className="px-3 py-1 bg-[#1db954]/20 text-[#1db954] text-xs rounded-full border border-[#1db954]/30">
-                                            Progressive
-                                        </span>
-                                    </div>
+                        {/* Progress Bar para carregamento */}
+                        {!isComplete && (
+                            <div className="mb-4">
+                                <div className="flex justify-between text-xs text-[#b3b3b3] mb-2">
+                                    <span>Carregando biblioteca...</span>
+                                    <span>{totalCount > 0 ? Math.round((loadedCount / totalCount) * 100) : 0}%</span>
                                 </div>
-                                <div className="flex-shrink-0">
-                                    <div className="w-32 h-32 md:w-40 md:h-40 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-2xl flex items-center justify-center">
-                                        <svg className="w-16 h-16 md:w-20 md:h-20 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M8 5v14l11-7z" />
-                                        </svg>
-                                    </div>
+                                <div className="w-full bg-[#282828] rounded-full h-2">
+                                    <motion.div 
+                                        className="bg-gradient-to-r from-[#1db954] to-[#1ed760] h-2 rounded-full"
+                                        initial={{ width: "0%" }}
+                                        animate={{ width: totalCount > 0 ? `${(loadedCount / totalCount) * 100}%` : "0%" }}
+                                        transition={{ duration: 0.5 }}
+                                    />
                                 </div>
                             </div>
-                        </div>
-                    </MotionDiv>
+                        )}
+                    </motion.div>
                 </div>
 
                 {/* CARROUSEL "COMUNIDADE DOS VIPS" - Mobile First */}
                 <div className="w-full max-w-[95%] mx-auto mt-6 sm:mt-8 mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 transition-all duration-300">
                     {/* Header do carrousel - Mobile First */}
                     <div className="flex items-center justify-between mb-3 sm:mb-6">
-                        <MotionDiv
+                        <motion.div 
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.6, delay: 0.2 }}
@@ -701,10 +701,10 @@ const NewPage = () => {
                                 <div className="w-2 h-2 bg-[#ff6b6b] rounded-full animate-ping"></div>
                                 <span className="text-[#ff6b6b] text-xs font-bold">LIVE</span>
                             </div>
-                        </MotionDiv>
+                        </motion.div>
 
                         {/* Controles de navegação - Mobile First */}
-                        <MotionDiv
+                        <motion.div 
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.6, delay: 0.3 }}
@@ -724,11 +724,11 @@ const NewPage = () => {
                             >
                                 <ChevronRight size={18} className="sm:w-[22px] sm:h-[22px] group-hover:scale-110 group-hover:text-[#1db954] transition-all duration-200" />
                             </button>
-                        </MotionDiv>
+                        </motion.div>
                     </div>
 
                     {/* Container do carrousel - Mobile First */}
-                    <MotionDiv
+                    <motion.div 
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.4 }}
@@ -835,7 +835,7 @@ const NewPage = () => {
                                 />
                             ))}
                         </div>
-                    </MotionDiv>
+                    </motion.div>
 
                     {/* Aviso Mobile - Experiência Desktop Recomendada */}
                     <div className="block sm:hidden mt-4">
@@ -1134,7 +1134,57 @@ const NewPage = () => {
                     </div>
                 )}
 
-
+                {/* SEÇÃO DE ATIVIDADE EM TEMPO REAL */}
+                <div className="w-full max-w-[95%] mx-auto mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 1.2 }}
+                        className="bg-gradient-to-br from-[#181818]/80 via-[#1db954]/5 to-[#282828]/80 rounded-2xl p-6 border border-[#1db954]/30 backdrop-blur-xl shadow-2xl"
+                    >
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-3 h-3 bg-[#ff6b6b] rounded-full animate-ping"></div>
+                            <h3 className="text-white font-bold text-xl">🎯 Atividade ao Vivo</h3>
+                            <div className="flex-1 h-px bg-gradient-to-r from-[#1db954]/50 to-transparent"></div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-[#282828]/50 rounded-xl p-4 border border-[#3e3e3e]/50">
+                                <h4 className="text-[#1db954] font-semibold mb-3 flex items-center gap-2 text-sm">
+                                    <Download className="w-4 h-4" />
+                                    Downloads Recentes
+                                </h4>
+                                <div className="space-y-2">
+                                    {["Progressive House Mix", "Deep Tech Vibes", "Melodic Techno"].map((track, i) => (
+                                        <div key={i} className="text-xs text-[#b3b3b3]">• {track}</div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="bg-[#282828]/50 rounded-xl p-4 border border-[#3e3e3e]/50">
+                                <h4 className="text-[#ff6b6b] font-semibold mb-3 flex items-center gap-2 text-sm">
+                                    ❤️ Mais Curtidas
+                                </h4>
+                                <div className="space-y-2">
+                                    {["Summer Vibes 2025", "Festival Anthems", "Club Bangers"].map((track, i) => (
+                                        <div key={i} className="text-xs text-[#b3b3b3]">• {track}</div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="bg-[#282828]/50 rounded-xl p-4 border border-[#3e3e3e]/50">
+                                <h4 className="text-[#4ecdc4] font-semibold mb-3 flex items-center gap-2 text-sm">
+                                    🟢 Sistema Online
+                                </h4>
+                                <div className="space-y-1 text-xs">
+                                    <div className="text-green-400">• Servidor: Operacional</div>
+                                    <div className="text-green-400">• Downloads: Rápidos</div>
+                                    <div className="text-green-400">• Qualidade: HD</div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
 
                 {/* BARRA DE BUSCA E FILTROS - Mobile First */}
                 <div className="w-full max-w-[95%] mx-auto mb-4 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
@@ -1237,20 +1287,20 @@ const NewPage = () => {
                     {!searchLoading && (
                         <div className="mb-6">
                             <ProgressiveLoadingBar
-                                loaded={totalCount}
+                                loaded={loadedCount}
                                 total={totalCount}
                                 isLoading={isLoading}
-                                isComplete={!isLoading}
+                                isComplete={isComplete}
                                 error={error}
-                                onRetry={() => loadPage(currentPage)}
+                                onRetry={retry}
                             />
 
                             {/* Botão de Carregar Mais */}
                             <LoadMoreButton
-                                onClick={() => loadPage(currentPage + 1)}
+                                onClick={loadMore}
                                 isLoading={isLoading}
-                                isComplete={!isLoading}
-                                loaded={totalCount}
+                                isComplete={isComplete}
+                                loaded={loadedCount}
                                 total={totalCount}
                             />
 
@@ -1258,7 +1308,7 @@ const NewPage = () => {
                             {error && (
                                 <ErrorRetryButton
                                     error={error}
-                                    onRetry={() => loadPage(currentPage)}
+                                    onRetry={retry}
                                 />
                             )}
                         </div>
@@ -1329,105 +1379,51 @@ const NewPage = () => {
                                 }
                             }}
                             enableInfiniteScroll={false} // Desabilitar infinite scroll para usar paginação baseada em datas
-                            hasMore={hasNextPage}
+                            hasMore={false}
                             isLoading={isLoading || searchLoading}
                             onLoadMore={() => { }}
                         />
                     )}
 
-                    {/* Controles de Paginação - Sempre visível e com tela cheia */}
-                    {!hasSearched && (
-                        <div className="mt-8 sm:mt-12 w-full">
-                            <div className="bg-[#121212] rounded-2xl p-6 sm:p-8 border border-[#282828] shadow-lg">
-                                <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-                                    {/* Informações da página - Lado esquerdo */}
-                                    <div className="text-center lg:text-left flex-1">
-                                        <h3 className="text-[#ffffff] text-lg sm:text-xl font-semibold mb-2">
-                                            Navegação de Páginas
-                                        </h3>
-                                        <p className="text-[#b3b3b3] text-base sm:text-lg mb-1">
-                                            Página <span className="text-[#1db954] font-bold">{currentPage}</span> de <span className="text-[#1db954] font-bold">{totalPages}</span>
-                                        </p>
-                                        <p className="text-[#535353] text-sm sm:text-base">
-                                            Músicas <span className="text-[#1db954] font-semibold">
-                                                {((currentPage - 1) * 60) + 1}-{Math.min(currentPage * 60, totalCount)}
-                                            </span> de {totalCount.toLocaleString()} • 60 por página
-                                        </p>
+                    {/* Indicador de scroll infinito */}
+                    {!isLoading && !searchLoading && !hasSearched && visibleTracksCount < allTracksSorted.length && (
+                        <div className="mt-8 sm:mt-12">
+                            <div className="bg-[#121212] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg text-center">
+                                <div className="flex items-center justify-center gap-3">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#1db954]"></div>
+                                    <span className="text-[#b3b3b3]">
+                                        Carregando mais músicas... ({visibleTracksCount} de {allTracksSorted.length})
+                                    </span>
+                                </div>
+                                <div className="mt-3">
+                                    <div className="w-full bg-[#282828] rounded-full h-2">
+                                        <div 
+                                            className="bg-[#1db954] h-2 rounded-full transition-all duration-300"
+                                            style={{
+                                                width: `${(visibleTracksCount / allTracksSorted.length) * 100}%`
+                                            }}
+                                        ></div>
                                     </div>
-
-                                    {/* Controles de navegação - Lado direito */}
-                                    {totalPages > 1 && (
-                                        <div className="flex flex-col sm:flex-row items-center gap-4 flex-1 justify-center lg:justify-end">
-                                            {/* Botão Anterior */}
-                                            <button
-                                                onClick={previousPage}
-                                                disabled={!hasPreviousPage || isLoading}
-                                                className={`px-6 py-3 rounded-xl text-base font-medium transition-all ${hasPreviousPage && !isLoading
-                                                    ? 'bg-gradient-to-r from-[#1db954] to-[#1ed760] text-white hover:from-[#1ed760] hover:to-[#1db954] shadow-lg hover:shadow-xl transform hover:scale-105'
-                                                    : 'bg-[#282828] text-[#535353] cursor-not-allowed'
-                                                    }`}
-                                            >
-                                                Anterior
-                                            </button>
-
-                                            {/* Números das páginas - Centralizado */}
-                                            <div className="flex items-center gap-2">
-                                                {Array.from({ length: Math.min(10, totalPages) }, (_, i) => {
-                                                    let pageNum;
-                                                    if (totalPages <= 10) {
-                                                        pageNum = i + 1;
-                                                    } else if (currentPage <= 5) {
-                                                        pageNum = i + 1;
-                                                    } else if (currentPage >= totalPages - 4) {
-                                                        pageNum = totalPages - 9 + i;
-                                                    } else {
-                                                        pageNum = currentPage - 4 + i;
-                                                    }
-
-                                                    return (
-                                                        <button
-                                                            key={pageNum}
-                                                            onClick={() => loadPage(pageNum)}
-                                                            disabled={isLoading}
-                                                            className={`w-10 h-10 rounded-xl text-base font-medium transition-all ${currentPage === pageNum
-                                                                ? 'bg-[#1db954] text-white shadow-lg'
-                                                                : 'bg-[#282828] text-[#b3b3b3] hover:bg-[#383838] hover:shadow-md'
-                                                                }`}
-                                                        >
-                                                            {pageNum}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-
-                                            {/* Botão Próxima */}
-                                            <button
-                                                onClick={nextPage}
-                                                disabled={!hasNextPage || isLoading}
-                                                className={`px-6 py-3 rounded-xl text-base font-medium transition-all ${hasNextPage && !isLoading
-                                                    ? 'bg-gradient-to-r from-[#1db954] to-[#1ed760] text-white hover:from-[#1ed760] hover:to-[#1db954] shadow-lg hover:scale-105'
-                                                    : 'bg-[#282828] text-[#535353] cursor-not-allowed'
-                                                    }`}
-                                            >
-                                                Próxima
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    {/* Indicador de carregamento */}
-                                    {isLoading && (
-                                        <div className="absolute inset-0 bg-[#121212]/80 rounded-2xl flex items-center justify-center">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-5 h-5 border-2 border-[#1db954] border-t-transparent rounded-full animate-spin"></div>
-                                                <span className="text-[#1db954] text-sm">Carregando...</span>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>
                     )}
 
+                    {/* Indicador de todas as músicas carregadas */}
+                    {!isLoading && !searchLoading && !hasSearched && visibleTracksCount >= allTracksSorted.length && allTracksSorted.length > 0 && (
+                        <div className="mt-8 sm:mt-12">
+                            <div className="bg-[#121212] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg text-center">
+                                <div className="flex items-center justify-center gap-3">
+                                    <svg className="w-5 h-5 text-[#1db954]" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                    </svg>
+                                    <span className="text-[#1db954] font-medium">
+                                        ✨ Todas as {allTracksSorted.length} músicas foram carregadas!
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* MODAL DE FILTROS */}

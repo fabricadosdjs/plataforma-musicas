@@ -62,7 +62,7 @@ export function AdminAuth({ children }: AdminAuthProps) {
                 <div className="max-w-md w-full">
                     {/* Back button */}
                     <button
-                        onClick={() => router.push('/new')}
+                        onClick={() => router.push('/new#/page=1')}
                         className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
                     >
                         <ArrowLeft className="h-4 w-4" />

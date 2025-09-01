@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Track } from '@/types/track';
 import { useToastContext } from '@/context/ToastContext';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
@@ -18,7 +18,6 @@ import { ImageErrorBoundary } from '@/components/ui/ImageErrorBoundary';
 import { generateGradientColors, generateInitials } from '@/utils/imageUtils';
 
 interface MusicListProps {
-    selectedGenre?: string;
     tracks: Track[];
     downloadedTrackIds: number[];
     setDownloadedTrackIds: (ids: number[] | ((prev: number[]) => number[])) => void;
@@ -32,11 +31,9 @@ interface MusicListProps {
     // Props para likes
     likedTrackIds?: number[];
     setLikedTrackIds?: (ids: number[] | ((prev: number[]) => number[])) => void;
-    // Props para paginação
+    // Props para paginaÃ§Ã£o
     currentPage?: number;
     setCurrentPage?: (page: number | ((prev: number) => number)) => void;
-    // Filtros ativos
-    hasActiveFilters?: boolean;
 }
 
 interface GroupedTracks {
@@ -47,7 +44,7 @@ interface GroupedTracks {
     };
 }
 
-const MusicList = React.memo(function MusicList({
+export default function MusicList({
     tracks,
     itemsPerPage = 20,
     enableInfiniteScroll = false,
@@ -71,14 +68,14 @@ const MusicList = React.memo(function MusicList({
     // Hook para cache de downloads
     const downloadsCache = useDownloadsCache();
 
-    // Função para forçar sincronização
+    // FunÃ§Ã£o para forÃ§ar sincronizaÃ§Ã£o
     const handleForceSync = async () => {
         try {
             await downloadsCache.forceSync();
-            showToast('🔄 Cache sincronizado com sucesso!', 'success');
+            showToast('ðŸ”„ Cache sincronizado com sucesso!', 'success');
         } catch (error) {
-            console.error('❌ Erro ao sincronizar cache:', error);
-            showToast('❌ Erro ao sincronizar cache', 'error');
+            console.error('âŒ Erro ao sincronizar cache:', error);
+            showToast('âŒ Erro ao sincronizar cache', 'error');
         }
     };
 
@@ -92,7 +89,7 @@ const MusicList = React.memo(function MusicList({
     const [currentPage, setCurrentPage] = useState(1);
     const [testingAudio, setTestingAudio] = useState<Set<number>>(new Set());
 
-    // Estados para modal de confirmação mobile
+    // Estados para modal de confirmaÃ§Ã£o mobile
     const [showMobileConfirmModal, setShowMobileConfirmModal] = useState(false);
     const [pendingDownloadAction, setPendingDownloadAction] = useState<{
         type: 'new' | 'all';
@@ -103,56 +100,17 @@ const MusicList = React.memo(function MusicList({
     // Cache para URLs que falharam (evitar tentativas repetidas)
     const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
 
-    // Verificar permissão de notificações ao carregar
+    // Verificar permissÃ£o de notificaÃ§Ãµes ao carregar
     useEffect(() => {
         if ('Notification' in window && Notification.permission === 'default') {
             setShowNotificationPermission(true);
         }
     }, []);
 
-    // Carregar cache em segundo plano e mostrar toast de sucesso
-    const hasShownCacheToast = useRef(false);
-    const isInitialMount = useRef(true);
-
-    useEffect(() => {
-        // Garantir que só execute no mount inicial
-        if (!isInitialMount.current) {
-            console.log('🔄 Componente re-renderizou, pulando carregamento de cache...');
-            return;
-        }
-
-        if (hasShownCacheToast.current) {
-            console.log('🔄 Toast de cache já foi mostrado, pulando...');
-            return; // Evitar múltiplos toasts
-        }
-
-        console.log('🔄 Iniciando carregamento de cache em segundo plano...');
-        isInitialMount.current = false;
-
-        const loadCacheInBackground = async () => {
-            try {
-                // Carregar cache em segundo plano
-                await downloadsCache.forceSync();
-                // Mostrar toast de sucesso apenas uma vez
-                if (!hasShownCacheToast.current) {
-                    hasShownCacheToast.current = true;
-                    console.log('🔄 Mostrando toast de cache sincronizado');
-                    showToast('🔄 Cache sincronizado com sucesso!', 'success');
-                }
-            } catch (error) {
-                console.error('❌ Erro ao carregar cache em segundo plano:', error);
-                // Não mostrar toast de erro para não poluir a interface
-            }
-        };
-
-        // Executar em segundo plano
-        loadCacheInBackground();
-    }, []); // Executar apenas uma vez ao montar o componente
-
-    // Função para solicitar permissão de notificações
+    // FunÃ§Ã£o para solicitar permissÃ£o de notificaÃ§Ãµes
     const requestNotificationPermission = useCallback(async () => {
         if (!('Notification' in window)) {
-            showToast('📱 Notificações não suportadas neste navegador', 'warning');
+            showToast('ðŸ“± NotificaÃ§Ãµes nÃ£o suportadas neste navegador', 'warning');
             return;
         }
 
@@ -160,17 +118,17 @@ const MusicList = React.memo(function MusicList({
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
                 setShowNotificationPermission(false);
-                showToast('✅ Permissão de notificações concedida!', 'success');
+                showToast('âœ… PermissÃ£o de notificaÃ§Ãµes concedida!', 'success');
             } else {
-                showToast('❌ Permissão de notificações negada', 'warning');
+                showToast('âŒ PermissÃ£o de notificaÃ§Ãµes negada', 'warning');
             }
         } catch (error) {
-            console.error('Erro ao solicitar permissão:', error);
-            showToast('❌ Erro ao solicitar permissão', 'error');
+            console.error('Erro ao solicitar permissÃ£o:', error);
+            showToast('âŒ Erro ao solicitar permissÃ£o', 'error');
         }
     }, [showToast]);
 
-    // Função para mostrar modal de confirmação mobile
+    // FunÃ§Ã£o para mostrar modal de confirmaÃ§Ã£o mobile
     const showMobileDownloadConfirmation = (type: 'new' | 'all', tracks: Track[], callback: () => void) => {
         if (window.innerWidth < 640) {
             setPendingDownloadAction({ type, tracks, callback });
@@ -181,7 +139,7 @@ const MusicList = React.memo(function MusicList({
         }
     };
 
-    // Função para confirmar download mobile
+    // FunÃ§Ã£o para confirmar download mobile
     const confirmMobileDownload = () => {
         if (pendingDownloadAction) {
             pendingDownloadAction.callback();
@@ -190,22 +148,22 @@ const MusicList = React.memo(function MusicList({
         }
     };
 
-    // Função para cancelar download mobile
+    // FunÃ§Ã£o para cancelar download mobile
     const cancelMobileDownload = () => {
         setShowMobileConfirmModal(false);
         setPendingDownloadAction(null);
     };
 
-    // Função para mostrar notificação amigável de arquivo não disponível
+    // FunÃ§Ã£o para mostrar notificaÃ§Ã£o amigÃ¡vel de arquivo nÃ£o disponÃ­vel
     const showFileUnavailableMessage = (track: Track, reason: string) => {
-        const message = `❌ "${track.songName}" não está disponível: ${reason}`;
+        const message = `âŒ "${track.songName}" nÃ£o estÃ¡ disponÃ­vel: ${reason}`;
         showToast(message, 'warning');
 
         // Adicionar ao cache de falhas para evitar tentativas futuras
         setFailedUrls(prev => new Set([...prev, track.downloadUrl]));
 
         // Log para debugging
-        console.log(`🎵 MusicList: Arquivo marcado como não disponível:`, {
+        console.log(`ðŸŽµ MusicList: Arquivo marcado como nÃ£o disponÃ­vel:`, {
             trackId: track.id,
             songName: track.songName,
             reason,
@@ -213,7 +171,7 @@ const MusicList = React.memo(function MusicList({
         });
     };
 
-    // Função para tentar reproduzir com diferentes estratégias
+    // FunÃ§Ã£o para tentar reproduzir com diferentes estratÃ©gias
     const tryPlayWithFallback = async (track: Track, tracks: Track[]) => {
         const strategies = [
             { name: 'URL direta', url: track.downloadUrl },
@@ -222,7 +180,7 @@ const MusicList = React.memo(function MusicList({
 
         for (const strategy of strategies) {
             try {
-                console.log(`🎵 MusicList: Tentando estratégia: ${strategy.name}`);
+                console.log(`ðŸŽµ MusicList: Tentando estratÃ©gia: ${strategy.name}`);
 
                 const trackWithStrategy = {
                     ...track,
@@ -230,10 +188,10 @@ const MusicList = React.memo(function MusicList({
                 };
 
                 await playTrack(trackWithStrategy, undefined, tracks);
-                console.log(`🎵 MusicList: Estratégia ${strategy.name} funcionou!`);
+                console.log(`ðŸŽµ MusicList: EstratÃ©gia ${strategy.name} funcionou!`);
                 return true;
             } catch (error) {
-                console.log(`🎵 MusicList: Estratégia ${strategy.name} falhou:`, error);
+                console.log(`ðŸŽµ MusicList: EstratÃ©gia ${strategy.name} falhou:`, error);
                 continue;
             }
         }
@@ -241,10 +199,10 @@ const MusicList = React.memo(function MusicList({
         return false;
     };
 
-    // Estabilizar tracks para evitar piscamentos - Solução mais robusta
+    // Estabilizar tracks para evitar piscamentos - SoluÃ§Ã£o mais robusta
     useEffect(() => {
         if (tracks && tracks.length > 0) {
-            // Só atualiza se realmente mudou significativamente
+            // SÃ³ atualiza se realmente mudou significativamente
             const currentIds = tracks.map(t => t.id).sort().join(',');
             const stableIds = stableTracks.map(t => t.id).sort().join(',');
 
@@ -264,7 +222,7 @@ const MusicList = React.memo(function MusicList({
         }
     }, [tracks]);
 
-    // Usar cache se disponível, senão usar props
+    // Usar cache se disponÃ­vel, senÃ£o usar props
     const finalDownloadedTrackIds = downloadsCache.downloadedTrackIds.length > 0
         ? downloadsCache.downloadedTrackIds
         : downloadedTrackIds;
@@ -279,7 +237,7 @@ const MusicList = React.memo(function MusicList({
         rootMargin: '0px 0px 300px 0px'
     });
 
-    // Agrupar músicas por data de postagem - Otimizado para evitar re-renderizações
+    // Agrupar mÃºsicas por data de postagem - Otimizado para evitar re-renderizaÃ§Ãµes
     const groupedTracks = useMemo(() => {
         if (!stableTracks || stableTracks.length === 0) return {};
 
@@ -333,39 +291,55 @@ const MusicList = React.memo(function MusicList({
         return sortedGroups;
     }, [stableTracks]);
 
-    // Paginação dos grupos - Otimizada para evitar re-renderizações
+    // PaginaÃ§Ã£o dos grupos - Otimizada para evitar re-renderizaÃ§Ãµes
     const paginatedGroups = useMemo(() => {
         const groupKeys = Object.keys(groupedTracks);
-
         if (groupKeys.length === 0) return {};
-
         if (enableInfiniteScroll) {
-            // Para infinite scroll, mostrar todos os grupos até a página atual
+            // Infinite scroll: mostrar todos os grupos até a página atual (comportamento antigo)
             const endIndex = currentPage * itemsPerPage;
             const pageGroups = groupKeys.slice(0, endIndex);
-
             const result: GroupedTracks = {};
             pageGroups.forEach(key => {
                 result[key] = groupedTracks[key];
             });
-
-            return result;
-        } else {
-            // Paginação tradicional
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageGroups = groupKeys.slice(startIndex, endIndex);
-
-            const result: GroupedTracks = {};
-            pageGroups.forEach(key => {
-                result[key] = groupedTracks[key];
-            });
-
             return result;
         }
+
+        // Paginação: pode cortar grupos entre páginas
+        // 1. Juntar todas as tracks em ordem, mantendo referência ao grupo
+        const allTracksWithGroup: Array<{ groupKey: string; group: typeof groupedTracks[string]; track: Track; trackIndex: number; groupTrackIndex: number; }> = [];
+        groupKeys.forEach(key => {
+            const group = groupedTracks[key];
+            group.tracks.forEach((track, idx) => {
+                allTracksWithGroup.push({ groupKey: key, group, track, trackIndex: allTracksWithGroup.length, groupTrackIndex: idx });
+            });
+        });
+
+        // 2. Selecionar as tracks da página atual
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const pageTracks = allTracksWithGroup.slice(startIndex, endIndex);
+
+        // 3. Reconstruir os grupos para a página, incluindo headers de grupo mesmo se for continuação
+        const pageGroups: GroupedTracks = {};
+        pageTracks.forEach(({ groupKey, group, track, groupTrackIndex }) => {
+            if (!pageGroups[groupKey]) {
+                // Se for continuação, manter o mesmo header
+                pageGroups[groupKey] = { ...group, tracks: [] };
+            }
+            pageGroups[groupKey].tracks.push(track);
+        });
+
+        return pageGroups;
     }, [groupedTracks, currentPage, itemsPerPage, enableInfiniteScroll]);
 
-    const totalPages = Math.ceil(Object.keys(groupedTracks).length / itemsPerPage);
+    // Calcular total de páginas para paginação agrupada
+    const totalPages = React.useMemo(() => {
+    // Total de páginas baseado no total de músicas
+    const totalTracks = Object.values(groupedTracks).reduce((acc, group) => acc + group.tracks.length, 0);
+    return Math.max(1, Math.ceil(totalTracks / itemsPerPage));
+    }, [groupedTracks, itemsPerPage]);
 
     const generateThumbnail = (track: Track) => {
         if (!track.songName || !track.artist) {
@@ -383,21 +357,21 @@ const MusicList = React.memo(function MusicList({
 
     const handlePlayPause = async (track: Track) => {
         try {
-            // Se a música atual já está tocando, apenas pausar/despausar
+            // Se a mÃºsica atual jÃ¡ estÃ¡ tocando, apenas pausar/despausar
             if (currentTrack?.id === track.id && isPlaying) {
-                console.log('🎵 MusicList: Música já tocando, alternando play/pause');
+                console.log('ðŸŽµ MusicList: MÃºsica jÃ¡ tocando, alternando play/pause');
                 togglePlayPause();
                 return;
             }
 
-            // Detectar dispositivo móvel e tipo
+            // Detectar dispositivo mÃ³vel e tipo
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             const isAndroid = /Android/i.test(navigator.userAgent);
             const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
             const isChrome = /Chrome/i.test(navigator.userAgent);
             const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
 
-            console.log('🎵 MusicList: Dispositivo detectado:', {
+            console.log('ðŸŽµ MusicList: Dispositivo detectado:', {
                 isMobile,
                 isAndroid,
                 isIOS,
@@ -405,13 +379,13 @@ const MusicList = React.memo(function MusicList({
                 isSafari
             });
 
-            // Em dispositivos móveis, verificar permissões primeiro
+            // Em dispositivos mÃ³veis, verificar permissÃµes primeiro
             if (isMobile && !hasUserInteracted) {
-                console.log('🎵 MusicList: Primeira interação em mobile - solicitando permissão');
+                console.log('ðŸŽµ MusicList: Primeira interaÃ§Ã£o em mobile - solicitando permissÃ£o');
 
-                // Estratégia universal para mobile
+                // EstratÃ©gia universal para mobile
                 try {
-                    // Tentar criar um contexto de áudio silencioso para "desbloquear" o áudio
+                    // Tentar criar um contexto de Ã¡udio silencioso para "desbloquear" o Ã¡udio
                     if (window.AudioContext || (window as any).webkitAudioContext) {
                         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
                         const audioContext = new AudioContextClass();
@@ -425,7 +399,7 @@ const MusicList = React.memo(function MusicList({
                         oscillator.start();
                         oscillator.stop(audioContext.currentTime + 0.001);
 
-                        console.log('🎵 MusicList: Contexto de áudio mobile ativado');
+                        console.log('ðŸŽµ MusicList: Contexto de Ã¡udio mobile ativado');
 
                         // Aguardar um pouco para o contexto ser estabelecido
                         await new Promise(resolve => setTimeout(resolve, 100));
@@ -433,29 +407,29 @@ const MusicList = React.memo(function MusicList({
                         audioContext.close();
                     }
                 } catch (audioContextError) {
-                    console.log('🎵 MusicList: Erro no contexto de áudio mobile:', audioContextError);
+                    console.log('ðŸŽµ MusicList: Erro no contexto de Ã¡udio mobile:', audioContextError);
                 }
 
                 const permissionGranted = await requestAudioPermission();
                 if (!permissionGranted) {
                     if (isAndroid) {
-                        showToast('🔇 Toque novamente para ativar o áudio no Android', 'warning');
+                        showToast('ðŸ”‡ Toque novamente para ativar o Ã¡udio no Android', 'warning');
                     } else if (isIOS) {
-                        showToast('🔇 Toque novamente para ativar o áudio no iOS', 'warning');
+                        showToast('ðŸ”‡ Toque novamente para ativar o Ã¡udio no iOS', 'warning');
                     } else {
-                        showToast('🔇 Toque novamente para ativar o áudio no seu dispositivo', 'warning');
+                        showToast('ðŸ”‡ Toque novamente para ativar o Ã¡udio no seu dispositivo', 'warning');
                     }
                     return;
                 }
             }
 
-            // Solução universal para problemas de CORS em mobile
+            // SoluÃ§Ã£o universal para problemas de CORS em mobile
             if (isMobile && track.downloadUrl && track.downloadUrl.includes('contabostorage.com')) {
-                console.log('🎵 MusicList: Mobile + Contabo - aplicando solução universal CORS');
+                console.log('ðŸŽµ MusicList: Mobile + Contabo - aplicando soluÃ§Ã£o universal CORS');
 
-                // Verificar se esta URL já falhou recentemente
+                // Verificar se esta URL jÃ¡ falhou recentemente
                 if (failedUrls.has(track.downloadUrl)) {
-                    console.log('🎵 MusicList: URL já falhou recentemente, tentando proxy direto');
+                    console.log('ðŸŽµ MusicList: URL jÃ¡ falhou recentemente, tentando proxy direto');
                     try {
                         const trackWithProxy = {
                             ...track,
@@ -464,63 +438,63 @@ const MusicList = React.memo(function MusicList({
                         await playTrack(trackWithProxy, undefined, tracks);
                         return;
                     } catch (proxyError) {
-                        console.log('🎵 MusicList: Proxy direto falhou para URL em cache:', proxyError);
-                        showFileUnavailableMessage(track, 'arquivo não disponível (pode ter sido removido)');
+                        console.log('ðŸŽµ MusicList: Proxy direto falhou para URL em cache:', proxyError);
+                        showFileUnavailableMessage(track, 'arquivo nÃ£o disponÃ­vel (pode ter sido removido)');
                         return;
                     }
                 }
 
-                // Verificar se a URL está acessível antes de tentar proxy
+                // Verificar se a URL estÃ¡ acessÃ­vel antes de tentar proxy
                 try {
-                    console.log('🎵 MusicList: Verificando acessibilidade da URL antes do proxy');
+                    console.log('ðŸŽµ MusicList: Verificando acessibilidade da URL antes do proxy');
                     const testResponse = await fetch(track.downloadUrl, {
                         method: 'HEAD',
                         signal: AbortSignal.timeout(5000) // 5 segundos timeout
                     });
 
                     if (testResponse.status === 401 || testResponse.status === 403) {
-                        console.log(`🎵 MusicList: URL retorna ${testResponse.status} - arquivo não autorizado`);
-                        showFileUnavailableMessage(track, 'arquivo não autorizado ou removido');
+                        console.log(`ðŸŽµ MusicList: URL retorna ${testResponse.status} - arquivo nÃ£o autorizado`);
+                        showFileUnavailableMessage(track, 'arquivo nÃ£o autorizado ou removido');
                         return;
                     } else if (testResponse.status === 404) {
-                        console.log('🎵 MusicList: URL retorna 404 - arquivo não encontrado');
-                        showFileUnavailableMessage(track, 'arquivo não encontrado (pode ter sido movido)');
+                        console.log('ðŸŽµ MusicList: URL retorna 404 - arquivo nÃ£o encontrado');
+                        showFileUnavailableMessage(track, 'arquivo nÃ£o encontrado (pode ter sido movido)');
                         return;
                     } else if (!testResponse.ok) {
-                        console.log(`🎵 MusicList: URL retorna ${testResponse.status} - erro desconhecido`);
+                        console.log(`ðŸŽµ MusicList: URL retorna ${testResponse.status} - erro desconhecido`);
                         // Continuar com proxy para tentar resolver CORS
                     } else {
-                        console.log('🎵 MusicList: URL acessível, tentando proxy para resolver CORS');
+                        console.log('ðŸŽµ MusicList: URL acessÃ­vel, tentando proxy para resolver CORS');
                     }
                 } catch (testError) {
-                    console.log('🎵 MusicList: Erro ao testar URL:', testError);
-                    // Se não conseguir testar, continuar com proxy
+                    console.log('ðŸŽµ MusicList: Erro ao testar URL:', testError);
+                    // Se nÃ£o conseguir testar, continuar com proxy
                 }
 
                 // Para iOS Safari e Android Chrome, sempre usar proxy CORS
                 if ((isIOS && isSafari) || (isAndroid && isChrome)) {
-                    console.log('🎵 MusicList: Usando proxy CORS para', isIOS ? 'iOS Safari' : 'Android Chrome');
+                    console.log('ðŸŽµ MusicList: Usando proxy CORS para', isIOS ? 'iOS Safari' : 'Android Chrome');
 
                     // Sistema de retry com 3 tentativas
                     for (let attempt = 1; attempt <= 3; attempt++) {
                         try {
-                            console.log(`🎵 MusicList: Tentativa ${attempt}/3 com proxy CORS`);
+                            console.log(`ðŸŽµ MusicList: Tentativa ${attempt}/3 com proxy CORS`);
 
                             const proxyUrl = `/api/audio-mobile-proxy?url=${encodeURIComponent(track.downloadUrl)}`;
 
-                            // Verificar se o proxy está funcionando com timeout
+                            // Verificar se o proxy estÃ¡ funcionando com timeout
                             const controller = new AbortController();
                             const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos
 
                             const proxyResponse = await fetch(proxyUrl, {
                                 signal: controller.signal,
-                                method: 'HEAD' // Usar HEAD para teste mais rápido
+                                method: 'HEAD' // Usar HEAD para teste mais rÃ¡pido
                             });
 
                             clearTimeout(timeoutId);
 
                             if (proxyResponse.ok) {
-                                console.log(`🎵 MusicList: Proxy CORS funcionou na tentativa ${attempt}`);
+                                console.log(`ðŸŽµ MusicList: Proxy CORS funcionou na tentativa ${attempt}`);
 
                                 // Criar uma nova track com URL do proxy
                                 const trackWithProxy = {
@@ -531,32 +505,32 @@ const MusicList = React.memo(function MusicList({
                                 await playTrack(trackWithProxy, undefined, tracks);
                                 return;
                             } else if (proxyResponse.status === 401 || proxyResponse.status === 403) {
-                                // Se for erro de autorização, não tentar mais com proxy
-                                console.log(`🎵 MusicList: Erro de autorização (${proxyResponse.status}) - arquivo não acessível`);
-                                showFileUnavailableMessage(track, 'arquivo não autorizado ou removido');
+                                // Se for erro de autorizaÃ§Ã£o, nÃ£o tentar mais com proxy
+                                console.log(`ðŸŽµ MusicList: Erro de autorizaÃ§Ã£o (${proxyResponse.status}) - arquivo nÃ£o acessÃ­vel`);
+                                showFileUnavailableMessage(track, 'arquivo nÃ£o autorizado ou removido');
                                 return;
                             } else {
                                 throw new Error(`Proxy falhou com status ${proxyResponse.status}`);
                             }
                         } catch (proxyError) {
-                            console.log(`🎵 MusicList: Tentativa ${attempt}/3 falhou:`, proxyError);
+                            console.log(`ðŸŽµ MusicList: Tentativa ${attempt}/3 falhou:`, proxyError);
 
                             if (attempt === 3) {
                                 // Adicionar URL ao cache de falhas
                                 setFailedUrls(prev => new Set([...prev, track.downloadUrl]));
 
-                                // Última tentativa: tentar URL direta
+                                // Ãšltima tentativa: tentar URL direta
                                 try {
-                                    console.log('🎵 MusicList: Última tentativa com URL direta');
+                                    console.log('ðŸŽµ MusicList: Ãšltima tentativa com URL direta');
                                     await playTrack(track, undefined, tracks);
                                     return;
                                 } catch (finalError) {
-                                    console.log('🎵 MusicList: URL direta também falhou:', finalError);
-                                    showFileUnavailableMessage(track, 'erro de reprodução');
+                                    console.log('ðŸŽµ MusicList: URL direta tambÃ©m falhou:', finalError);
+                                    showFileUnavailableMessage(track, 'erro de reproduÃ§Ã£o');
                                     return;
                                 }
                             } else {
-                                // Aguardar um pouco antes da próxima tentativa
+                                // Aguardar um pouco antes da prÃ³xima tentativa
                                 await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
                             }
                         }
@@ -564,7 +538,7 @@ const MusicList = React.memo(function MusicList({
                 } else {
                     // Para outros navegadores mobile, tentar proxy direto
                     try {
-                        console.log('🎵 MusicList: Outro navegador mobile - tentando proxy direto');
+                        console.log('ðŸŽµ MusicList: Outro navegador mobile - tentando proxy direto');
                         const trackWithProxy = {
                             ...track,
                             downloadUrl: `/api/audio-mobile-proxy?url=${encodeURIComponent(track.downloadUrl)}`
@@ -572,39 +546,39 @@ const MusicList = React.memo(function MusicList({
                         await playTrack(trackWithProxy, undefined, tracks);
                         return;
                     } catch (proxyError) {
-                        console.log('🎵 MusicList: Proxy direto falhou, tentando URL original:', proxyError);
+                        console.log('ðŸŽµ MusicList: Proxy direto falhou, tentando URL original:', proxyError);
                         // Continuar com a URL original
                     }
                 }
             }
 
-            // Passar a lista de músicas atual para permitir navegação
+            // Passar a lista de mÃºsicas atual para permitir navegaÃ§Ã£o
             try {
                 await playTrack(track, undefined, tracks);
             } catch (playError) {
-                console.log('🎵 MusicList: Erro ao tocar música diretamente:', playError);
+                console.log('ðŸŽµ MusicList: Erro ao tocar mÃºsica diretamente:', playError);
 
-                // Se falhar, tentar com estratégias de fallback
+                // Se falhar, tentar com estratÃ©gias de fallback
                 if (isMobile && track.downloadUrl && track.downloadUrl.includes('contabostorage.com')) {
-                    console.log('🎵 MusicList: Tentando estratégias de fallback para mobile');
+                    console.log('ðŸŽµ MusicList: Tentando estratÃ©gias de fallback para mobile');
 
                     const fallbackSuccess = await tryPlayWithFallback(track, tracks);
                     if (fallbackSuccess) {
                         return;
                     }
 
-                    // Se todas as estratégias falharem, mostrar mensagem de erro
-                    showFileUnavailableMessage(track, 'erro de reprodução em todas as estratégias');
+                    // Se todas as estratÃ©gias falharem, mostrar mensagem de erro
+                    showFileUnavailableMessage(track, 'erro de reproduÃ§Ã£o em todas as estratÃ©gias');
                     return;
                 } else {
-                    showToast('❌ Erro ao reproduzir música. Tente novamente.', 'error');
+                    showToast('âŒ Erro ao reproduzir mÃºsica. Tente novamente.', 'error');
                     return;
                 }
             }
         } catch (error) {
-            console.error('Erro ao tocar música:', error);
+            console.error('Erro ao tocar mÃºsica:', error);
 
-            // Mensagens específicas para mobile
+            // Mensagens especÃ­ficas para mobile
             if (isMobile) {
                 const isAndroid = /Android/i.test(navigator.userAgent);
                 const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -612,67 +586,67 @@ const MusicList = React.memo(function MusicList({
                 if (error instanceof Error) {
                     if (error.name === 'NotAllowedError') {
                         if (isAndroid) {
-                            showToast('🔇 Permissão negada no Android. Toque novamente.', 'warning');
+                            showToast('ðŸ”‡ PermissÃ£o negada no Android. Toque novamente.', 'warning');
                         } else if (isIOS) {
-                            showToast('🔇 Permissão negada no iOS. Toque novamente.', 'warning');
+                            showToast('ðŸ”‡ PermissÃ£o negada no iOS. Toque novamente.', 'warning');
                         } else {
-                            showToast('🔇 Toque no botão de play para ativar o áudio', 'warning');
+                            showToast('ðŸ”‡ Toque no botÃ£o de play para ativar o Ã¡udio', 'warning');
                         }
                     } else if (error.name === 'NotSupportedError') {
                         if (isAndroid) {
-                            showToast('🔇 Formato de áudio não suportado no Android', 'error');
+                            showToast('ðŸ”‡ Formato de Ã¡udio nÃ£o suportado no Android', 'error');
                         } else if (isIOS) {
-                            showToast('🔇 Formato de áudio não suportado no iOS', 'error');
+                            showToast('ðŸ”‡ Formato de Ã¡udio nÃ£o suportado no iOS', 'error');
                         } else {
-                            showToast('❌ Formato de áudio não suportado', 'error');
+                            showToast('âŒ Formato de Ã¡udio nÃ£o suportado', 'error');
                         }
                     } else if (error.message.includes('CORS') || error.message.includes('cors')) {
                         if (isAndroid) {
-                            showToast('🔇 Erro de CORS no Android. Tentando solução automática...', 'warning');
+                            showToast('ðŸ”‡ Erro de CORS no Android. Tentando soluÃ§Ã£o automÃ¡tica...', 'warning');
                         } else if (isIOS) {
-                            showToast('🔇 Erro de CORS no iOS. Tentando solução automática...', 'warning');
+                            showToast('ðŸ”‡ Erro de CORS no iOS. Tentando soluÃ§Ã£o automÃ¡tica...', 'warning');
                         } else {
-                            showToast('❌ Erro de CORS ao reproduzir áudio', 'error');
+                            showToast('âŒ Erro de CORS ao reproduzir Ã¡udio', 'error');
                         }
                     } else {
                         if (isAndroid) {
-                            showToast('❌ Erro ao reproduzir música no Android', 'error');
+                            showToast('âŒ Erro ao reproduzir mÃºsica no Android', 'error');
                         } else if (isIOS) {
-                            showToast('❌ Erro ao reproduzir música no iOS', 'error');
+                            showToast('âŒ Erro ao reproduzir mÃºsica no iOS', 'error');
                         } else {
-                            showToast('❌ Erro ao reproduzir música no dispositivo móvel', 'error');
+                            showToast('âŒ Erro ao reproduzir mÃºsica no dispositivo mÃ³vel', 'error');
                         }
                     }
                 } else {
                     if (isAndroid) {
-                        showToast('❌ Erro desconhecido no Android', 'error');
+                        showToast('âŒ Erro desconhecido no Android', 'error');
                     } else if (isIOS) {
-                        showToast('❌ Erro desconhecido no iOS', 'error');
+                        showToast('âŒ Erro desconhecido no iOS', 'error');
                     } else {
-                        showToast('❌ Erro desconhecido ao reproduzir música', 'error');
+                        showToast('âŒ Erro desconhecido ao reproduzir mÃºsica', 'error');
                     }
                 }
             } else {
-                showToast('❌ Erro ao reproduzir música', 'error');
+                showToast('âŒ Erro ao reproduzir mÃºsica', 'error');
             }
         }
     };
 
     const handleDownload = async (track: Track) => {
         if (!session) {
-            showToast('🔐 Ative um plano', 'warning');
+            showToast('ðŸ” Ative um plano', 'warning');
             return;
         }
 
         if (isDownloaded(track)) {
-            showToast('✅ Música já foi baixada', 'info');
+            showToast('âœ… MÃºsica jÃ¡ foi baixada', 'info');
             return;
         }
 
         setDownloadingTracks(prev => new Set([...prev, track.id]));
 
         try {
-            console.log('🔍 Iniciando download para track:', track.id);
+            console.log('ðŸ” Iniciando download para track:', track.id);
 
             const response = await fetch(`/api/download`, {
                 method: 'POST',
@@ -683,65 +657,53 @@ const MusicList = React.memo(function MusicList({
                 body: JSON.stringify({ trackId: track.id }),
             });
 
+            console.log('ðŸ” Response status:', response.status, response.statusText);
 
-            console.log('🔍 Response status:', response.status, response.statusText);
-
-            let data;
             if (!response.ok) {
                 let errorMessage = 'Falha no download';
                 try {
-                    data = await response.json();
-                    errorMessage = data.error || errorMessage;
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorMessage;
                 } catch (parseError) {
-                    // Se não for JSON, tente ler como texto e logar
-                    const text = await response.text();
-                    console.error('❌ Erro ao fazer parse da resposta de erro:', parseError, 'Conteúdo:', text);
-                    errorMessage = 'Erro inesperado do servidor (resposta não-JSON)';
+                    console.error('âŒ Erro ao fazer parse da resposta de erro:', parseError);
                 }
                 throw new Error(errorMessage);
-            } else {
-                try {
-                    data = await response.json();
-                } catch (parseError) {
-                    const text = await response.text();
-                    console.error('❌ Erro ao fazer parse do JSON da resposta:', parseError, 'Conteúdo:', text);
-                    throw new Error('Resposta do servidor não é JSON válido');
-                }
             }
 
-            console.log('🔍 Dados da API:', data);
+            const data = await response.json();
+            console.log('ðŸ” Dados da API:', data);
 
             if (!data.downloadUrl) {
-                console.error('❌ URL de download não disponível nos dados:', data);
-                throw new Error('URL de download não disponível');
+                console.error('âŒ URL de download nÃ£o disponÃ­vel nos dados:', data);
+                throw new Error('URL de download nÃ£o disponÃ­vel');
             }
 
-            console.log('🔍 Fazendo download via proxy:', data.downloadUrl);
+            console.log('ðŸ” Fazendo download via proxy:', data.downloadUrl);
 
             // Fazer download do arquivo via nosso proxy
             const downloadResponse = await fetch(data.downloadUrl);
-            console.log('🔍 Download response status:', downloadResponse.status, downloadResponse.statusText);
+            console.log('ðŸ” Download response status:', downloadResponse.status, downloadResponse.statusText);
 
             if (!downloadResponse.ok) {
-                console.error('❌ Erro na resposta do download:', downloadResponse.status, downloadResponse.statusText);
+                console.error('âŒ Erro na resposta do download:', downloadResponse.status, downloadResponse.statusText);
 
                 let errorMessage = `Erro ao baixar arquivo: ${downloadResponse.status}`;
 
                 if (downloadResponse.status === 404) {
-                    errorMessage = 'Arquivo não encontrado no servidor';
+                    errorMessage = 'Arquivo nÃ£o encontrado no servidor';
                 } else if (downloadResponse.status === 403) {
                     errorMessage = 'Acesso negado ao arquivo';
                 } else if (downloadResponse.status === 500) {
                     errorMessage = 'Erro interno do servidor';
                 } else if (downloadResponse.status === 0) {
-                    errorMessage = 'Falha na conexão com o servidor';
+                    errorMessage = 'Falha na conexÃ£o com o servidor';
                 }
 
                 throw new Error(errorMessage);
             }
 
             const blob = await downloadResponse.blob();
-            console.log('🔍 Blob criado, tamanho:', blob.size);
+            console.log('ðŸ” Blob criado, tamanho:', blob.size);
 
             if (blob.size === 0) {
                 throw new Error('Arquivo vazio recebido');
@@ -758,19 +720,19 @@ const MusicList = React.memo(function MusicList({
             document.body.removeChild(a);
 
             await downloadsCache.markAsDownloaded(track.id);
-            showToast('✅ Download concluído!', 'success');
+            showToast('âœ… Download concluÃ­do!', 'success');
 
             // Disparar evento customizado para notificar o contexto global
             window.dispatchEvent(new CustomEvent('trackDownloaded', {
                 detail: { trackId: track.id, status: 'completed' }
             }));
 
-            // Adicionar notificação de download com dados da música para push nativo
+            // Adicionar notificaÃ§Ã£o de download com dados da mÃºsica para push nativo
             addMusicNotification(
-                'Download Concluído',
+                'Download ConcluÃ­do',
                 `"${track.songName}" de ${track.artist} foi baixada com sucesso!`,
                 {
-                    coverUrl: (track.imageUrl as string | undefined) || (track.thumbnailUrl as string | undefined),
+                    coverUrl: track.imageUrl || (typeof track.thumbnailUrl === 'string' ? track.thumbnailUrl : undefined),
                     artistName: track.artist,
                     songName: track.songName,
                     trackId: track.id
@@ -779,8 +741,8 @@ const MusicList = React.memo(function MusicList({
                 'Ver Downloads'
             );
         } catch (error) {
-            console.error('❌ Erro no download:', error);
-            showToast(`❌ ${error instanceof Error ? error.message : 'Erro ao baixar arquivo'}`, 'error');
+            console.error('âŒ Erro no download:', error);
+            showToast(`âŒ ${error instanceof Error ? error.message : 'Erro ao baixar arquivo'}`, 'error');
 
             // Disparar evento customizado para notificar o contexto global sobre falha
             window.dispatchEvent(new CustomEvent('trackDownloaded', {
@@ -804,7 +766,7 @@ const MusicList = React.memo(function MusicList({
             const isCurrentlyLiked = finalLikedTrackIds.includes(track.id);
             const action = isCurrentlyLiked ? 'unlike' : 'like';
 
-            console.log('🔍 MusicList handleLike:', { trackId: track.id, action, isCurrentlyLiked });
+            console.log('ðŸ” MusicList handleLike:', { trackId: track.id, action, isCurrentlyLiked });
 
             const response = await fetch('/api/tracks/like', {
                 method: 'POST',
@@ -818,7 +780,7 @@ const MusicList = React.memo(function MusicList({
             });
 
             if (!response.ok) {
-                let errorMessage = 'Falha ao curtir/descurtir música';
+                let errorMessage = 'Falha ao curtir/descurtir mÃºsica';
                 try {
                     const contentType = response.headers.get('content-type');
                     if (contentType && contentType.includes('application/json')) {
@@ -829,33 +791,33 @@ const MusicList = React.memo(function MusicList({
                         errorMessage = textError || errorMessage;
                     }
                 } catch (parseError) {
-                    console.error('❌ Erro ao fazer parse da resposta:', parseError);
+                    console.error('âŒ Erro ao fazer parse da resposta:', parseError);
                     errorMessage = 'Falha ao processar resposta da API';
                 }
 
-                console.error('❌ Response não ok:', { error: errorMessage });
+                console.error('âŒ Response nÃ£o ok:', { error: errorMessage });
                 throw new Error(errorMessage);
             }
 
             const result = await response.json();
-            console.log('🔍 Response result:', result);
+            console.log('ðŸ” Response result:', result);
 
             if (result.success) {
                 if (isCurrentlyLiked) {
                     downloadsCache.markAsUnliked(track.id);
-                    showToast('💔 Removido dos favoritos', 'info');
+                    showToast('ðŸ’” Removido dos favoritos', 'info');
                 } else {
                     downloadsCache.markAsLiked(track.id);
-                    showToast('❤️ Adicionado aos favoritos!', 'success');
+                    showToast('â¤ï¸ Adicionado aos favoritos!', 'success');
                 }
 
-                // O downloadsCache já gerencia o estado dos likes automaticamente
+                // O downloadsCache jÃ¡ gerencia o estado dos likes automaticamente
             } else {
                 throw new Error('API retornou success: false');
             }
         } catch (error) {
-            console.error('❌ Erro ao curtir música:', error);
-            showToast('❌ Erro ao curtir música', 'error');
+            console.error('âŒ Erro ao curtir mÃºsica:', error);
+            showToast('âŒ Erro ao curtir mÃºsica', 'error');
         }
     };
 
@@ -874,11 +836,11 @@ const MusicList = React.memo(function MusicList({
         router.push(`/artist/${encodeURIComponent(artist)}`);
     };
 
-    // Função para renderizar artistas separados por background
+    // FunÃ§Ã£o para renderizar artistas separados por background
     const renderArtists = (artistString: string | null | undefined) => {
         if (!artistString || artistString === 'N/A') return null;
 
-        // Separar artistas por vírgula e limpar espaços
+        // Separar artistas por vÃ­rgula e limpar espaÃ§os
         const artists = artistString.split(',').map(artist => artist.trim()).filter(artist => artist);
 
         return (
@@ -902,16 +864,16 @@ const MusicList = React.memo(function MusicList({
             setIsLoadingMore(true);
 
             if (enableInfiniteScroll) {
-                // Para infinite scroll, carregar próxima página automaticamente
+                // Para infinite scroll, carregar prÃ³xima pÃ¡gina automaticamente
                 const timeoutId = setTimeout(() => {
                     setCurrentPage(prev => prev + 1);
                     setIsLoadingMore(false);
-                    console.log(`📄 Infinite scroll: Carregada página ${currentPage + 1} de ${totalPages}`);
+                    console.log(`ðŸ“„ Infinite scroll: Carregada pÃ¡gina ${currentPage + 1} de ${totalPages}`);
                 }, 300);
 
                 return () => clearTimeout(timeoutId);
             } else {
-                // Paginação tradicional
+                // PaginaÃ§Ã£o tradicional
                 const timeoutId = setTimeout(() => {
                     setCurrentPage(prev => prev + 1);
                     setIsLoadingMore(false);
@@ -934,7 +896,7 @@ const MusicList = React.memo(function MusicList({
 
     const downloadTracksInBatches = async (tracksToDownload: Track[], includeDownloaded: boolean) => {
         if (!session) {
-            showToast('🔐 Ative um plano', 'warning');
+            showToast('ðŸ” Ative um plano', 'warning');
             return;
         }
 
@@ -943,7 +905,7 @@ const MusicList = React.memo(function MusicList({
             : tracksToDownload.filter(track => !isDownloaded(track));
 
         if (filteredTracks.length === 0) {
-            showToast('ℹ️ Nenhuma música nova para baixar', 'info');
+            showToast('â„¹ï¸ Nenhuma mÃºsica nova para baixar', 'info');
             return;
         }
 
@@ -951,7 +913,7 @@ const MusicList = React.memo(function MusicList({
         let downloadedCount = 0;
         let failedCount = 0;
 
-        showToast(`📥 Iniciando download de ${filteredTracks.length} músicas...`, 'info');
+        showToast(`ðŸ“¥ Iniciando download de ${filteredTracks.length} mÃºsicas...`, 'info');
 
         for (let i = 0; i < filteredTracks.length; i += batchSize) {
             const batch = filteredTracks.slice(i, i + batchSize);
@@ -972,28 +934,12 @@ const MusicList = React.memo(function MusicList({
                     });
 
                     if (!response.ok) {
-                        let errorMessage = 'Falha no download';
-                        try {
-                            const errorData = await response.json();
-                            errorMessage = errorData.error || errorMessage;
-                        } catch (parseError) {
-                            const text = await response.text();
-                            console.error('❌ Erro ao fazer parse da resposta de erro:', parseError, 'Conteúdo:', text);
-                            errorMessage = 'Erro inesperado do servidor (resposta não-JSON)';
-                        }
-                        throw new Error(errorMessage);
+                        throw new Error('Falha no download');
                     }
 
-                    let data;
-                    try {
-                        data = await response.json();
-                    } catch (parseError) {
-                        const text = await response.text();
-                        console.error('❌ Erro ao fazer parse do JSON da resposta:', parseError, 'Conteúdo:', text);
-                        throw new Error('Resposta do servidor não é JSON válido');
-                    }
+                    const data = await response.json();
                     if (!data.downloadUrl) {
-                        throw new Error('URL de download não encontrada');
+                        throw new Error('URL de download nÃ£o encontrada');
                     }
 
                     // Baixar o arquivo diretamente da URL retornada
@@ -1034,18 +980,18 @@ const MusicList = React.memo(function MusicList({
             if (i + batchSize < filteredTracks.length) {
                 await new Promise(resolve => {
                     const timeoutId = setTimeout(resolve, 1000);
-                    // Cleanup se necessário
+                    // Cleanup se necessÃ¡rio
                     return () => clearTimeout(timeoutId);
                 });
             }
         }
 
         if (downloadedCount > 0) {
-            showToast(`✅ ${downloadedCount} música(s) baixada(s) com sucesso!`, 'success');
+            showToast(`âœ… ${downloadedCount} mÃºsica(s) baixada(s) com sucesso!`, 'success');
         }
 
         if (failedCount > 0) {
-            showToast(`❌ ${failedCount} download(s) falharam`, 'error');
+            showToast(`âŒ ${failedCount} download(s) falharam`, 'error');
         }
     };
 
@@ -1060,13 +1006,14 @@ const MusicList = React.memo(function MusicList({
 
 
     // Mostrar skeleton durante transições para evitar piscamentos
-    if (!isStable || stableTracks.length === 0) {
+    if (!isStable || stableTracks.length === 0 || isLoading) {
+        // Skeleton loader: 3 blocos grandes
         return (
             <div className="space-y-0 w-full overflow-x-hidden">
                 <div className="animate-pulse">
-                    <div className="h-32 bg-gray-800 rounded-lg mb-4"></div>
-                    <div className="h-32 bg-gray-800 rounded-lg mb-4"></div>
-                    <div className="h-32 bg-gray-800 rounded-lg mb-4"></div>
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-32 bg-gray-800 rounded-lg mb-4"></div>
+                    ))}
                 </div>
             </div>
         );
@@ -1076,15 +1023,15 @@ const MusicList = React.memo(function MusicList({
         <div className="w-full">
             {/* Banner de Permissão de Notificações */}
             {showNotificationPermission && (
-                <div className="bg-[#181818] text-white p-4 mb-4 rounded-lg border border-[#282828] shadow-lg">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 mb-4 rounded-lg shadow-lg">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-[#1db954]/20 rounded-full flex items-center justify-center">
-                                <span className="text-lg">📱</span>
+                            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                                <span className="text-lg">ðŸ“±</span>
                             </div>
                             <div>
-                                <h3 className="font-semibold text-sm sm:text-base text-white font-open-sans">Ativar Notificações Push</h3>
-                                <p className="text-[#b3b3b3] text-xs sm:text-sm font-open-sans">
+                                <h3 className="font-semibold text-sm sm:text-base">Ativar Notificações Push</h3>
+                                <p className="text-blue-100 text-xs sm:text-sm">
                                     Receba notificações sobre downloads e novas músicas
                                 </p>
                             </div>
@@ -1092,36 +1039,59 @@ const MusicList = React.memo(function MusicList({
                         <div className="flex gap-2">
                             <button
                                 onClick={requestNotificationPermission}
-                                className="px-4 py-2 bg-[#1db954] text-white rounded-lg font-medium text-sm hover:bg-[#1ed760] transition-colors shadow-md hover:shadow-lg font-open-sans"
+                                className="px-4 py-2 bg-white text-blue-600 rounded-lg font-medium text-sm hover:bg-blue-50 transition-colors"
                             >
                                 Ativar
                             </button>
                             <button
                                 onClick={() => setShowNotificationPermission(false)}
-                                className="px-3 py-2 text-[#b3b3b3] hover:text-white transition-colors"
+                                className="px-3 py-2 text-blue-100 hover:text-white transition-colors"
                             >
-                                ✕
+                                âœ•
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-
+            {/* Banner de Sincronização de Cache */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-4 mb-4 rounded-lg shadow-lg">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                            <span className="text-lg">ðŸ”„</span>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-sm sm:text-base">Sincronização de Downloads</h3>
+                            <p className="text-green-100 text-xs sm:text-sm">
+                                Seus downloads estão sincronizados com o banco de dados
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleForceSync}
+                            className="px-4 py-2 bg-white text-green-600 rounded-lg font-medium text-sm hover:bg-green-50 transition-colors"
+                        >
+                            Sincronizar
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             {/* Lista de músicas */}
             {showDate ? (
-                // Renderização com agrupamento por data (padrão)
+                // RenderizaÃ§Ã£o com agrupamento por data (padrÃ£o)
                 groupedTracks && Object.keys(groupedTracks).length > 0 ? (
                     <div className="space-y-0 w-full overflow-x-hidden">
                         {Object.entries(paginatedGroups).map(([dateKey, group], groupIndex) => (
-                            <div key={dateKey} className={`space-y-6 ${groupIndex > 0 ? 'pt-10' : ''}`}>
-                                {/* Cabeçalho de data estilo EDM */}
-                                <div className="relative mb-8">
+                            <div key={dateKey} className={`space-y-4 ${groupIndex > 0 ? 'pt-8' : ''}`}>
+                                {/* CabeÃ§alho de data alinhado com o tÃ­tulo "Novidades" */}
+                                <div className="relative mb-6">
                                     <div className="mb-3">
                                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                                             <div className="flex items-center justify-between lg:justify-start gap-2 lg:gap-4 flex-nowrap">
-                                                <h2 className="text-sm sm:text-lg lg:text-2xl text-white font-bold min-w-0 flex-1 break-words font-open-sans">
+                                                <h2 className="text-sm sm:text-lg lg:text-2xl text-white font-sans min-w-0 flex-1 break-words">
                                                     {group.label === 'Hoje' || group.label === 'Em breve' ? (
                                                         <span className="font-bold">{group.label}</span>
                                                     ) : (
@@ -1131,17 +1101,28 @@ const MusicList = React.memo(function MusicList({
                                                         </>
                                                     )}
                                                 </h2>
-
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <span className="text-gray-400 text-xs lg:text-base font-medium bg-gray-800/50 px-2 lg:px-2.5 py-0.5 lg:py-1 rounded-full whitespace-nowrap">
+                                                        {group.tracks.length} {group.tracks.length === 1 ? 'música' : 'músicas'}
+                                                    </span>
+                                                    {/* Indicador de sincronizaÃ§Ã£o com Google Drive */}
+                                                    <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-800/30 px-2 py-1 rounded-full border border-gray-700/50">
+                                                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                                                        </svg>
+                                                        <span className="hidden sm:inline">Google Drive</span>
+                                                    </div>
+                                                </div>
                                             </div>
 
-                                            {/* Botões de download em massa responsivos */}
+                                            {/* BotÃµes de download em massa responsivos */}
                                             <div className="flex flex-col sm:flex-row items-stretch lg:items-center gap-2 w-full lg:w-auto">
                                                 <button
                                                     onClick={() => {
                                                         showMobileDownloadConfirmation('new', group.tracks, () => downloadNewTracks(group.tracks));
                                                     }}
-                                                    className="bg-gray-800 hover:bg-gray-700 text-white px-3 sm:px-4 lg:px-5 py-2 rounded-lg font-medium text-xs lg:text-sm transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto font-open-sans"
-                                                    title={`Baixar ${group.tracks.filter(t => !downloadedTrackIds.includes(t.id)).length} músicas novas desta data`}
+                                                    className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white px-2 sm:px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm transition-all duration-200 transform hover:scale-105 shadow-lg border border-blue-400/30 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                    title={`Baixar ${group.tracks.filter(t => !downloadedTrackIds.includes(t.id)).length} mÃºsicas novas desta data`}
                                                 >
                                                     <Download className="h-3 w-3 lg:h-4 lg:w-4" />
                                                     <span className="hidden sm:inline">Baixar Novas</span>
@@ -1153,38 +1134,38 @@ const MusicList = React.memo(function MusicList({
                                                     onClick={() => {
                                                         showMobileDownloadConfirmation('all', group.tracks, () => downloadAllTracks(group.tracks));
                                                     }}
-                                                    className="bg-gray-800 hover:bg-gray-700 text-white px-3 sm:px-4 lg:px-5 py-2 rounded-lg font-medium text-xs lg:text-sm transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto font-open-sans"
-                                                    title={`Baixar todas as ${group.tracks.length} músicas desta data`}
+                                                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-2 sm:px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm transition-all duration-200 transform hover:scale-105 shadow-lg border border-green-400/30 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                    title={`Baixar todas as ${group.tracks.length} mÃºsicas desta data`}
                                                 >
                                                     <Download className="h-3 w-3 lg:h-4 lg:w-4" />
                                                     <span className="hidden sm:inline">Baixar Tudo</span>
-                                                    <span className="hidden sm:inline">Baixar Tudo</span>
+                                                    <span className="sm:hidden">Baixar Tudo</span>
                                                     ({group.tracks.length})
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Linha neon EDM */}
-                                    <div className="h-1 bg-[#383838] rounded-full"></div>
+                                    {/* Linha verde sutil */}
+                                    <div className="h-px bg-green-500/40 rounded-full"></div>
 
 
                                 </div>
 
-                                {/* Lista de músicas */}
+                                {/* Lista de mÃºsicas */}
                                 <div className="">
                                     {/* Mobile: Grid de cards */}
                                     <div className="block sm:hidden">
                                         <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                                             {group.tracks.map((track, index) => {
-                                                const { initials, colors } = track ? generateThumbnail(track) : { initials: '?', colors: 'from-gray-500 to-gray-700' };
+                                                const { initials, colors } = generateThumbnail(track);
                                                 const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
 
                                                 return (
                                                     <div key={track.id} className="">
                                                         <div className="group mb-3">
-                                                            <div className="bg-[#181818] border border-[#282828] rounded-3xl p-4 group relative overflow-hidden">
-                                                                {/* ...removed overlay EDM ... */}
+                                                            <div className="bg-black border border-white/10 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 group relative overflow-hidden">
+                                                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                                                                 <div className="relative mb-2 sm:mb-2">
                                                                     {/* Thumbnail responsivo */}
@@ -1196,11 +1177,11 @@ const MusicList = React.memo(function MusicList({
                                                                             fallbackContent={initials}
                                                                         />
 
-                                                                        {/* Player sempre visível na thumbnail - Mobile */}
+                                                                        {/* Player sempre visÃ­vel na thumbnail - Mobile */}
                                                                         <button
                                                                             onClick={() => {
                                                                                 if (!session) {
-                                                                                    showToast('🔐 Ative um plano', 'warning');
+                                                                                    showToast('ðŸ” Ative um plano', 'warning');
                                                                                     return;
                                                                                 }
                                                                                 handlePlayPause(track);
@@ -1236,16 +1217,16 @@ const MusicList = React.memo(function MusicList({
                                                                             </div>
                                                                         )}
 
-                                                                        {/* Badge do estilo da música */}
+                                                                        {/* Badge do estilo da mÃºsica */}
                                                                         <div className="absolute top-1.5 left-1.5 z-40">
                                                                             <button
                                                                                 onClick={() => handleStyleClick(track.style)}
                                                                                 disabled={!track.style || track.style === 'N/A'}
-                                                                                className={`px-1 text-white text-[9px] font-bold rounded-lg backdrop-blur-md border transition-all duration-300 shadow-lg ${track.style && track.style !== 'N/A'
-                                                                                    ? 'bg-gradient-to-r from-emerald-500/90 to-teal-500/90 border-emerald-400/60 cursor-pointer hover:from-emerald-400 hover:to-teal-400 hover:scale-110 hover:shadow-xl hover:shadow-emerald-500/40'
-                                                                                    : 'bg-gradient-to-r from-slate-600/90 to-gray-600/90 border-slate-400/50 cursor-not-allowed opacity-60'
+                                                                                className={`px-0.5 text-white text-[9px] font-bold rounded-sm backdrop-blur-sm border transition-all duration-200 shadow-sm ${track.style && track.style !== 'N/A'
+                                                                                    ? 'bg-emerald-500/90 border-emerald-400/50 cursor-pointer hover:bg-emerald-500 hover:scale-105 hover:shadow-md'
+                                                                                    : 'bg-gray-600/90 border-gray-400/50 cursor-not-allowed opacity-60'
                                                                                     }`}
-                                                                                title={track.style && track.style !== 'N/A' ? `Filtrar por estilo: ${track.style}` : 'Estilo não disponível'}
+                                                                                title={track.style && track.style !== 'N/A' ? `Filtrar por estilo: ${track.style}` : 'Estilo nÃ£o disponÃ­vel'}
                                                                             >
                                                                                 {track.style || 'N/A'}
                                                                             </button>
@@ -1253,11 +1234,11 @@ const MusicList = React.memo(function MusicList({
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Informações da música - Nome, Artista e Folder com espaçamento igual */}
+                                                                {/* InformaÃ§Ãµes da mÃºsica - Nome, Artista e Folder com espaÃ§amento igual */}
                                                                 <div className="space-y-1.5 sm:space-y-2">
                                                                     <div className="overflow-hidden">
                                                                         <h3
-                                                                            className="font-medium text-white text-xs sm:text-sm truncate cursor-pointer transition-all duration-500 ease-in-out tracking-wide font-open-sans"
+                                                                            className="font-black text-white text-xs sm:text-base truncate cursor-pointer transition-all duration-500 ease-in-out tracking-tight"
                                                                             title={track.songName}
                                                                             onClick={() => {
                                                                                 const element = event?.target as HTMLElement;
@@ -1266,7 +1247,7 @@ const MusicList = React.memo(function MusicList({
                                                                                     element.classList.add('whitespace-nowrap', 'animate-scroll-text');
                                                                                     element.style.animationDuration = '3s';
 
-                                                                                    // Reset após a animação com cleanup
+                                                                                    // Reset apÃ³s a animaÃ§Ã£o com cleanup
                                                                                     const timeoutId = setTimeout(() => {
                                                                                         if (element && element.parentNode) {
                                                                                             element.classList.remove('whitespace-nowrap', 'animate-scroll-text');
@@ -1282,39 +1263,39 @@ const MusicList = React.memo(function MusicList({
                                                                         >
                                                                             {track.songName}
                                                                         </h3>
-                                                                        <div className="text-[10px] sm:text-sm text-gray-300 font-medium truncate font-open-sans">
+                                                                        <div className="text-xs sm:text-sm text-gray-300 font-medium truncate">
                                                                             {track.artist}
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* Informações adicionais - Mobile */}
+                                                                    {/* InformaÃ§Ãµes adicionais - Mobile */}
                                                                     <button
                                                                         onClick={() => {
                                                                             const folderName = track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt);
                                                                             router.push(`/folder/${encodeURIComponent(folderName)}`);
                                                                         }}
-                                                                        className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer w-full relative z-50"
-                                                                        title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
+                                                                        className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer w-full relative z-50"
+                                                                        title={`Ver todas as mÃºsicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
                                                                     >
-                                                                        <span className="text-purple-400 text-xs">📁</span>
-                                                                        <span className="text-gray-200 text-[10px] sm:text-xs font-medium truncate text-center font-open-sans">
+                                                                        <span className="text-purple-400 text-xs">ðŸ“</span>
+                                                                        <span className="text-gray-200 text-[10px] sm:text-xs font-medium truncate text-center">
                                                                             {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
                                                                         </span>
                                                                     </button>
 
-                                                                    {/* Botões de ação - Mobile */}
-                                                                    <div className="flex flex-col gap-3 mt-3 relative z-50">
-                                                                        {/* Botão Download */}
+                                                                    {/* BotÃµes de aÃ§Ã£o - Mobile */}
+                                                                    <div className="flex flex-col gap-2 mt-1 relative z-50">
+                                                                        {/* BotÃ£o Download */}
                                                                         <button
                                                                             onClick={() => handleDownload(track)}
                                                                             disabled={downloadingTracks.has(track.id) || isDownloaded(track) || !session}
-                                                                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 w-full font-open-sans ${isDownloaded(track)
-                                                                                ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                                                                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 w-full transform hover:scale-105 active:scale-95 ${isDownloaded(track)
+                                                                                ? 'bg-gradient-to-br from-green-500/30 to-green-600/40 text-green-400 border border-green-500/50 cursor-not-allowed shadow-lg shadow-green-500/20'
                                                                                 : !session
-                                                                                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                                                                                    : 'bg-gray-700 hover:bg-gray-600 text-white'
-                                                                                }`}
-                                                                            title={isDownloaded(track) ? 'Música já baixada' : !session ? 'Ative um plano' : 'Baixar música'}
+                                                                                    ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
+                                                                                    : 'bg-gradient-to-br from-blue-600/60 to-blue-700/70 text-white border border-blue-500/60 hover:from-blue-500/70 hover:to-blue-600/80 hover:border-blue-400/70 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40'
+                                                                                } font-sans`}
+                                                                            title={isDownloaded(track) ? 'MÃºsica jÃ¡ baixada' : !session ? 'Ative um plano' : 'Baixar mÃºsica'}
                                                                         >
                                                                             {downloadingTracks.has(track.id) ? (
                                                                                 <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
@@ -1326,22 +1307,22 @@ const MusicList = React.memo(function MusicList({
                                                                             </span>
                                                                         </button>
 
-                                                                        {/* Botão Like */}
+                                                                        {/* BotÃ£o Like */}
                                                                         <button
                                                                             onClick={() => {
                                                                                 if (!session) {
-                                                                                    showToast('🔐 Ative um plano', 'warning');
+                                                                                    showToast('ðŸ” Ative um plano', 'warning');
                                                                                     return;
                                                                                 }
                                                                                 handleLike(track);
                                                                             }}
                                                                             disabled={!session}
-                                                                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 w-full font-open-sans ${!session
-                                                                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                                                            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 w-full transform hover:scale-105 active:scale-95 ${!session
+                                                                                ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
                                                                                 : isLiked(track)
-                                                                                    ? 'bg-gray-600 text-gray-300'
-                                                                                    : 'bg-gray-700 hover:bg-gray-600 text-white'
-                                                                                }`}
+                                                                                    ? 'bg-gradient-to-br from-red-500/30 to-red-600/40 text-red-400 border border-red-500/50 shadow-lg shadow-red-500/20'
+                                                                                    : 'bg-gradient-to-br from-pink-600/60 to-pink-700/70 text-white border border-pink-500/60 hover:from-pink-500/70 hover:to-pink-600/80 hover:border-pink-400/70 shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40'
+                                                                                } font-sans`}
                                                                             title={!session ? 'Ative um plano' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                                                         >
                                                                             <Heart className={`h-3 w-3 ${isLiked(track) ? 'fill-current' : ''}`} />
@@ -1370,7 +1351,7 @@ const MusicList = React.memo(function MusicList({
                                                 <div key={track.id} className="overflow-x-hidden">
                                                     {/* Linha separadora sutil */}
                                                     {index > 0 && (
-                                                        <div className="w-full h-px bg-[#383838] mb-1 mt-0"></div>
+                                                        <div className="w-full h-px bg-white/15 mb-1 mt-0"></div>
                                                     )}
                                                     <div className="group py-1">
                                                         <div className="flex items-start gap-2 min-h-16 sm:min-h-20">
@@ -1378,15 +1359,15 @@ const MusicList = React.memo(function MusicList({
                                                             <div className="flex-shrink-0 relative h-16 w-16 sm:h-20 sm:w-20">
                                                                 <ImageErrorBoundary
                                                                     fallback={
-                                                                        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg`}>
+                                                                        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg border border-red-500/30`}>
                                                                             {initials}
                                                                         </div>
                                                                     }
                                                                 >
                                                                     <OptimizedImage
                                                                         track={track}
-                                                                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg z-10"
-                                                                        fallbackClassName={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg`}
+                                                                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg border border-red-500/30 z-10"
+                                                                        fallbackClassName={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg border border-red-500/30`}
                                                                         fallbackContent={initials}
                                                                         style={{ position: 'absolute', inset: 0 }}
                                                                     />
@@ -1412,11 +1393,11 @@ const MusicList = React.memo(function MusicList({
                                                                     </div>
                                                                 )}
 
-                                                                {/* Botão Play/Pause responsivo */}
+                                                                {/* BotÃ£o Play/Pause responsivo */}
                                                                 <button
                                                                     onClick={() => {
                                                                         if (!session) {
-                                                                            showToast('🔐 Ative um plano', 'warning');
+                                                                            showToast('ðŸ” Ative um plano', 'warning');
                                                                             return;
                                                                         }
                                                                         handlePlayPause(track);
@@ -1435,16 +1416,16 @@ const MusicList = React.memo(function MusicList({
                                                                 </button>
                                                             </div>
 
-                                                            {/* Informações da música responsivas */}
+                                                            {/* InformaÃ§Ãµes da mÃºsica responsivas */}
                                                             <div className="flex-1 min-w-0 pt-1">
                                                                 <div className="flex items-center gap-2 mb-0.5 mt-0">
-                                                                    <h3 className="text-white font-medium text-xs sm:text-sm truncate tracking-wide font-open-sans">
+                                                                    <h3 className="text-white font-bold text-xs sm:text-sm truncate tracking-wide font-sans">
                                                                         {track.songName}
                                                                     </h3>
 
                                                                 </div>
 
-                                                                <div className="text-gray-300 text-[10px] sm:text-sm font-medium mb-0.5 font-open-sans">
+                                                                <div className="text-gray-300 text-xs sm:text-sm font-medium mb-0.5 font-sans">
                                                                     {renderArtists(track.artist)}
                                                                 </div>
 
@@ -1454,13 +1435,13 @@ const MusicList = React.memo(function MusicList({
                                                                         onClick={() => handleStyleClick(track.style)}
                                                                         disabled={!track.style || track.style === 'N/A'}
                                                                         className={`flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 ${track.style && track.style !== 'N/A'
-                                                                            ? 'bg-emerald-500/20 cursor-pointer'
-                                                                            : 'bg-gray-600/20 cursor-not-allowed opacity-50'
+                                                                            ? 'bg-emerald-500/20 border border-emerald-500/30 cursor-pointer'
+                                                                            : 'bg-gray-600/20 border border-gray-600/30 cursor-not-allowed opacity-50'
                                                                             }`}
-                                                                        title={track.style && track.style !== 'N/A' ? `Filtrar por estilo: ${track.style}` : 'Estilo não disponível'}
+                                                                        title={track.style && track.style !== 'N/A' ? `Filtrar por estilo: ${track.style}` : 'Estilo nÃ£o disponÃ­vel'}
                                                                     >
-                                                                        <span className="text-emerald-400 text-xs">🎭</span>
-                                                                        <span className="text-gray-200 text-xs font-medium font-open-sans">
+                                                                        <span className="text-emerald-400 text-xs">ðŸŽ­</span>
+                                                                        <span className="text-gray-200 text-xs font-medium">
                                                                             {track.style || 'N/A'}
                                                                         </span>
                                                                     </button>
@@ -1469,13 +1450,13 @@ const MusicList = React.memo(function MusicList({
                                                                         onClick={() => handlePoolClick(track.pool)}
                                                                         disabled={!track.pool || track.pool === 'N/A'}
                                                                         className={`flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 ${track.pool && track.pool !== 'N/A'
-                                                                            ? 'bg-amber-500/20 cursor-pointer'
-                                                                            : 'bg-gray-600/20 cursor-not-allowed opacity-50'
+                                                                            ? 'bg-amber-500/20 border border-amber-500/30 cursor-pointer'
+                                                                            : 'bg-gray-600/20 border border-gray-600/30 cursor-not-allowed opacity-50'
                                                                             }`}
-                                                                        title={track.pool && track.pool !== 'N/A' ? `Filtrar por pool: ${track.pool}` : 'Pool não disponível'}
+                                                                        title={track.pool && track.pool !== 'N/A' ? `Filtrar por pool: ${track.pool}` : 'Pool nÃ£o disponÃ­vel'}
                                                                     >
-                                                                        <span className="text-amber-500 text-xs">🏷️</span>
-                                                                        <span className="text-gray-200 text-xs font-medium font-open-sans">
+                                                                        <span className="text-amber-500 text-xs">ðŸ·ï¸</span>
+                                                                        <span className="text-gray-200 text-xs font-medium">
                                                                             {track.pool || 'N/A'}
                                                                         </span>
                                                                     </button>
@@ -1486,11 +1467,11 @@ const MusicList = React.memo(function MusicList({
                                                                             const folderName = track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt);
                                                                             router.push(`/folder/${encodeURIComponent(folderName)}`);
                                                                         }}
-                                                                        className="flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer"
-                                                                        title={`Ver todas as músicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
+                                                                        className="flex items-center gap-1 lg:gap-1.5 px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-200 cursor-pointer"
+                                                                        title={`Ver todas as mÃºsicas do folder: ${track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}`}
                                                                     >
-                                                                        <span className="text-purple-400 text-xs">📁</span>
-                                                                        <span className="text-gray-200 text-[10px] sm:text-xs font-medium font-open-sans">
+                                                                        <span className="text-purple-400 text-xs">ðŸ“</span>
+                                                                        <span className="text-gray-200 text-[10px] sm:text-xs font-medium">
                                                                             {track.folder || formatDateShortBrazil(track.updatedAt || track.createdAt)}
                                                                         </span>
                                                                     </button>
@@ -1499,18 +1480,18 @@ const MusicList = React.memo(function MusicList({
                                                                 </div>
                                                             </div>
 
-                                                            {/* Botões de ação responsivos */}
+                                                            {/* BotÃµes de aÃ§Ã£o responsivos */}
                                                             <div className="flex items-start gap-1 sm:gap-2 pt-1">
                                                                 <button
                                                                     onClick={() => handleDownload(track)}
                                                                     disabled={downloadingTracks.has(track.id) || isDownloadedTrack || !session}
-                                                                    className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium transition-colors duration-200 justify-center font-open-sans ${isDownloadedTrack
-                                                                        ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                                                                    className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-300 justify-center transform hover:scale-105 active:scale-95 ${isDownloadedTrack
+                                                                        ? 'bg-gradient-to-br from-green-500/30 to-green-600/40 text-green-400 border border-green-500/50 cursor-not-allowed shadow-lg shadow-green-500/20'
                                                                         : !session
-                                                                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                                                                            : 'bg-gray-700 hover:bg-gray-600 text-white'
-                                                                        }`}
-                                                                    title={isDownloadedTrack ? 'Música já baixada' : !session ? 'Ative um plano' : 'Baixar música'}
+                                                                            ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
+                                                                            : 'bg-gradient-to-br from-blue-600/60 to-blue-700/70 text-white border border-blue-500/60 hover:from-blue-500/70 hover:to-blue-600/80 hover:border-blue-400/70 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40'
+                                                                        } font-sans`}
+                                                                    title={isDownloadedTrack ? 'MÃºsica jÃ¡ baixada' : !session ? 'Ative um plano' : 'Baixar mÃºsica'}
                                                                 >
                                                                     {downloadingTracks.has(track.id) ? (
                                                                         <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
@@ -1525,18 +1506,18 @@ const MusicList = React.memo(function MusicList({
                                                                 <button
                                                                     onClick={() => {
                                                                         if (!session) {
-                                                                            showToast('🔐 Ative um plano', 'warning');
+                                                                            showToast('ðŸ” Ative um plano', 'warning');
                                                                             return;
                                                                         }
                                                                         handleLike(track);
                                                                     }}
                                                                     disabled={!session}
-                                                                    className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium transition-colors duration-200 justify-center font-open-sans ${!session
-                                                                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                                                    className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 ${!session
+                                                                        ? 'bg-gradient-to-br from-gray-600/40 to-gray-700/50 text-gray-500 border border-gray-600/50 cursor-not-allowed shadow-lg shadow-gray-600/20'
                                                                         : isLiked(track)
-                                                                            ? 'bg-gray-600 text-gray-300'
-                                                                            : 'bg-gray-700 hover:bg-gray-600 text-white'
-                                                                        }`}
+                                                                            ? 'bg-gradient-to-br from-red-500/30 to-red-600/40 text-red-400 border border-red-500/50 shadow-lg shadow-red-500/20'
+                                                                            : 'bg-gradient-to-br from-pink-600/60 to-pink-700/70 text-white border border-pink-500/60 hover:from-pink-500/70 hover:to-pink-600/80 hover:border-pink-400/70 shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40'
+                                                                        } font-sans`}
                                                                     title={!session ? 'Ative um plano' : isLiked(track) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                                                                 >
                                                                     <span className="flex justify-center w-full"><Heart className={`h-3 w-3 ${isLiked(track) ? 'fill-current' : ''}`} /></span>
@@ -1568,31 +1549,31 @@ const MusicList = React.memo(function MusicList({
                                 <div className="inline-flex items-center gap-3 px-4 sm:px-6 py-4 bg-gray-800/40 border border-gray-700/50 rounded-xl">
                                     <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                                     <span className="text-gray-300 text-sm font-medium">
-                                        {infiniteScrollLoading || isLoadingMore ? 'Carregando mais músicas...' : 'Role para carregar mais'}
+                                        {infiniteScrollLoading || isLoadingMore ? 'Carregando mais mÃºsicas...' : 'Role para carregar mais'}
                                     </span>
                                 </div>
                             </div>
                         )}
 
-                        {/* Indicador de mais conteúdo responsivo - apenas para paginação tradicional */}
+                        {/* Indicador de mais conteÃºdo responsivo - apenas para paginaÃ§Ã£o tradicional */}
                         {!enableInfiniteScroll && currentPage < totalPages && (
                             <div className="text-center py-8 px-4">
                                 <div className="inline-flex items-center gap-3 px-4 sm:px-6 py-4 bg-gray-800/40 border border-gray-700/50 rounded-xl">
                                     <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
                                     <span className="text-gray-300 text-sm font-medium">
-                                        Há mais {totalPages - currentPage} página(s) com músicas
+                                        HÃ¡ mais {totalPages - currentPage} pÃ¡gina(s) com mÃºsicas
                                     </span>
                                     <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Controles de paginação responsivos - ocultos quando infinite scroll está ativo */}
+                        {/* Controles de paginaÃ§Ã£o responsivos - ocultos quando infinite scroll estÃ¡ ativo */}
                         {!enableInfiniteScroll && totalPages > 1 && (
                             <div className="mt-8 mb-4 px-4">
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                                     <div className="text-gray-400 text-sm text-center sm:text-left">
-                                        Página {currentPage} de {totalPages} • {Object.keys(paginatedGroups).length} de {Object.keys(groupedTracks).length} grupos
+                                        PÃ¡gina {currentPage} de {totalPages} â€¢ {Object.keys(paginatedGroups).length} de {Object.keys(groupedTracks).length} grupos
                                     </div>
 
                                     <div className="flex items-center gap-2">
@@ -1603,7 +1584,7 @@ const MusicList = React.memo(function MusicList({
                                                 ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
                                                 : 'bg-gray-700/60 text-gray-300 hover:bg-gray-600/60 hover:text-gray-200'
                                                 }`}
-                                            title="Primeira página"
+                                            title="Primeira pÃ¡gina"
                                         >
                                             Primeira
                                         </button>
@@ -1615,7 +1596,7 @@ const MusicList = React.memo(function MusicList({
                                                 ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
                                                 : 'bg-gray-700/60 text-gray-300 hover:bg-gray-600/60 hover:text-gray-200'
                                                 }`}
-                                            title="Página anterior"
+                                            title="PÃ¡gina anterior"
                                         >
                                             Anterior
                                         </button>
@@ -1635,7 +1616,7 @@ const MusicList = React.memo(function MusicList({
                                                 }`}
                                             title="Carregar mais grupos"
                                         >
-                                            {currentPage >= totalPages ? 'Última' : isLoadingMore ? (
+                                            {currentPage >= totalPages ? 'Ãšltima' : isLoadingMore ? (
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                                                     Carregando...
@@ -1647,11 +1628,11 @@ const MusicList = React.memo(function MusicList({
                             </div>
                         )}
 
-                        {/* Modal de Confirmação para Downloads Mobile */}
+                        {/* Modal de ConfirmaÃ§Ã£o para Downloads Mobile */}
                         {showMobileConfirmModal && (
                             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
                                 <div className="bg-[#282828] border border-[#3e3e3e] rounded-xl p-5 max-w-sm w-full mx-3">
-                                    {/* Ícone de Aviso */}
+                                    {/* Ãcone de Aviso */}
                                     <div className="flex justify-center mb-4">
                                         <div className="w-14 h-14 bg-yellow-500/20 border-2 border-yellow-500/30 rounded-full flex items-center justify-center">
                                             <svg className="w-7 h-7 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -1660,7 +1641,7 @@ const MusicList = React.memo(function MusicList({
                                         </div>
                                     </div>
 
-                                    {/* Título */}
+                                    {/* TÃ­tulo */}
                                     <h3 className="text-white text-lg font-bold text-center mb-4">
                                         Aviso de Download
                                     </h3>
@@ -1669,14 +1650,14 @@ const MusicList = React.memo(function MusicList({
                                     <div className="text-gray-300 text-sm text-center mb-6 space-y-3">
                                         <p className="font-medium">
                                             {pendingDownloadAction?.type === 'new'
-                                                ? `Baixar ${pendingDownloadAction.tracks.filter(t => !finalDownloadedTrackIds.includes(t.id)).length} músicas novas?`
-                                                : `Baixar todas as ${pendingDownloadAction?.tracks.length} músicas?`
+                                                ? `Baixar ${pendingDownloadAction.tracks.filter(t => !finalDownloadedTrackIds.includes(t.id)).length} mÃºsicas novas?`
+                                                : `Baixar todas as ${pendingDownloadAction?.tracks.length} mÃºsicas?`
                                             }
                                         </p>
 
                                         <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
                                             <p className="text-yellow-400 font-medium text-xs">
-                                                ⚠️ Celulares podem não suportar muitos downloads simultâneos.
+                                                âš ï¸ Celulares podem nÃ£o suportar muitos downloads simultÃ¢neos.
                                             </p>
                                             <p className="text-gray-300 text-xs mt-1">
                                                 Recomendamos usar um computador para downloads em massa.
@@ -1685,12 +1666,12 @@ const MusicList = React.memo(function MusicList({
 
                                         <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
                                             <p className="text-purple-300 font-medium text-xs">
-                                                💎 Para uma experiência premium, acesse nossa plataforma VIP!
+                                                ðŸ’Ž Para uma experiÃªncia premium, acesse nossa plataforma VIP!
                                             </p>
                                         </div>
                                     </div>
 
-                                    {/* Botões de Ação */}
+                                    {/* BotÃµes de AÃ§Ã£o */}
                                     <div className="flex flex-col gap-3">
                                         <button
                                             onClick={confirmMobileDownload}
@@ -1724,19 +1705,21 @@ const MusicList = React.memo(function MusicList({
                     </div>
                 ) : null
             ) : (
-                // Renderização sem agrupamento por data (para community)
+                // RenderizaÃ§Ã£o sem agrupamento por data (para community)
                 tracks && tracks.length > 0 ? (
                     <div className="space-y-0 w-full overflow-x-hidden">
-                        {/* Indicador de sincronização com Google Drive */}
-                        <div className="flex items-center justify-center py-6 mb-8">
-                            <div className="flex items-center gap-3 text-sm text-white bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 px-6 py-3 rounded-full border border-cyan-400/30 backdrop-blur-md shadow-lg shadow-cyan-500/20">
-                                <div className="w-4 h-4 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full animate-pulse"></div>
-                                <span className="font-medium tracking-wide">Sincronizado com Google Drive</span>
+                        {/* Indicador de sincronizaÃ§Ã£o com Google Drive */}
+                        <div className="flex items-center justify-center py-4 mb-6">
+                            <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-800/30 px-3 py-1.5 rounded-full border border-gray-700/50">
+                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                                </svg>
+                                <span>Sincronizado com Google Drive</span>
                             </div>
                         </div>
-                        {/* Mobile: Grid de cards estilo EDM */}
+                        {/* Mobile: Grid de cards */}
                         <div className="block sm:hidden">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                                 {tracks.map((track, index) => {
                                     const { initials, colors } = generateThumbnail(track);
                                     const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
@@ -1744,8 +1727,8 @@ const MusicList = React.memo(function MusicList({
                                     return (
                                         <div key={track.id} className="">
                                             <div className="group mb-3">
-                                                <div className="bg-gradient-to-br from-slate-900/90 via-purple-900/80 to-slate-800/90 backdrop-blur-md border border-purple-500/30 rounded-3xl p-4 group relative overflow-hidden hover:border-purple-400/60 transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl hover:shadow-purple-500/30">
-                                                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                                <div className="bg-black border border-white/10 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 group relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                                                     <div className="relative mb-2 sm:mb-2">
                                                         {/* Thumbnail responsivo */}
@@ -1757,11 +1740,11 @@ const MusicList = React.memo(function MusicList({
                                                                 fallbackContent={initials}
                                                             />
 
-                                                            {/* Player sempre visível na thumbnail - Mobile */}
+                                                            {/* Player sempre visÃ­vel na thumbnail - Mobile */}
                                                             <button
                                                                 onClick={() => {
                                                                     if (!session) {
-                                                                        showToast('🔐 Ative um plano', 'warning');
+                                                                        showToast('ðŸ” Ative um plano', 'warning');
                                                                         return;
                                                                     }
                                                                     handlePlayPause(track);
@@ -1780,9 +1763,9 @@ const MusicList = React.memo(function MusicList({
                                                             </button>
                                                         </div>
 
-                                                        {/* Informações da música */}
+                                                        {/* InformaÃ§Ãµes da mÃºsica */}
                                                         <div className="px-1 sm:px-2">
-                                                            <div className="text-white font-medium text-[10px] sm:text-xs truncate mb-1">
+                                                            <div className="text-white font-medium text-xs sm:text-sm truncate mb-1">
                                                                 {track.songName}
                                                             </div>
                                                             <div className="text-gray-400 text-xs truncate">
@@ -1790,18 +1773,18 @@ const MusicList = React.memo(function MusicList({
                                                             </div>
                                                         </div>
 
-                                                        {/* Botões de ação */}
-                                                        <div className="flex items-center justify-between gap-2 mt-3">
+                                                        {/* BotÃµes de aÃ§Ã£o */}
+                                                        <div className="flex items-center justify-between gap-1 mt-2 px-1 sm:px-2">
                                                             <button
                                                                 onClick={() => handleDownload(track)}
                                                                 disabled={downloadingTracks.has(track.id)}
-                                                                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                title={downloadedTrackIds.includes(track.id) ? 'Já baixada' : 'Baixar música'}
+                                                                className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                                                title={downloadedTrackIds.includes(track.id) ? 'JÃ¡ baixada' : 'Baixar mÃºsica'}
                                                             >
                                                                 {downloadingTracks.has(track.id) ? (
                                                                     <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
                                                                 ) : downloadedTrackIds.includes(track.id) ? (
-                                                                    '✅'
+                                                                    'âœ…'
                                                                 ) : (
                                                                     <Download className="w-3 h-3 mx-auto" />
                                                                 )}
@@ -1810,13 +1793,13 @@ const MusicList = React.memo(function MusicList({
                                                             <button
                                                                 onClick={() => handleLike(track)}
                                                                 disabled={liking === track.id}
-                                                                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                title={likedTrackIds.includes(track.id) ? 'Descurtir' : 'Curtir música'}
+                                                                className="flex-1 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                                                title={likedTrackIds.includes(track.id) ? 'Descurtir' : 'Curtir mÃºsica'}
                                                             >
                                                                 {liking === track.id ? (
                                                                     <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
                                                                 ) : likedTrackIds.includes(track.id) ? (
-                                                                    '❤️'
+                                                                    'â¤ï¸'
                                                                 ) : (
                                                                     <Heart className="w-3 h-3 mx-auto" />
                                                                 )}
@@ -1831,17 +1814,17 @@ const MusicList = React.memo(function MusicList({
                             </div>
                         </div>
 
-                        {/* Desktop: Grid de cards estilo streaming */}
+                        {/* Desktop: Lista horizontal */}
                         <div className="hidden sm:block">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                                 {tracks.map((track, index) => {
                                     const { initials, colors } = generateThumbnail(track);
                                     const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
 
                                     return (
                                         <div key={track.id} className="group">
-                                            <div className="bg-gradient-to-br from-slate-900/90 via-purple-900/80 to-slate-800/90 backdrop-blur-md border border-purple-500/30 rounded-3xl p-5 group relative overflow-hidden hover:border-purple-400/60 transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl hover:shadow-purple-500/30">
-                                                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                            <div className="bg-black border border-white/10 rounded-xl p-3 group relative overflow-hidden">
+                                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                                                 <div className="relative">
                                                     {/* Thumbnail */}
@@ -1853,11 +1836,11 @@ const MusicList = React.memo(function MusicList({
                                                             fallbackContent={initials}
                                                         />
 
-                                                        {/* Player sempre visível na thumbnail - Desktop */}
+                                                        {/* Player sempre visÃ­vel na thumbnail - Desktop */}
                                                         <button
                                                             onClick={() => {
                                                                 if (!session) {
-                                                                    showToast('🔐 Ative um plano', 'warning');
+                                                                    showToast('ðŸ” Ative um plano', 'warning');
                                                                     return;
                                                                 }
                                                                 handlePlayPause(track);
@@ -1876,9 +1859,9 @@ const MusicList = React.memo(function MusicList({
                                                         </button>
                                                     </div>
 
-                                                    {/* Informações da música */}
+                                                    {/* InformaÃ§Ãµes da mÃºsica */}
                                                     <div className="mb-3">
-                                                        <div className="text-white font-medium text-xs truncate mb-1">
+                                                        <div className="text-white font-medium text-sm truncate mb-1">
                                                             {track.songName}
                                                         </div>
                                                         <div className="text-gray-400 text-xs truncate">
@@ -1886,18 +1869,18 @@ const MusicList = React.memo(function MusicList({
                                                         </div>
                                                     </div>
 
-                                                    {/* Botões de ação */}
-                                                    <div className="flex items-center gap-4">
+                                                    {/* BotÃµes de aÃ§Ã£o */}
+                                                    <div className="flex items-center gap-2">
                                                         <button
                                                             onClick={() => handleDownload(track)}
                                                             disabled={downloadingTracks.has(track.id)}
-                                                            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                            title={downloadedTrackIds.includes(track.id) ? 'Já baixada' : 'Baixar música'}
+                                                            className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                                            title={downloadedTrackIds.includes(track.id) ? 'JÃ¡ baixada' : 'Baixar mÃºsica'}
                                                         >
                                                             {downloadingTracks.has(track.id) ? (
                                                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
                                                             ) : downloadedTrackIds.includes(track.id) ? (
-                                                                '✅ Já baixada'
+                                                                'âœ… JÃ¡ baixada'
                                                             ) : (
                                                                 <Download className="w-4 h-4 mx-auto" />
                                                             )}
@@ -1906,13 +1889,13 @@ const MusicList = React.memo(function MusicList({
                                                         <button
                                                             onClick={() => handleLike(track)}
                                                             disabled={liking === track.id}
-                                                            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                            title={likedTrackIds.includes(track.id) ? 'Descurtir' : 'Curtir música'}
+                                                            className="flex-1 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                                            title={likedTrackIds.includes(track.id) ? 'Descurtir' : 'Curtir mÃºsica'}
                                                         >
                                                             {liking === track.id ? (
                                                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
                                                             ) : likedTrackIds.includes(track.id) ? (
-                                                                '❤️ Curtida'
+                                                                'â¤ï¸ Curtida'
                                                             ) : (
                                                                 <Heart className="w-4 h-4 mx-auto" />
                                                             )}
@@ -1928,12 +1911,12 @@ const MusicList = React.memo(function MusicList({
                     </div>
                 ) : (
                     <div className="text-center py-16">
-                        <div className="text-gray-400 text-lg">Nenhuma música encontrada</div>
+                        <div className="text-gray-400 text-lg">Nenhuma mÃºsica encontrada</div>
                     </div>
                 )
             )}
         </div>
     );
-});
+}
 
-export default MusicList;
+

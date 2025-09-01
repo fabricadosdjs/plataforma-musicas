@@ -120,7 +120,7 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
     }, [session?.user?.id]);
 
     // Função para atualizar cache da API com debounce e retry automático
-    const refreshCache = useCallback(async (retryCount = 0): Promise<void> => {
+    const refreshCache = useCallback(async (retryCount = 0) => {
         if (!session?.user?.id) return;
 
         // Evitar múltiplas chamadas simultâneas
@@ -223,7 +223,7 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
                         console.error('❌ Timeout persistente após 3 tentativas');
                     }
                 } else {
-                    setError(error instanceof Error ? error.message : 'Erro desconhecido');
+                    setError(error.message || 'Erro desconhecido');
                 }
             } finally {
                 setIsLoading(false);

@@ -36,7 +36,7 @@ export default function SignInPage() {
           setError(result.error);
         }
       } else {
-        router.push('/new');
+        router.push('/new#/page=1');
         router.refresh();
       }
     } catch (err) {

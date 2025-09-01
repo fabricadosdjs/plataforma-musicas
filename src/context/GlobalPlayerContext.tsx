@@ -40,67 +40,27 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const getSecureAudioUrl = async (track: Track): Promise<string | null> => {
         // Usar a API de audio-track para obter a URL de áudio segura (assinada)
         try {
-            AudioDebugger.log('info', 'Solicitando URL de áudio via audio-track API', {
-                trackId: track.id,
-                songName: track.songName,
-                downloadUrl: track.downloadUrl ? (String(track.downloadUrl).substring(0, 50) + '...') : 'N/A',
-                previewUrl: track.previewUrl ? (String(track.previewUrl).substring(0, 50) + '...') : 'N/A'
-            });
-
+            AudioDebugger.log('info', 'Solicitando URL de áudio via audio-track API', { trackId: track.id, songName: track.songName });
             const response = await fetch('/api/audio-track', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ trackId: track.id }),
             });
 
-            AudioDebugger.log('info', 'Resposta da API audio-track recebida', {
-                status: response.status,
-                statusText: response.statusText,
-                ok: response.ok,
-                trackId: track.id
-            });
-
             if (!response.ok) {
-                let errorData;
-                try {
-                    errorData = await response.json();
-                } catch (parseError) {
-                    errorData = { error: 'Erro ao parsear resposta da API' };
-                }
-
+                const errorData = await response.json();
                 AudioDebugger.log('error', 'Erro ao obter URL de áudio da API audio-track', {
                     status: response.status,
-                    statusText: response.statusText,
                     error: errorData.error || 'Erro desconhecido',
                     trackId: track.id,
-                    songName: track.songName,
-                    responseBody: errorData
+                    songName: track.songName
                 });
-
                 showToast(`❌ Erro ao obter URL de áudio: ${errorData.error || 'Tente novamente.'}`, 'error');
                 return null;
             }
 
-            let data;
-            try {
-                data = await response.json();
-                AudioDebugger.log('info', 'Dados da API parseados com sucesso', {
-                    hasAudioUrl: !!data.audioUrl,
-                    audioUrlLength: data.audioUrl?.length || 0,
-                    trackId: track.id,
-                    songName: track.songName
-                });
-            } catch (parseError) {
-                AudioDebugger.log('error', 'Erro ao parsear resposta JSON da API', {
-                    error: parseError instanceof Error ? parseError.message : String(parseError),
-                    trackId: track.id,
-                    songName: track.songName
-                });
-                showToast('❌ Erro ao processar resposta da API.', 'error');
-                return null;
-            }
-
-            if (data && data.audioUrl) {
+            const data = await response.json();
+            if (data.audioUrl) {
                 AudioDebugger.log('info', 'URL de áudio obtida com sucesso da API audio-track', {
                     url: data.audioUrl.substring(0, 100) + '...',
                     trackId: track.id,
@@ -108,38 +68,16 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 });
                 return data.audioUrl;
             } else {
-                AudioDebugger.log('warn', 'API audio-track não retornou URL de áudio válida', {
-                    data: data,
-                    hasData: !!data,
-                    hasAudioUrl: !!(data && data.audioUrl),
+                AudioDebugger.log('warn', 'API audio-track não retornou URL de áudio', {
                     trackId: track.id,
                     songName: track.songName
                 });
-
-                // Fallback: tentar usar URLs diretas se a API falhar
-                AudioDebugger.log('info', 'Tentando fallback com URLs diretas', {
-                    trackId: track.id,
-                    songName: track.songName
-                });
-
-                const fallbackUrl = String(track.downloadUrl || track.previewUrl || '');
-                if (fallbackUrl && fallbackUrl !== '') {
-                    AudioDebugger.log('warn', 'Usando URL direta como fallback', {
-                        url: fallbackUrl.substring(0, 100) + '...',
-                        trackId: track.id,
-                        songName: track.songName
-                    });
-                    showToast('⚠️ Usando URL direta (pode não funcionar em dispositivos móveis)', 'warning');
-                    return fallbackUrl;
-                } else {
-                    showToast('❌ A API não retornou uma URL de áudio válida.', 'error');
-                    return null;
-                }
+                showToast('❌ A API não retornou uma URL de áudio válida.', 'error');
+                return null;
             }
         } catch (error) {
             AudioDebugger.log('error', 'Erro de rede ao chamar a API audio-track', {
                 error: error instanceof Error ? error.message : String(error),
-                errorName: error instanceof Error ? error.name : 'Unknown',
                 trackId: track.id,
                 songName: track.songName
             });
@@ -154,6 +92,7 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
             songName: track.songName,
             downloadUrl: track.downloadUrl,
             previewUrl: track.previewUrl,
+            url: track.url,
             imageUrl: track.imageUrl,
             musicList: musicList?.length || 0
         });

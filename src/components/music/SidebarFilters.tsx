@@ -18,23 +18,13 @@ type Track = {
   isCopyrightProtected?: boolean;
 };
 
-type Filters = {
-  genres: string[];
-  versions: string[];
-  artists: string[];
-  date: {
-    from: string;
-    to: string;
-  };
-};
-
 const SidebarFilters = memo(function SidebarFilters({
   tracks,
   onFilterChange,
   onSearchChange
 }: {
   tracks: Track[],
-  onFilterChange: (filters: Filters | ((prevFilters: Filters) => Filters)) => void,
+  onFilterChange: (filters: any) => void,
   onSearchChange?: (query: string) => void
 }) {
   // Adicionar verificação para garantir que 'tracks' é um array antes de usar .map
@@ -48,7 +38,7 @@ const SidebarFilters = memo(function SidebarFilters({
   const maxDate = useMemo(() => safeTracks.length ? safeTracks.reduce((max, t) => t.releaseDate > max ? t.releaseDate : max, safeTracks[0].releaseDate) : '', [safeTracks]);
 
   const handleFilterChange = (type: 'genres' | 'versions' | 'artists', value: string) => {
-    onFilterChange((prevFilters: Filters) => {
+    onFilterChange((prevFilters: any) => {
       const currentFilter = prevFilters[type];
       const newFilter = currentFilter.includes(value)
         ? currentFilter.filter((item: string) => item !== value)
@@ -59,7 +49,7 @@ const SidebarFilters = memo(function SidebarFilters({
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>, bound: 'from' | 'to') => {
     const value = e.target.value;
-    onFilterChange((prevFilters: Filters) => ({
+    onFilterChange((prevFilters: any) => ({
       ...prevFilters,
       date: {
         ...prevFilters.date,

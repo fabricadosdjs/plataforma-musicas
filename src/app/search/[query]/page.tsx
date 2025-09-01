@@ -44,7 +44,7 @@ const SearchPage = () => {
 
     // Funções
     const handleClearSearch = () => setSearchQuery('');
-    const handleBackToNew = () => window.open('/new', '_blank');
+    const handleBackToNew = () => window.open('/new#/page=1', '_blank');
 
     // Carregar dados de busca
     useEffect(() => {

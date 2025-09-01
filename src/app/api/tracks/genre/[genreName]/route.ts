@@ -14,33 +14,19 @@ export async function GET(
 
         // Paginação otimizada
         const { searchParams } = new URL(request.url);
-        const page = parseInt(searchParams.get('page') || '1', 10);
-        const limit = Math.min(parseInt(searchParams.get('limit') || '60', 10), 200); // Limitar máximo
-        const offset = (page - 1) * limit;
+        const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 200); // Limitar máximo
+        const offset = parseInt(searchParams.get('offset') || '0', 10);
 
-        // Log apenas em desenvolvimento
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`🔍 Genre API: ${decodedGenreName} (page ${page})`);
-        }
+        console.log('🔍 API Genre Tracks chamada para:', decodedGenreName, 'limit:', limit, 'offset:', offset);
 
         try {
             await prisma.$connect();
+            console.log('✅ Conexão com banco estabelecida');
         } catch (dbError) {
             console.error('❌ Erro na conexão com banco:', dbError);
             throw dbError;
         }
 
-        // Primeiro, contar o total de tracks para este gênero
-        const totalCount = await prisma.track.count({
-            where: {
-                style: {
-                    equals: decodedGenreName,
-                    mode: 'insensitive',
-                },
-            },
-        });
-
-        // Depois, buscar as tracks da página atual
         const tracks = await prisma.track.findMany({
             where: {
                 style: {
@@ -70,10 +56,7 @@ export async function GET(
             skip: offset,
         });
 
-        // Log apenas em desenvolvimento
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`📊 ${decodedGenreName}: ${tracks.length}/${totalCount} tracks`);
-        }
+        console.log(`📊 Gênero ${decodedGenreName}: ${tracks.length} tracks encontradas`);
 
         const tracksWithPreview = tracks.map((track: any) => ({
             ...track,
@@ -88,11 +71,7 @@ export async function GET(
         const response = NextResponse.json({
             tracks: tracksWithPreview,
             genreName: decodedGenreName,
-            totalCount: totalCount,
-            currentPage: page,
-            totalPages: Math.ceil(totalCount / limit),
-            hasNextPage: page < Math.ceil(totalCount / limit),
-            hasPreviousPage: page > 1
+            totalCount: tracks.length,
         });
 
         // Adicionar headers de cache para melhor performance

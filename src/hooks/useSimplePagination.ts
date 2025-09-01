@@ -56,8 +56,11 @@ export const useSimplePagination = (options: UseSimplePaginationOptions): Simple
 
     // Função para carregar uma página específica
     const loadPage = useCallback(async (page: number, force = false) => {
+        console.log('📥 Hook useSimplePagination - loadPage chamada:', { page, force, lastLoadedPage: lastLoadedPage.current, tracksLength: tracks.length });
+
         // Se já carregamos esta página e não é forçado, não recarregar
         if (!force && lastLoadedPage.current === page && tracks.length > 0) {
+            console.log('⏭️ Hook useSimplePagination - Página já carregada, pulando...');
             return;
         }
 
@@ -86,6 +89,14 @@ export const useSimplePagination = (options: UseSimplePaginationOptions): Simple
             }
 
             const result = await response.json();
+
+            console.log('📊 Hook useSimplePagination - Dados recebidos:', {
+                page,
+                pageSize,
+                tracksCount: (result.tracks || result.data || []).length,
+                totalCount: result.totalCount || result.total || 0,
+                result
+            });
 
             setTracks(result.tracks || result.data || []);
             setTotalCount(result.totalCount || result.total || 0);
@@ -138,10 +149,22 @@ export const useSimplePagination = (options: UseSimplePaginationOptions): Simple
     // Carregar página inicial apenas uma vez
     useEffect(() => {
         if (!hasInitialized.current) {
+            // Verificar se há hash na URL para determinar a página inicial
+            let pageToLoad = initialPage;
+            if (typeof window !== 'undefined') {
+                const hash = window.location.hash;
+                const match = hash.match(/#\/page=(\d+)/);
+                if (match) {
+                    pageToLoad = parseInt(match[1], 10);
+                    console.log('🔗 Hook useSimplePagination - Página detectada do hash:', pageToLoad);
+                }
+            }
+
+            console.log('🚀 Hook useSimplePagination - Inicializando com página:', pageToLoad, 'endpoint:', endpoint);
             hasInitialized.current = true;
-            loadPage(initialPage);
+            loadPage(pageToLoad);
         }
-    }, [initialPage, loadPage]);
+    }, [initialPage, endpoint]); // Remover loadPage das dependências para evitar loop
 
     // Detectar quando a página volta do histórico e recarregar se necessário
     useEffect(() => {

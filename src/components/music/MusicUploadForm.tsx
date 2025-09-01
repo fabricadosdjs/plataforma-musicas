@@ -511,10 +511,10 @@ export default function MusicUploadForm() {
                                 </h4>
                                 <ol className="text-sm text-gray-300 space-y-2">
                                     <li>1. Acesse <a href="https://imgbb.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">imgbb.com</a></li>
-                                    <li>2. Clique em &quot;Start uploading&quot; ou arraste sua imagem</li>
-                                    <li>3. Após o upload, clique em &quot;Embed codes&quot;</li>
-                                    <li>4. Copie o link que começa com &quot;https://i.ibb.co/...&quot;</li>
-                                    <li>5. Cole o link no campo &quot;Capa da Música&quot; acima</li>
+                                    <li>2. Clique em "Start uploading" ou arraste sua imagem</li>
+                                    <li>3. Após o upload, clique em "Embed codes"</li>
+                                    <li>4. Copie o link que começa com "https://i.ibb.co/..."</li>
+                                    <li>5. Cole o link no campo "Capa da Música" acima</li>
                                 </ol>
                                 <div className="mt-3 p-2 bg-gray-800/50 rounded text-xs text-gray-400">
                                     <strong>Exemplo:</strong> https://i.ibb.co/abc123/cover-image.jpg

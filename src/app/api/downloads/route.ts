@@ -127,14 +127,30 @@ export async function POST(req: NextRequest) {
                     data: { downloadedAt: now }
                 });
             } else {
-                // Criar novo download
-                await prisma.download.create({
-                    data: {
+                // Verificar se já existe um download para evitar constraint única
+                const existingDownload = await prisma.download.findFirst({
+                    where: {
                         userId: String(user.id),
-                        trackId: Number(numericTrackId),
-                        downloadedAt: now
+                        trackId: Number(numericTrackId)
                     }
                 });
+
+                if (!existingDownload) {
+                    // Criar novo download apenas se não existir
+                    await prisma.download.create({
+                        data: {
+                            userId: String(user.id),
+                            trackId: Number(numericTrackId),
+                            downloadedAt: now
+                        }
+                    });
+                } else {
+                    // Atualizar download existente
+                    await prisma.download.update({
+                        where: { id: existingDownload.id },
+                        data: { downloadedAt: now }
+                    });
+                }
             }
 
             const track = await prisma.track.findUnique({
