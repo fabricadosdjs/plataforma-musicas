@@ -317,6 +317,4 @@ export const authOptions: AuthOptions = {
     },
     secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key',
     debug: process.env.NODE_ENV === 'development', // Adicionar debug em desenvolvimento
-    // Configuração para resolver erro de fetch
-    trustHost: true,
 };

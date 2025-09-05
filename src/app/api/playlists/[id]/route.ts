@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 import { extractIdFromSlug } from '@/lib/playlist-utils';
 
 export async function GET(
@@ -70,7 +72,7 @@ export async function GET(
             playlist: {
                 ...playlist,
                 trackCount: playlist._count.tracks,
-                tracks: playlist.tracks.map(pt => ({
+                tracks: playlist.tracks.map((pt: any) => ({
                     ...pt,
                     track: pt.track
                 }))
@@ -276,7 +278,7 @@ export async function DELETE(
             );
         }
 
-        // Deletar playlist (cascade deletará as PlaylistTracks)
+        // Deletar playlist (cascade deletará as playlistTracks)
         await prisma.playlist.delete({
             where: { id: playlistId }
         });
