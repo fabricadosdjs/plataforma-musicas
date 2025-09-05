@@ -167,7 +167,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
             <Link href="/" className="flex items-center">
               <Image
                 src={NEW_LOGO_URL}
-                alt="NextorDJ Logo"
+                alt="Nexor Records"
                 width={120}
                 height={32}
                 priority
@@ -563,7 +563,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
               <Link href="/" onClick={() => setMobileMenuOpen(false)}>
                 <Image
                   src={NEW_LOGO_URL}
-                  alt="NextorDJ Logo"
+                  alt="Nexor Records"
                   width={120}
                   height={32}
                   priority

@@ -3,7 +3,9 @@
 // Força renderização dinâmica para evitar erro de pré-renderização
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { apiCache, getCacheKey } from '@/lib/cache';
+import { useDataPreloader } from '@/hooks/useDataPreloader';
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
@@ -23,12 +25,13 @@ import Header from "@/components/layout/Header";
 import FiltersModal from "@/components/music/FiltersModal";
 import MusicList from "@/components/music/MusicList";
 import BatchDownloadButtons from "@/components/download/BatchDownloadButtons";
-import { ProgressiveLoadingBar, LoadMoreButton, ErrorRetryButton } from "@/components/ui/ProgressiveLoadingBar";
+
+import { useProgressiveTracksFetch } from "@/hooks/useProgressiveTracksFetch";
 
 import { useAppContext } from "@/context/AppContext";
 import { useGlobalPlayer } from "@/context/GlobalPlayerContext";
 import { usePageLoading } from "@/hooks/usePageLoading";
-import { useProgressiveTracksFetch } from "@/hooks/useProgressiveTracksFetch";
+import { useSimplePagination } from "@/hooks/useSimplePagination";
 import { useDownloadsCache } from "@/hooks/useDownloadsCache";
 import { Track } from "@/types/track";
 import { motion } from "framer-motion";
@@ -36,12 +39,83 @@ import { motion } from "framer-motion";
 const NewPage = () => {
     // Estado para controlar hidratação (evitar hydration mismatch)
     const [isHydrated, setIsHydrated] = useState(false);
+
+    // Estados para carregamento de página específica
+
+    // Função para carregar página específica
+    const loadPage = useCallback(async (page: number) => {
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            console.log(`🔄 Carregando página ${page}...`);
+
+            // 1) Verificar cache do cliente para renderização instantânea
+            const cacheKey = getCacheKey('new_tracks', { page, limit: 60 });
+            const cached = apiCache.get(cacheKey);
+            if (cached?.tracks) {
+                setTracks(cached.tracks || []);
+                setTotalCount(cached.totalCount || 0);
+                setTotalPages(cached.totalPages || 0);
+                console.log(`⚡ Cache hit (cliente) para página ${page}: ${cached.tracks?.length || 0} músicas`);
+                // Prosseguir para confirmar dados em background sem bloquear UI
+            }
+
+            const response = await fetch(`/api/tracks/new?page=${page}&limit=60`, {
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            setTracks(result.tracks || []);
+            setTotalCount(result.totalCount || 0);
+            setTotalPages(result.totalPages || 0);
+            // Atualizar cache do cliente
+            apiCache.set(cacheKey, result, 120);
+
+            console.log(`✅ Página ${page} carregada: ${result.tracks?.length || 0} músicas`);
+
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error('Erro desconhecido');
+            setError(error);
+            console.error(`❌ Erro ao carregar página ${page}:`, error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    // Hook para detectar hidratação
+    useEffect(() => {
+        setIsHydrated(true);
+    }, []);
+
+    // Posições das estrelas (só no cliente)
     const [starPositions, setStarPositions] = useState<Array<{
         left: string;
         top: string;
         animationDelay: string;
         animationDuration: string;
     }>>([]);
+
+    useEffect(() => {
+        if (isHydrated) {
+            const positions = Array.from({ length: 50 }, () => ({
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${3 + Math.random() * 2}s`,
+            }));
+            setStarPositions(positions);
+        }
+    }, [isHydrated]);
+
 
     // Estados para filtros
     const [searchQuery, setSearchQuery] = useState("");
@@ -55,62 +129,112 @@ const NewPage = () => {
     const [selectedGenre, setSelectedGenre] = useState("");
     const [selectedArtist, setSelectedArtist] = useState("");
     const [selectedDateRange, setSelectedDateRange] = useState("");
+
+    // Prefetch leve para páginas de folder: aquece o cache da API by-folder
+    const prefetchedFoldersRef = useRef<Set<string>>(new Set());
+    const prefetchFolder = useCallback((name: string) => {
+        if (!name) return;
+        if (prefetchedFoldersRef.current.has(name)) return;
+        prefetchedFoldersRef.current.add(name);
+        // Consulta mínima (limit=1) apenas para aquecer cache do servidor
+        fetch(`/api/tracks/by-folder?folder=${encodeURIComponent(name)}&limit=1`).catch(() => {
+            // silencioso
+        });
+    }, []);
     const [selectedVersion, setSelectedVersion] = useState("");
     const [selectedMonth, setSelectedMonth] = useState("");
     const [selectedPool, setSelectedPool] = useState("");
 
-    // Estados para scroll infinito
-    const [visibleTracksCount, setVisibleTracksCount] = useState(50); // Mostrar 50 músicas inicialmente
-    const TRACKS_PER_SCROLL = 25; // Carregar 25 músicas por vez ao fazer scroll
+    // Estados para downloads
+    const [downloadedTrackIds, setDownloadedTrackIds] = useState<Set<string>>(new Set());
 
-    // Hook para carregamento progressivo das músicas
-    const {
-        tracks,
-        totalCount,
-        loadedCount,
-        isLoading,
-        isComplete,
-        error,
-        retry,
-        loadMore
-    } = useProgressiveTracksFetch({
-        endpoint: '/api/tracks/new',
-        batchSize: 25, // Carregar 25 músicas por vez
-        delayBetweenBatches: 150, // 150ms entre lotes para não sobrecarregar
-        onProgress: (loaded, total) => {
-            console.log(`📊 Progresso: ${loaded}/${total} músicas carregadas`);
-        },
-        onBatchLoaded: (batch, batchIndex) => {
-            console.log(`✅ Lote ${batchIndex + 1} carregado: ${batch.length} músicas`);
-        },
-        onComplete: (allTracks) => {
-            console.log(`🎉 Todas as ${allTracks.length} músicas foram carregadas!`);
-        },
-        onError: (error) => {
-            console.error('❌ Erro no carregamento progressivo:', error);
+    // Estados para paginação baseada em hash
+    const TRACKS_PER_PAGE = 60;
+    const [currentPage, setCurrentPage] = useState(1);
+    const [visibleTracksCount, setVisibleTracksCount] = useState(TRACKS_PER_PAGE);
+
+    // Função para ler página do hash (apenas no cliente)
+    const getPageFromHash = useCallback(() => {
+        if (typeof window === 'undefined') return 1;
+        const hash = window.location.hash;
+        const match = hash.match(/page=(\d+)/);
+        if (match && !isNaN(Number(match[1]))) {
+            const page = parseInt(match[1], 10);
+            return page > 0 ? page : 1;
         }
-    });
+        return 1;
+    }, []);
+
+    // Sempre sincronizar currentPage com a hash antes de qualquer renderização
+    useEffect(() => {
+        const page = getPageFromHash();
+        if (page !== currentPage) {
+            setCurrentPage(page);
+        }
+    }, [getPageFromHash, currentPage]);
+
+    // Atualiza página apenas no cliente após hidratação
+    // Efeito 1: escuta hashchange e atualiza currentPage
+    useEffect(() => {
+        if (!isHydrated) return;
+
+        const updatePageFromHash = () => {
+            const page = getPageFromHash();
+            console.log(`🔗 Hash mudou, nova página: ${page}`);
+            setCurrentPage(page);
+            setVisibleTracksCount(page * TRACKS_PER_PAGE);
+        };
+
+        // Inicializa com o hash atual (ou 1 se vazio, sem escrever no hash)
+        updatePageFromHash();
+        window.addEventListener('hashchange', updatePageFromHash);
+        return () => window.removeEventListener('hashchange', updatePageFromHash);
+    }, [isHydrated, getPageFromHash]);
+
+    // Efeito 2: carrega dados quando currentPage muda
+    useEffect(() => {
+        if (!isHydrated) return;
+        loadPage(currentPage);
+    }, [currentPage, isHydrated, loadPage]);
+
+
+    // Estados para carregamento de página específica
+    const [tracks, setTracks] = useState<Track[]>([]);
+    const [totalCount, setTotalCount] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
+
+    // Carregar página quando currentPage muda
+    useEffect(() => {
+        if (isHydrated) {
+            loadPage(currentPage);
+        }
+    }, [currentPage, isHydrated, loadPage]);
+
+    // Precarregar páginas adjacentes em background
+    useDataPreloader(currentPage, { enabled: true, maxPages: 2, delay: 1200 });
 
     // Extrair dados únicos para filtros - otimizado para evitar re-cálculos desnecessários
     const genres = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.style).filter((v): v is string => Boolean(v))));
-    }, [tracks.length, isComplete]); // Recalcular apenas quando necessário
+    }, [tracks.length]); // Recalcular apenas quando necessário
 
     const artists = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.artist).filter((v): v is string => Boolean(v))));
-    }, [tracks.length, isComplete]);
+    }, [tracks.length]);
 
     const versions = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.version).filter((v): v is string => Boolean(v))));
-    }, [tracks.length, isComplete]);
+    }, [tracks.length]);
 
     const pools = useMemo(() => {
         if (tracks.length === 0) return [];
         return Array.from(new Set(tracks.map(t => t.pool).filter((v): v is string => Boolean(v))));
-    }, [tracks.length, isComplete]);
+    }, [tracks.length]);
 
     const monthOptions = useMemo(() => {
         if (tracks.length === 0) return [];
@@ -127,6 +251,8 @@ const NewPage = () => {
     // Estados para estilos mais baixados
     const [styles, setStyles] = useState<Array<{ name: string; trackCount: number; downloadCount: number }>>([]);
     const [stylesLoading, setStylesLoading] = useState(true);
+    const [shouldLoadStyles, setShouldLoadStyles] = useState(false);
+    const stylesRef = useRef<HTMLDivElement | null>(null);
 
     // Estados para folders recentes
     const [recentFolders, setRecentFolders] = useState<Array<{
@@ -137,6 +263,8 @@ const NewPage = () => {
         downloadCount: number;
     }>>([]);
     const [foldersLoading, setFoldersLoading] = useState(true);
+    const [shouldLoadFolders, setShouldLoadFolders] = useState(false);
+    const foldersRef = useRef<HTMLDivElement | null>(null);
 
 
 
@@ -373,16 +501,61 @@ const NewPage = () => {
             animationDuration: `${2 + Math.random() * 3}s`
         }));
         setStarPositions(positions);
-        setIsHydrated(true);
+        // Remover setIsHydrated duplicado - já está sendo definido no início
     }, []);
 
-    // Carregar estilos e folders apenas uma vez quando há tracks suficientes
+    // Configurar IntersectionObserver para carregar estilos/folders quando visíveis
     useEffect(() => {
-        if (tracks.length > 20) { // Aguardar pelo menos 20 tracks antes de buscar estilos/folders
+        if (typeof window === 'undefined') return;
+        if (!('IntersectionObserver' in window)) {
+            setShouldLoadStyles(true);
+            setShouldLoadFolders(true);
+            return;
+        }
+
+        const observers: IntersectionObserver[] = [];
+
+        if (stylesRef.current) {
+            const obs = new IntersectionObserver((entries) => {
+                if (entries.some(e => e.isIntersecting)) {
+                    setShouldLoadStyles(true);
+                    obs.disconnect();
+                }
+            }, { root: null, rootMargin: '200px', threshold: 0.1 });
+            obs.observe(stylesRef.current);
+            observers.push(obs);
+        } else {
+            // fallback
+            setShouldLoadStyles(true);
+        }
+
+        if (foldersRef.current) {
+            const obs2 = new IntersectionObserver((entries) => {
+                if (entries.some(e => e.isIntersecting)) {
+                    setShouldLoadFolders(true);
+                    obs2.disconnect();
+                }
+            }, { root: null, rootMargin: '200px', threshold: 0.1 });
+            obs2.observe(foldersRef.current);
+            observers.push(obs2);
+        } else {
+            setShouldLoadFolders(true);
+        }
+
+        return () => observers.forEach(o => o.disconnect());
+    }, []);
+
+    // Disparar buscas quando elegíveis e com tracks suficientes para enriquecer fallback
+    useEffect(() => {
+        if (shouldLoadStyles && tracks.length >= 0) {
             fetchStyles();
+        }
+    }, [shouldLoadStyles]);
+    useEffect(() => {
+        if (shouldLoadFolders && tracks.length >= 0) {
             fetchRecentFolders();
         }
-    }, [tracks.length]); // Depender apenas do length, não do array completo
+    }, [shouldLoadFolders]);
 
     const { data: session } = useSession();
     const { showAlert } = useAppContext();
@@ -390,8 +563,36 @@ const NewPage = () => {
     const { startLoading, stopLoading } = usePageLoading();
     const router = useRouter();
 
+
     // Hook para cache de downloads
     const downloadsCache = useDownloadsCache();
+
+    // Otimização: Buscar todos os IDs de download de uma vez
+    useEffect(() => {
+        if (isHydrated && session?.user) {
+            const fetchDownloadedTracks = async () => {
+                try {
+                    console.log('📥 Otimização: Buscando todos os IDs de faixas baixadas...');
+                    const response = await fetch('/api/downloads');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && Array.isArray(data.downloads)) {
+                            const ids = data.downloads.map((d: { trackId: number }) => d.trackId.toString());
+                            setDownloadedTrackIds(new Set(ids));
+                            console.log(`✅ Otimização: ${ids.length} IDs de download carregados.`);
+                        } else {
+                            console.warn('⚠️ Otimização: A resposta de /api/downloads não continha um array de downloads.', data);
+                        }
+                    } else {
+                        console.error('❌ Otimização: Falha ao buscar faixas baixadas. Status:', response.status);
+                    }
+                } catch (error) {
+                    console.error('❌ Otimização: Erro ao buscar faixas baixadas:', error);
+                }
+            };
+            fetchDownloadedTracks();
+        }
+    }, [isHydrated, session]);
 
     // Função para agrupar tracks por data - otimizada para evitar recálculos desnecessários
     const groupedTracksByDate = useMemo(() => {
@@ -415,7 +616,7 @@ const NewPage = () => {
         return Object.fromEntries(
             Object.entries(groups).sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
         );
-    }, [tracks.length, isComplete]); // Recalcular apenas quando o tamanho muda ou carregamento completa
+    }, [tracks.length]); // Recalcular apenas quando o tamanho muda
 
     // Para scroll infinito, mostramos todas as tracks ordenadas por data
     const allTracksSorted = useMemo(() => {
@@ -423,43 +624,21 @@ const NewPage = () => {
         return dateKeys.flatMap(dateKey => groupedTracksByDate[dateKey] || []);
     }, [groupedTracksByDate]);
 
-    // Tracks visíveis baseadas no scroll infinito
+    // Usar diretamente os tracks da página atual (não precisamos mais de paginação virtual)
     const visibleTracks = useMemo(() => {
-        return allTracksSorted.slice(0, visibleTracksCount);
-    }, [allTracksSorted, visibleTracksCount]);
+        return tracks; // Já são apenas os 60 tracks da página atual
+    }, [tracks]);
 
-    // Hook para detectar scroll infinito - otimizado
-    useEffect(() => {
-        let timeoutId: NodeJS.Timeout;
-        
-        const handleScroll = () => {
-            // Usar throttle para melhor performance
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => {
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                const windowHeight = window.innerHeight;
-                const documentHeight = document.documentElement.offsetHeight;
-                
-                // Carregar mais quando estiver a 200px do final
-                if (scrollTop + windowHeight >= documentHeight - 200) {
-                    // Se chegou ao final e ainda há tracks para carregar
-                    if (visibleTracksCount < allTracksSorted.length) {
-                        setVisibleTracksCount(prev => {
-                            const newCount = Math.min(prev + TRACKS_PER_SCROLL, allTracksSorted.length);
-                            console.log(`📜 Scroll infinito: Carregando mais ${TRACKS_PER_SCROLL} tracks. Total visível: ${newCount}/${allTracksSorted.length}`);
-                            return newCount;
-                        });
-                    }
-                }
-            }, 100); // Throttle de 100ms
-        };
+    const goToPage = useCallback((page: number) => {
+        if (typeof window === 'undefined') return;
+        const safePage = Math.min(Math.max(1, page), totalPages);
+        if (safePage === currentPage) return; // não faz nada se já está na página
+        console.log(`🔗 goToPage chamado: página ${safePage}`);
+        window.location.hash = `page=${safePage}`;
+        // O listener de hashchange já vai atualizar os dados
+    }, [totalPages, currentPage]);
 
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-            clearTimeout(timeoutId);
-        };
-    }, [visibleTracksCount, allTracksSorted.length, TRACKS_PER_SCROLL]);
+    // Remover scroll infinito, agora a navegação é por página
 
     // --- SLIDES DA COMUNIDADE ---
     const communitySlides = [
@@ -571,13 +750,12 @@ const NewPage = () => {
         return visibleTracks;
     }, [hasSearched, searchResults, visibleTracks]);
 
-
-
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#121212] to-[#1a1a1a] overflow-x-hidden relative">
-            {/* Particles Background Effect */}
+        <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#121212] to-[#1a1a1a] overflow-x-hidden relative" suppressHydrationWarning>
+            {/* Fundo estático sempre renderizado (SSR e cliente) */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
                 <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.02]"></div>
+                {/* Estrelas só aparecem após hidratação (no cliente) */}
                 {isHydrated && starPositions.map((star, i) => (
                     <div
                         key={i}
@@ -597,97 +775,13 @@ const NewPage = () => {
 
             {/* Conteúdo Principal - Tela Cheia */}
             <div className="pt-16 lg:pt-20 relative z-10">
-                {/* HERO SECTION - Estatísticas em Tempo Real */}
-                <div className="w-full max-w-[95%] mx-auto mt-4 sm:mt-6 mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="bg-gradient-to-br from-[#1db954]/10 via-[#181818]/80 to-[#282828]/50 rounded-3xl p-6 sm:p-8 border border-[#1db954]/20 backdrop-blur-xl shadow-2xl"
-                    >
-                        <div className="text-center mb-6">
-                            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-transparent bg-gradient-to-r from-[#1db954] via-[#1ed760] to-[#00d4aa] bg-clip-text mb-2">
-                                LATEST DROPS
-                            </h1>
-                            <p className="text-[#b3b3b3] text-sm sm:text-base">Descobra as novidades da música eletrônica</p>
-                        </div>
-                        
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                            <motion.div 
-                                whileHover={{ scale: 1.05 }}
-                                className="bg-[#181818]/60 rounded-xl p-4 text-center border border-[#282828]/50"
-                            >
-                                <div className="text-2xl sm:text-3xl font-bold text-[#1db954] mb-1">
-                                    {loadedCount.toLocaleString()}
-                                </div>
-                                <div className="text-xs sm:text-sm text-[#b3b3b3] uppercase tracking-wider">
-                                    Novas Faixas
-                                </div>
-                            </motion.div>
-                            
-                            <motion.div 
-                                whileHover={{ scale: 1.05 }}
-                                className="bg-[#181818]/60 rounded-xl p-4 text-center border border-[#282828]/50"
-                            >
-                                <div className="text-2xl sm:text-3xl font-bold text-[#ff6b6b] mb-1">
-                                    {genres.length}
-                                </div>
-                                <div className="text-xs sm:text-sm text-[#b3b3b3] uppercase tracking-wider">
-                                    Gêneros
-                                </div>
-                            </motion.div>
-                            
-                            <motion.div 
-                                whileHover={{ scale: 1.05 }}
-                                className="bg-[#181818]/60 rounded-xl p-4 text-center border border-[#282828]/50"
-                            >
-                                <div className="text-2xl sm:text-3xl font-bold text-[#4ecdc4] mb-1">
-                                    {artists.length}
-                                </div>
-                                <div className="text-xs sm:text-sm text-[#b3b3b3] uppercase tracking-wider">
-                                    Artistas
-                                </div>
-                            </motion.div>
-                            
-                            <motion.div 
-                                whileHover={{ scale: 1.05 }}
-                                className="bg-[#181818]/60 rounded-xl p-4 text-center border border-[#282828]/50"
-                            >
-                                <div className="text-2xl sm:text-3xl font-bold text-[#ffd93d] mb-1">
-                                    {pools.length}
-                                </div>
-                                <div className="text-xs sm:text-sm text-[#b3b3b3] uppercase tracking-wider">
-                                    Labels
-                                </div>
-                            </motion.div>
-                        </div>
-
-                        {/* Progress Bar para carregamento */}
-                        {!isComplete && (
-                            <div className="mb-4">
-                                <div className="flex justify-between text-xs text-[#b3b3b3] mb-2">
-                                    <span>Carregando biblioteca...</span>
-                                    <span>{totalCount > 0 ? Math.round((loadedCount / totalCount) * 100) : 0}%</span>
-                                </div>
-                                <div className="w-full bg-[#282828] rounded-full h-2">
-                                    <motion.div 
-                                        className="bg-gradient-to-r from-[#1db954] to-[#1ed760] h-2 rounded-full"
-                                        initial={{ width: "0%" }}
-                                        animate={{ width: totalCount > 0 ? `${(loadedCount / totalCount) * 100}%` : "0%" }}
-                                        transition={{ duration: 0.5 }}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </motion.div>
-                </div>
+                {/* Seção HERO removida */}
 
                 {/* CARROUSEL "COMUNIDADE DOS VIPS" - Mobile First */}
                 <div className="w-full max-w-[95%] mx-auto mt-6 sm:mt-8 mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 transition-all duration-300">
                     {/* Header do carrousel - Mobile First */}
                     <div className="flex items-center justify-between mb-3 sm:mb-6">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.6, delay: 0.2 }}
@@ -704,7 +798,7 @@ const NewPage = () => {
                         </motion.div>
 
                         {/* Controles de navegação - Mobile First */}
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.6, delay: 0.3 }}
@@ -728,7 +822,7 @@ const NewPage = () => {
                     </div>
 
                     {/* Container do carrousel - Mobile First */}
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.4 }}
@@ -860,7 +954,7 @@ const NewPage = () => {
                 </div>
 
                 {/* CARDS DOS ESTILOS MAIS BAIXADOS - Mobile First */}
-                <div className="w-full max-w-[95%] mx-auto mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 transition-all duration-300">
+                <div ref={stylesRef} className="w-full max-w-[95%] mx-auto mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 transition-all duration-300">
                     {/* Header da seção - Mobile First */}
                     <div className="flex items-center justify-between mb-3 sm:mb-6">
                         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -869,15 +963,10 @@ const NewPage = () => {
                                 ESTILOS MAIS BAIXADOS
                             </h2>
                         </div>
-                        <span
-                            className="text-[#1db954] text-sm sm:text-base font-medium hover:text-[#1ed760] transition-colors duration-200 cursor-pointer"
-                            onClick={() => router.push('/styles')}
-                        >
+                        <span className="text-[#1db954] text-sm sm:text-base font-medium hover:text-[#1ed760] transition-colors duration-200 cursor-pointer" onClick={() => router.push('/styles')} >
                             Ver Todos
                         </span>
                     </div>
-
-
                     {/* Cards dos estilos */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-9 gap-2 sm:gap-3">
                         {stylesLoading ? (
@@ -892,12 +981,7 @@ const NewPage = () => {
                             ))
                         ) : styles.length > 0 ? (
                             styles.slice(0, 9).map((style, index) => (
-                                <div
-                                    key={style.name}
-                                    className={`group relative bg-gradient-to-br from-[#181818] to-[#282828] rounded-xl p-2 sm:p-3 border border-[#282828] hover:border-[#1db954]/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#1db954]/20 cursor-pointer ${index < 9 ? 'ring-2 ring-[#1db954]/30' : ''} ${index >= 4 ? 'hidden sm:block' : ''}`}
-                                    onClick={() => router.push(`/genre/${encodeURIComponent(style.name)}`)}
-                                    title={`${style.name} - ${style.trackCount} músicas, ${style.downloadCount} downloads`}
-                                >
+                                <div key={style.name} className={`group relative bg-gradient-to-br from-[#181818] to-[#282828] rounded-xl p-2 sm:p-3 border border-[#282828] hover:border-[#1db954]/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#1db954]/20 cursor-pointer ${index < 9 ? 'ring-2 ring-[#1db954]/30' : ''} ${index >= 4 ? 'hidden sm:block' : ''}`} onClick={() => router.push(`/genre/${encodeURIComponent(style.name)}`)} title={`${style.name} - ${style.trackCount} músicas, ${style.downloadCount} downloads`} >
                                     {/* Badge de posição para top 9 */}
                                     {index < 9 && (
                                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-full flex items-center justify-center shadow-lg">
@@ -906,19 +990,16 @@ const NewPage = () => {
                                             </span>
                                         </div>
                                     )}
-
                                     {/* Ícone do estilo */}
                                     <div className="w-7 h-7 sm:w-9 sm:h-9 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300">
                                         <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z" clipRule="evenodd" />
                                         </svg>
                                     </div>
-
                                     {/* Nome do estilo */}
                                     <h3 className="text-white text-xs sm:text-sm font-bold mb-2 text-center line-clamp-2 leading-tight">
                                         {style.name}
                                     </h3>
-
                                     {/* Estatísticas */}
                                     <div className="space-y-1 text-center">
                                         <div className="text-[#1db954] text-xs font-semibold">
@@ -928,606 +1009,241 @@ const NewPage = () => {
                                             {style.downloadCount} downloads
                                         </div>
                                     </div>
-
                                     {/* Indicador de popularidade */}
                                     <div className="mt-2 flex justify-center">
                                         <div className="flex space-x-1">
                                             {[...Array(3)].map((_, i) => (
                                                 <div
                                                     key={i}
-                                                    className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i < Math.min(3, Math.ceil((style.downloadCount / Math.max(...styles.map(s => s.downloadCount))) * 3))
-                                                        ? 'bg-[#1db954]'
-                                                        : 'bg-[#535353]'
+                                                    className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i < Math.min(3, Math.ceil((style.downloadCount / Math.max(...styles.map(s => s.downloadCount))) * 3)) ? 'bg-[#1db954]' : 'bg-[#282828]'
                                                         }`}
                                                 />
                                             ))}
                                         </div>
                                     </div>
-
-                                    {/* Hover effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#1db954]/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                 </div>
                             ))
                         ) : (
-                            // Mensagem quando não há estilos
-                            <div className="col-span-full text-center py-8">
-                                <p className="text-[#b3b3b3] text-sm">Nenhum estilo encontrado</p>
+                            <div className="col-span-2 sm:col-span-3 lg:col-span-5 xl:col-span-7 2xl:col-span-9 text-center p-6 bg-[#181818]/60 rounded-xl border border-[#282828] text-[#b3b3b3]">
+                                🤷‍♂️ Nenhum estilo popular encontrado.
                             </div>
                         )}
                     </div>
-
-
                 </div>
 
-                {/* CARDS DOS FOLDERS RECENTES - Mobile First */}
-                <div className="w-full max-w-[95%] mx-auto mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 transition-all duration-300">
-                    {/* Header da seção - Mobile First */}
+                {/* CARDS DOS FOLDERS RECENTES */}
+                <div ref={foldersRef} className="w-full max-w-[95%] mx-auto mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 transition-all duration-300">
+                    {/* Header da seção */}
                     <div className="flex items-center justify-between mb-3 sm:mb-6">
                         <div className="flex items-center gap-1.5 sm:gap-2">
                             <div className="w-1 h-4 sm:h-5 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
                             <h2 className="text-white text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight">
-                                FOLDERS RECENTES
+                                📂 PASTAS RECENTES
                             </h2>
                         </div>
-                        <span
-                            className="text-[#1db954] text-sm sm:text-base font-medium hover:text-[#1ed760] transition-colors duration-200 cursor-pointer"
-                            onClick={() => router.push('/folders')}
-                        >
+                        <span className="text-[#1db954] text-sm sm:text-base font-medium hover:text-[#1ed760] transition-colors duration-200 cursor-pointer" onClick={() => router.push('/folders')}>
                             Ver Todos
                         </span>
                     </div>
 
-
-                    {/* Cards dos folders */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-9 gap-2 sm:gap-3">
+                    {/* Cards das pastas */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                         {foldersLoading ? (
-                            // Loading skeleton - 4 em mobile, 9 em desktop
-                            [...Array(9)].map((_, index) => (
-                                <div key={index} className={`bg-[#181818] rounded-xl p-2 sm:p-3 border border-[#282828] animate-pulse ${index >= 4 ? 'hidden sm:block' : ''}`}>
-                                    <div className="w-7 h-7 sm:w-9 sm:h-9 bg-[#282828] rounded-lg mx-auto mb-2"></div>
-                                    <div className="h-3 bg-[#282828] rounded mb-2"></div>
-                                    <div className="h-2 bg-[#282828] rounded mb-1"></div>
-                                    <div className="h-2 bg-[#282828] rounded"></div>
+                            [...Array(5)].map((_, index) => (
+                                <div key={index} className="bg-[#181818]/60 rounded-xl p-4 animate-pulse flex items-center gap-4">
+                                    <div className="w-16 h-16 bg-[#282828] rounded-lg flex-shrink-0"></div>
+                                    <div className="flex-grow">
+                                        <div className="h-4 bg-[#282828] rounded w-3/4 mb-2"></div>
+                                        <div className="h-3 bg-[#282828] rounded w-1/2 mb-1"></div>
+                                        <div className="h-3 bg-[#282828] rounded w-2/3"></div>
+                                    </div>
                                 </div>
                             ))
                         ) : recentFolders.length > 0 ? (
-                            recentFolders.slice(0, 9).map((folder, index) => (
-                                <div
+                            recentFolders.slice(0, 7).map((folder) => (
+                                <motion.div
                                     key={folder.name}
-                                    className={`group relative bg-gradient-to-br from-[#181818] to-[#282828] rounded-xl p-2 sm:p-3 border border-[#282828] hover:border-[#1db954]/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#1db954]/20 cursor-pointer ${index < 9 ? 'ring-2 ring-[#1db954]/30' : ''} ${index >= 4 ? 'hidden sm:block' : ''}`}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.3 }}
+                                    whileHover={{ scale: 1.05, boxShadow: "0 10px 15px -3px rgba(29, 185, 84, 0.3), 0 4px 6px -2px rgba(29, 185, 84, 0.2)" }}
+                                    className="relative bg-gradient-to-br from-[#181818] to-[#282828] rounded-xl p-4 border border-[#282828] hover:border-[#1db954]/50 cursor-pointer flex items-center gap-4 transition-all duration-300"
+                                    onMouseEnter={() => prefetchFolder(folder.name)}
+                                    onFocus={() => prefetchFolder(folder.name)}
+                                    onTouchStart={() => prefetchFolder(folder.name)}
                                     onClick={() => router.push(`/folder/${encodeURIComponent(folder.name)}`)}
                                     title={`${folder.name} - ${folder.trackCount} músicas, ${folder.downloadCount} downloads`}
                                 >
-                                    {/* Badge de posição para top 9 */}
-                                    {index < 9 && (
-                                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-full flex items-center justify-center shadow-lg">
-                                            <span className="text-white text-xs font-bold">
-                                                {index + 1}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {/* Imagem do folder */}
-                                    <div className="w-7 h-7 sm:w-9 sm:h-9 mx-auto mb-2 overflow-hidden rounded-lg">
-                                        <img
+                                    <div className="flex-shrink-0 relative">
+                                        <Image
                                             src={folder.imageUrl}
                                             alt={folder.name}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                            onError={(e) => {
-                                                const target = e.target as HTMLImageElement;
-                                                target.src = '/images/default-folder.jpg';
-                                            }}
+                                            width={64}
+                                            height={64}
+                                            className="rounded-lg object-cover w-16 h-16"
                                         />
+                                        <div className="absolute inset-0 rounded-lg border border-white/10"></div>
                                     </div>
-
-                                    {/* Nome do folder */}
-                                    <h3 className="text-white text-xs sm:text-sm font-bold mb-2 text-center line-clamp-2 leading-tight">
-                                        {folder.name}
-                                    </h3>
-
-                                    {/* Estatísticas */}
-                                    <div className="space-y-1 text-center">
-                                        <div className="text-[#1db954] text-xs font-semibold">
-                                            {folder.trackCount} músicas
-                                        </div>
-                                        <div className="text-[#b3b3b3] text-xs">
-                                            {folder.downloadCount} downloads
-                                        </div>
-                                    </div>
-
-                                    {/* Indicador de popularidade */}
-                                    <div className="mt-2 flex justify-center">
-                                        <div className="flex space-x-1">
-                                            {[...Array(3)].map((_, i) => (
-                                                <div
-                                                    key={i}
-                                                    className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i < Math.min(3, Math.ceil((folder.downloadCount / Math.max(...recentFolders.map(f => f.downloadCount))) * 3))
-                                                        ? 'bg-[#1db954]'
-                                                        : 'bg-[#535353]'
-                                                        }`}
-                                                />
-                                            ))}
+                                    <div className="flex-grow">
+                                        <h3 className="text-white font-bold line-clamp-1">
+                                            {folder.name}
+                                        </h3>
+                                        <div className="text-xs text-[#b3b3b3]">
+                                            <span className="flex items-center gap-1">
+                                                <Music size={12} className="text-[#1db954]" /> {folder.trackCount} faixas
+                                            </span>
+                                            <span className="flex items-center gap-1 mt-1">
+                                                <Download size={12} className="text-[#4ecdc4]" /> {folder.downloadCount} downloads
+                                            </span>
                                         </div>
                                     </div>
-
-                                    {/* Hover effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#1db954]/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                </div>
+                                    <ChevronRight size={18} className="text-[#b3b3b3] group-hover:text-[#1db954] transition-colors" />
+                                </motion.div>
                             ))
                         ) : (
-                            // Mensagem quando não há folders
-                            <div className="col-span-full text-center py-8">
-                                <p className="text-[#b3b3b3] text-sm">Nenhum folder recente encontrado</p>
+                            <div className="col-span-full text-center p-6 bg-[#181818]/60 rounded-xl border border-[#282828] text-[#b3b3b3]">
+                                🤷‍♂️ Nenhum folder recente encontrado.
                             </div>
                         )}
                     </div>
-
-
                 </div>
 
-                {/* MENSAGEM DE BOAS-VINDAS PARA USUÁRIOS NÃO LOGADOS */}
-                {!session?.user && (
-                    <div className="w-full max-w-[95%] mx-auto mb-6 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-                        <div className="bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-pink-900/20 rounded-2xl p-6 border border-blue-500/30 backdrop-blur-sm relative overflow-hidden">
-                            {/* Background Pattern */}
-                            <div className="absolute inset-0 opacity-5">
-                                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-400 to-purple-500"></div>
-                            </div>
 
-                            <div className="relative z-10 text-center">
-                                <div className="flex items-center justify-center mb-4">
-                                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full mr-3 shadow-lg">
-                                        <Music className="h-6 w-6 text-white" />
-                                    </div>
-                                    <h2 className="text-2xl font-bold text-white">Bem-vindo ao DJ Pools! 🎶</h2>
-                                </div>
+                {/* Seção principal para busca e listagem de músicas */}
+                <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 mb-20 relative">
 
-                                <p className="text-gray-300 text-lg mb-4">
-                                    Você está prestes a entrar no universo mais completo de packs exclusivos, remixes raros e faixas selecionadas para DJs que não param nunca. 🚀
-                                </p>
-
-                                <p className="text-gray-300 mb-4">
-                                    👉 Para ter acesso ilimitado a todos os conteúdos e aproveitar o que há de melhor na cena eletrônica, assine um dos nossos planos hoje mesmo e faça parte dessa comunidade que vive e respira música.
-                                </p>
-
-                                <div className="bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-xl p-4 border border-purple-500/30 mb-4">
-                                    <h3 className="text-lg font-bold text-purple-300 mb-3">💎 Benefícios de assinar:</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left text-sm">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
-                                            <span className="text-gray-300">Acesso imediato a milhares de tracks exclusivas</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
-                                            <span className="text-gray-300">Downloads ilimitados direto do nosso drive</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
-                                            <span className="text-gray-300">Packs atualizados toda semana</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
-                                            <span className="text-gray-300">Conteúdos pensados para elevar o nível dos seus sets</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <p className="text-gray-300 text-sm mb-4">
-                                    Não fique de fora da batida. 🔥<br />
-                                    👉 Assine agora e seja parte do DJ Pools!
-                                </p>
-
-                                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                    <Link href="/plans">
-                                        <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-sm">
-                                            Ver Planos
-                                        </button>
-                                    </Link>
-                                    <Link href="/auth/sign-in">
-                                        <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-sm">
-                                            Fazer Login
-                                        </button>
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* SEÇÃO DE ATIVIDADE EM TEMPO REAL */}
-                <div className="w-full max-w-[95%] mx-auto mb-6 sm:mb-8 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 1.2 }}
-                        className="bg-gradient-to-br from-[#181818]/80 via-[#1db954]/5 to-[#282828]/80 rounded-2xl p-6 border border-[#1db954]/30 backdrop-blur-xl shadow-2xl"
-                    >
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-3 h-3 bg-[#ff6b6b] rounded-full animate-ping"></div>
-                            <h3 className="text-white font-bold text-xl">🎯 Atividade ao Vivo</h3>
-                            <div className="flex-1 h-px bg-gradient-to-r from-[#1db954]/50 to-transparent"></div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-[#282828]/50 rounded-xl p-4 border border-[#3e3e3e]/50">
-                                <h4 className="text-[#1db954] font-semibold mb-3 flex items-center gap-2 text-sm">
-                                    <Download className="w-4 h-4" />
-                                    Downloads Recentes
-                                </h4>
-                                <div className="space-y-2">
-                                    {["Progressive House Mix", "Deep Tech Vibes", "Melodic Techno"].map((track, i) => (
-                                        <div key={i} className="text-xs text-[#b3b3b3]">• {track}</div>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            <div className="bg-[#282828]/50 rounded-xl p-4 border border-[#3e3e3e]/50">
-                                <h4 className="text-[#ff6b6b] font-semibold mb-3 flex items-center gap-2 text-sm">
-                                    ❤️ Mais Curtidas
-                                </h4>
-                                <div className="space-y-2">
-                                    {["Summer Vibes 2025", "Festival Anthems", "Club Bangers"].map((track, i) => (
-                                        <div key={i} className="text-xs text-[#b3b3b3]">• {track}</div>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            <div className="bg-[#282828]/50 rounded-xl p-4 border border-[#3e3e3e]/50">
-                                <h4 className="text-[#4ecdc4] font-semibold mb-3 flex items-center gap-2 text-sm">
-                                    🟢 Sistema Online
-                                </h4>
-                                <div className="space-y-1 text-xs">
-                                    <div className="text-green-400">• Servidor: Operacional</div>
-                                    <div className="text-green-400">• Downloads: Rápidos</div>
-                                    <div className="text-green-400">• Qualidade: HD</div>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-
-                {/* BARRA DE BUSCA E FILTROS - Mobile First */}
-                <div className="w-full max-w-[95%] mx-auto mb-4 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-                    <div className="bg-[#181818] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg">
-                        {/* Título principal - Mobile First */}
-                        <div className="mb-3 sm:mb-4">
-                            <h1 className="flex items-center gap-1.5 sm:gap-2">
-                                <div className="w-1 h-4 sm:h-5 bg-gradient-to-b from-[#1db954] to-[#1ed760] rounded-full"></div>
-                                <span className="text-white text-xl sm:text-2xl font-bold tracking-tight">
-                                    {hasSearched ? `RESULTADOS PARA "${appliedSearchQuery}"` : "NOVIDADES"}
-                                </span>
-                            </h1>
-                        </div>
-
-                        {/* Container de busca e filtros - Mobile First */}
-                        <div className="space-y-2 sm:space-y-3">
-                            {/* Barra de pesquisa responsiva - Mobile First */}
-                            <div className="relative w-full">
+                    {/* Controles de Busca e Filtros - Mobile First */}
+                    <div className="bg-[#181818]/80 backdrop-blur-md rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-[#282828]">
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                            {/* Campo de Busca */}
+                            <div className="relative flex-grow w-full">
+                                <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#b3b3b3] z-10" />
                                 <input
                                     type="text"
-                                    placeholder="Buscar por música, artista, estilo..."
-                                    className="bg-[#282828] text-white rounded-lg px-4 py-2 pl-10 pr-10 focus:ring-2 focus:ring-[#1db954] outline-none w-full h-10 text-sm sm:text-base border border-[#3e3e3e] focus:border-[#1db954]"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
                                             performSearch(searchQuery);
                                         }
                                     }}
-                                    disabled={searchLoading}
+                                    placeholder="Buscar por nome, artista, estilo..."
+                                    className="w-full pl-12 pr-4 py-3 bg-[#282828] rounded-full text-white placeholder:text-[#b3b3b3] focus:outline-none focus:ring-2 focus:ring-[#1db954] transition-all duration-300 text-sm"
                                 />
-                                {searchLoading ? (
-                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                                        <div className="animate-spin w-4 h-4 border-2 border-[#1db954] border-t-transparent rounded-full"></div>
-                                    </div>
-                                ) : (
-                                    <Search
-                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#b3b3b3] cursor-pointer hover:text-[#1db954] transition-colors"
-                                        size={18}
-                                        onClick={() => performSearch(searchQuery)}
-                                    />
-                                )}
-                                {hasSearched && (
-                                    <button
-                                        onClick={clearSearch}
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#b3b3b3] hover:text-red-400 transition-colors"
-                                        title="Limpar busca"
-                                    >
-                                        ✕
-                                    </button>
-                                )}
                             </div>
 
-                            {/* Botões de ação responsivos - Mobile First */}
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
-                                <button
-                                    onClick={() => performSearch(searchQuery)}
-                                    disabled={searchLoading || !searchQuery.trim()}
-                                    className="px-4 py-2 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] disabled:bg-[#535353] disabled:cursor-not-allowed transition h-10 w-full sm:w-auto min-w-[120px] text-sm sm:text-base font-medium shadow-lg"
-                                >
-                                    {searchLoading ? "Buscando..." : "Buscar"}
-                                </button>
-                                <button
-                                    onClick={() => setShowFiltersModal(true)}
-                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-[#282828] text-white rounded-lg hover:bg-[#3e3e3e] transition h-10 w-full sm:w-auto min-w-[120px] text-sm sm:text-base border border-[#3e3e3e]"
-                                >
-                                    <Filter size={18} /> Filtros
-                                </button>
-                            </div>
+                            {/* Botão de Filtros */}
+                            <button
+                                onClick={() => setShowFiltersModal(true)}
+                                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#1db954] hover:bg-[#1ed760] transition-colors duration-300 text-white font-bold py-3 px-6 rounded-full shadow-lg"
+                            >
+                                <Filter size={20} />
+                                <span className="text-sm">Filtros</span>
+                            </button>
                         </div>
+                    </div>
 
-                        {/* Indicador de resultados - Mobile First */}
-                        {hasSearched && (
-                            <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div className="text-[#b3b3b3] text-sm">
-                                    {searchLoading ? (
-                                        "Buscando..."
-                                    ) : searchResults.length > 0 ? (
-                                        `${searchResults.length} resultado${searchResults.length !== 1 ? 's' : ''} encontrado${searchResults.length !== 1 ? 's' : ''}`
-                                    ) : (
-                                        "Nenhum resultado encontrado"
-                                    )}
-                                </div>
-                                <button
-                                    onClick={clearSearch}
-                                    className="text-sm text-[#1db954] hover:text-[#1ed760] transition-colors self-start sm:self-auto"
-                                >
-                                    Voltar às novidades
+                    {/* Exibir resultados da busca ou a lista completa */}
+                    {hasSearched && (
+                        <div className="mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-white text-xl sm:text-2xl font-bold">
+                                    Resultados para: <span className="text-[#1db954]">"{appliedSearchQuery}"</span>
+                                </h2>
+                                <button onClick={clearSearch} className="text-[#b3b3b3] hover:text-white transition-colors text-sm">
+                                    Limpar busca
                                 </button>
                             </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Botões de Download em Massa removidos conforme solicitado */}
-
-                {/* LISTA DE MÚSICAS - Mobile First */}
-                <div className="w-full max-w-[95%] mx-auto pb-4 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-                    {/* Barra de Progresso Progressiva */}
-                    {!searchLoading && (
-                        <div className="mb-6">
-                            <ProgressiveLoadingBar
-                                loaded={loadedCount}
-                                total={totalCount}
-                                isLoading={isLoading}
-                                isComplete={isComplete}
-                                error={error}
-                                onRetry={retry}
+                            <MusicList
+                                tracks={searchResults}
+                                downloadedTrackIds={Array.from(downloadedTrackIds).map(id => parseInt(id, 10))}
+                                setDownloadedTrackIds={(ids) => {
+                                    if (typeof ids === 'function') {
+                                        setDownloadedTrackIds(prev => new Set(ids(Array.from(prev).map(id => parseInt(id, 10))).map(id => id.toString())));
+                                    } else {
+                                        setDownloadedTrackIds(new Set(ids.map(id => id.toString())));
+                                    }
+                                }}
                             />
-
-                            {/* Botão de Carregar Mais */}
-                            <LoadMoreButton
-                                onClick={loadMore}
-                                isLoading={isLoading}
-                                isComplete={isComplete}
-                                loaded={loadedCount}
-                                total={totalCount}
-                            />
-
-                            {/* Botão de Retry em caso de erro */}
-                            {error && (
-                                <ErrorRetryButton
-                                    error={error}
-                                    onRetry={retry}
-                                />
+                            {searchResults.length === 0 && (
+                                <div className="text-center text-[#b3b3b3] p-6 bg-[#181818]/60 rounded-xl mt-4">
+                                    🤷‍♂️ Nenhuma música encontrada com essa busca.
+                                </div>
                             )}
                         </div>
                     )}
 
-                    {/* Estado de loading - Mobile First */}
-                    {(isLoading || searchLoading) && (
-                        <div className="flex items-center justify-center py-12 sm:py-16">
-                            <div className="text-center">
-                                <div className="animate-spin w-10 h-10 sm:w-12 sm:h-12 border-4 border-[#1db954] border-t-transparent rounded-full mx-auto mb-4"></div>
-                                <p className="text-[#b3b3b3] text-base sm:text-lg">
-                                    {searchLoading ? "Buscando músicas..." : "Carregando novidades..."}
-                                </p>
-                            </div>
+                    {!hasSearched && (
+                        <div>
+                            {/* Renderização direta da lista de músicas da página atual */}
+                            <MusicList
+                                key={`musiclist-page-${currentPage}-tracks-${tracks.length}-first-${tracks[0]?.id || 'empty'}`}
+                                tracks={tracks}
+                                downloadedTrackIds={Array.from(downloadedTrackIds).map(id => parseInt(id, 10))}
+                                setDownloadedTrackIds={(ids) => {
+                                    if (typeof ids === 'function') {
+                                        setDownloadedTrackIds(prev => new Set(ids(Array.from(prev).map(id => parseInt(id, 10))).map(id => id.toString())));
+                                    } else {
+                                        setDownloadedTrackIds(new Set(ids.map(id => id.toString())));
+                                    }
+                                }}
+                            />
                         </div>
                     )}
 
-                    {/* Nenhum resultado encontrado - Mobile First */}
-                    {!isLoading && !searchLoading && hasSearched && searchResults.length === 0 && (
-                        <div className="text-center py-12 sm:py-16">
-                            <div className="bg-[#181818] rounded-2xl p-6 sm:p-8 max-w-md mx-auto border border-[#282828]">
-                                <div className="text-5xl sm:text-6xl mb-4">🔍</div>
-                                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
-                                    Nenhum resultado encontrado
-                                </h3>
-                                <p className="text-[#b3b3b3] mb-6 text-sm sm:text-base">
-                                    Não encontramos nenhuma música para "{appliedSearchQuery}".
-                                </p>
-                                <div className="space-y-3">
-                                    <p className="text-sm text-[#535353] mb-4">Tente buscar por:</p>
-                                    <div className="flex flex-wrap gap-2 justify-center">
-                                        {["Progressive House", "Trance", "Techno", "Deep House", "Melodic Techno"].map((suggestion) => (
-                                            <button
-                                                key={suggestion}
-                                                onClick={() => {
-                                                    setSearchQuery(suggestion);
-                                                    performSearch(suggestion);
-                                                }}
-                                                className="px-3 py-1 bg-[#1db954]/20 text-[#1db954] rounded-full text-sm hover:bg-[#1db954]/40 transition-colors border border-[#1db954]/30"
-                                            >
-                                                {suggestion}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <button
-                                        onClick={clearSearch}
-                                        className="mt-4 px-6 py-2 bg-[#1db954] text-white rounded-lg hover:bg-[#1ed760] transition-colors text-sm sm:text-base font-medium shadow-lg"
-                                    >
-                                        Ver todas as novidades
-                                    </button>
-                                </div>
-                            </div>
+                    {/* Controles de Paginação */}
+                    {!hasSearched && (
+                        <div className="flex justify-center items-center mt-8 gap-4">
+                            <button
+                                onClick={() => goToPage(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className={`p-2 rounded-full ${currentPage === 1 ? 'bg-[#282828] text-[#555] cursor-not-allowed' : 'bg-[#181818] text-white hover:bg-[#282828]'
+                                    }`}
+                            >
+                                <ChevronLeft size={24} />
+                            </button>
+                            <span className="text-white font-bold">Página {currentPage} de {totalPages}</span>
+                            <button
+                                onClick={() => goToPage(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className={`p-2 rounded-full ${currentPage === totalPages ? 'bg-[#282828] text-[#555] cursor-not-allowed' : 'bg-[#181818] text-white hover:bg-[#282828]'
+                                    }`}
+                            >
+                                <ChevronRight size={24} />
+                            </button>
                         </div>
                     )}
 
-                    {/* Lista de músicas - Mobile First */}
-                    {!isLoading && !searchLoading && displayTracks.length > 0 && (
-                        <MusicList
-                            tracks={displayTracks}
-                            downloadedTrackIds={downloadsCache.downloadedTrackIds}
-                            setDownloadedTrackIds={(ids) => {
-                                if (typeof ids === 'function') {
-                                    const newIds = ids(downloadsCache.downloadedTrackIds);
-                                    downloadsCache.markAsDownloaded(newIds[newIds.length - 1]);
-                                } else {
-                                    // Para compatibilidade, mas o cache já gerencia isso
-                                    console.log('Cache de downloads gerenciado automaticamente');
-                                }
-                            }}
-                            enableInfiniteScroll={false} // Desabilitar infinite scroll para usar paginação baseada em datas
-                            hasMore={false}
-                            isLoading={isLoading || searchLoading}
-                            onLoadMore={() => { }}
+
+                    {/* Modal de Filtros (oculto por padrão) */}
+                    {showFiltersModal && (
+                        <FiltersModal
+                            genres={genres}
+                            artists={artists}
+                            versions={versions}
+                            pools={pools}
+                            selectedGenre={selectedGenre}
+                            selectedArtist={selectedArtist}
+                            selectedDateRange={selectedDateRange}
+                            selectedVersion={selectedVersion}
+                            selectedMonth={selectedMonth}
+                            selectedPool={selectedPool}
+                            onGenreChange={setSelectedGenre}
+                            onArtistChange={setSelectedArtist}
+                            onDateRangeChange={setSelectedDateRange}
+                            onVersionChange={setSelectedVersion}
+                            onMonthChange={setSelectedMonth}
+                            onPoolChange={setSelectedPool}
+                            onApplyFilters={() => { }}
+                            onClearFilters={() => { }}
+                            isOpen={showFiltersModal}
+                            onClose={() => setShowFiltersModal(false)}
+                            monthOptions={[]}
+                            isLoading={false}
+                            hasActiveFilters={false}
                         />
                     )}
-
-                    {/* Indicador de scroll infinito */}
-                    {!isLoading && !searchLoading && !hasSearched && visibleTracksCount < allTracksSorted.length && (
-                        <div className="mt-8 sm:mt-12">
-                            <div className="bg-[#121212] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg text-center">
-                                <div className="flex items-center justify-center gap-3">
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#1db954]"></div>
-                                    <span className="text-[#b3b3b3]">
-                                        Carregando mais músicas... ({visibleTracksCount} de {allTracksSorted.length})
-                                    </span>
-                                </div>
-                                <div className="mt-3">
-                                    <div className="w-full bg-[#282828] rounded-full h-2">
-                                        <div 
-                                            className="bg-[#1db954] h-2 rounded-full transition-all duration-300"
-                                            style={{
-                                                width: `${(visibleTracksCount / allTracksSorted.length) * 100}%`
-                                            }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Indicador de todas as músicas carregadas */}
-                    {!isLoading && !searchLoading && !hasSearched && visibleTracksCount >= allTracksSorted.length && allTracksSorted.length > 0 && (
-                        <div className="mt-8 sm:mt-12">
-                            <div className="bg-[#121212] rounded-2xl p-4 sm:p-6 border border-[#282828] shadow-lg text-center">
-                                <div className="flex items-center justify-center gap-3">
-                                    <svg className="w-5 h-5 text-[#1db954]" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                                    </svg>
-                                    <span className="text-[#1db954] font-medium">
-                                        ✨ Todas as {allTracksSorted.length} músicas foram carregadas!
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
-
-                {/* MODAL DE FILTROS */}
-                {showFiltersModal && (
-                    <FiltersModal
-                        isOpen={showFiltersModal}
-                        onClose={() => setShowFiltersModal(false)}
-                        genres={genres}
-                        artists={artists}
-                        versions={versions}
-                        pools={pools}
-                        monthOptions={monthOptions}
-                        selectedGenre={selectedGenre}
-                        selectedArtist={selectedArtist}
-                        selectedDateRange={selectedDateRange}
-                        selectedVersion={selectedVersion}
-                        selectedMonth={selectedMonth}
-                        selectedPool={selectedPool}
-                        onGenreChange={setSelectedGenre}
-                        onArtistChange={setSelectedArtist}
-                        onDateRangeChange={setSelectedDateRange}
-                        onVersionChange={setSelectedVersion}
-                        onMonthChange={setSelectedMonth}
-                        onPoolChange={setSelectedPool}
-                        onApplyFilters={() => setShowFiltersModal(false)}
-                        onClearFilters={() => {
-                            setSelectedGenre("");
-                            setSelectedArtist("");
-                            setSelectedDateRange("");
-                            setSelectedVersion("");
-                            setSelectedMonth("");
-                            setSelectedPool("");
-                        }}
-                        isLoading={isLoading}
-                        hasActiveFilters={Boolean(selectedGenre || selectedArtist || selectedDateRange || selectedVersion || selectedMonth || selectedPool)}
-                    />
-                )}
-
-                {/* Footer Simples */}
-                <footer className="bg-black border-t border-gray-800 mt-20">
-                    <div className="max-w-[95%] mx-auto px-6 py-12">
-
-                        {/* Conteúdo Principal */}
-                        <div className="flex flex-col items-center gap-4">
-
-                            {/* Logo e Nome */}
-                            <div className="text-center">
-                                <div className="flex items-center justify-center gap-3 mb-2">
-                                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                                        <Music className="w-7 h-7 text-white" />
-                                    </div>
-                                    <span className="text-2xl font-bold text-white">
-                                        Nexor Records Pools
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Links */}
-                            <div className="flex flex-wrap justify-center gap-6">
-                                <Link href="/new" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
-                                    Novidades
-                                </Link>
-                                <Link href="/trending" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
-                                    Trending
-                                </Link>
-                                <Link href="/plans" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
-                                    Planos
-                                </Link>
-                                <Link href="/privacidade" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
-                                    Privacidade
-                                </Link>
-                                <Link href="/termos" className="text-gray-400 hover:text-blue-400 transition-colors text-sm cursor-pointer select-text relative z-10 px-2 py-1" style={{ pointerEvents: 'auto' }}>
-                                    Termos
-                                </Link>
-                            </div>
-
-                            {/* Redes Sociais */}
-                            <div className="flex gap-4">
-                                <a href="https://twitter.com/plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806.026-1.566.247-2.229.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
-                                    </svg>
-                                </a>
-                                <a href="https://instagram.com/plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-pink-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.746-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24.009c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.017 12.017.017z" />
-                                    </svg>
-                                </a>
-                                <a href="https://youtube.com/@plataformamusicas" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-800 hover:bg-red-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer relative z-10" style={{ pointerEvents: 'auto' }}>
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                                    </svg>
-                                </a>
-                            </div>
-
-                            {/* Copyright */}
-                            <div className="text-center">
-                                <p className="text-gray-400 text-sm">
-                                    © 2025 Nexor Records Pools. Todos os direitos reservados.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </footer>
             </div>
         </div>
     );

@@ -16,7 +16,7 @@ export class AudioDebugger {
         };
 
         this.logs.push(logEntry);
-        
+
         // Manter apenas os últimos 50 logs
         if (this.logs.length > 50) {
             this.logs = this.logs.slice(-50);
@@ -25,7 +25,7 @@ export class AudioDebugger {
         // Console output baseado no nível
         const emoji = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : '🎵';
         const consoleMethod = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
-        
+
         if (data) {
             consoleMethod(`${emoji} AudioDebug: ${message}`, data);
         } else {
@@ -45,7 +45,7 @@ export class AudioDebugger {
         const logText = this.logs
             .map(log => `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}${log.data ? ' | Data: ' + JSON.stringify(log.data) : ''}`)
             .join('\n');
-        
+
         return logText;
     }
 
@@ -55,7 +55,7 @@ export class AudioDebugger {
         const recentLogs = this.logs.slice(-20); // Últimos 20 logs
 
         // Verificar se há muitos erros de carregamento
-        const loadErrors = recentLogs.filter(log => 
+        const loadErrors = recentLogs.filter(log =>
             log.level === 'error' && log.message.includes('carregamento')
         );
         if (loadErrors.length > 3) {
@@ -63,7 +63,7 @@ export class AudioDebugger {
         }
 
         // Verificar se há problemas específicos da Contabo
-        const contaboErrors = recentLogs.filter(log => 
+        const contaboErrors = recentLogs.filter(log =>
             log.level === 'error' && log.message.includes('contabostorage')
         );
         if (contaboErrors.length > 2) {
@@ -71,7 +71,7 @@ export class AudioDebugger {
         }
 
         // Verificar se há problemas de CORS
-        const corsErrors = recentLogs.filter(log => 
+        const corsErrors = recentLogs.filter(log =>
             log.level === 'error' && (log.message.includes('CORS') || log.message.includes('cross-origin'))
         );
         if (corsErrors.length > 1) {
@@ -101,10 +101,10 @@ export const testAudioConnectivity = async (url: string): Promise<{
     responseTime?: number;
 }> => {
     const startTime = Date.now();
-    
+
     try {
         AudioDebugger.log('info', 'Testando conectividade de áudio', { url: url.substring(0, 100) + '...' });
-        
+
         const response = await fetch(url, {
             method: 'HEAD',
             headers: {
@@ -114,14 +114,14 @@ export const testAudioConnectivity = async (url: string): Promise<{
         });
 
         const responseTime = Date.now() - startTime;
-        
+
         if (response.ok) {
             AudioDebugger.log('info', 'Teste de conectividade bem-sucedido', {
                 status: response.status,
                 responseTime: `${responseTime}ms`,
                 contentType: response.headers.get('content-type')
             });
-            
+
             return {
                 success: true,
                 status: response.status,
@@ -133,7 +133,7 @@ export const testAudioConnectivity = async (url: string): Promise<{
                 statusText: response.statusText,
                 responseTime: `${responseTime}ms`
             });
-            
+
             return {
                 success: false,
                 status: response.status,
@@ -144,12 +144,12 @@ export const testAudioConnectivity = async (url: string): Promise<{
     } catch (error) {
         const responseTime = Date.now() - startTime;
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-        
+
         AudioDebugger.log('error', 'Falha no teste de conectividade', {
             error: errorMessage,
             responseTime: `${responseTime}ms`
         });
-        
+
         return {
             success: false,
             error: errorMessage,

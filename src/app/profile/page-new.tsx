@@ -113,7 +113,7 @@ const Header = memo(function Header({ onSearchChange }: { onSearchChange: (query
                     <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
                         <Music size={16} className="text-white" />
                     </div>
-                    <h1 className="text-xl font-bold text-gray-900 hidden sm:block">Nextor Records</h1>
+                    <h1 className="text-xl font-bold text-gray-900 hidden sm:block">Nexor Records</h1>
                 </Link>
             </div>
             <div className="relative w-full max-w-md mx-4 hidden lg:block">
@@ -339,7 +339,7 @@ const SiteFooter = memo(function SiteFooter() {
         <footer className="bg-white border-t border-gray-200 mt-auto">
             <div className="max-w-screen-xl mx-auto py-8 px-6 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                 <div className="text-center md:text-left">
-                    <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Nextor Records. Todos os direitos reservados.</p>
+                    <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Nexor Records. Todos os direitos reservados.</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="relative flex h-3 w-3">

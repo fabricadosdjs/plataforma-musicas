@@ -124,7 +124,10 @@ export async function POST(request: NextRequest) {
         console.log('✅ Arquivos salvos com sucesso');
 
         // URLs para acesso público (ajustar conforme sua configuração)
-        const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || 'http://localhost:3000/storage';
+        const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL ||
+            (process.env.NODE_ENV === 'production'
+                ? 'https://plataforma-musicas.vercel.app/storage'
+                : 'http://localhost:3000/storage');
         const audioUrl = `${baseUrl}/community/${audioFileName}`;
         const coverUrl = `${baseUrl}/community/covers/${coverFileName}`;
 
@@ -159,6 +162,8 @@ export async function POST(request: NextRequest) {
         );
     }
 }
+
+
 
 
 

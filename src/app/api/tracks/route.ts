@@ -10,37 +10,78 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Buscar todas as músicas com informações básicas
-    const tracks = await prisma.track.findMany({
+    // Obter parâmetros da query
+    const { searchParams } = new URL(request.url);
+    const style = searchParams.get('style');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '30');
+    const skip = (page - 1) * limit;
+
+    // Construir filtros
+    const whereClause: any = {};
+    if (style) {
+      whereClause.style = {
+        equals: style,
+        mode: 'insensitive'
+      };
+    }
+
+    // Buscar músicas com filtros
+    const [tracks, totalCount] = await Promise.all([
+      prisma.track.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          songName: true,
+          artist: true,
+          style: true,
+          version: true,
+          pool: true,
+          imageUrl: true,
+          previewUrl: true,
+          downloadUrl: true,
+          releaseDate: true,
+          createdAt: true,
+          isCommunity: true,
+          uploadedBy: true,
+          bitrate: true
+        },
+        orderBy: {
+          releaseDate: 'desc'
+        },
+        skip,
+        take: limit
+      }),
+      prisma.track.count({
+        where: whereClause
+      })
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // Buscar dados do usuário primeiro
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
       select: {
         id: true,
-        songName: true,
-        artist: true,
-        style: true,
-        version: true,
-        pool: true,
-        imageUrl: true,
-        previewUrl: true,
-        downloadUrl: true,
-        releaseDate: true,
-        createdAt: true,
-        isCommunity: true,
-        uploadedBy: true,
-        bitrate: true
-      },
-      orderBy: {
-        releaseDate: 'desc'
+        is_vip: true,
+        dailyDownloadCount: true,
+        lastDownloadReset: true
       }
     });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
     // Buscar downloads do usuário
     const userDownloads = await prisma.download.findMany({
       where: {
-        userId: session.user.id
+        userId: user.id
       },
       select: {
         trackId: true,
@@ -51,20 +92,10 @@ export async function GET(request: NextRequest) {
     // Buscar likes do usuário
     const userLikes = await prisma.like.findMany({
       where: {
-        userId: session.user.id
+        userId: user.id
       },
       select: {
         trackId: true
-      }
-    });
-
-    // Buscar dados do usuário para verificar VIP
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        is_vip: true,
-        dailyDownloadCount: true,
-        lastDownloadReset: true
       }
     });
 
@@ -92,6 +123,14 @@ export async function GET(request: NextRequest) {
         isLiked: userLikes.some(l => l.trackId === track.id),
         downloadedAt: userDownloads.find(d => d.trackId === track.id)?.downloadedAt || null
       })),
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      },
       userData: {
         isVip: user?.is_vip || false,
         downloadsLeft,

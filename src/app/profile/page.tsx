@@ -122,6 +122,15 @@ const ProfilePage = () => {
     const [activityLoading, setActivityLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
 
+    // Verificar se há parâmetro tab na URL
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam && sidebarItems.some(item => item.id === tabParam)) {
+            setActiveTab(tabParam);
+        }
+    }, []);
+
     // Estado para dados da sessão atualizados
     const [sessionData, setSessionData] = useState<any>(null);
     const [refreshing, setRefreshing] = useState(false);
@@ -646,12 +655,12 @@ const ProfilePage = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#121212] relative overflow-hidden">
+            <div className="min-h-screen bg-black text-white font-montserrat">
                 <Header />
-                <div className="pt-12 lg:pt-16 min-h-screen bg-[#121212] flex items-center justify-center">
+                <div className="pt-24 min-h-screen bg-black flex items-center justify-center">
                     <div className="text-center">
-                        <div className="animate-spin w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full mx-auto mb-6"></div>
-                        <p className="text-white text-xl">Carregando perfil...</p>
+                        <div className="animate-spin w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p className="text-white">Carregando perfil...</p>
                     </div>
                 </div>
             </div>
@@ -660,12 +669,12 @@ const ProfilePage = () => {
 
     if (!session?.user) {
         return (
-            <div className="min-h-screen bg-[#121212] relative overflow-hidden">
+            <div className="min-h-screen bg-black text-white font-montserrat">
                 <Header />
-                <div className="pt-12 lg:pt-16 min-h-screen bg-[#121212] flex items-center justify-center">
+                <div className="pt-24 min-h-screen bg-black flex items-center justify-center">
                     <div className="text-center">
-                        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Lock className="h-8 w-8 text-red-400" />
+                        <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-6">
+                            <Lock className="h-8 w-8 text-white" />
                         </div>
                         <h2 className="text-2xl font-bold text-white mb-4">Acesso Negado</h2>
                         <p className="text-gray-400">Você precisa estar logado para acessar esta página.</p>
@@ -676,15 +685,16 @@ const ProfilePage = () => {
     }
 
     const sidebarItems = [
-        { id: 'overview', label: 'Visão Geral', icon: BarChart3, color: 'text-blue-400' },
-        { id: 'profile', label: 'Informações', icon: User, color: 'text-green-400' },
-        { id: 'downloads', label: 'Downloads', icon: Download, color: 'text-purple-400' },
-        { id: 'likes', label: 'Curtidas', icon: Heart, color: 'text-pink-400' },
-        { id: 'plan', label: 'Meu Plano', icon: Crown, color: 'text-yellow-400' },
-        { id: 'activity', label: 'Atividade', icon: Activity, color: 'text-cyan-400' },
-        { id: 'benefits', label: 'Benefícios', icon: Gift, color: 'text-emerald-400' },
-        { id: 'deemix', label: 'Deemix', icon: Music2, color: 'text-violet-400' },
-        { id: 'allavsoft', label: 'Allavsoft', icon: Disc, color: 'text-orange-400' }
+        { id: 'overview', label: 'Visão Geral', icon: BarChart3 },
+        { id: 'profile', label: 'Informações', icon: User },
+        { id: 'downloads', label: 'Downloads', icon: Download },
+        { id: 'likes', label: 'Curtidas', icon: Heart },
+        { id: 'library', label: 'Biblioteca', icon: ListMusic },
+        { id: 'plan', label: 'Meu Plano', icon: Crown },
+        { id: 'activity', label: 'Atividade', icon: Activity },
+        { id: 'benefits', label: 'Benefícios', icon: Gift },
+        { id: 'deemix', label: 'Deemix', icon: Music2 },
+        { id: 'allavsoft', label: 'Allavsoft', icon: Disc }
     ];
 
     const renderContent = () => {
@@ -692,209 +702,193 @@ const ProfilePage = () => {
             case 'overview':
                 return (
                     <div className="space-y-8">
-                        {/* Header da Seção com Design Melhorado */}
-                        <div className="bg-gradient-to-r from-gray-900/80 via-gray-800/80 to-gray-900/80 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden">
-                            {/* Background Pattern */}
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(34,197,94,0.1),transparent_50%)]"></div>
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.1),transparent_50%)]"></div>
-
-                            <div className="relative z-10">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center border border-blue-500/30">
-                                            <BarChart3 className="h-8 w-8 text-blue-400" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
-                                                Visão Geral da Conta
-                                                <span className="px-3 py-1 bg-blue-500/20 text-blue-300 text-sm rounded-full border border-blue-500/30 font-medium">
-                                                    Dashboard
-                                                </span>
-                                            </h2>
-                                            <p className="text-gray-300 text-lg">Resumo completo das suas atividades e estatísticas</p>
-                                        </div>
+                        {/* Header da Seção */}
+                        <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
+                                        <BarChart3 className="h-6 w-6 text-white" />
                                     </div>
-
-                                    {/* Botão de Atualização */}
-                                    <div className="flex items-center gap-3">
-                                        {lastRefresh && (
-                                            <div className="text-sm text-gray-400">
-                                                Última verificação: {lastRefresh.toLocaleDateString('pt-BR')}, {lastRefresh.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                            </div>
-                                        )}
-                                        <button
-                                            onClick={refreshUserSession}
-                                            disabled={refreshing}
-                                            className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl border transition-all duration-300 ${refreshing
-                                                ? 'bg-green-500/30 text-green-200 border-green-500/50 cursor-not-allowed'
-                                                : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-green-500/30 hover:border-green-500/50 shadow-lg hover:shadow-xl'
-                                                }`}
-                                            title="Atualizar dados do perfil em tempo real"
-                                        >
-                                            <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
-                                            {refreshing ? 'Atualizando...' : 'Atualizar Dados'}
-                                        </button>
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-white mb-2">
+                                            Visão Geral da Conta
+                                        </h2>
+                                        <p className="text-gray-400">Resumo completo das suas atividades e estatísticas</p>
                                     </div>
                                 </div>
 
-                                {/* Status Rápido */}
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                                                <CheckCircle className="h-5 w-5 text-green-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Status VIP</p>
-                                                <p className={`font-bold ${vipStatus.isVip ? 'text-green-400' : 'text-red-400'}`}>
-                                                    {vipStatus.isVip ? 'ATIVO' : 'INATIVO'}
-                                                </p>
-                                            </div>
+                                {/* Botão de Atualização */}
+                                <div className="flex items-center gap-3">
+                                    {lastRefresh && (
+                                        <div className="text-sm text-gray-400">
+                                            Última verificação: {lastRefresh.toLocaleDateString('pt-BR')}, {lastRefresh.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    )}
+                                    <button
+                                        onClick={refreshUserSession}
+                                        disabled={refreshing}
+                                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${refreshing
+                                            ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
+                                            : 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600'
+                                            }`}
+                                        title="Atualizar dados do perfil em tempo real"
+                                    >
+                                        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                                        {refreshing ? 'Atualizando...' : 'Atualizar'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Status Rápido */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <CheckCircle className="h-4 w-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Status VIP</p>
+                                            <p className="text-white font-bold">
+                                                {vipStatus.isVip ? 'ATIVO' : 'INATIVO'}
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                                <Package className="h-5 w-5 text-blue-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Plano</p>
-                                                <p className="text-blue-400 font-bold">{vipStatus.plan}</p>
-                                            </div>
+                                </div>
+                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <Package className="h-4 w-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Plano</p>
+                                            <p className="text-white font-bold">{vipStatus.plan}</p>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                                                <Download className="h-5 w-5 text-purple-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Downloads</p>
-                                                <p className="text-purple-400 font-bold">{downloadStats?.totalDownloads || 0}</p>
-                                            </div>
+                                </div>
+                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <Download className="h-4 w-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Downloads</p>
+                                            <p className="text-white font-bold">{downloadStats?.totalDownloads || 0}</p>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center">
-                                                <Heart className="h-5 w-5 text-pink-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Curtidas</p>
-                                                <p className="text-pink-400 font-bold">{recentLikes.length}</p>
-                                            </div>
+                                </div>
+                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <Heart className="h-4 w-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Curtidas</p>
+                                            <p className="text-white font-bold">{recentLikes.length}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        {/* Status do Plano com Design Premium */}
+                        {/* Status do Plano */}
                         {vipStatus.vencimento && (
-                            <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-green-500/30 transition-all duration-500">
-                                {/* Background Effects */}
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(34,197,94,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_20%_50%,rgba(34,197,94,0.15),transparent_50%)] transition-all duration-500"></div>
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-green-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
-
-                                <div className="relative z-10">
-                                    <div className="flex items-start justify-between mb-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center border border-green-500/30 group-hover:scale-110 transition-all duration-300">
-                                                <CreditCard className="h-8 w-8 text-green-400" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-2xl font-bold text-white mb-2">Status do Plano</h3>
-                                                <p className="text-gray-300">Gerencie sua assinatura e renovações</p>
-                                            </div>
+                            <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+                                <div className="flex items-start justify-between mb-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
+                                            <CreditCard className="h-6 w-6 text-white" />
                                         </div>
-                                        <div className="px-4 py-2 bg-green-500/20 text-green-300 text-sm rounded-full border border-green-500/30 font-medium">
-                                            Assinatura
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white mb-2">Status do Plano</h3>
+                                            <p className="text-gray-400">Gerencie sua assinatura e renovações</p>
                                         </div>
                                     </div>
+                                    <div className="px-3 py-1 bg-gray-800 text-gray-300 text-sm rounded-lg border border-gray-700 font-medium">
+                                        Assinatura
+                                    </div>
+                                </div>
 
-                                    {(() => {
-                                        const vencimento = new Date(vipStatus.vencimento);
-                                        const hoje = new Date();
-                                        const diffTime = vencimento.getTime() - hoje.getTime();
-                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                        const isPrestesAVencer = diffDays <= 5 && diffDays > 0;
-                                        const isVencido = diffDays < 0;
+                                {(() => {
+                                    const vencimento = new Date(vipStatus.vencimento);
+                                    const hoje = new Date();
+                                    const diffTime = vencimento.getTime() - hoje.getTime();
+                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                    const isPrestesAVencer = diffDays <= 5 && diffDays > 0;
+                                    const isVencido = diffDays < 0;
 
-                                        return (
-                                            <div className="space-y-4">
-                                                {/* Botão de Renovação */}
-                                                <div className="flex items-center justify-between p-6 bg-gray-800/50 rounded-2xl border border-gray-700/50">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-                                                            <CreditCard className="h-6 w-6 text-green-400" />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="text-white font-semibold text-lg">Renovação do Plano</h4>
-                                                            <p className="text-gray-300 text-sm">
-                                                                {isVencido ? 'Plano vencido - Renovação necessária' :
-                                                                    isPrestesAVencer ? 'Plano vence em breve' : 'Plano em dia'}
-                                                            </p>
-                                                        </div>
+                                    return (
+                                        <div className="space-y-4">
+                                            {/* Botão de Renovação */}
+                                            <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                                                        <CreditCard className="h-5 w-5 text-white" />
                                                     </div>
-                                                    <a
-                                                        href={getRenewalLink(vipStatus.plan)}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${isRenewalButtonEnabled()
-                                                            ? 'bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 hover:border-green-500/50'
-                                                            : 'bg-gray-500/20 text-gray-400 border border-gray-500/30 cursor-not-allowed'
-                                                            }`}
-                                                        onClick={(e) => {
-                                                            if (!isRenewalButtonEnabled()) {
-                                                                e.preventDefault();
-                                                            }
-                                                        }}
-                                                    >
-                                                        <CreditCard className="h-4 w-4" />
-                                                        {isVencido ? 'Renovar Agora' : 'Renovar Plano'}
-                                                    </a>
+                                                    <div>
+                                                        <h4 className="text-white font-semibold">Renovação do Plano</h4>
+                                                        <p className="text-gray-400 text-sm">
+                                                            {isVencido ? 'Plano vencido - Renovação necessária' :
+                                                                isPrestesAVencer ? 'Plano vence em breve' : 'Plano em dia'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <a
+                                                    href={getRenewalLink(vipStatus.plan)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isRenewalButtonEnabled()
+                                                        ? 'bg-red-500 hover:bg-red-600 text-white'
+                                                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                                        }`}
+                                                    onClick={(e) => {
+                                                        if (!isRenewalButtonEnabled()) {
+                                                            e.preventDefault();
+                                                        }
+                                                    }}
+                                                >
+                                                    <CreditCard className="h-4 w-4" />
+                                                    {isVencido ? 'Renovar Agora' : 'Renovar Plano'}
+                                                </a>
+                                            </div>
+
+                                            {/* Status Detalhado */}
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                                                    <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                                        <Calendar className="h-5 w-5 text-white" />
+                                                    </div>
+                                                    <h4 className="text-white font-semibold mb-2">Vencimento</h4>
+                                                    <p className="text-white text-lg font-bold">{formatDate(vipStatus.vencimento)}</p>
                                                 </div>
 
-                                                {/* Status Detalhado */}
-                                                <div className="space-y-4">
-                                                    <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                                        <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-                                                            <Calendar className="h-6 w-6 text-blue-400" />
-                                                        </div>
-                                                        <h4 className="text-white font-semibold mb-2">Vencimento</h4>
-                                                        <p className="text-blue-400 text-lg font-bold">{formatDate(vipStatus.vencimento)}</p>
+                                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                                                    <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                                        <Clock className="h-5 w-5 text-white" />
                                                     </div>
+                                                    <h4 className="text-white font-semibold mb-2">Dias Restantes</h4>
+                                                    <p className={`text-2xl font-bold ${isVencido ? 'text-red-400' : isPrestesAVencer ? 'text-yellow-400' : 'text-green-400'}`}>
+                                                        {isVencido ? Math.abs(diffDays) : diffDays}
+                                                    </p>
+                                                    <p className={`text-sm ${isVencido ? 'text-red-400' : isPrestesAVencer ? 'text-yellow-400' : 'text-green-400'}`}>
+                                                        {isVencido ? 'dias vencidos' : isPrestesAVencer ? 'dias restantes' : 'dias restantes'}
+                                                    </p>
+                                                </div>
 
-                                                    <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                                        <div className="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-                                                            <Clock className="h-6 w-6 text-yellow-400" />
-                                                        </div>
-                                                        <h4 className="text-white font-semibold mb-2">Dias Restantes</h4>
-                                                        <p className={`text-2xl font-bold ${isVencido ? 'text-red-400' : isPrestesAVencer ? 'text-yellow-400' : 'text-green-400'}`}>
-                                                            {isVencido ? Math.abs(diffDays) : diffDays}
-                                                        </p>
-                                                        <p className={`text-sm ${isVencido ? 'text-red-400' : isPrestesAVencer ? 'text-yellow-400' : 'text-green-400'}`}>
-                                                            {isVencido ? 'dias vencidos' : isPrestesAVencer ? 'dias restantes' : 'dias restantes'}
-                                                        </p>
+                                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                                                    <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                                        <ShieldCheck className="h-5 w-5 text-white" />
                                                     </div>
-
-                                                    <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                                        <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-                                                            <ShieldCheck className="h-6 w-6 text-green-400" />
-                                                        </div>
-                                                        <h4 className="text-white font-semibold mb-2">Status</h4>
-                                                        <p className={`text-lg font-bold ${isVencido ? 'text-red-400' : isPrestesAVencer ? 'text-yellow-400' : 'text-green-400'}`}>
-                                                            {isVencido ? 'VENCIDO' : isPrestesAVencer ? 'ATENÇÃO' : 'ATIVO'}
-                                                        </p>
-                                                        <p className={`text-sm ${isVencido ? 'text-red-400' : isPrestesAVencer ? 'text-yellow-400' : 'text-green-400'}`}>
-                                                            {isVencido ? 'Renovação necessária' : isPrestesAVencer ? 'Vence em breve' : 'Plano em dia'}
-                                                        </p>
-                                                    </div>
+                                                    <h4 className="text-white font-semibold mb-2">Status</h4>
+                                                    <p className={`text-lg font-bold ${isVencido ? 'text-red-400' : isPrestesAVencer ? 'text-yellow-400' : 'text-green-400'}`}>
+                                                        {isVencido ? 'VENCIDO' : isPrestesAVencer ? 'ATENÇÃO' : 'ATIVO'}
+                                                    </p>
+                                                    <p className={`text-sm ${isVencido ? 'text-red-400' : isPrestesAVencer ? 'text-yellow-400' : 'text-green-400'}`}>
+                                                        {isVencido ? 'Renovação necessária' : isPrestesAVencer ? 'Vence em breve' : 'Plano em dia'}
+                                                    </p>
                                                 </div>
                                             </div>
-                                        );
-                                    })()}
-                                </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         )}
 
@@ -991,110 +985,108 @@ const ProfilePage = () => {
                         </div>
                     </div>
                 );
+                break;
 
             case 'profile':
                 return (
                     <div className="space-y-8">
-                        {/* Header da Seção com Design Melhorado */}
-                        <div className="bg-gradient-to-r from-gray-900/80 via-gray-800/80 to-gray-900/80 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden">
-                            {/* Background Pattern */}
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(34,197,94,0.1),transparent_50%)]"></div>
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.1),transparent_50%)]"></div>
-
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center border border-green-500/30">
-                                        <User className="h-8 w-8 text-green-400" />
+                        {/* Header da Seção */}
+                        <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
+                                        <User className="h-6 w-6 text-white" />
                                     </div>
                                     <div>
-                                        <h2 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
+                                        <h2 className="text-2xl font-bold text-white mb-2">
                                             Informações do Cliente
-                                            <span className="px-3 py-1 bg-green-500/20 text-green-300 text-sm rounded-full border border-green-500/30 font-medium">
-                                                Perfil Ativo
-                                            </span>
                                         </h2>
-                                        <p className="text-gray-300 text-lg">Gerencie seus dados pessoais e informações da conta</p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Última verificação: {lastRefresh ? formatDateTime(lastRefresh.toISOString()) : 'Nunca'}
-                                        </p>
+                                        <p className="text-gray-400">Gerencie seus dados pessoais e informações da conta</p>
                                     </div>
                                 </div>
 
                                 {/* Status Rápido */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                                                <CheckCircle className="h-5 w-5 text-green-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Status</p>
-                                                <p className="text-green-400 font-bold">Verificado</p>
-                                            </div>
+                                <div className="flex items-center gap-3">
+                                    {lastRefresh && (
+                                        <div className="text-sm text-gray-400">
+                                            Última verificação: {lastRefresh.toLocaleDateString('pt-BR')}, {lastRefresh.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Status Rápido */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <CheckCircle className="h-4 w-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Status</p>
+                                            <p className="text-white font-bold">Verificado</p>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                                <Calendar className="h-5 w-5 text-blue-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Membro desde</p>
-                                                <p className="text-blue-400 font-bold">2024</p>
-                                            </div>
+                                </div>
+                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <Calendar className="h-4 w-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Membro desde</p>
+                                            <p className="text-white font-bold">2024</p>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                                                <ShieldCheck className="h-5 w-5 text-purple-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Segurança</p>
-                                                <p className="text-purple-400 font-bold">Alta</p>
-                                            </div>
+                                </div>
+                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <ShieldCheck className="h-4 w-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Segurança</p>
+                                            <p className="text-white font-bold">Alta</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Mensagens de Feedback com Design Melhorado */}
+                        {/* Mensagens de Feedback */}
                         {(userEdit.error || userEdit.success) && (
-                            <div className="bg-gradient-to-r from-gray-800/90 to-gray-700/90 rounded-2xl p-6 border border-gray-600/50 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
-
+                            <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
                                 {userEdit.error && (
-                                    <div className="flex items-center gap-4 text-red-400 relative z-10">
-                                        <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center border border-red-500/30">
-                                            <AlertCircle className="h-6 w-6" />
+                                    <div className="flex items-center gap-4 text-white">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <AlertCircle className="h-4 w-4" />
                                         </div>
                                         <div className="flex-1">
-                                            <h4 className="font-semibold text-lg mb-1">Erro ao Salvar</h4>
-                                            <p className="text-red-300">{userEdit.error}</p>
+                                            <h4 className="font-semibold mb-1">Erro ao Salvar</h4>
+                                            <p className="text-gray-300">{userEdit.error}</p>
                                         </div>
                                         <button
                                             onClick={userEdit.resetMessages}
-                                            className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center text-red-400 hover:text-white hover:bg-red-500/30 transition-all duration-200 border border-red-500/30"
+                                            className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center text-white hover:text-gray-300 hover:bg-gray-600 transition-colors"
                                         >
-                                            <X className="h-5 w-5" />
+                                            <X className="h-4 w-4" />
                                         </button>
                                     </div>
                                 )}
                                 {userEdit.success && (
-                                    <div className="flex items-center gap-4 text-green-400 relative z-10">
-                                        <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center border border-green-500/30">
-                                            <CheckCircle className="h-6 w-6" />
+                                    <div className="flex items-center gap-4 text-white">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <CheckCircle className="h-4 w-4" />
                                         </div>
                                         <div className="flex-1">
-                                            <h4 className="font-semibold text-lg mb-1">Sucesso!</h4>
-                                            <p className="text-green-300">{userEdit.success}</p>
+                                            <h4 className="font-semibold mb-1">Sucesso!</h4>
+                                            <p className="text-gray-300">{userEdit.success}</p>
                                         </div>
                                         <button
                                             onClick={userEdit.resetMessages}
-                                            className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center text-green-400 hover:text-white hover:bg-green-500/30 transition-all duration-200 border border-green-500/30"
+                                            className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center text-white hover:text-gray-300 hover:bg-gray-600 transition-colors"
                                         >
-                                            <X className="h-5 w-5" />
+                                            <X className="h-4 w-4" />
                                         </button>
                                     </div>
                                 )}
@@ -1547,494 +1539,415 @@ const ProfilePage = () => {
                         </div>
                     </div>
                 );
+                break;
 
             case 'downloads':
                 return (
                     <div className="space-y-8">
-                        {/* Header da Seção com Design Melhorado */}
-                        <div className="bg-gradient-to-r from-gray-900/80 via-gray-800/80 to-gray-900/80 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden">
-                            {/* Background Pattern */}
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(147,51,234,0.1),transparent_50%)]"></div>
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.1),transparent_50%)]"></div>
+                        {/* Header da Seção */}
+                        <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
+                                    <Download className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white mb-2">
+                                        Histórico de Downloads
+                                    </h2>
+                                    <p className="text-gray-400">Acompanhe todas as suas músicas baixadas</p>
+                                </div>
+                            </div>
 
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-violet-500/20 rounded-2xl flex items-center justify-center border border-purple-500/30">
-                                        <Download className="h-8 w-8 text-purple-400" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
-                                            Histórico de Downloads
-                                            <span className="px-3 py-1 bg-purple-500/20 text-purple-300 text-sm rounded-full border border-purple-500/30 font-medium">
-                                                Downloads
-                                            </span>
-                                        </h2>
-                                        <p className="text-gray-300 text-lg">Acompanhe todas as suas músicas baixadas</p>
+                            {/* Status Rápido */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <Download className="h-4 w-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Total</p>
+                                            <p className="text-white font-bold">{downloadStats?.totalDownloads || 0}</p>
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Status Rápido */}
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                                                <Download className="h-5 w-5 text-purple-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Total</p>
-                                                <p className="text-purple-400 font-bold">{downloadStats?.totalDownloads || 0}</p>
-                                            </div>
+                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <Clock className="h-4 w-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Hoje</p>
+                                            <p className="text-white font-bold">{downloadStats?.downloadsToday || 0}</p>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                                                <Clock className="h-5 w-5 text-green-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Hoje</p>
-                                                <p className="text-green-400 font-bold">{downloadStats?.downloadsToday || 0}</p>
-                                            </div>
+                                </div>
+                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <Calendar className="h-4 w-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Último</p>
+                                            <p className="text-white font-bold">
+                                                {downloadStats?.lastDownload ? formatDate(downloadStats.lastDownload) : 'Nenhum'}
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                                <Calendar className="h-5 w-5 text-blue-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Último</p>
-                                                <p className="text-blue-400 font-bold">
-                                                    {downloadStats?.lastDownload ? formatDate(downloadStats.lastDownload) : 'Nenhum'}
-                                                </p>
-                                            </div>
+                                </div>
+                                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <ShieldCheck className="h-4 w-4 text-white" />
                                         </div>
-                                    </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                                                <ShieldCheck className="h-5 w-5 text-yellow-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Limite</p>
-                                                <p className="text-yellow-400 font-bold">{downloadStats?.dailyLimit || 'Ilimitado'}</p>
-                                            </div>
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Limite</p>
+                                            <p className="text-white font-bold">{downloadStats?.dailyLimit || 'Ilimitado'}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Cards de Estatísticas de Download com Design Moderno */}
+                        {/* Estatísticas de Download */}
                         <div className="space-y-6">
-                            {/* Total de Downloads */}
-                            <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-purple-500/30 transition-all duration-500">
-                                {/* Background Effects */}
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(147,51,234,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_20%_80%,rgba(147,51,234,0.15),transparent_50%)] transition-all duration-500"></div>
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
+                            <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
+                                        <Download className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white mb-1">Estatísticas de Download</h3>
+                                        <p className="text-gray-400">Resumo das suas atividades de download</p>
+                                    </div>
+                                </div>
 
-                                <div className="relative z-10">
-                                    <div className="flex items-start justify-between mb-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-violet-500/20 rounded-2xl flex items-center justify-center border border-purple-500/30 group-hover:scale-110 transition-all duration-300">
-                                                <Download className="h-8 w-8 text-purple-400" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-2xl font-bold text-white mb-2">Total de Downloads</h3>
-                                                <p className="text-gray-300">Estatísticas completas dos seus downloads</p>
-                                            </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                                        <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                            <Download className="h-6 w-6 text-white" />
                                         </div>
-                                        <div className="px-4 py-2 bg-purple-500/20 text-purple-300 text-sm rounded-full border border-purple-500/30 font-medium">
-                                            Estatísticas
-                                        </div>
+                                        <h4 className="text-white font-semibold mb-1">Total Geral</h4>
+                                        <p className="text-white text-2xl font-bold mb-1">{downloadStats?.totalDownloads || 0}</p>
+                                        <p className="text-gray-400 text-sm">Músicas baixadas</p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                            <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                                <Download className="h-8 w-8 text-purple-400" />
-                                            </div>
-                                            <h4 className="text-white font-semibold text-lg mb-2">Total Geral</h4>
-                                            <p className="text-purple-400 text-3xl font-black mb-2">{downloadStats?.totalDownloads || 0}</p>
-                                            <p className="text-gray-300 text-sm">Músicas baixadas</p>
+                                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                                        <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                            <Clock className="h-6 w-6 text-white" />
                                         </div>
+                                        <h4 className="text-white font-semibold mb-1">Downloads Hoje</h4>
+                                        <p className="text-white text-2xl font-bold mb-1">{downloadStats?.downloadsToday || 0}</p>
+                                        <p className="text-gray-400 text-sm">
+                                            Limite: {downloadStats?.dailyLimit || 'Ilimitado'}
+                                        </p>
+                                    </div>
 
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                            <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                                <Clock className="h-8 w-8 text-green-400" />
-                                            </div>
-                                            <h4 className="text-white font-semibold text-lg mb-2">Downloads Hoje</h4>
-                                            <p className="text-green-400 text-3xl font-black mb-2">{downloadStats?.downloadsToday || 0}</p>
-                                            <p className="text-gray-300 text-sm">
-                                                Limite: {downloadStats?.dailyLimit || 'Ilimitado'}
-                                            </p>
+                                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                                        <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                            <Calendar className="h-6 w-6 text-white" />
                                         </div>
-
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                            <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                                <Calendar className="h-8 w-8 text-blue-400" />
-                                            </div>
-                                            <h4 className="text-white font-semibold text-lg mb-2">Último Download</h4>
-                                            <p className="text-blue-400 text-lg font-bold mb-2">
-                                                {downloadStats?.lastDownload ? formatDate(downloadStats.lastDownload) : 'Nenhum'}
-                                            </p>
-                                            <p className="text-gray-300 text-sm">Data do último download</p>
-                                        </div>
+                                        <h4 className="text-white font-semibold mb-1">Último Download</h4>
+                                        <p className="text-white text-2xl font-bold mb-1">
+                                            {downloadStats?.lastDownload ? formatDate(downloadStats.lastDownload) : 'Nenhum'}
+                                        </p>
+                                        <p className="text-gray-400 text-sm">Data do último download</p>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Lista de Downloads Recentes com Design Premium */}
-                            <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-pink-500/30 transition-all duration-500">
-                                {/* Background Effects */}
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(236,72,153,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_80%_20%,rgba(236,72,153,0.15),transparent_50%)] transition-all duration-500"></div>
-                                <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-pink-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
+                        {/* Downloads Recentes */}
+                        <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
+                                    <ListMusic className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-1">Downloads Recentes</h3>
+                                    <p className="text-gray-400">Suas músicas baixadas mais recentemente</p>
+                                </div>
+                            </div>
 
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-4 mb-6">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-2xl flex items-center justify-center border border-pink-500/30 group-hover:scale-110 transition-all duration-300">
-                                            <ListMusic className="h-8 w-8 text-pink-400" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-2xl font-bold text-white mb-2">Downloads Recentes</h3>
-                                            <p className="text-gray-300">Suas músicas baixadas mais recentemente</p>
-                                        </div>
-                                    </div>
+                            {recentDownloads.length > 0 ? (
+                                <div className="space-y-4">
+                                    {recentDownloads.map((download) => (
+                                        <div key={download.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
+                                                    {download.track.imageUrl ? (
+                                                        <img
+                                                            src={download.track.imageUrl}
+                                                            alt={download.track.songName}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                const target = e.target as HTMLImageElement;
+                                                                target.style.display = 'none';
+                                                                target.parentElement!.innerHTML = '<Music className="h-6 w-6 text-gray-400" />';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <Music className="h-6 w-6 text-gray-400" />
+                                                    )}
+                                                </div>
 
-                                    {recentDownloads.length > 0 ? (
-                                        <div className="space-y-4">
-                                            {recentDownloads.map((download) => (
-                                                <div key={download.id} className="group/item bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-pink-500/30 transition-all duration-300 hover:scale-[1.02]">
-                                                    <div className="flex items-center gap-6">
-                                                        <div className="w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl flex items-center justify-center overflow-hidden border border-gray-600/50 group-hover/item:border-pink-500/30 transition-all duration-300">
-                                                            {download.track.imageUrl ? (
-                                                                <img
-                                                                    src={download.track.imageUrl}
-                                                                    alt={download.track.songName}
-                                                                    className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-300"
-                                                                    onError={(e) => {
-                                                                        const target = e.target as HTMLImageElement;
-                                                                        target.style.display = 'none';
-                                                                        target.parentElement!.innerHTML = '<Music className="h-8 w-8 text-gray-400" />';
-                                                                    }}
-                                                                />
-                                                            ) : (
-                                                                <Music className="h-8 w-8 text-gray-400" />
-                                                            )}
-                                                        </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-white font-semibold mb-1">
+                                                        {download.track.songName}
+                                                    </h4>
+                                                    <p className="text-gray-400 text-sm mb-2">{download.track.artist}</p>
 
-                                                        <div className="flex-1 min-w-0">
-                                                            <h4 className="text-white font-bold text-xl mb-2 group-hover/item:text-pink-300 transition-colors duration-300">
-                                                                {download.track.songName}
-                                                            </h4>
-                                                            <p className="text-gray-300 text-lg mb-3">{download.track.artist}</p>
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        {download.track.style && download.track.style.trim() !== '' && (
+                                                            <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded border border-gray-600">
+                                                                {download.track.style}
+                                                            </span>
+                                                        )}
+                                                        {download.track.pool && download.track.pool.trim() !== '' && (
+                                                            <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded border border-gray-600">
+                                                                {download.track.pool}
+                                                            </span>
+                                                        )}
+                                                    </div>
 
-                                                            <div className="flex items-center gap-3 mb-3">
-                                                                {download.track.style && download.track.style.trim() !== '' && (
-                                                                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-sm rounded-full border border-emerald-500/30 font-medium">
-                                                                        {download.track.style}
-                                                                    </span>
-                                                                )}
-                                                                {download.track.pool && download.track.pool.trim() !== '' && (
-                                                                    <span className="px-3 py-1 bg-blue-500/20 text-blue-300 text-sm rounded-full border border-blue-500/30 font-medium">
-                                                                        {download.track.pool}
-                                                                    </span>
-                                                                )}
-                                                                {download.track.folder && download.track.folder.trim() !== '' && (
-                                                                    <span className="px-3 py-1 bg-purple-500/20 text-purple-300 text-sm rounded-full border border-purple-500/30 font-medium">
-                                                                        {download.track.folder}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-
-                                                            <div className="flex items-center gap-4 text-sm text-gray-400">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Download className="h-4 w-4 text-purple-400" />
-                                                                    <span>Baixado em {download.downloadedAt ? formatDateTime(download.downloadedAt) : 'Data não disponível'}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="text-right">
-                                                            <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center border border-purple-500/30 group-hover/item:scale-110 transition-all duration-300">
-                                                                <Download className="h-6 w-6 text-purple-400" />
-                                                            </div>
-                                                            <p className="text-purple-400 text-xs mt-2 font-medium">Baixado</p>
-                                                        </div>
+                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                        <Download className="h-3 w-3" />
+                                                        <span>Baixado em {download.downloadedAt ? formatDateTime(download.downloadedAt) : 'Data não disponível'}</span>
                                                     </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-16">
-                                            <div className="w-24 h-24 bg-gray-800/50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-gray-700/50">
-                                                <Download className="h-12 w-12 text-gray-600" />
                                             </div>
-                                            <h4 className="text-xl font-bold text-white mb-3">Nenhum download recente</h4>
-                                            <p className="text-gray-400 mb-4">Suas músicas baixadas aparecerão aqui</p>
-                                            <a
-                                                href="/new"
-                                                className="inline-flex items-center gap-2 px-6 py-3 bg-purple-500/20 text-purple-300 rounded-xl border border-purple-500/30 hover:bg-purple-500/30 transition-all duration-300"
-                                            >
-                                                <Music className="h-4 w-4" />
-                                                Explorar Músicas
-                                            </a>
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                        <Download className="h-8 w-8 text-gray-400" />
+                                    </div>
+                                    <h4 className="text-lg font-semibold text-white mb-2">Nenhum download recente</h4>
+                                    <p className="text-gray-400 mb-4">Suas músicas baixadas aparecerão aqui</p>
+                                    <a
+                                        href="/new"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 hover:bg-gray-600 transition-colors"
+                                    >
+                                        <Music className="h-4 w-4" />
+                                        Explorar Músicas
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
+                break;
 
             case 'likes':
                 return (
-                    <div className="space-y-8">
-                        {/* Header da Seção com Design Melhorado */}
-                        <div className="bg-gradient-to-r from-gray-900/80 via-gray-800/80 to-gray-900/80 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden">
-                            {/* Background Pattern */}
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(236,72,153,0.1),transparent_50%)]"></div>
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(147,51,234,0.1),transparent_50%)]"></div>
+                    <div className="space-y-8 pb-8">
+                        {/* Header da Seção */}
+                        <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
+                                    <Heart className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white mb-2">
+                                        Músicas Curtidas
+                                    </h2>
+                                    <p className="text-gray-400">Acompanhe todas as suas músicas favoritas</p>
+                                </div>
+                            </div>
 
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-2xl flex items-center justify-center border border-pink-500/30">
-                                        <Heart className="h-8 w-8 text-pink-400" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
-                                            Músicas Curtidas
-                                            <span className="px-3 py-1 bg-pink-500/20 text-pink-300 text-sm rounded-full border border-pink-500/30 font-medium">
-                                                Favoritos
-                                            </span>
-                                        </h2>
-                                        <p className="text-gray-300 text-lg">Acompanhe todas as suas músicas favoritas</p>
+                            {/* Status Rápido */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
+                                <div className="bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-700">
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-gray-400 text-xs sm:text-sm">Total</p>
+                                            <p className="text-white font-bold text-sm sm:text-base">{recentLikes.length}</p>
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Status Rápido */}
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center">
-                                                <Heart className="h-5 w-5 text-pink-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Total</p>
-                                                <p className="text-pink-400 font-bold">{recentLikes.length}</p>
-                                            </div>
+                                <div className="bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-700">
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Music className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-gray-400 text-xs sm:text-sm">Estilos</p>
+                                            <p className="text-white font-bold text-sm sm:text-base">
+                                                {[...new Set(recentLikes.map(like => like.track.style).filter(Boolean))].length}
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                                                <Music className="h-5 w-5 text-purple-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Estilos</p>
-                                                <p className="text-purple-400 font-bold">
-                                                    {[...new Set(recentLikes.map(like => like.track.style).filter(Boolean))].length}
-                                                </p>
-                                            </div>
+                                </div>
+                                <div className="bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-700">
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-gray-400 text-xs sm:text-sm">Última</p>
+                                            <p className="text-white font-bold text-xs sm:text-sm">
+                                                {recentLikes.length > 0 && recentLikes[0].likedAt ? formatDate(recentLikes[0].likedAt) : 'Nenhuma'}
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                                <Calendar className="h-5 w-5 text-blue-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Última</p>
-                                                <p className="text-blue-400 font-bold">
-                                                    {recentLikes.length > 0 && recentLikes[0].likedAt ? formatDate(recentLikes[0].likedAt) : 'Nenhuma'}
-                                                </p>
-                                            </div>
+                                </div>
+                                <div className="bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-700">
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                                         </div>
-                                    </div>
-                                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                                                <TrendingUp className="h-5 w-5 text-emerald-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-sm">Status</p>
-                                                <p className="text-emerald-400 font-bold">Ativo</p>
-                                            </div>
+                                        <div className="min-w-0">
+                                            <p className="text-gray-400 text-xs sm:text-sm">Status</p>
+                                            <p className="text-white font-bold text-sm sm:text-base">Ativo</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Cards de Estatísticas de Likes com Design Moderno */}
+                        {/* Estatísticas de Curtidas */}
                         <div className="space-y-6">
-                            {/* Estatísticas Gerais */}
-                            <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-pink-500/30 transition-all duration-500">
-                                {/* Background Effects */}
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(236,72,153,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_20%_80%,rgba(236,72,153,0.15),transparent_50%)] transition-all duration-500"></div>
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-pink-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
+                            <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
+                                        <Heart className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white mb-1">Estatísticas de Curtidas</h3>
+                                        <p className="text-gray-400">Resumo completo dos seus favoritos</p>
+                                    </div>
+                                </div>
 
-                                <div className="relative z-10">
-                                    <div className="flex items-start justify-between mb-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-16 h-16 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-2xl flex items-center justify-center border border-pink-500/30 group-hover:scale-110 transition-all duration-300">
-                                                <Heart className="h-8 w-8 text-pink-400" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-2xl font-bold text-white mb-2">Estatísticas de Curtidas</h3>
-                                                <p className="text-gray-300">Resumo completo dos seus favoritos</p>
-                                            </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                                        <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                            <Heart className="h-6 w-6 text-white" />
                                         </div>
-                                        <div className="px-4 py-2 bg-pink-500/20 text-pink-300 text-sm rounded-full border border-pink-500/30 font-medium">
-                                            Favoritos
-                                        </div>
+                                        <h4 className="text-white font-semibold mb-1">Total de Curtidas</h4>
+                                        <p className="text-white text-2xl font-bold mb-1">{recentLikes.length}</p>
+                                        <p className="text-gray-400 text-sm">Músicas favoritas</p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                            <div className="w-16 h-16 bg-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                                <Heart className="h-8 w-8 text-pink-400" />
-                                            </div>
-                                            <h4 className="text-white font-semibold text-lg mb-2">Total de Curtidas</h4>
-                                            <p className="text-pink-400 text-3xl font-black mb-2">{recentLikes.length}</p>
-                                            <p className="text-gray-300 text-sm">Músicas favoritas</p>
+                                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                                        <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                            <Music className="h-6 w-6 text-white" />
                                         </div>
+                                        <h4 className="text-white font-semibold mb-1">Estilos Favoritos</h4>
+                                        <p className="text-white text-2xl font-bold mb-1">
+                                            {[...new Set(recentLikes.map(like => like.track.style).filter(Boolean))].length}
+                                        </p>
+                                        <p className="text-gray-400 text-sm">Gêneros musicais</p>
+                                    </div>
 
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                            <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                                <Music className="h-8 w-8 text-purple-400" />
-                                            </div>
-                                            <h4 className="text-white font-semibold text-lg mb-2">Estilos Favoritos</h4>
-                                            <p className="text-purple-400 text-3xl font-black mb-2">
-                                                {[...new Set(recentLikes.map(like => like.track.style).filter(Boolean))].length}
-                                            </p>
-                                            <p className="text-gray-300 text-sm">Gêneros musicais</p>
+                                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                                        <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                            <Calendar className="h-6 w-6 text-white" />
                                         </div>
-
-                                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 text-center">
-                                            <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                                <Calendar className="h-8 w-8 text-blue-400" />
-                                            </div>
-                                            <h4 className="text-white font-semibold text-lg mb-2">Última Curtida</h4>
-                                            <p className="text-blue-400 text-lg font-bold mb-2">
-                                                {recentLikes.length > 0 && recentLikes[0].likedAt ? formatDate(recentLikes[0].likedAt) : 'Nenhuma'}
-                                            </p>
-                                            <p className="text-gray-300 text-sm">Data da última curtida</p>
-                                        </div>
+                                        <h4 className="text-white font-semibold mb-1">Última Curtida</h4>
+                                        <p className="text-white text-2xl font-bold mb-1">
+                                            {recentLikes.length > 0 && recentLikes[0].likedAt ? formatDate(recentLikes[0].likedAt) : 'Nenhuma'}
+                                        </p>
+                                        <p className="text-gray-400 text-sm">Data da última curtida</p>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Lista de Curtidas com Design Premium */}
-                            <div className="bg-gradient-to-br from-gray-800/90 via-gray-700/90 to-gray-800/90 rounded-3xl p-8 border border-gray-700/50 relative overflow-hidden group hover:border-purple-500/30 transition-all duration-500">
-                                {/* Background Effects */}
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(147,51,234,0.1),transparent_50%)] group-hover:bg-[radial-gradient(circle_at_80%_20%,rgba(147,51,234,0.15),transparent_50%)] transition-all duration-500"></div>
-                                <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-all duration-500"></div>
+                        {/* Músicas Curtidas */}
+                        <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
+                                    <ListMusic className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-1">Músicas Curtidas</h3>
+                                    <p className="text-gray-400">Suas músicas favoritas organizadas</p>
+                                </div>
+                            </div>
 
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-4 mb-6">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-violet-500/20 rounded-2xl flex items-center justify-center border border-purple-500/30 group-hover:scale-110 transition-all duration-300">
-                                            <ListMusic className="h-8 w-8 text-purple-400" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-2xl font-bold text-white mb-2">Músicas Curtidas</h3>
-                                            <p className="text-gray-300">Suas músicas favoritas organizadas</p>
-                                        </div>
-                                    </div>
+                            {recentLikes.length > 0 ? (
+                                <div className="space-y-4">
+                                    {recentLikes.map((like) => (
+                                        <div key={like.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
+                                                    {like.track.imageUrl ? (
+                                                        <img
+                                                            src={like.track.imageUrl}
+                                                            alt={like.track.songName}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                const target = e.target as HTMLImageElement;
+                                                                target.style.display = 'none';
+                                                                target.parentElement!.innerHTML = '<Music className="h-6 w-6 text-gray-400" />';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <Music className="h-6 w-6 text-gray-400" />
+                                                    )}
+                                                </div>
 
-                                    {recentLikes.length > 0 ? (
-                                        <div className="space-y-4">
-                                            {recentLikes.map((like) => (
-                                                <div key={like.id} className="group/item bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 hover:scale-[1.02]">
-                                                    <div className="flex items-center gap-6">
-                                                        <div className="w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl flex items-center justify-center overflow-hidden border border-gray-600/50 group-hover/item:border-purple-500/30 transition-all duration-300">
-                                                            {like.track.imageUrl ? (
-                                                                <img
-                                                                    src={like.track.imageUrl}
-                                                                    alt={like.track.songName}
-                                                                    className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-300"
-                                                                    onError={(e) => {
-                                                                        const target = e.target as HTMLImageElement;
-                                                                        target.style.display = 'none';
-                                                                        target.parentElement!.innerHTML = '<Music className="h-8 w-8 text-gray-400" />';
-                                                                    }}
-                                                                />
-                                                            ) : (
-                                                                <Music className="h-8 w-8 text-gray-400" />
-                                                            )}
-                                                        </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-white font-semibold mb-1">
+                                                        {like.track.songName}
+                                                    </h4>
+                                                    <p className="text-gray-400 text-sm mb-2">{like.track.artist}</p>
 
-                                                        <div className="flex-1 min-w-0">
-                                                            <h4 className="text-white font-bold text-xl mb-2 group-hover/item:text-purple-300 transition-colors duration-300">
-                                                                {like.track.songName}
-                                                            </h4>
-                                                            <p className="text-gray-300 text-lg mb-3">{like.track.artist}</p>
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        {like.track.style && like.track.style.trim() !== '' && (
+                                                            <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded border border-gray-600">
+                                                                {like.track.style}
+                                                            </span>
+                                                        )}
+                                                        {like.track.pool && like.track.pool.trim() !== '' && (
+                                                            <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded border border-gray-600">
+                                                                {like.track.pool}
+                                                            </span>
+                                                        )}
+                                                    </div>
 
-                                                            <div className="flex items-center gap-3 mb-3">
-                                                                {like.track.style && like.track.style.trim() !== '' && (
-                                                                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-sm rounded-full border border-emerald-500/30 font-medium">
-                                                                        {like.track.style}
-                                                                    </span>
-                                                                )}
-                                                                {like.track.pool && like.track.pool.trim() !== '' && (
-                                                                    <span className="px-3 py-1 bg-blue-500/20 text-blue-300 text-sm rounded-full border border-blue-500/30 font-medium">
-                                                                        {like.track.pool}
-                                                                    </span>
-                                                                )}
-                                                                {like.track.folder && like.track.folder.trim() !== '' && (
-                                                                    <span className="px-3 py-1 bg-purple-500/20 text-purple-300 text-sm rounded-full border border-purple-500/30 font-medium">
-                                                                        {like.track.folder}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-
-                                                            <div className="flex items-center gap-4 text-sm text-gray-400">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Heart className="h-4 w-4 text-pink-400" />
-                                                                    <span>Curtido em {like.likedAt ? formatDateTime(like.likedAt) : 'Data não disponível'}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="text-right">
-                                                            <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center border border-pink-500/30 group-hover/item:scale-110 transition-all duration-300">
-                                                                <Heart className="h-6 w-6 text-pink-400" />
-                                                            </div>
-                                                            <p className="text-pink-400 text-xs mt-2 font-medium">Favorito</p>
-                                                        </div>
+                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                        <Heart className="h-3 w-3" />
+                                                        <span>Curtido em {like.likedAt ? formatDateTime(like.likedAt) : 'Data não disponível'}</span>
                                                     </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : likesLoading ? (
-                                        <div className="text-center py-16">
-                                            <div className="w-24 h-24 bg-gray-800/50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-gray-700/50">
-                                                <div className="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
                                             </div>
-                                            <h4 className="text-xl font-bold text-white mb-3">Carregando curtidas...</h4>
-                                            <p className="text-gray-400 mb-4">Buscando suas músicas favoritas</p>
                                         </div>
-                                    ) : (
-                                        <div className="text-center py-16">
-                                            <div className="w-24 h-24 bg-gray-800/50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-gray-700/50">
-                                                <Heart className="h-12 w-12 text-gray-600" />
-                                            </div>
-                                            <h4 className="text-xl font-bold text-white mb-3">Nenhuma música curtida</h4>
-                                            <p className="text-gray-400 mb-4">Suas músicas favoritas aparecerão aqui</p>
-                                            <a
-                                                href="/new"
-                                                className="inline-flex items-center gap-2 px-6 py-3 bg-pink-500/20 text-pink-300 rounded-xl border border-pink-500/30 hover:bg-pink-500/30 transition-all duration-300"
-                                            >
-                                                <Music className="h-4 w-4" />
-                                                Explorar Músicas
-                                            </a>
-                                        </div>
-                                    )}
+                                    ))}
                                 </div>
-                            </div>
+                            ) : likesLoading ? (
+                                <div className="text-center py-12">
+                                    <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                        <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    </div>
+                                    <h4 className="text-lg font-semibold text-white mb-2">Carregando curtidas...</h4>
+                                    <p className="text-gray-400">Buscando suas músicas favoritas</p>
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                        <Heart className="h-8 w-8 text-gray-400" />
+                                    </div>
+                                    <h4 className="text-lg font-semibold text-white mb-2">Nenhuma música curtida</h4>
+                                    <p className="text-gray-400 mb-4">Suas músicas favoritas aparecerão aqui</p>
+                                    <a
+                                        href="/new"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 hover:bg-gray-600 transition-colors"
+                                    >
+                                        <Music className="h-4 w-4" />
+                                        Explorar Músicas
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
+                break;
 
             case 'allavsoft':
                 return (
@@ -2127,6 +2040,7 @@ const ProfilePage = () => {
                         </div>
                     </div>
                 );
+                break;
 
             case 'activity':
                 return (
@@ -2509,6 +2423,8 @@ const ProfilePage = () => {
                         </div>
                     </div>
                 );
+                break;
+
 
             case 'plan':
                 return (
@@ -2904,6 +2820,7 @@ const ProfilePage = () => {
                         </div>
                     </div>
                 );
+                break;
 
             case 'benefits':
                 return (
@@ -3358,6 +3275,7 @@ const ProfilePage = () => {
                         </div>
                     </div>
                 );
+                break;
 
             case 'deemix':
                 return (
@@ -3748,12 +3666,13 @@ const ProfilePage = () => {
                         )}
                     </div>
                 );
+                break;
 
             default:
                 return (
                     <div className="text-center py-16">
-                        <div className="w-20 h-20 bg-gradient-to-br from-gray-800 to-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Info className="h-10 w-10 text-gray-400" />
+                        <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-6">
+                            <Info className="h-8 w-8 text-white" />
                         </div>
                         <h3 className="text-xl font-bold text-white mb-2">Selecione uma Opção</h3>
                         <p className="text-gray-400">Escolha uma das opções no menu lateral para ver as informações</p>
@@ -3763,24 +3682,24 @@ const ProfilePage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#121212] relative overflow-hidden">
+        <div className="min-h-screen bg-black text-white font-montserrat">
             <Header />
 
             {/* Verificação Mobile */}
             {isMobile && (
-                <div className="pt-12 lg:pt-16 min-h-screen bg-[#121212] flex items-center justify-center">
+                <div className="pt-24 min-h-screen bg-black flex items-center justify-center">
                     <div className="max-w-md mx-auto text-center px-4">
                         <div className="mb-8">
-                            <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <Monitor className="w-12 h-12 text-white" />
+                            <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-6">
+                                <Monitor className="w-8 h-8 text-white" />
                             </div>
                             <h1 className="text-2xl font-bold text-white mb-4">
                                 Acesso Restrito ao Desktop
                             </h1>
-                            <p className="text-gray-300 mb-6 leading-relaxed">
+                            <p className="text-gray-400 mb-6">
                                 Para gerenciar seu perfil e plano, é necessário acessar através de um computador.
                             </p>
-                            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+                            <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
                                 <h2 className="text-lg font-semibold text-white mb-4">
                                     Gerenciar Plano via WhatsApp
                                 </h2>
@@ -3791,9 +3710,9 @@ const ProfilePage = () => {
                                     href="https://wa.me/5551935052274?text=Olá! Gostaria de gerenciar meu plano na plataforma Nexor Records."
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-3 w-full justify-center px-6 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all duration-300 font-medium text-lg"
+                                    className="inline-flex items-center gap-3 w-full justify-center px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium"
                                 >
-                                    <MessageCircle className="w-6 h-6" />
+                                    <MessageCircle className="w-5 h-5" />
                                     WhatsApp +55 51 93505-2274
                                 </a>
                             </div>
@@ -3804,14 +3723,14 @@ const ProfilePage = () => {
 
             {/* Conteúdo Desktop */}
             {!isMobile && (
-                <div className="pt-12 lg:pt-16 min-h-screen bg-[#121212]">
-                    <div className="max-w-[95%] mx-auto px-4 py-4 sm:py-8">
+                <div className="pt-24 min-h-screen bg-black pb-20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                         {/* Header da Página */}
                         <div className="mb-8">
-                            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4">
+                            <h1 className="text-3xl font-bold text-white mb-4">
                                 Meu Perfil
                             </h1>
-                            <p className="text-gray-400 text-sm sm:text-base lg:text-lg max-w-none lg:max-w-4xl">
+                            <p className="text-gray-400 text-sm max-w-4xl">
                                 Gerencie suas informações, veja suas estatísticas e acompanhe seu plano VIP
                             </p>
                         </div>
@@ -3820,7 +3739,7 @@ const ProfilePage = () => {
                         <div className="flex gap-6">
                             {/* Sidebar */}
                             <div className="w-64 flex-shrink-0">
-                                <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
+                                <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
                                     <nav className="space-y-2">
                                         {sidebarItems.map((item) => {
                                             const Icon = item.icon;
@@ -3828,15 +3747,15 @@ const ProfilePage = () => {
                                                 <button
                                                     key={item.id}
                                                     onClick={() => setActiveTab(item.id)}
-                                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-left ${activeTab === item.id
-                                                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                        : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${activeTab === item.id
+                                                        ? 'bg-red-500 text-white'
+                                                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
                                                         }`}
                                                 >
-                                                    <Icon className={`h-5 w-5 ${activeTab === item.id ? 'text-green-400' : item.color}`} />
+                                                    <Icon className="h-5 w-5" />
                                                     <span className="font-medium">{item.label}</span>
                                                     {activeTab === item.id && (
-                                                        <ChevronRight className="h-4 w-4 ml-auto text-green-400" />
+                                                        <ChevronRight className="h-4 w-4 ml-auto" />
                                                     )}
                                                 </button>
                                             );

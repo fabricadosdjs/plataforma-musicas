@@ -10,7 +10,19 @@ export const isValidImageUrl = (url: string | undefined | null): boolean => {
     if (invalidValues.includes(url.toLowerCase())) return false;
 
     try {
-        new URL(url);
+        const urlObj = new URL(url);
+
+        // Rejeitar URLs localhost em produção
+        if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
+            console.warn('URL localhost rejeitada para imagem:', url);
+            return false;
+        }
+
+        // Verificar se é um protocolo válido
+        if (!['http:', 'https:'].includes(urlObj.protocol)) {
+            return false;
+        }
+
         return true;
     } catch {
         return false;

@@ -55,11 +55,11 @@ export default function SignInPage() {
       <div className="w-full max-w-xl">
         {/* Logo/Header */}
         <div className="text-center mb-4">
-          {/* Logo Real da Nextor Records */}
+          {/* Logo Real da Nexor Records */}
           <div className="inline-flex items-center justify-center mb-3 w-full">
             <img
               src="https://i.ibb.co/Y7WKPY57/logo-nexor.png"
-              alt="Nextor Records"
+              alt="Nexor Records"
               className="object-contain h-20 sm:h-28 w-full max-w-xs sm:max-w-lg"
               style={{}}
             />
@@ -111,7 +111,7 @@ export default function SignInPage() {
         {/* Footer */}
         <div className="text-center mt-4">
           <p className="text-gray-500 text-xs">
-            © 2025 Nextor Records. Acesso exclusivo para membros VIP.
+            © 2025 Nexor Records. Acesso exclusivo para membros VIP.
           </p>
         </div>
 

@@ -527,7 +527,7 @@ export const useNotifications = () => {
         // Verificar se é uma notificação de música
         if (notification.musicData) {
             const { coverUrl, artistName, songName, trackId } = notification.musicData;
-            
+
             // Solicitar permissão se necessário
             if (Notification.permission === 'default') {
                 Notification.requestPermission().then(permission => {
@@ -544,7 +544,7 @@ export const useNotifications = () => {
     // Função para criar notificação de música específica
     const createMusicNotification = useCallback((notification: Notification) => {
         const { coverUrl, artistName, songName, trackId } = notification.musicData!;
-        
+
         // Criar notificação com dados da música
         const musicNotification = new Notification(notification.title, {
             body: notification.message,
@@ -566,12 +566,12 @@ export const useNotifications = () => {
         musicNotification.onclick = () => {
             // Focar na janela se estiver em background
             window.focus();
-            
+
             // Se tiver URL de ação, navegar para ela
             if (notification.actionUrl) {
                 window.location.href = notification.actionUrl;
             }
-            
+
             // Fechar a notificação
             musicNotification.close();
         };

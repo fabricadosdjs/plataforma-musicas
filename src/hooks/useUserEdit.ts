@@ -25,7 +25,7 @@ export const useUserEdit = (): UseUserEditReturn => {
     const { data: session, update } = useSession();
     const [isEditing, setIsEditing] = useState(false);
     const [editingField, setEditingField] = useState<string | null>(null);
-        const user = session && session.user ? (session.user as typeof session.user & { whatsapp?: string }) : undefined;
+    const user = session && session.user ? (session.user as typeof session.user & { whatsapp?: string }) : undefined;
     const [editedData, setEditedData] = useState<UserData>({
         name: user?.name || '',
         email: user?.email || '',
@@ -36,15 +36,15 @@ export const useUserEdit = (): UseUserEditReturn => {
 
     // Atualizar dados quando a sessão mudar
     useEffect(() => {
-            if (session && session.user) {
-                const user = session.user as typeof session.user & { whatsapp?: string };
-                const newData = {
-                    name: user.name || '',
-                    email: user.email || '',
-                    whatsapp: user.whatsapp || '(51) 98108 - 6784'
-                };
-                console.log('🔄 Atualizando dados da sessão:', newData);
-                setEditedData(newData);
+        if (session && session.user) {
+            const user = session.user as typeof session.user & { whatsapp?: string };
+            const newData = {
+                name: user.name || '',
+                email: user.email || '',
+                whatsapp: user.whatsapp || '(51) 98108 - 6784'
+            };
+            console.log('🔄 Atualizando dados da sessão:', newData);
+            setEditedData(newData);
         }
     }, [session]);
     const [isLoading, setIsLoading] = useState(false);
@@ -63,8 +63,8 @@ export const useUserEdit = (): UseUserEditReturn => {
         } else if (field === 'email') {
             setEditedData(prev => ({ ...prev, email: session?.user?.email || '' }));
         } else if (field === 'whatsapp') {
-                const user = session && session.user ? (session.user as typeof session.user & { whatsapp?: string }) : undefined;
-                setEditedData(prev => ({ ...prev, whatsapp: user?.whatsapp || '(51) 98108 - 6784' }));
+            const user = session && session.user ? (session.user as typeof session.user & { whatsapp?: string }) : undefined;
+            setEditedData(prev => ({ ...prev, whatsapp: user?.whatsapp || '(51) 98108 - 6784' }));
         }
     }, [session]);
 

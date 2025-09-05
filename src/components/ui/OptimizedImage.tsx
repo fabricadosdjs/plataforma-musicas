@@ -24,6 +24,23 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     alt,
     style = {}
 }) => {
+    // Verificação de segurança para track undefined
+    if (!track) {
+        console.warn('OptimizedImage: track é undefined');
+        return (
+            <div
+                className={fallbackClassName}
+                style={{
+                    display: 'flex',
+                    opacity: 1,
+                    transition: 'opacity 0.3s ease-in-out'
+                }}
+            >
+                {fallbackContent}
+            </div>
+        );
+    }
+
     const { imageProps, hasError, isLoaded } = useMusicImageLoader(track);
     const imgRef = useRef<HTMLImageElement>(null);
 
@@ -37,6 +54,14 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         quality: 85,
         format: 'webp'
     }) : '';
+
+    // Log para debug de URLs inválidas
+    if (track.imageUrl && !hasValidUrl) {
+        console.warn('URL de imagem inválida rejeitada:', {
+            url: track.imageUrl,
+            track: `${track.artist} - ${track.songName}`
+        });
+    }
 
     // Efeito para limpar referências e prevenir vazamentos de memória
     useEffect(() => {

@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 export const SessionDebug = () => {
     const { data: session, status } = useSession();
 
-        const user = session && session.user ? (session.user as typeof session.user & { isAdmin?: boolean }) : undefined;
+    const user = session && session.user ? (session.user as typeof session.user & { isAdmin?: boolean }) : undefined;
     return (
         <div className="fixed top-20 right-4 bg-black/80 text-white p-4 rounded-lg border border-white/20 text-xs max-w-sm z-50">
             <h3 className="font-bold mb-2">🔍 Debug - Sessão</h3>

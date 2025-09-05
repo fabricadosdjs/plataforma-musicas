@@ -43,6 +43,7 @@ model User {
   likes                       Like[]
   plays                       Play[]
   requests                    Request[]
+  library                     UserLibrary[]
 
   @@index([period])
 }
@@ -58,6 +59,7 @@ model Track {
   previewUrl  String?
   downloadUrl String?
   releaseDate DateTime?
+  duration    String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   isCommunity Boolean?
@@ -67,14 +69,18 @@ model Track {
   releaseId   Int?
   folder      String?    @db.VarChar(255)
   filename    String?
+  storageKey  String?    @db.VarChar(500)
+  fileSize    Int?
   downloads   Download[]
   likes       Like[]
   plays       Play[]
   requests    Request[]
   release     release?   @relation(fields: [releaseId], references: [id])
+  playlists   PlaylistTrack[]
 
   @@index([filename])
   @@index([folder], map: "idx_track_folder")
+  @@index([storageKey], map: "idx_track_storage_key")
 }
 
 model Request {
@@ -203,4 +209,50 @@ enum Status {
   COMPLETED
   CANCELLED
   ON_HOLD
+}
+
+model Playlist {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  coverImage  String?
+  isPublic    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  section     String?  @db.VarChar(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String
+  tracks      PlaylistTrack[]
+  library     UserLibrary[]
+  
+  @@index([isPublic])
+  @@index([isFeatured])
+  @@index([section])
+}
+
+model PlaylistTrack {
+  id         Int      @id @default(autoincrement())
+  playlistId Int
+  trackId    Int
+  order      Int      @default(0)
+  addedAt    DateTime @default(now())
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  
+  @@unique([playlistId, trackId])
+  @@index([playlistId])
+  @@index([trackId])
+}
+
+model UserLibrary {
+  id         Int      @id @default(autoincrement())
+  userId     String
+  playlistId Int
+  addedAt    DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, playlistId])
+  @@index([userId])
+  @@index([playlistId])
 }

@@ -87,7 +87,7 @@ const TrackRow = React.memo(({
                         </button>
                     </div>
                     <div className="flex flex-col min-w-0 flex-1">
-                        <span className="font-bold text-gray-100 truncate text-[9px] sm:text-[10px] lg:text-[11px]">{track.songName}</span>
+                        <span className="font-bold text-gray-100 truncate text-[8px] sm:text-[9px] lg:text-[10px]">{track.songName}</span>
                         <span className="text-[8px] sm:text-[9px] lg:text-[10px] text-gray-400 truncate">{track.artist}</span>
                         {/* Pool/Label visível apenas em tablet, não em mobile */}
                         <div className="hidden sm:flex lg:hidden items-center gap-1 mt-1">
@@ -149,7 +149,7 @@ const TrackCard = React.memo(({
                 </div>
                 <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-base truncate">{track.songName}</span>
+                        <span className="font-bold text-white text-sm truncate">{track.songName}</span>
                     </div>
                     <span className="text-sm text-gray-400 truncate">{track.artist}</span>
                     <div className="flex items-center gap-2 mt-2">
@@ -388,7 +388,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
         console.log('🔍 handleLikeClick chamado para trackId:', trackId);
         console.log('🔍 Session:', session?.user?.email);
         console.log('🔍 userData:', userData);
-        
+
         if (!session?.user) {
             showToast('👤 Faça login para curtir músicas', 'warning');
             return;
@@ -400,7 +400,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
             // Verificar se já curtiu
             const isCurrentlyLiked = userData?.likedTrackIds?.includes(trackId) || false;
             const action = isCurrentlyLiked ? 'unlike' : 'like';
-            
+
             console.log('🔍 Estado atual do like:', isCurrentlyLiked);
             console.log('🔍 Ação a ser executada:', action);
 
@@ -429,7 +429,7 @@ const MusicTable = ({ tracks, onDownload: onTracksUpdate, isDownloading: isDownl
                     // Atualizar estado local
                     console.log('🔍 Atualizando estado local...');
                     updateLikedTrack(trackId, action === 'like');
-                    
+
                     // Verificar se o estado foi atualizado
                     console.log('🔍 Estado após atualização:', userData?.likedTrackIds);
 

@@ -6,8 +6,8 @@ export async function GET(
     { params }: { params: Promise<{ artistName: string }> }
 ) {
     try {
-    const resolvedParams = await params;
-    const artistName = decodeURIComponent(resolvedParams.artistName);
+        const resolvedParams = await params;
+        const artistName = decodeURIComponent(resolvedParams.artistName);
 
         if (!artistName) {
             return NextResponse.json(

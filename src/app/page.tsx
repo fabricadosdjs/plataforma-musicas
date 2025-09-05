@@ -1,1069 +1,1489 @@
 // src/app/page.tsx
 "use client";
 
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import { useSession } from 'next-auth/react';
+import React, { useState, useEffect } from 'react';
+import { Play, Pause, Download, Heart } from 'lucide-react';
 import Link from 'next/link';
-import AdminMessagesDisplay from '@/components/ui/AdminMessagesDisplay';
-import CreditDashboard from '@/components/credit/CreditDashboard';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { generateGradientColors, generateInitials } from '@/utils/imageUtils';
+import FooterPlayer from '@/components/player/FooterPlayer';
+import { useSession } from 'next-auth/react';
+import toast from 'react-hot-toast';
+import Header from '@/components/layout/Header';
+import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
+import { Track } from '@/types/track';
+import AdvancedSearch from '@/components/ui/AdvancedSearch';
 
-import {
-  Heart, Music, TrendingUp, Database, Upload, AlertTriangle, CheckCircle, Clock, Star, Zap, Play, Download, Users, Award, Globe, Headphones, Crown, Sparkles, Target, ArrowRight, ChevronRight, Shuffle, Volume2, Disc3, Mic2, Radio, Disc, Disc2, Archive, Activity, FolderOpen, Search, ShoppingCart
-} from 'lucide-react';
-import { SafeImage } from '@/components/ui/SafeImage';
+interface PopularTrack extends Track {
+  downloadCount: number;
+}
 
-// Extend NextAuth session user type to include is_vip
-import type { Session } from 'next-auth';
+const featuredDJs = [
+  "CALVIN HARRIS",
+  "DAVID GUETTA",
+  "MARTIN GARRIX",
+  "TIËSTO",
+  "SKRILLEX"
+];
 
-// Tipagem NextAuth deve ser feita em um arquivo global.d.ts ou types/next-auth.d.ts
-// Removido bloco duplicado/errado daqui
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import dynamic from 'next/dynamic';
+const heroSlides = [
+  {
+    id: 1,
+    imageUrl: "https://s3.amazonaws.com/djc.www.images/djcity2/heroes/1756235131293-An%20archive%20of%20the%20top%20tracks%20downloaded%20each%20month.-thumbnail.png",
+    title: "Archive Collection",
+    subtitle: "Top tracks downloaded each month"
+  },
+  {
+    id: 2,
+    imageUrl: "https://s3.amazonaws.com/djc.www.images/djcity2/heroes/1755820289808-Playlists-thumbnail.png",
+    title: "Playlists",
+    subtitle: "Curated mixes for every occasion"
+  }
+];
 
-function HomePageContent() {
+export default function HomePage() {
   const { data: session } = useSession();
-  // Toast
-  const { showToast } = require('@/hooks/useToast').useToast();
+  const { playTrack, currentTrack, isPlaying, togglePlayPause } = useGlobalPlayer();
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [popularTracks, setPopularTracks] = useState<PopularTrack[]>([]);
+  const [recentStyles, setRecentStyles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [downloadedTracks, setDownloadedTracks] = useState<Set<number>>(new Set());
+  const [downloadingTracks, setDownloadingTracks] = useState<Set<number>>(new Set());
+  const [likedTracks, setLikedTracks] = useState<Set<number>>(new Set());
+  const [likingTracks, setLikingTracks] = useState<Set<number>>(new Set());
+  const [downloadingBatch, setDownloadingBatch] = useState<boolean>(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number, total: number }>({ current: 0, total: 0 });
+  const [batchCancel, setBatchCancel] = useState<boolean>(false);
 
-  // Estados principais para estatísticas e funcionalidades (ajuste para buscar dados reais conforme necessário)
-  const [tracks, setTracks] = useState<any[]>([]); // TODO: buscar tracks reais
-  const [genres, setGenres] = useState<string[]>([]); // TODO: buscar genres reais
-  const [artists, setArtists] = useState<any[]>([]); // TODO: buscar artists reais
-  const [downloadQueue, setDownloadQueue] = useState<any[]>([]); // TODO: buscar fila real
-  const [downloadedTrackIds, setDownloadedTrackIds] = useState<any[]>([]); // TODO: buscar baixadas reais
-  const [filteredTracks, setFilteredTracks] = useState<any[]>([]); // TODO: aplicar filtros reais
-  const [groupTracksByReleaseDate, setGroupTracksByReleaseDate] = useState<{ grouped: Record<string, any[]> }>({ grouped: {} }); // TODO: agrupar por data real
+  // Estados para paginação e filtros
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [tracksLoading, setTracksLoading] = useState(false);
 
-  // Estado para as músicas mais baixadas (mantido do original)
-  const [mostDownloadedTracks, setMostDownloadedTracks] = useState<any[]>([]);
-  const [loadingMostDownloaded, setLoadingMostDownloaded] = useState(true);
-  const [isVisible, setIsVisible] = useState(false);
+  // Estados para busca avançada
+  const [searchParams, setSearchParams] = useState({
+    query: '',
+    styles: [] as string[],
+    artists: [] as string[],
+    pools: [] as string[]
+  });
+  const [availableStyles, setAvailableStyles] = useState<string[]>([]);
+  const [availableArtists, setAvailableArtists] = useState<string[]>([]);
+  const [availablePools, setAvailablePools] = useState<string[]>([]);
 
-  const fetchMostDownloadedTracks = useCallback(async () => {
+  // Função para atualizar URL com parâmetros
+  const updateURL = (genre: string | null, page: number = 1) => {
+    if (typeof window === 'undefined') return;
+
+    const params = new URLSearchParams();
+    if (genre) {
+      params.set('genre', genre);
+    }
+    if (page > 1) {
+      params.set('page', page.toString());
+    }
+
+    const newURL = params.toString() ? `?${params.toString()}` : window.location.pathname;
+    window.history.pushState({}, '', newURL);
+  };
+
+  // Função para ler parâmetros da URL
+  const readURLParams = () => {
+    if (typeof window === 'undefined') return { genre: null, page: 1 };
+
+    const params = new URLSearchParams(window.location.search);
+    const genre = params.get('genre');
+    const page = parseInt(params.get('page') || '1');
+
+    return { genre, page };
+  };
+
+  // Fetch latest tracks with pagination and filters
+  const fetchLatestTracks = async (
+    page: number = 1,
+    genre: string | null = null,
+    searchParams?: {
+      query: string;
+      styles: string[];
+      artists: string[];
+      pools: string[];
+    }
+  ) => {
     try {
-      setLoadingMostDownloaded(true);
+      setTracksLoading(true);
+      let url = `/api/tracks/new?page=${page}&limit=60`;
 
-      // Verificar se estamos no cliente
-      if (typeof window === 'undefined') return;
+      if (genre) {
+        url += `&genre=${encodeURIComponent(genre)}`;
+      }
 
-      const response = await fetch('/api/tracks/most-downloaded', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Adicionar timeout
-        signal: AbortSignal.timeout(10000) // 10 segundos
+      if (searchParams) {
+        if (searchParams.query) {
+          url += `&query=${encodeURIComponent(searchParams.query)}`;
+        }
+        if (searchParams.styles.length > 0) {
+          url += `&styles=${encodeURIComponent(JSON.stringify(searchParams.styles))}`;
+        }
+        if (searchParams.artists.length > 0) {
+          url += `&artists=${encodeURIComponent(JSON.stringify(searchParams.artists))}`;
+        }
+        if (searchParams.pools.length > 0) {
+          url += `&pools=${encodeURIComponent(JSON.stringify(searchParams.pools))}`;
+        }
+      }
+
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setTracks(data.tracks || []);
+        setTotalPages(data.totalPages || 1);
+        setCurrentPage(page);
+      }
+    } catch (error) {
+      console.error('Error fetching latest tracks:', error);
+    } finally {
+      setTracksLoading(false);
+    }
+  };
+
+  // Handle genre filter with toggle functionality
+  const handleGenreFilter = (genre: string | null) => {
+    // Se clicou no mesmo gênero que já está selecionado, desmarca (toggle)
+    if (selectedGenre === genre) {
+      setSelectedGenre(null);
+      setCurrentPage(1);
+      updateURL(null, 1);
+      fetchLatestTracks(1, null);
+    } else {
+      // Caso contrário, seleciona o novo gênero
+      setSelectedGenre(genre);
+      setCurrentPage(1);
+      updateURL(genre, 1);
+      fetchLatestTracks(1, genre);
+    }
+  };
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    updateURL(selectedGenre, page);
+    fetchLatestTracks(page, selectedGenre);
+  };
+
+  // Função para gerar slug do gênero
+  const generateGenreSlug = (style: string) => {
+    return style.toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/\//g, '-%2F-')
+      .replace(/--/g, '-');
+  };
+
+  // Group tracks by release date
+  const groupTracksByDate = (tracks: Track[]) => {
+    const grouped: { [key: string]: Track[] } = {};
+
+    tracks.forEach(track => {
+      if (track.releaseDate) {
+        const date = new Date(track.releaseDate);
+        const dateKey = date.toLocaleDateString('pt-BR', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }).toUpperCase();
+
+        if (!grouped[dateKey]) {
+          grouped[dateKey] = [];
+        }
+        grouped[dateKey].push(track);
+      } else {
+        // Se não tem data, coloca em "Sem data"
+        if (!grouped['SEM DATA']) {
+          grouped['SEM DATA'] = [];
+        }
+        grouped['SEM DATA'].push(track);
+      }
+    });
+
+    return grouped;
+  };
+
+  // Fetch recent styles
+  const fetchRecentStyles = async () => {
+    try {
+      const response = await fetch('/api/styles/recent');
+      if (response.ok) {
+        const data = await response.json();
+        setRecentStyles(data.styles || []);
+      } else {
+        console.error('Failed to fetch recent styles');
+        setRecentStyles([]);
+      }
+    } catch (error) {
+      console.error('Error fetching recent styles:', error);
+      setRecentStyles([]);
+    }
+  };
+
+  // Fetch available options for search filters
+  const fetchSearchOptions = async () => {
+    try {
+      const response = await fetch('/api/tracks/search-options');
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableStyles(data.styles || []);
+        setAvailableArtists(data.artists || []);
+        setAvailablePools(data.pools || []);
+      } else {
+        console.error('Failed to fetch search options:', response.status, response.statusText);
+        // Usar dados estáticos como fallback
+        setAvailableStyles(['House', 'Techno', 'Trance', 'Progressive', 'Deep House', 'Tech House', 'Minimal', 'Ambient', 'Drum & Bass', 'Dubstep']);
+        setAvailableArtists(['Calvin Harris', 'David Guetta', 'Martin Garrix', 'Tiësto', 'Skrillex', 'Deadmau5', 'Armin van Buuren', 'Above & Beyond']);
+        setAvailablePools(['Beatport', 'DJCity', 'Traxsource', 'Juno Download', 'Bandcamp']);
+      }
+    } catch (error) {
+      console.error('Error fetching search options:', error);
+      // Usar dados estáticos como fallback
+      setAvailableStyles(['House', 'Techno', 'Trance', 'Progressive', 'Deep House', 'Tech House', 'Minimal', 'Ambient', 'Drum & Bass', 'Dubstep']);
+      setAvailableArtists(['Calvin Harris', 'David Guetta', 'Martin Garrix', 'Tiësto', 'Skrillex', 'Deadmau5', 'Armin van Buuren', 'Above & Beyond']);
+      setAvailablePools(['Beatport', 'DJCity', 'Traxsource', 'Juno Download', 'Bandcamp']);
+    }
+  };
+
+  // Handle advanced search
+  const handleAdvancedSearch = (params: {
+    query: string;
+    styles: string[];
+    artists: string[];
+    pools: string[];
+  }) => {
+    setSearchParams(params);
+    setCurrentPage(1);
+    fetchLatestTracks(1, null, params);
+  };
+
+  // Handle search clear
+  const handleSearchClear = () => {
+    setSearchParams({
+      query: '',
+      styles: [],
+      artists: [],
+      pools: []
+    });
+    setCurrentPage(1);
+    fetchLatestTracks(1, selectedGenre);
+  };
+
+  // Fetch most downloaded tracks
+  const fetchMostDownloaded = async () => {
+    try {
+      const response = await fetch('/api/tracks/most-downloaded');
+      if (response.ok) {
+        const data = await response.json();
+        // Transform the data to match our interface and limit to 13
+        const transformedTracks = data.tracks?.map((track: any, index: number) => ({
+          id: track.id,
+          songName: track.songName,
+          artist: track.artist,
+          style: track.style,
+          pool: track.pool,
+          imageUrl: track.imageUrl,
+          previewUrl: track.previewUrl,
+          downloadUrl: track.downloadUrl,
+          releaseDate: track.releaseDate,
+          createdAt: track.createdAt,
+          updatedAt: track.updatedAt,
+          __v: track.__v,
+          downloadCount: track.downloadCount || 0,
+          rank: index + 1
+        })) || [];
+        setPopularTracks(transformedTracks.slice(0, 13));
+      } else {
+        console.error('Failed to fetch most downloaded tracks');
+        setPopularTracks([]);
+      }
+    } catch (error) {
+      console.error('Error fetching most downloaded tracks:', error);
+      setPopularTracks([]);
+    }
+  };
+
+  // Função para verificar downloads do usuário
+  const checkUserDownloads = async (trackIds: number[]) => {
+    if (!session?.user || trackIds.length === 0) return;
+
+    try {
+      const response = await fetch('/api/downloads/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackIds })
       });
 
       if (response.ok) {
         const data = await response.json();
-        setMostDownloadedTracks(data.tracks || []);
-      } else {
-        console.warn('API response not ok:', response.status, response.statusText);
-        // Em caso de erro, definir tracks vazios para não quebrar a UI
-        setMostDownloadedTracks([]);
+        const downloadedSet = new Set<number>();
+        Object.keys(data.downloads).forEach(trackId => {
+          if (data.downloads[trackId]) {
+            downloadedSet.add(parseInt(trackId));
+          }
+        });
+        setDownloadedTracks(downloadedSet);
       }
     } catch (error) {
-      console.error('Error fetching most downloaded tracks:', error);
-      // Em caso de erro, definir tracks vazios para não quebrar a UI
-      setMostDownloadedTracks([]);
-    } finally {
-      setLoadingMostDownloaded(false);
+      console.error('Erro ao verificar downloads:', error);
     }
+  };
+
+  // Função para verificar likes do usuário
+  const checkUserLikes = async (trackIds: number[]) => {
+    if (!session?.user || trackIds.length === 0) return;
+
+    try {
+      const response = await fetch('/api/likes', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const likedSet = new Set<number>();
+        if (data.likedTracks && Array.isArray(data.likedTracks)) {
+          data.likedTracks.forEach((trackId: number) => {
+            likedSet.add(trackId);
+          });
+        }
+        setLikedTracks(likedSet);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar likes:', error);
+    }
+  };
+
+
+  // Load data on component mount
+  useEffect(() => {
+
+    const loadData = async () => {
+      setLoading(true);
+
+      // Ler parâmetros da URL
+      const { genre, page } = readURLParams();
+
+      // Aplicar parâmetros da URL aos estados
+      if (genre) {
+        setSelectedGenre(genre);
+      }
+      if (page > 1) {
+        setCurrentPage(page);
+      }
+
+      await Promise.all([
+        fetchLatestTracks(page, genre),
+        fetchMostDownloaded(),
+        fetchRecentStyles(),
+        fetchSearchOptions()
+      ]);
+      setLoading(false);
+    };
+
+    loadData();
   }, []);
 
+  // Definir isClient após hidratação
   useEffect(() => {
-    fetchMostDownloadedTracks();
-    setIsVisible(true);
-  }, [fetchMostDownloadedTracks]);
+    setIsClient(true);
+  }, []);
+
+  // Verificar downloads e likes quando as tracks são carregadas
+  useEffect(() => {
+    if (!tracks.length && !popularTracks.length) return;
+
+    const allTrackIds = [
+      ...tracks.map(t => t.id),
+      ...popularTracks.map(t => t.id)
+    ];
+    checkUserDownloads(allTrackIds);
+    checkUserLikes(allTrackIds);
+  }, [tracks, popularTracks, session]);
+
+  // Debug: Log do estado dos botões quando downloadedTracks muda
+  useEffect(() => {
+    if (!tracks.length) return;
+
+    console.log('🔍 Estado atual dos downloads:', {
+      totalTracks: tracks.length,
+      downloadedTracks: downloadedTracks.size,
+      downloadedTrackIds: Array.from(downloadedTracks),
+      currentPage,
+      selectedGenre
+    });
+  }, [downloadedTracks, tracks, currentPage, selectedGenre]);
+
+  // Auto-slide hero section
+  useEffect(() => {
+
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Listener para mudanças na URL (botão voltar/avançar)
+  useEffect(() => {
+
+    const handlePopState = () => {
+      const { genre, page } = readURLParams();
+      setSelectedGenre(genre);
+      setCurrentPage(page);
+      fetchLatestTracks(page, genre);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Função para validar se uma URL é válida
+  const isValidAudioUrl = (url: string | undefined): boolean => {
+    if (!url || url.trim() === '') return false;
+
+    // Filtrar URLs localhost que podem não existir
+    if (url.includes('localhost:3000') || url.includes('127.0.0.1')) {
+      console.log('⚠️ URL localhost detectada, pode não estar disponível:', url);
+      return false;
+    }
+
+    // Verificar se é uma URL válida
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handlePlayPause = async (track: Track, isFromMostPopular: boolean = false) => {
+    console.log('🎵 Homepage: handlePlayPause chamado', {
+      hasSession: !!session,
+      sessionUser: session?.user?.email,
+      track: track.songName
+    });
+
+    if (!session) {
+      toast.error('🔒 Faça login para ouvir as músicas');
+      return;
+    }
+
+    // Validar URLs antes de tentar reproduzir
+    const hasValidPreviewUrl = isValidAudioUrl(track.previewUrl);
+    const hasValidDownloadUrl = isValidAudioUrl(track.downloadUrl);
+
+    if (!hasValidPreviewUrl && !hasValidDownloadUrl) {
+      console.log('❌ Nenhuma URL válida encontrada para reprodução:', {
+        trackId: track.id,
+        songName: track.songName,
+        previewUrl: track.previewUrl,
+        downloadUrl: track.downloadUrl
+      });
+      toast.error('❌ URL de áudio não disponível para esta música');
+      return;
+    }
+
+    try {
+      if (currentTrack?.id === track.id && isPlaying) {
+        togglePlayPause();
+      } else {
+        // Se for da seção Most Popular, passar a lista para auto-play
+        if (isFromMostPopular && popularTracks.length > 0) {
+          console.log('🎵 Homepage: Tocando da seção Most Popular', {
+            track: track.songName,
+            playlistLength: popularTracks.length,
+            popularTracksIds: popularTracks.map(t => ({ id: t.id, name: t.songName }))
+          });
+          await playTrack(track, popularTracks);
+        } else if (tracks.length > 0) {
+          // Se for da lista principal, passar a lista de tracks
+          console.log('🎵 Homepage: Tocando da lista principal', {
+            track: track.songName,
+            playlistLength: tracks.length,
+            tracksIds: tracks.map(t => ({ id: t.id, name: t.songName }))
+          });
+          await playTrack(track, tracks);
+        } else {
+          console.log('🎵 Homepage: Tocando sem playlist');
+          await playTrack(track);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao reproduzir música:', error);
+      toast.error('❌ Erro ao reproduzir música');
+    }
+  };
+
+  // Função de download melhorada e mais rápida
+  const handleDownload = async (track: Track) => {
+    if (!session?.user) {
+      toast.error('🔒 Faça login para baixar músicas');
+      return;
+    }
+
+    if (downloadingTracks.has(track.id)) {
+      return; // Já está baixando
+    }
+
+    setDownloadingTracks(prev => new Set(prev).add(track.id));
+
+    try {
+      // 1. Registrar download no banco (rápido)
+      const downloadResponse = await fetch('/api/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackId: track.id })
+      });
+
+      if (!downloadResponse.ok) {
+        throw new Error('Erro ao autorizar download');
+      }
+
+      const downloadData = await downloadResponse.json();
+
+      // 2. Marcar como baixado imediatamente
+      setDownloadedTracks(prev => new Set(prev).add(track.id));
+
+      // 3. Iniciar download do arquivo
+      const response = await fetch(downloadData.downloadUrl);
+      if (!response.ok) {
+        throw new Error('Erro ao baixar arquivo');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${track.artist} - ${track.songName}.mp3`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('✅ Download concluído!', {
+        duration: 2000,
+        style: {
+          background: 'linear-gradient(135deg, #1f2937 0%, #111827 100%)',
+          color: '#f9fafb',
+          border: '1px solid #10b981',
+          borderRadius: '12px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      });
+
+    } catch (error) {
+      console.error('Erro no download:', error);
+      toast.error('❌ Erro ao baixar música');
+      // Remover do estado de baixado se houve erro
+      setDownloadedTracks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(track.id);
+        return newSet;
+      });
+    } finally {
+      setDownloadingTracks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(track.id);
+        return newSet;
+      });
+    }
+  };
+
+  // Função para download em lotes
+  const downloadBatch = async (isNewOnly: boolean = false, dateTracks?: Track[]) => {
+    if (!session?.user) {
+      toast.error('🔒 Faça login para baixar músicas');
+      return;
+    }
+
+    if (downloadingBatch) {
+      toast.error('⏳ Download em andamento, aguarde...');
+      return;
+    }
+
+    // Usar as músicas da data específica se fornecidas, senão usar todas da página
+    const sourceTracks = dateTracks || tracks;
+
+    // Para DOWNLOAD ALL, sempre usar todas as músicas da fonte
+    // Para DOWNLOAD NEW, usar apenas músicas não baixadas da fonte
+    const tracksToDownload = isNewOnly
+      ? sourceTracks.filter(track => !downloadedTracks.has(track.id))
+      : sourceTracks;
+
+    if (tracksToDownload.length === 0) {
+      toast.error(isNewOnly ? '📭 Nenhuma música nova para baixar' : '📭 Nenhuma música disponível');
+      return;
+    }
+
+    setDownloadingBatch(true);
+    setBatchCancel(false);
+    setBatchProgress({ current: 0, total: tracksToDownload.length });
+
+    try {
+      // Processar em lotes de 10
+      const batchSize = 10;
+      const batches = [];
+      for (let i = 0; i < tracksToDownload.length; i += batchSize) {
+        batches.push(tracksToDownload.slice(i, i + batchSize));
+      }
+
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        if (batchCancel) {
+          toast.error('❌ Download cancelado pelo usuário');
+          break;
+        }
+
+        const batch = batches[batchIndex];
+
+        // Processar cada música do lote
+        for (let trackIndex = 0; trackIndex < batch.length; trackIndex++) {
+          if (batchCancel) break;
+
+          const track = batch[trackIndex];
+          const currentProgress = batchIndex * batchSize + trackIndex + 1;
+          setBatchProgress({ current: currentProgress, total: tracksToDownload.length });
+
+          try {
+            // Registrar download no banco
+            const downloadResponse = await fetch('/api/download', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ trackId: track.id })
+            });
+
+            if (downloadResponse.ok) {
+              const downloadData = await downloadResponse.json();
+
+              // Baixar arquivo
+              const response = await fetch(downloadData.downloadUrl);
+              if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${track.artist} - ${track.songName}.mp3`;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                // Marcar como baixado
+                setDownloadedTracks(prev => {
+                  const newSet = new Set(prev).add(track.id);
+                  console.log('🎵 Música marcada como baixada:', track.songName, 'Total baixadas:', newSet.size);
+                  return newSet;
+                });
+              }
+            }
+
+            // Pequena pausa entre downloads
+            await new Promise(resolve => setTimeout(resolve, 500));
+          } catch (error) {
+            console.error(`Erro ao baixar ${track.songName}:`, error);
+          }
+        }
+
+        // Pausa maior entre lotes
+        if (batchIndex < batches.length - 1 && !batchCancel) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      if (!batchCancel) {
+        toast.success(`✅ Download concluído! ${tracksToDownload.length} músicas baixadas`);
+      }
+    } catch (error) {
+      console.error('Erro no download em lote:', error);
+      toast.error('❌ Erro durante o download em lote');
+    } finally {
+      setDownloadingBatch(false);
+      setBatchProgress({ current: 0, total: 0 });
+      setBatchCancel(false);
+    }
+  };
+
+  // Função para cancelar download em lote
+  const cancelBatchDownload = () => {
+    setBatchCancel(true);
+    toast.error('⏹️ Cancelando download...');
+  };
+
+  // Função para lidar com likes
+  const handleLike = async (track: Track) => {
+    if (!session?.user) {
+      toast.error('🔒 Faça login para curtir músicas');
+      return;
+    }
+
+    if (likingTracks.has(track.id)) {
+      return; // Já está processando
+    }
+
+    setLikingTracks(prev => new Set(prev).add(track.id));
+
+    try {
+      console.log('🔍 Enviando like para track:', track.id);
+
+      const response = await fetch('/api/likes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trackId: track.id
+        })
+      });
+
+      console.log('🔍 Resposta da API:', response.status, response.ok);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('🔍 Dados recebidos:', data);
+
+        if (data.liked) {
+          setLikedTracks(prev => new Set(prev).add(track.id));
+          toast.success('❤️ Música curtida!');
+        } else {
+          setLikedTracks(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(track.id);
+            return newSet;
+          });
+          toast.success('💔 Música descurtida');
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Erro na resposta:', response.status, errorData);
+        throw new Error(`Erro ${response.status}: ${errorData.error || 'Erro desconhecido'}`);
+      }
+    } catch (error) {
+      console.error('❌ Erro no like:', error);
+      toast.error(`❌ Erro ao curtir música: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    } finally {
+      setLikingTracks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(track.id);
+        return newSet;
+      });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Header Fixo */}
+    <div className="min-h-screen bg-black text-white font-inter">
       <Header />
 
-      {/* Conteúdo Principal - Tela Cheia */}
-      <div className="pt-12 lg:pt-16">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-48 sm:w-56 md:w-64 lg:w-72 h-48 sm:h-56 md:h-64 lg:h-72 bg-purple-500/5 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute top-40 right-20 w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute bottom-20 left-1/4 w-56 sm:w-64 md:w-80 h-56 sm:h-64 md:h-80 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
+      {/* Main Content */}
+      <div className="pt-24 flex flex-col lg:flex-row min-h-screen pb-32">
+        {/* Main Content Area */}
+        <div className="w-full lg:w-3/5 p-4 sm:p-6">
+          {/* Hero Section */}
+          <div className="relative mb-12 mt-4">
+            <div className="relative rounded-2xl overflow-hidden h-80 sm:h-96 shadow-2xl">
+              {/* Slides */}
+              {heroSlides.map((slide, index) => (
+                <div
+                  key={slide.id}
+                  className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'
+                    }`}
+                >
+                  <div
+                    className="w-full h-full bg-cover bg-center relative"
+                    style={{
+                      backgroundImage: `linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.6) 100%), url(${slide.imageUrl})`
+                    }}
+                  >
+                    {/* NEW & NOTABLE Badge */}
+                    <div className="absolute top-6 right-6 bg-gradient-to-r from-emerald-400 to-teal-500 text-black px-4 py-2 rounded-full font-inter font-semibold text-sm shadow-lg backdrop-blur-sm">
+                      ✨ NEW & NOTABLE
+                    </div>
+
+                    {/* Content */}
+                    <div className="absolute inset-0 flex flex-col justify-center p-8 sm:p-12">
+                      <div className="max-w-2xl">
+                        <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-inter font-bold text-white leading-tight mb-4 tracking-tight">
+                          {slide.title}
+                        </h2>
+                        <p className="text-xl sm:text-2xl text-gray-100 font-inter font-light leading-relaxed">
+                          {slide.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Navigation Dots */}
+              <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3">
+                {heroSlides.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide
+                      ? 'bg-white scale-125'
+                      : 'bg-white/40 hover:bg-white/70'
+                      }`}
+                  />
+                ))}
+              </div>
+
+              {/* Navigation Arrows */}
+              <button
+                onClick={() => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
+                className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white p-3 rounded-full transition-all duration-300 hover:scale-110"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
+                className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white p-3 rounded-full transition-all duration-300 hover:scale-110"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Discover More Section */}
+          <div className="mb-12 -mt-4">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-1 h-8 bg-gradient-to-b from-red-500 to-red-600 rounded-full"></div>
+              <h2 className="text-2xl font-bebas font-bold text-white tracking-wide">
+                DESCUBRA MAIS
+              </h2>
+            </div>
+
+            {/* Cards de Navegação - Design Ultra Moderno */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {/* Card 1 - Mais Populares */}
+              <Link href="/most-popular">
+                <div className="group relative">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/50 to-pink-500/50 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                  <div className="relative bg-[#242424] backdrop-blur-xl rounded-2xl p-6 border border-white/5 hover:border-white/10 transition-all duration-300">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-pink-500 rounded-lg flex items-center justify-center shadow-lg">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      </div>
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    </div>
+                    <h3 className="text-white font-inter font-bold text-sm leading-tight mb-1 tracking-wide">
+                      MAIS POPULARES
+                    </h3>
+                    <p className="text-gray-500 text-sm font-inter uppercase tracking-wider">Top tracks</p>
+                  </div>
+                </div>
+              </Link>
+
+              {/* Card 2 - Top Playlists */}
+              <Link href="/playlists">
+                <div className="group relative">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-green-500/50 to-emerald-500/50 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                  <div className="relative bg-[#242424] backdrop-blur-xl rounded-2xl p-6 border border-white/5 hover:border-white/10 transition-all duration-300">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center shadow-lg">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" />
+                        </svg>
+                      </div>
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    </div>
+                    <h3 className="text-white font-inter font-bold text-sm leading-tight mb-1 tracking-wide">
+                      TOP PLAYLISTS
+                    </h3>
+                    <p className="text-gray-500 text-sm font-inter uppercase tracking-wider">Curated mixes</p>
+                  </div>
+                </div>
+              </Link>
+
+              {/* Card 3 - Charts Mensais */}
+              <div className="group relative">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/50 to-orange-500/50 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                <div className="relative bg-[#242424] backdrop-blur-xl rounded-2xl p-6 border border-white/5 hover:border-white/10 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center shadow-lg">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z" />
+                      </svg>
+                    </div>
+                    <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <h3 className="text-white font-inter font-bold text-sm leading-tight mb-1 tracking-wide whitespace-nowrap">
+                    CHARTS MENSAIS
+                  </h3>
+                  <p className="text-gray-500 text-sm font-inter uppercase tracking-wider">Ranking Mensal</p>
+                </div>
+              </div>
+
+              {/* Card 4 - Navegar Gêneros */}
+              <div className="group relative">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-teal-500/50 to-cyan-500/50 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                <div className="relative bg-[#242424] backdrop-blur-xl rounded-2xl p-6 border border-white/5 hover:border-white/10 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center shadow-lg">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                      </svg>
+                    </div>
+                    <div className="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <h3 className="text-white font-inter font-bold text-sm leading-tight mb-1 tracking-wide">
+                    GÊNEROS
+                  </h3>
+                  <p className="text-gray-500 text-xs font-inter uppercase tracking-wider">Explore styles</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Featured Highlights Section */}
+          <div className="mb-12 -mt-4">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></div>
+              <h2 className="text-2xl font-bebas font-bold text-white tracking-wide">
+                DESTAQUES ESPECIAIS
+              </h2>
+            </div>
+
+            {/* Featured Slides */}
+            <div className="relative rounded-2xl overflow-hidden h-64 shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/90 via-pink-600/90 to-red-600/90"></div>
+
+              {/* Content */}
+              <div className="relative z-10 h-full flex items-center justify-between p-8">
+                <div className="flex-1">
+                  <div className="mb-4">
+                    <span className="bg-white/20 text-white px-3 py-1 rounded-full text-sm font-inter font-medium">
+                      🔥 TRENDING NOW
+                    </span>
+                  </div>
+                  <h3 className="text-3xl sm:text-4xl font-bebas font-bold text-white mb-3 tracking-tight">
+                    MIXES EXCLUSIVOS
+                  </h3>
+                  <p className="text-white/90 text-lg font-inter font-light mb-6 max-w-md">
+                    Descubra as melhores seleções curadas pelos nossos DJs profissionais
+                  </p>
+                  <div className="flex gap-4">
+                    <Link href="/new-releases">
+                      <button className="bg-white text-purple-600 px-6 py-3 rounded-xl font-inter font-semibold hover:bg-white/90 transition-all duration-300 hover:scale-105">
+                        EXPLORAR MIXES
+                      </button>
+                    </Link>
+                    <Link href="/playlists">
+                      <button className="border-2 border-white text-white px-6 py-3 rounded-xl font-inter font-semibold hover:bg-white hover:text-purple-600 transition-all duration-300">
+                        VER PLAYLISTS
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Decorative Elements */}
+                <div className="hidden lg:block">
+                  <div className="relative">
+                    <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
+                      <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                      </svg>
+                    </div>
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
+                      <span className="text-black font-bold text-sm">★</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Elements */}
+              <div className="absolute top-4 right-4 w-4 h-4 bg-white/20 rounded-full animate-pulse"></div>
+              <div className="absolute bottom-8 right-8 w-2 h-2 bg-white/30 rounded-full animate-bounce"></div>
+              <div className="absolute top-1/2 right-12 w-1 h-1 bg-white/40 rounded-full animate-ping"></div>
+            </div>
+          </div>
+
+          {/* New Releases Section Header */}
+          <div className="mb-12 -mt-4">
+            <div className="relative">
+              {/* Background gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-red-900/20 via-transparent to-red-900/20 rounded-2xl"></div>
+
+              {/* Main content */}
+              <div className="relative p-8 bg-gradient-to-r from-gray-900/40 to-gray-800/30 backdrop-blur-sm rounded-2xl border border-gray-700/30 shadow-2xl">
+                <div className="text-center mb-6">
+                  {/* Pool de Gravação - Enhanced */}
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <span className="text-red-400 text-sm font-inter font-semibold uppercase tracking-[0.2em] letter-spacing-wider">
+                      Pool de Gravação
+                    </span>
+                  </div>
+
+                  {/* NOVOS LANÇAMENTOS - Enhanced */}
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bebas font-black text-white tracking-tight mb-3 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent drop-shadow-2xl">
+                    NOVOS LANÇAMENTOS
+                  </h1>
+
+                  {/* Pool Exclusivo de DJs - Enhanced */}
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                    <p className="text-gray-300 text-base font-inter font-medium tracking-wide">
+                      Pool Exclusivo de DJs
+                    </p>
+                  </div>
+                </div>
+
+                {/* Decorative elements */}
+                <div className="absolute top-4 right-4 opacity-20">
+                  <div className="w-16 h-16 border border-red-500/30 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 border border-red-500/50 rounded-full flex items-center justify-center">
+                      <div className="w-4 h-4 bg-red-500/30 rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="absolute bottom-4 left-4 opacity-10">
+                  <div className="w-12 h-12 border border-gray-500/30 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <main className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-6 sm:py-8 md:py-12 relative z-10">
-
-          {/* Hero Section */}
-          <div className={`text-center mb-12 sm:mb-16 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <div className="mb-8 sm:mb-12 relative">
-              {/* Fundo animado topo do hero */}
-              <div className="absolute -top-12 sm:-top-16 left-1/2 -translate-x-1/2 w-[85vw] sm:w-[90vw] max-w-4xl lg:max-w-5xl h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-blue-500/30 rounded-full blur-2xl animate-pulse z-0" style={{ pointerEvents: 'none' }} />
-
-              {/* Elementos flutuantes animados */}
-              <div className="absolute top-8 sm:top-10 left-8 sm:left-10 w-3 sm:w-4 h-3 sm:h-4 bg-purple-400 rounded-full animate-bounce opacity-60"></div>
-              <div className="absolute top-16 sm:top-20 right-16 sm:right-20 w-2 sm:w-3 h-2 sm:h-3 bg-pink-400 rounded-full animate-bounce opacity-60" style={{ animationDelay: '0.5s' }}></div>
-              <div className="absolute top-24 sm:top-32 left-1/4 w-1.5 sm:w-2 h-1.5 sm:h-2 bg-blue-400 rounded-full animate-bounce opacity-60" style={{ animationDelay: '1s' }}></div>
-
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600/20 to-pink-600/20 px-4 sm:px-6 py-2 sm:py-3 rounded-full border border-purple-500/30 mb-6 sm:mb-8 backdrop-blur-sm hover:from-purple-600/30 hover:to-pink-600/30 transition-all duration-300 transform hover:scale-105">
-                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400 animate-pulse" />
-                <span className="text-purple-300 font-medium text-sm sm:text-base">A Plataforma Definitiva para DJs</span>
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bold text-white tracking-tight mb-4 sm:mb-6 leading-tight">
-                {/* Mobile: 4 linhas, Desktop: 2 linhas próximas, largura igual ao parágrafo */}
-                <span className="block md:hidden">
-                  <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center">
-                    O POOL DE DISCOS
-                  </span>
-                  <br />
-                  <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center">
-                    INDEPENDENTES
-                  </span>
-                  <br />
-                  <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center">
-                    ONDE OS DJS
-                  </span>
-                  <br />
-                  <span className="bg-gradient-to-r from-green-400 via-blue-400 to-purple-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center">
-                    DESCOBREM O FUTURO
-                  </span>
-                </span>
-                <span className="hidden md:block max-w-4xl lg:max-w-5xl mx-auto">
-                  <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center">
-                    O POOL DE DISCOS INDEPENDENTES
-                  </span>
-                  <span
-                    className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent font-bebas-neue uppercase block text-center mt-[5px] md:mt-[13px] lg:mt-[25px] xl:mt-[37px]"
-                    style={{ display: 'block', marginTop: '-3px' }}
-                  >
-                    ONDE OS DJS DESCOBREM O FUTURO
-                  </span>
-                </span>
-              </h1>
-
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-gray-300 max-w-4xl lg:max-w-5xl mx-auto leading-relaxed mb-6 sm:mb-8 text-justify text-center md:text-justify font-inter">
-                A plataforma definitiva para DJs que buscam as melhores músicas eletrônicas,
-                remixes exclusivos e sets que dominam as pistas. Descubra o futuro da música eletrônica.
-              </p>
-
-              {/* Animated Image */}
-              <div className="relative mb-8 sm:mb-12 group">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl lg:rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-
-                {/* Efeitos de brilho */}
-                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-xl lg:rounded-2xl blur opacity-25 group-hover:opacity-40 transition-all duration-500"></div>
-
-                {/* Bordas animadas */}
-                <div className="absolute inset-0 rounded-xl lg:rounded-2xl bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-blue-500/50 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-
-                <SafeImage
-                  src="https://i.ibb.co/fYTVXwdR/tela-home.png"
-                  alt="Tela do computador mostrando a plataforma"
-                  width={800}
-                  height={600}
-                  className="relative w-full max-w-4xl lg:max-w-5xl mx-auto rounded-xl lg:rounded-2xl shadow-2xl border border-purple-500/30 group-hover:scale-[1.02] transition-all duration-500"
-                />
-
-                {/* Overlay de brilho */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-xl lg:rounded-2xl"></div>
-              </div>
+        {/* Right Sidebar */}
+        <div className="w-full lg:w-2/5 p-4 sm:p-6 lg:pl-4 lg:pr-6">
+          <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/30 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-6 -mt-4">
+              <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-500 rounded-full"></div>
+              <h3 className="text-xl font-inter font-bold text-white tracking-wide">Most Popular</h3>
             </div>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-8 sm:mb-12">
-              <Link href="/new">
-                <button className="group w-full sm:w-auto bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl lg:rounded-2xl text-base sm:text-lg transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 flex items-center justify-center gap-2 sm:gap-3 transform hover:scale-105 relative overflow-hidden">
-                  {/* Efeito de brilho */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                  <Music className="h-5 w-5 sm:h-6 sm:w-6 group-hover:animate-pulse relative z-10" />
-                  <span className="relative z-10">Explorar Músicas</span>
-                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform relative z-10" />
-                </button>
-              </Link>
-              <Link href="/trending">
-                <button className="group w-full sm:w-auto bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 hover:from-purple-700 hover:via-pink-700 hover:to-red-700 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl lg:rounded-2xl text-base sm:text-lg transition-all duration-300 shadow-2xl hover:shadow-purple-500/25 flex items-center justify-center gap-2 sm:gap-3 transform hover:scale-105 relative overflow-hidden">
-                  {/* Efeito de brilho */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 group-hover:animate-pulse relative z-10" />
-                  <span className="relative z-10">Ver Trending</span>
-                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform relative z-10" />
-                </button>
-              </Link>
-            </div>
-
-            {/* Pricing Badge */}
-            <Link href="/plans">
-              <div className="group inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-green-600/20 to-emerald-600/20 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow-lg hover:from-green-700/30 hover:to-emerald-700/30 transition-all duration-300 cursor-pointer border border-green-500/30 hover:border-green-400/50 transform hover:scale-105 relative overflow-hidden backdrop-blur-sm">
-                {/* Efeito de brilho */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                {/* Partículas flutuantes */}
-                <div className="absolute top-1 left-2 w-1 h-1 bg-green-400 rounded-full animate-ping opacity-60"></div>
-                <div className="absolute bottom-1 right-2 w-1 h-1 bg-emerald-400 rounded-full animate-ping opacity-60" style={{ animationDelay: '0.5s' }}></div>
-
-                <Star className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 group-hover:animate-spin relative z-10" />
-                <span className="relative z-10 text-sm sm:text-base">A partir de R$ 38,00/mês</span>
-                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 group-hover:translate-x-1 transition-transform relative z-10" />
-              </div>
-            </Link>
-          </div>
-
-          {/* SEÇÃO - PLANOS PARA USUÁRIOS NÃO LOGADOS */}
-          {!session?.user && (
-            <div className="mb-20">
-              <div className="bg-gradient-to-br from-yellow-900/20 via-orange-900/20 to-red-900/20 rounded-3xl p-10 border border-yellow-500/20 backdrop-blur-sm relative overflow-hidden">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-5">
-                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-yellow-400 to-orange-500"></div>
-                </div>
-
-                <div className="relative z-10">
-                  <div className="text-center mb-10">
-                    <div className="flex items-center justify-center mb-6">
-                      <div className="bg-gradient-to-r from-yellow-600 to-orange-600 p-4 rounded-full mr-4 shadow-lg">
-                        <Crown className="h-10 w-10 text-white" />
-                      </div>
-                      <h2 className="text-4xl font-bold text-white">Escolha Seu Plano VIP</h2>
-                    </div>
-                    <p className="text-gray-300 max-w-4xl mx-auto text-xl">
-                      Acesso completo ao maior acervo de música eletrônica do Brasil.
-                      Escolha o plano ideal para suas necessidades e comece a baixar hoje mesmo.
-                    </p>
+            <div className="space-y-3">
+              {popularTracks.slice(0, 12).map((track, index) => (
+                <div key={track.id} className="flex items-center gap-3 p-3 bg-gray-800/30 hover:bg-gray-700/40 rounded-lg transition-all duration-200 border border-gray-700/30 hover:border-gray-600/50">
+                  {/* Número da posição */}
+                  <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">{index + 1}</span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-                    <div className="group bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-2xl p-8 text-center border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden backdrop-blur-sm">
-                      {/* Efeito de brilho */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                      {/* Partículas flutuantes */}
-                      <div className="absolute top-4 right-4 w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-40"></div>
-
-                      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-blue-500/50 transition-all duration-300">
-                        <span className="text-3xl group-hover:scale-110 transition-transform duration-300">🥉</span>
-                      </div>
-                      <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-blue-300 transition-colors duration-300">VIP BÁSICO</h3>
-                      <p className="text-gray-300 text-lg mb-6">R$ 38,00/mês</p>
-                      <ul className="text-gray-400 text-base space-y-3 text-left">
-                        <li className="flex items-center gap-2 group-hover:text-gray-200 transition-colors duration-300">
-                          <CheckCircle className="h-5 w-5 text-green-400 group-hover:animate-pulse" />
-                          Acesso ao Drive Mensal
-                        </li>
-                        <li className="flex items-center gap-2 group-hover:text-gray-200 transition-colors duration-300">
-                          <CheckCircle className="h-5 w-5 text-green-400 group-hover:animate-pulse" />
-                          Até 4 packs por semana
-                        </li>
-                        <li className="flex items-center gap-2 group-hover:text-gray-200 transition-colors duration-300">
-                          <CheckCircle className="h-5 w-5 text-green-400 group-hover:animate-pulse" />
-                          Downloads ilimitados
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="group bg-gradient-to-br from-green-900/30 to-green-800/20 rounded-2xl p-8 text-center border-2 border-yellow-500/50 hover:border-yellow-400/70 transition-all duration-300 transform hover:scale-105 relative overflow-hidden backdrop-blur-sm">
-                      {/* Efeito de brilho */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                      {/* Partículas flutuantes */}
-                      <div className="absolute top-4 right-4 w-2 h-2 bg-green-400 rounded-full animate-ping opacity-40"></div>
-                      <div className="absolute bottom-4 left-4 w-2 h-2 bg-yellow-400 rounded-full animate-ping opacity-40" style={{ animationDelay: '0.7s' }}></div>
-
-                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg group-hover:scale-110 transition-transform duration-300">
-                        MAIS POPULAR
-                      </div>
-                      <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-green-500/50 transition-all duration-300">
-                        <span className="text-3xl group-hover:scale-110 transition-transform duration-300">🥈</span>
-                      </div>
-                      <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-green-300 transition-colors duration-300">VIP PADRÃO</h3>
-                      <p className="text-gray-300 text-lg mb-6">R$ 42,00/mês</p>
-                      <ul className="text-gray-400 text-base space-y-3 text-left">
-                        <li className="flex items-center gap-2 group-hover:text-gray-200 transition-colors duration-300">
-                          <CheckCircle className="h-5 w-5 text-green-400 group-hover:animate-pulse" />
-                          Tudo do Básico
-                        </li>
-                        <li className="flex items-center gap-2 group-hover:text-gray-200 transition-colors duration-300">
-                          <CheckCircle className="h-5 w-5 text-green-400 group-hover:animate-pulse" />
-                          Deezer Premium Grátis
-                        </li>
-                        <li className="flex items-center gap-2 group-hover:text-gray-200 transition-colors duration-300">
-                          <CheckCircle className="h-5 w-5 text-green-400 group-hover:animate-pulse" />
-                          15% desconto Deemix
-                        </li>
-                        <li className="flex items-center gap-2 group-hover:text-gray-200 transition-colors duration-300">
-                          <CheckCircle className="h-5 w-5 text-green-400 group-hover:animate-pulse" />
-                          ARL Premium
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="group bg-gradient-to-br from-purple-900/30 to-purple-800/20 rounded-2xl p-8 text-center border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden backdrop-blur-sm">
-                      {/* Efeito de brilho */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                      {/* Partículas flutuantes */}
-                      <div className="absolute top-4 right-4 w-2 h-2 bg-purple-400 rounded-full animate-ping opacity-40"></div>
-                      <div className="absolute bottom-4 left-4 w-2 h-2 bg-pink-400 rounded-full animate-ping opacity-40" style={{ animationDelay: '1s' }}></div>
-
-                      <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-purple-500/50 transition-all duration-300">
-                        <span className="text-3xl group-hover:scale-110 transition-transform duration-300">🥇</span>
-                      </div>
-                      <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors duration-300">VIP COMPLETO</h3>
-                      <p className="text-gray-300 text-lg mb-6">R$ 60,00/mês</p>
-                      <ul className="text-gray-400 text-base space-y-3 text-left">
-                        <li className="flex items-center gap-2 group-hover:text-gray-200 transition-colors duration-300">
-                          <CheckCircle className="h-5 w-5 text-green-400 group-hover:animate-pulse" />
-                          Tudo do Padrão
-                        </li>
-                        <li className="flex items-center gap-2 group-hover:text-gray-200 transition-colors duration-300">
-                          <CheckCircle className="h-5 w-5 text-green-400 group-hover:animate-pulse" />
-                          Playlists ilimitadas
-                        </li>
-                        <li className="flex items-center gap-2 group-hover:text-gray-200 transition-colors duration-300">
-                          <CheckCircle className="h-5 w-5 text-green-400 group-hover:animate-pulse" />
-                          Produção de música
-                        </li>
-                        <li className="flex items-center gap-2 group-hover:text-gray-200 transition-colors duration-300">
-                          <CheckCircle className="h-5 w-5 text-green-400 group-hover:animate-pulse" />
-                          Suporte prioritário
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="text-center">
-                    <Link href="/plans">
-                      <button className="group bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white font-bold py-4 px-10 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 mx-auto shadow-lg hover:shadow-xl transform hover:scale-105 relative overflow-hidden">
-                        {/* Efeito de brilho */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                        {/* Partículas flutuantes */}
-                        <div className="absolute top-2 left-2 w-1 h-1 bg-yellow-300 rounded-full animate-ping opacity-60"></div>
-                        <div className="absolute bottom-2 right-2 w-1 h-1 bg-orange-300 rounded-full animate-ping opacity-60" style={{ animationDelay: '0.5s' }}></div>
-
-                        <Crown className="h-6 w-6 group-hover:animate-pulse relative z-10" />
-                        <span className="relative z-10">Ver Todos os Planos</span>
-                        <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform relative z-10" />
-                      </button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Estatísticas Animadas */}
-
-          {/* Features Grid */}
-          <div className="mb-20">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bebas-neue font-bold text-white mb-4 uppercase">POR QUE ESCOLHER NOSSA PLATAFORMA?</h2>
-              <p className="text-gray-300 text-xl max-w-3xl mx-auto">
-                Somos a escolha número um dos DJs brasileiros que buscam qualidade,
-                variedade e uma experiência premium incomparável.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div className="group bg-gradient-to-br from-blue-900/30 to-blue-800/20 backdrop-blur-sm rounded-2xl p-8 border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                {/* Efeito de brilho */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                {/* Partículas flutuantes */}
-                <div className="absolute top-4 right-4 w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-40"></div>
-
-                <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 group-hover:animate-pulse group-hover:shadow-blue-500/50 transition-all duration-300">
-                  <Music className="h-8 w-8 text-white group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-blue-300 transition-colors duration-300">Milhares de Músicas</h3>
-                <p className="text-gray-300 text-base group-hover:text-gray-200 transition-colors duration-300">Catálogo vasto com as melhores faixas eletrônicas do momento</p>
-              </div>
-
-              <div className="group bg-gradient-to-br from-purple-900/30 to-purple-800/20 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                {/* Efeito de brilho */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                {/* Partículas flutuantes */}
-                <div className="absolute top-4 right-4 w-2 h-2 bg-purple-400 rounded-full animate-ping opacity-40"></div>
-
-                <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 group-hover:animate-pulse group-hover:shadow-purple-500/50 transition-all duration-300">
-                  <TrendingUp className="h-8 w-8 text-white group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-purple-300 transition-colors duration-300">Trending Semanal</h3>
-                <p className="text-gray-300 text-base group-hover:text-gray-200 transition-colors duration-300">Descubra as músicas mais baixadas pelos DJs da comunidade</p>
-              </div>
-
-              <div className="group bg-gradient-to-br from-green-900/30 to-green-800/20 backdrop-blur-sm rounded-2xl p-8 border border-green-500/30 hover:border-green-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                {/* Efeito de brilho */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                {/* Partículas flutuantes */}
-                <div className="absolute top-4 right-4 w-2 h-2 bg-green-400 rounded-full animate-ping opacity-40"></div>
-
-                <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 group-hover:animate-pulse group-hover:shadow-green-500/50 transition-all duration-300">
-                  <Download className="h-8 w-8 text-white group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-green-300 transition-colors duration-300">Downloads Ilimitados</h3>
-                <p className="text-gray-300 text-base group-hover:text-gray-200 transition-colors duration-300">Baixe quantas músicas quiser, quando quiser</p>
-              </div>
-
-              <div className="group bg-gradient-to-br from-pink-900/30 to-pink-800/20 backdrop-blur-sm rounded-2xl p-8 border border-pink-500/30 hover:border-pink-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                {/* Efeito de brilho */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-pink-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                {/* Partículas flutuantes */}
-                <div className="absolute top-4 right-4 w-2 h-2 bg-pink-400 rounded-full animate-ping opacity-40"></div>
-
-                <div className="bg-gradient-to-br from-pink-600 to-pink-700 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 group-hover:animate-pulse group-hover:shadow-pink-500/50 transition-all duration-300">
-                  <Users className="h-8 w-8 text-white group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-pink-300 transition-colors duration-300">Comunidade Ativa</h3>
-                <p className="text-gray-300 text-base group-hover:text-gray-200 transition-colors duration-300">Conecte-se com DJs de todo o Brasil</p>
-              </div>
-            </div>
-          </div>
-
-          {/* BOX DESTAQUE - DOWNLOAD EM LOTE */}
-          <div className="bg-gradient-to-br from-cyan-900/30 via-blue-900/30 to-cyan-900/30 rounded-3xl p-10 mb-20 border border-cyan-500/30 backdrop-blur-sm">
-            <div className="text-center mb-10">
-              <div className="flex items-center justify-center mb-6">
-                <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 rounded-full mr-4 shadow-lg">
-                  <Archive className="h-10 w-10 text-white" />
-                </div>
-                <h2 className="text-4xl font-bold text-white">Download em Lote</h2>
-              </div>
-              <p className="text-gray-300 max-w-4xl mx-auto text-xl mb-8">
-                Baixe músicas em lotes de 10 em 10 para máxima organização! Escolha entre: novidades da semana, por artista específico, por estilo musical ou por gravadora. Ideal para DJs que querem manter suas bibliotecas organizadas e atualizadas!
-              </p>
-
-              {/* Cards de Benefícios */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-                <div className="group bg-gradient-to-br from-cyan-900/30 to-blue-900/30 rounded-2xl p-8 text-center border border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300 transform hover:scale-105">
-                  <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                    <Database className="h-10 w-10 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Como Funciona</h3>
-                  <p className="text-gray-300 text-base">1. Escolha o tipo de lote: novidades, por artista, estilo ou gravadora 2. O sistema mostra 10 músicas por vez 3. Baixe o lote atual e navegue para o próximo</p>
-                </div>
-
-                <div className="group bg-gradient-to-br from-blue-900/30 to-indigo-900/30 rounded-2xl p-8 text-center border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 transform hover:scale-105">
-                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                    <Download className="h-10 w-10 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Sistema de Lotes</h3>
-                  <p className="text-gray-300 text-base">Downloads organizados em grupos de 10 músicas por vez. Navegue entre lotes facilmente e mantenha sua biblioteca sempre atualizada com as melhores faixas</p>
-                </div>
-
-                <div className="group bg-gradient-to-br from-indigo-900/30 to-purple-900/30 rounded-2xl p-8 text-center border border-indigo-500/30 hover:border-indigo-400/50 transition-all duration-300 transform hover:scale-105">
-                  <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                    <Zap className="h-10 w-10 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Navegação Inteligente</h3>
-                  <p className="text-gray-300 text-base">Navegue facilmente entre lotes com botões de próximo/anterior. Cada lote de 10 músicas é organizado automaticamente por categoria</p>
-                </div>
-              </div>
-
-              {/* Botão de Ação */}
-              <div className="text-center">
-                <Link href="/new">
-                  <button className="group bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold py-4 px-10 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 mx-auto shadow-lg hover:shadow-xl transform hover:scale-105">
-                    <Archive className="h-6 w-6 group-hover:animate-pulse" />
-                    COMECE A OUVIR E BAIXAR
-                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </button>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* SEÇÃO - UPLOAD DE MÚSICAS */}
-          <div className="bg-gradient-to-br from-purple-900/30 via-pink-900/30 to-purple-900/30 rounded-3xl p-10 mb-20 border border-purple-500/30 backdrop-blur-sm">
-            <div className="text-center mb-10">
-              <div className="flex items-center justify-center mb-6">
-                <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 rounded-full mr-4 shadow-lg">
-                  <Upload className="h-10 w-10 text-white" />
-                </div>
-                <h2 className="text-4xl font-bold text-white">Compartilhe Suas Músicas</h2>
-              </div>
-              <p className="text-gray-300 max-w-4xl mx-auto text-xl">
-                Usuários VIP podem enviar suas próprias músicas para que outros membros pagantes possam baixar e conhecer seus trabalhos.
-                Faça parte da comunidade e compartilhe suas criações!
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-              <div className="group bg-gradient-to-br from-purple-900/30 to-pink-900/30 rounded-2xl p-8 text-center border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 transform hover:scale-105">
-                <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                  <Music className="h-10 w-10 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Upload Fácil</h3>
-                <p className="text-gray-300 text-base">Envie suas músicas diretamente pela plataforma com metadados completos</p>
-              </div>
-
-              <div className="group bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-2xl p-8 text-center border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 transform hover:scale-105">
-                <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                  <Users className="h-10 w-10 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Visibilidade</h3>
-                <p className="text-gray-300 text-base">Suas músicas aparecem na página da comunidade e no catálogo geral</p>
-              </div>
-
-              <div className="group bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-2xl p-8 text-center border border-green-500/30 hover:border-green-400/50 transition-all duration-300 transform hover:scale-105">
-                <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                  <TrendingUp className="h-10 w-10 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Crescimento</h3>
-                <p className="text-gray-300 text-base">Acompanhe downloads, curtidas e plays das suas músicas enviadas</p>
-              </div>
-            </div>
-
-            <div className="text-center">
-              <Link href="/community">
-                <button className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-4 px-10 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 mx-auto shadow-lg hover:shadow-xl transform hover:scale-105">
-                  <Users className="h-6 w-6 group-hover:animate-pulse" />
-                  Ver Músicas da Comunidade
-                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </Link>
-            </div>
-          </div>
-
-          {/* SEÇÃO - DEEMIX */}
-          <div className="bg-gradient-to-br from-indigo-900/30 via-purple-900/30 to-indigo-900/30 rounded-3xl p-10 mb-20 border border-indigo-500/30 backdrop-blur-sm">
-            <div className="text-center mb-10">
-              <div className="flex items-center justify-center mb-6">
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-full mr-4 shadow-lg">
-                  <Headphones className="h-10 w-10 text-white" />
-                </div>
-                <h2 className="text-4xl font-bold text-white">Deemix - Download Premium</h2>
-              </div>
-              <p className="text-gray-300 max-w-4xl mx-auto text-xl">
-                Acesse o Deemix, nossa plataforma exclusiva para download de músicas em alta qualidade diretamente do Deezer e Spotify.
-                Baixe em FLAC, MP3 320kbps e muito mais com nossa infraestrutura dedicada.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-              <div className="group bg-gradient-to-br from-indigo-900/30 to-purple-900/30 rounded-2xl p-8 text-center border border-indigo-500/30 hover:border-indigo-400/50 transition-all duration-300 transform hover:scale-105">
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                  <Download className="h-10 w-10 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Download FLAC/MP3</h3>
-                <p className="text-gray-300 text-base">Qualidade Hi-Fi e MP3 320kbps para suas apresentações</p>
-              </div>
-
-              <div className="group bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-2xl p-8 text-center border border-green-500/30 hover:border-green-400/50 transition-all duration-300 transform hover:scale-105">
-                <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                  <Zap className="h-10 w-10 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Velocidade Máxima</h3>
-                <p className="text-gray-300 text-base">Downloads ultra-rápidos com nossa infraestrutura dedicada</p>
-              </div>
-
-              <div className="group bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-2xl p-8 text-center border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 transform hover:scale-105">
-                <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                  <Globe className="h-10 w-10 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Acesso Global</h3>
-                <p className="text-gray-300 text-base">Conecte-se de qualquer lugar através do nosso servidor web</p>
-              </div>
-            </div>
-
-            <div className="text-center">
-              <Link href="/deemix">
-                <button className="group bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-10 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 mx-auto shadow-lg hover:shadow-xl transform hover:scale-105">
-                  <Headphones className="h-6 w-6 group-hover:animate-pulse" />
-                  Conhecer Deemix
-                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </Link>
-            </div>
-          </div>
-
-
-
-          {/* SEÇÃO - AVISO IMPORTANTE SOBRE O ACERVO */}
-          {session?.user?.is_vip && (
-            <div className="mb-16">
-              <div className="bg-gradient-to-br from-amber-600/20 via-orange-600/20 to-red-600/20 backdrop-blur-sm text-white p-10 rounded-3xl border border-amber-500/30 relative overflow-hidden">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-amber-400 to-orange-500"></div>
-                </div>
-
-                {/* Content */}
-                <div className="relative z-10">
-                  <div className="flex items-center justify-center mb-8">
-                    <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-4 rounded-full mr-4 shadow-lg">
-                      <Database className="h-10 w-10 text-amber-300" />
-                    </div>
-                    <h2 className="text-4xl font-bold">Aviso Importante sobre o Acervo</h2>
-                  </div>
-
-                  <div className="text-center mb-8">
-                    <p className="text-xl mb-6">
-                      A migração de todo o nosso acervo para a nova plataforma está em andamento.
-                      <span className="font-bold text-amber-200"> Novas músicas são adicionadas diariamente!</span>
-                    </p>
-                    <p className="text-amber-100 text-lg">
-                      Estamos trabalhando para trazer todo o conteúdo histórico para a nova interface moderna.
-                    </p>
-                  </div>
-
-                  {/* Progress Section */}
-                  <div className="bg-black/20 rounded-2xl p-8 mb-8">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-amber-200 font-semibold text-lg">Progresso da Migração</span>
-                      <span className="text-amber-300 font-bold text-xl">5%</span>
-                    </div>
-                    <div className="w-full bg-amber-900/50 rounded-full h-4 mb-4">
-                      <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-4 rounded-full transition-all duration-1000" style={{ width: '5%' }}></div>
-                    </div>
-                    <div className="flex items-center justify-center text-amber-200">
-                      <Clock className="h-5 w-5 mr-2" />
-                      Em andamento - Atualização contínua
-                    </div>
-                  </div>
-
-                  {/* Features Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-black/20 rounded-xl p-6 text-center border border-amber-500/30">
-                      <Upload className="h-8 w-8 text-amber-300 mx-auto mb-3" />
-                      <h4 className="font-semibold text-amber-200 mb-2 text-lg">Upload Diário</h4>
-                      <p className="text-amber-100">Novas faixas adicionadas todos os dias</p>
-                    </div>
-                    <div className="bg-black/20 rounded-xl p-6 text-center border border-green-500/30">
-                      <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-3" />
-                      <h4 className="font-semibold text-green-300 mb-2 text-lg">Qualidade Garantida</h4>
-                      <p className="text-green-100">Todas as músicas em alta qualidade</p>
-                    </div>
-                    <div className="bg-black/20 rounded-xl p-6 text-center border border-blue-500/30">
-                      <AlertTriangle className="h-8 w-8 text-blue-400 mx-auto mb-3" />
-                      <h4 className="font-semibold text-blue-300 mb-2 text-lg">Acesso Temporário</h4>
-                      <p className="text-blue-100">Drive ainda disponível durante migração</p>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link href="https://plataformavip.nexorrecords.com.br/pesquisardrive" target="_blank" rel="noopener noreferrer">
-                      <button className="group w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105">
-                        <Database className="h-6 w-6 group-hover:animate-pulse" />
-                        Acessar Acervo no Drive
-                        <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                      </button>
-                    </Link>
-                    <Link href="/new">
-                      <button className="group w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105">
-                        <Music className="h-6 w-6 group-hover:animate-pulse" />
-                        Ver Músicas Migradas
-                        <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                      </button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* SEÇÃO - PLANOS E PREÇOS */}
-          <div className="mb-20">
-            <div className="bg-gradient-to-br from-amber-900/30 via-orange-900/30 to-red-900/30 rounded-3xl p-10 border border-amber-500/30 backdrop-blur-sm relative overflow-hidden">
-              {/* Background Pattern */}
-              <div className="absolute inset-0 opacity-5">
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-amber-400 via-orange-400 to-red-400"></div>
-              </div>
-
-              <div className="text-center mb-12 relative z-10">
-                <div className="flex items-center justify-center mb-6">
-                  <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 p-4 rounded-full mr-4 shadow-lg">
-                    <Crown className="h-10 w-10 text-white" />
-                  </div>
-                  <h2 className="text-4xl font-bold text-white">PLANOS QUE CABEM NO SEU BOLSO</h2>
-                </div>
-                <p className="text-gray-300 max-w-4xl mx-auto text-xl">
-                  Escolha o plano ideal para suas necessidades e comece a transformar sua carreira de DJ hoje mesmo
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10 relative z-10">
-                {/* Plano Básico */}
-                <div className="group bg-gradient-to-br from-amber-900/30 to-orange-900/30 rounded-2xl p-8 text-center border border-amber-500/30 hover:border-amber-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-
-                  {/* Badge Popular */}
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full">
-                      MAIS POPULAR
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                    <Star className="h-10 w-10 text-white" />
-                  </div>
-
-                  <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-amber-300 transition-colors duration-300">VIP Básico</h3>
-
-                  <div className="mb-6">
-                    <div className="text-4xl font-bold text-white mb-2">
-                      <span className="text-2xl text-amber-300">R$</span>38
-                      <span className="text-lg text-amber-300">/mês</span>
-                    </div>
-                    <p className="text-amber-200 text-sm">ou R$ 380/ano (2 meses grátis)</p>
-                  </div>
-
-                  <div className="space-y-3 mb-8 text-left">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Downloads ilimitados</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Acesso ao catálogo completo</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Suporte por WhatsApp</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Download em ZIP</span>
-                    </div>
-                  </div>
-
-                  <Link href="/plans">
-                    <button className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
-                      Começar Agora
+                  {/* Capa da música com botão de play */}
+                  <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden relative group">
+                    <OptimizedImage
+                      track={track}
+                      className="w-full h-full object-cover"
+                      fallbackClassName={`w-full h-full bg-gradient-to-br ${generateGradientColors(track.songName, track.artist)} flex items-center justify-center text-white font-bold text-xs`}
+                      fallbackContent={generateInitials(track.songName, track.artist)}
+                    />
+                    {/* Botão Play/Pause sobreposto */}
+                    <button
+                      onClick={() => handlePlayPause(track, false)}
+                      className={`absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-all duration-200 ${currentTrack?.id === track.id && isPlaying
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-100'
+                        }`}
+                      title={currentTrack?.id === track.id && isPlaying ? 'Pausar' : 'Tocar'}
+                    >
+                      {currentTrack?.id === track.id && isPlaying ? (
+                        <Pause className="w-4 h-4 text-white" />
+                      ) : (
+                        <Play className="w-4 h-4 text-white ml-0.5" />
+                      )}
                     </button>
-                  </Link>
-                </div>
-
-                {/* Plano Standard */}
-                <div className="group bg-gradient-to-br from-orange-900/30 to-red-900/30 rounded-2xl p-8 text-center border border-orange-500/30 hover:border-orange-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-
-                  <div className="bg-gradient-to-r from-orange-600 to-red-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                    <Crown className="h-10 w-10 text-white" />
                   </div>
 
-                  <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-orange-300 transition-colors duration-300">VIP Standard</h3>
-
-                  <div className="mb-6">
-                    <div className="text-4xl font-bold text-white mb-2">
-                      <span className="text-2xl text-orange-300">R$</span>58
-                      <span className="text-lg text-orange-300">/mês</span>
-                    </div>
-                    <p className="text-orange-200 text-sm">ou R$ 580/ano (2 meses grátis)</p>
-                  </div>
-
-                  <div className="space-y-3 mb-8 text-left">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Tudo do plano Básico</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Acesso ao Deemix</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Upload de músicas</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Prioridade no suporte</span>
+                  {/* Informações da música */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-white font-inter font-semibold text-sm truncate" title={track.songName}>
+                      {track.songName}
+                    </h4>
+                    <p className="text-gray-300 font-inter font-normal text-xs truncate">
+                      {track.artist}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {track.style && (
+                        <span className="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded text-xs font-inter font-medium">
+                          {track.style}
+                        </span>
+                      )}
+                      <span className="text-gray-400 text-xs">
+                        {track.downloadCount} downloads
+                      </span>
                     </div>
                   </div>
 
-                  <Link href="/plans">
-                    <button className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
-                      Escolher Standard
+                  {/* Botões de Download e Like */}
+                  <div className="flex gap-1 flex-shrink-0">
+                    {/* Botão Download */}
+                    <button
+                      onClick={() => handleDownload(track)}
+                      disabled={downloadingTracks.has(track.id)}
+                      style={{ fontSize: '11px' }}
+                      className={`px-2 py-1 rounded font-inter font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${downloadedTracks.has(track.id)
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : downloadingTracks.has(track.id)
+                          ? 'bg-yellow-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                        }`}
+                      title={
+                        downloadedTracks.has(track.id)
+                          ? 'Já baixado'
+                          : downloadingTracks.has(track.id)
+                            ? 'Baixando...'
+                            : 'Download'
+                      }
+                    >
+                      {downloadingTracks.has(track.id) ? (
+                        <div className="w-2 h-2 border border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Download className="w-2 h-2" />
+                      )}
+                      {downloadedTracks.has(track.id) ? 'Baixado' : 'Download'}
                     </button>
-                  </Link>
-                </div>
 
-                {/* Plano Full */}
-                <div className="group bg-gradient-to-br from-red-900/30 to-pink-900/30 rounded-2xl p-8 text-center border border-red-500/30 hover:border-red-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-
-                  <div className="bg-gradient-to-r from-red-600 to-pink-600 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:animate-pulse">
-                    <Crown className="h-10 w-10 text-white" />
-                  </div>
-
-                  <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-red-300 transition-colors duration-300">VIP Full</h3>
-
-                  <div className="mb-6">
-                    <div className="text-4xl font-bold text-white mb-2">
-                      <span className="text-2xl text-red-300">R$</span>78
-                      <span className="text-lg text-red-300">/mês</span>
-                    </div>
-                    <p className="text-red-200 text-sm">ou R$ 780/ano (2 meses grátis)</p>
-                  </div>
-
-                  <div className="space-y-3 mb-8 text-left">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Tudo do plano Standard</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Acesso antecipado</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Suporte VIP 24/7</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">Recursos exclusivos</span>
-                    </div>
-                  </div>
-
-                  <Link href="/plans">
-                    <button className="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
-                      Escolher Full
+                    {/* Botão Like */}
+                    <button
+                      onClick={() => handleLike(track)}
+                      disabled={likingTracks.has(track.id)}
+                      style={{ fontSize: '11px' }}
+                      className={`px-2 py-1 rounded font-inter font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${likedTracks.has(track.id)
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                        }`}
+                      title={likedTracks.has(track.id) ? 'Descurtir' : 'Curtir'}
+                    >
+                      {likingTracks.has(track.id) ? (
+                        <div className="w-2 h-2 border border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <svg className="w-2 h-2" fill={likedTracks.has(track.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                      )}
+                      {likedTracks.has(track.id) ? 'Curtido' : 'Curtir'}
                     </button>
-                  </Link>
+                  </div>
                 </div>
-              </div>
-
-              {/* CTA Final */}
-              <div className="text-center relative z-10">
-                <p className="text-amber-200 text-lg mb-6">
-                  💳 Aceitamos PIX, cartão de crédito e boleto bancário
-                </p>
-                <Link href="/plans">
-                  <button className="group bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-600 hover:via-orange-600 hover:to-red-600 text-white font-bold py-4 px-10 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 mx-auto shadow-lg hover:shadow-xl transform hover:scale-105">
-                    <Crown className="h-6 w-6 group-hover:animate-pulse" />
-                    Ver Todos os Planos
-                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </button>
-                </Link>
-              </div>
+              ))}
             </div>
           </div>
+        </div>
+      </div>
 
+      {/* Seção de Pesquisa e Musiclist em Largura Total */}
+      <div className="w-full px-4 sm:px-6 pb-32 -mt-20 sm:-mt-24 lg:-mt-40">
+        {/* Barra de Pesquisa Avançada */}
+        <div className="mb-4">
+          <AdvancedSearch
+            onSearch={handleAdvancedSearch}
+            onClear={handleSearchClear}
+            styles={availableStyles}
+            artists={availableArtists}
+            pools={availablePools}
+          />
+        </div>
 
+        {/* Tracklist Section */}
+        <div className="space-y-3 sm:space-y-4">
 
-          {/* Call to Action */}
-          <div className="text-center py-12 relative">
-            {/* Elementos flutuantes de fundo */}
-            <div className="absolute top-10 left-10 w-6 h-6 bg-purple-400 rounded-full animate-bounce opacity-20"></div>
-            <div className="absolute top-20 right-20 w-4 h-4 bg-pink-400 rounded-full animate-bounce opacity-20" style={{ animationDelay: '0.5s' }}></div>
-            <div className="absolute bottom-20 left-1/4 w-5 h-5 bg-blue-400 rounded-full animate-bounce opacity-20" style={{ animationDelay: '1s' }}></div>
-
-            <h2 className="text-5xl font-bold text-white mb-8 relative z-10">Pronto para dominar as pistas?</h2>
-            <p className="text-2xl text-gray-300 mb-12 max-w-4xl mx-auto relative z-10">
-              Junte-se a milhares de DJs que já descobriram o futuro da música eletrônica.
-              Comece sua jornada hoje mesmo.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center relative z-10">
-              <Link href="/new">
-                <button className="group bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-bold py-5 px-10 rounded-2xl text-xl transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 flex items-center justify-center gap-4 transform hover:scale-105 relative overflow-hidden">
-                  {/* Efeito de brilho */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                  {/* Partículas flutuantes */}
-                  <div className="absolute top-2 left-2 w-1 h-1 bg-blue-300 rounded-full animate-ping opacity-60"></div>
-                  <div className="absolute bottom-2 right-2 w-1 h-1 bg-purple-300 rounded-full animate-ping opacity-60" style={{ animationDelay: '0.5s' }}></div>
-
-                  <Play className="h-7 w-7 group-hover:animate-pulse relative z-10" />
-                  <span className="relative z-10">Começar Agora</span>
-                  <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform relative z-10" />
-                </button>
-              </Link>
-              <Link href="/trending">
-                <button className="group bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 hover:from-purple-700 hover:via-pink-700 hover:to-red-700 text-white font-bold py-5 px-10 rounded-2xl text-xl transition-all duration-300 shadow-2xl hover:shadow-purple-500/25 flex items-center justify-center gap-4 transform hover:scale-105 relative overflow-hidden">
-                  {/* Efeito de brilho */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                  {/* Partículas flutuantes */}
-                  <div className="absolute top-2 left-2 w-1 h-1 bg-purple-300 rounded-full animate-ping opacity-60"></div>
-                  <div className="absolute bottom-2 right-2 w-1 h-1 bg-pink-300 rounded-full animate-ping opacity-60" style={{ animationDelay: '0.5s' }}></div>
-
-                  <TrendingUp className="h-7 w-7 group-hover:animate-pulse relative z-10" />
-                  <span className="relative z-10">Ver Trending</span>
-                  <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform relative z-10" />
-                </button>
-              </Link>
+          {!isClient ? (
+            <div className="text-center text-gray-400 py-8">
+              <div className="animate-spin w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="font-inter font-medium">Carregando...</p>
             </div>
-          </div>
-
-          {/* Depoimentos de Usuários */}
-          <div className="mb-20">
-            <div className="bg-gradient-to-br from-emerald-900/30 via-teal-900/30 to-cyan-900/30 rounded-3xl p-10 border border-emerald-500/30 backdrop-blur-sm">
-              <div className="text-center mb-12">
-                <div className="flex items-center justify-center mb-6">
-                  <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-4 rounded-full mr-4 shadow-lg">
-                    <Users className="h-10 w-10 text-white" />
-                  </div>
-                  <h2 className="text-4xl font-bold text-white">O QUE OS DJS DIZEM</h2>
-                </div>
-                <p className="text-gray-300 max-w-4xl mx-auto text-xl">
-                  Depoimentos reais de DJs que transformaram suas carreiras com nossa plataforma
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-                <div className="group bg-gradient-to-br from-emerald-900/30 to-teal-900/30 rounded-2xl p-8 text-center border border-emerald-500/30 hover:border-emerald-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                  {/* Efeito de brilho */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-
-                  <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-emerald-500/50 transition-all duration-300">
-                    <span className="text-2xl">🎧</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-3 group-hover:text-emerald-300 transition-colors duration-300">DJ Carlos Silva</h3>
-                  <p className="text-gray-300 text-sm mb-4">São Paulo, SP</p>
-                  <p className="text-gray-400 text-base italic group-hover:text-gray-200 transition-colors duration-300">
-                    "A plataforma revolucionou minha forma de trabalhar. Agora tenho acesso a músicas exclusivas que me fazem destacar nas festas."
-                  </p>
-                  <div className="flex justify-center mt-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="h-4 w-4 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="group bg-gradient-to-br from-teal-900/30 to-cyan-900/30 rounded-2xl p-8 text-center border border-teal-500/30 hover:border-teal-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                  {/* Efeito de brilho */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-teal-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-
-                  <div className="bg-gradient-to-r from-teal-600 to-cyan-600 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-teal-500/50 transition-all duration-300">
-                    <span className="text-2xl">🎵</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-3 group-hover:text-teal-300 transition-colors duration-300">DJ Ana Costa</h3>
-                  <p className="text-gray-300 text-sm mb-4">Rio de Janeiro, RJ</p>
-                  <p className="text-gray-400 text-base italic group-hover:text-gray-200 transition-colors duration-300">
-                    "Qualidade excepcional e suporte incrível. Consegui expandir meu repertório e aumentar meus contratos significativamente."
-                  </p>
-                  <div className="flex justify-center mt-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="h-4 w-4 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="group bg-gradient-to-br from-cyan-900/30 to-blue-900/30 rounded-2xl p-8 text-center border border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                  {/* Efeito de brilho */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-
-                  <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-cyan-500/50 transition-all duration-300">
-                    <span className="text-2xl">🎤</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-3 group-hover:text-cyan-300 transition-colors duration-300">DJ Pedro Santos</h3>
-                  <p className="text-gray-300 text-sm mb-4">Belo Horizonte, MG</p>
-                  <p className="text-gray-400 text-base italic group-hover:text-gray-200 transition-colors duration-300">
-                    "Melhor investimento da minha carreira. O acervo é imenso e sempre atualizado com as últimas tendências."
-                  </p>
-                  <div className="flex justify-center mt-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="h-4 w-4 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                </div>
-              </div>
+          ) : recentStyles.length === 0 ? (
+            <div className="text-center text-gray-400 py-8">
+              <p className="font-inter font-normal">Nenhum estilo disponível</p>
             </div>
-          </div>
+          ) : null}
 
-          {/* SEÇÃO - MAIS BAIXADAS */}
-          <div className="mb-20">
-            <div className="bg-gradient-to-br from-blue-900/30 via-purple-900/30 to-pink-900/30 rounded-3xl p-10 border border-blue-500/30 backdrop-blur-sm">
-              <div className="text-center mb-10">
-                <div className="flex items-center justify-center mb-6">
-                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full mr-3 shadow-lg">
-                    <TrendingUp className="h-8 w-8 text-white" />
-                  </div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-white">MAIS BAIXADAS</h2>
-                </div>
-                <p className="text-gray-300 max-w-3xl mx-auto text-lg">
-                  Descubra as músicas mais baixadas pelos DJs da comunidade esta semana.
-                  As faixas que estão dominando as pistas.
-                </p>
-              </div>
+          {/* Seção de Músicas com Agrupamento por Data */}
+          {tracksLoading ? (
+            <div className="text-center text-gray-400 py-8">
+              <div className="animate-spin w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="font-inter font-medium">Carregando músicas...</p>
+            </div>
+          ) : tracks.length === 0 ? (
+            <div className="text-center text-gray-400 py-8">
+              <p className="font-inter font-normal">Nenhuma música disponível</p>
+            </div>
+          ) : (
+            <div className="mt-8">
+              {/* Lista de Músicas Agrupadas por Data */}
+              {Object.entries(groupTracksByDate(tracks)).map(([dateKey, dateTracks]) => (
+                <div key={dateKey} className="mb-8">
+                  {/* Header da Data */}
+                  <div className="mb-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-gray-300 text-base font-inter font-medium">{dateKey}</h3>
 
-              {loadingMostDownloaded ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {Array.from({ length: 4 }, (_, i) => (
-                    <div key={i} className="bg-gradient-to-br from-gray-800/50 to-gray-700/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-6 animate-pulse relative overflow-hidden">
-                      {/* Efeito de brilho no loading */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-400/10 to-transparent animate-pulse"></div>
+                      {/* Botões de Download em Lote */}
+                      <div className="flex gap-2">
+                        {/* Botão Download New */}
+                        <button
+                          onClick={() => {
+                            console.log('🔍 DOWNLOAD NEW clicado:', {
+                              dateKey,
+                              dateTracksCount: dateTracks.length,
+                              downloadedInThisDate: dateTracks.filter(track => downloadedTracks.has(track.id)).length,
+                              newInThisDate: dateTracks.filter(track => !downloadedTracks.has(track.id)).length,
+                              allDownloadedTracks: downloadedTracks.size
+                            });
+                            downloadBatch(true, dateTracks);
+                          }}
+                          disabled={downloadingBatch || dateTracks.every(track => downloadedTracks.has(track.id))}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white text-xs font-inter font-medium rounded transition-all duration-200 flex items-center gap-1"
+                          title={`Baixar apenas músicas novas desta data (${dateTracks.filter(track => !downloadedTracks.has(track.id)).length} novas)`}
+                        >
+                          <Download className="w-3 h-3" />
+                          DOWNLOAD NEW
+                        </button>
 
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="w-16 h-16 bg-gray-600 rounded-xl"></div>
-                        <div className="flex-1">
-                          <div className="h-5 bg-gray-600 rounded mb-2"></div>
-                          <div className="h-4 bg-gray-600 rounded"></div>
+                        {/* Botão Download All */}
+                        <button
+                          onClick={() => downloadBatch(false, dateTracks)}
+                          disabled={downloadingBatch}
+                          className="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white text-xs font-inter font-medium rounded transition-all duration-200 flex items-center gap-1"
+                          title={`Baixar todas as músicas desta data (${dateTracks.length} músicas)`}
+                        >
+                          <Download className="w-3 h-3" />
+                          DOWNLOAD ALL
+                        </button>
+
+                        {/* Botão Cancelar (só aparece durante download) */}
+                        {downloadingBatch && (
+                          <button
+                            onClick={cancelBatchDownload}
+                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-all duration-200 flex items-center gap-1"
+                            title="Cancelar download em lote"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            CANCELAR
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Progress Bar (só aparece durante download) */}
+                    {downloadingBatch && batchProgress.total > 0 && (
+                      <div className="mt-2">
+                        <div className="flex justify-between text-xs text-gray-400 mb-1">
+                          <span>Baixando...</span>
+                          <span>{batchProgress.current}/{batchProgress.total}</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div
+                            className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                          ></div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="h-4 bg-gray-600 rounded w-20"></div>
-                        <div className="h-4 bg-gray-600 rounded w-12"></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : mostDownloadedTracks.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {mostDownloadedTracks.map((track, index) => (
-                    <div key={track.id} className="group bg-gradient-to-br from-gray-800/50 to-gray-700/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-6 hover:bg-gray-700/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-                      {/* Efeito de brilho */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                      {/* Partículas flutuantes */}
-                      <div className="absolute top-2 right-2 w-1 h-1 bg-blue-400 rounded-full animate-ping opacity-40"></div>
+                    )}
 
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="w-16 h-16 rounded-xl overflow-hidden shadow-lg flex-shrink-0 group-hover:shadow-blue-500/50 transition-all duration-300">
-                          {track.imageUrl ? (
-                            <img
-                              src={track.imageUrl}
-                              alt={`Capa de ${track.songName}`}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                target.nextElementSibling?.classList.remove('hidden');
-                              }}
-                            />
-                          ) : null}
-                          <div className={`w-full h-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center ${track.imageUrl ? 'hidden' : ''}`}>
-                            <Music className="w-8 h-8 text-white group-hover:scale-110 transition-transform duration-300" />
+                    {/* Linha verde separadora */}
+                    <div className="w-full h-px bg-green-500 mt-2"></div>
+                  </div>
+
+                  {/* Lista de Músicas da Data */}
+                  <div className="space-y-0">
+                    {dateTracks.map((track, index) => (
+                      <div key={track.id} className="relative">
+                        {/* Linha divisória branca */}
+                        {index > 0 && (
+                          <div className="absolute -top-px left-0 right-0 h-px bg-white/30 z-10"></div>
+                        )}
+
+                        {/* Row da música */}
+                        <div className="flex items-center gap-4 bg-gray-900/30 hover:bg-[#242424] backdrop-blur-sm p-4 transition-all duration-300 border border-transparent hover:border-gray-700/50">
+                          {/* Capa da Música com Play/Pause */}
+                          <div className="flex-shrink-0 relative w-20 h-20">
+                            {/* Borda azul quando está tocando */}
+                            {currentTrack?.id === track.id && isPlaying && (
+                              <div className="absolute inset-0 border-2 border-blue-500 rounded"></div>
+                            )}
+
+                            {/* Capa da música */}
+                            <div className="w-full h-full rounded overflow-hidden">
+                              <OptimizedImage
+                                track={track}
+                                className="w-full h-full object-cover"
+                                fallbackClassName={`w-full h-full bg-gradient-to-br ${generateGradientColors(track.songName, track.artist)} flex items-center justify-center text-white font-bold text-sm`}
+                                fallbackContent={generateInitials(track.songName, track.artist)}
+                              />
+                            </div>
+
+                            {/* Overlay preto quando está tocando */}
+                            {currentTrack?.id === track.id && isPlaying && (
+                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                <Pause className="w-6 h-6 text-white" />
+                              </div>
+                            )}
+
+                            {/* Botão Play sobreposto (só aparece no hover quando não está tocando) */}
+                            {!(currentTrack?.id === track.id && isPlaying) && (
+                              <button
+                                onClick={() => handlePlayPause(track, false)}
+                                className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-all duration-200 opacity-0 hover:opacity-100 group"
+                                title="Tocar"
+                              >
+                                <Play className="w-6 h-6 text-white ml-0.5" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Informações da música */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex-1 min-w-0 mr-3">
+                                <h3 className="text-white font-inter font-semibold truncate" style={{ fontSize: '13px' }} title={track.songName}>
+                                  {track.songName}
+                                </h3>
+                                <p className="text-gray-300 font-inter font-normal truncate -mt-0.5" style={{ fontSize: '13px' }}>
+                                  {track.artist}
+                                </p>
+                              </div>
+
+                              {/* Botões de Download e Like estilo Facebook */}
+                              <div className="flex gap-2 flex-shrink-0">
+                                {/* Botão Download */}
+                                <button
+                                  onClick={() => handleDownload(track)}
+                                  disabled={downloadingTracks.has(track.id)}
+                                  style={{ fontSize: '13px' }}
+                                  className={`px-4 py-2 rounded font-inter font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${downloadedTracks.has(track.id)
+                                    ? 'bg-green-600 text-white hover:bg-green-700'
+                                    : downloadingTracks.has(track.id)
+                                      ? 'bg-yellow-600 text-white'
+                                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                                    }`}
+                                  title={
+                                    downloadedTracks.has(track.id)
+                                      ? 'Já baixado'
+                                      : downloadingTracks.has(track.id)
+                                        ? 'Baixando...'
+                                        : 'Download'
+                                  }
+                                >
+                                  {downloadingTracks.has(track.id) ? (
+                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Download className="w-3 h-3" />
+                                  )}
+                                  {downloadedTracks.has(track.id) ? 'Baixado' : 'Download'}
+                                </button>
+
+                                {/* Botão Like */}
+                                <button
+                                  onClick={() => handleLike(track)}
+                                  disabled={likingTracks.has(track.id)}
+                                  style={{ fontSize: '13px' }}
+                                  className={`px-4 py-2 rounded font-inter font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${likedTracks.has(track.id)
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                                    }`}
+                                  title={likedTracks.has(track.id) ? 'Descurtir' : 'Curtir'}
+                                >
+                                  {likingTracks.has(track.id) ? (
+                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <svg className="w-3 h-3" fill={likedTracks.has(track.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                  )}
+                                  {likedTracks.has(track.id) ? 'Curtido' : 'Curtir'}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                              {track.style && (
+                                <Link
+                                  href={`/genres/${generateGenreSlug(track.style)}`}
+                                  className="bg-red-500/20 text-red-300 px-2 py-1 rounded font-inter font-medium hover:bg-red-500/30 hover:text-red-200 transition-all duration-200 cursor-pointer"
+                                  style={{ fontSize: '13px' }}
+                                  title={`Ver todas as músicas de ${track.style}`}
+                                >
+                                  {track.style}
+                                </Link>
+                              )}
+                              {track.pool && (
+                                <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded font-inter font-medium" style={{ fontSize: '13px' }}>
+                                  {track.pool}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-white font-semibold text-base truncate group-hover:text-blue-300 transition-colors duration-300">{track.songName}</div>
-                          <div className="text-gray-400 text-sm truncate group-hover:text-gray-200 transition-colors duration-300">{track.artist}</div>
-                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400 group-hover:text-gray-200 transition-colors duration-300">Downloads: {track.downloadCount}</span>
-                        <span className="text-sm bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30 group-hover:from-blue-500/30 group-hover:to-purple-500/30 transition-all duration-300">#{index + 1}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="bg-gradient-to-br from-gray-800/50 to-gray-700/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700">
-                    <Music className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-400 text-lg">Nenhuma música baixada esta semana</p>
+                    ))}
                   </div>
+                </div>
+              ))}
+              {/* Paginação */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-3 mt-12">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 bg-gray-800/50 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700/50 transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50"
+                  >
+                    Anterior
+                  </button>
+
+                  <div className="flex gap-2">
+                    {Array.from({ length: Math.min(10, totalPages) }, (_, i) => {
+                      const pageNum = Math.max(1, Math.min(totalPages - 9, currentPage - 4)) + i;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-4 py-2 rounded-lg transition-all duration-200 ${currentPage === pageNum
+                            ? 'bg-red-500 text-white shadow-lg shadow-red-500/25'
+                            : 'bg-gray-800/50 text-white hover:bg-gray-700/50 border border-gray-700/50 hover:border-gray-600/50'
+                            }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 bg-gray-800/50 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700/50 transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50"
+                  >
+                    Próximo
+                  </button>
                 </div>
               )}
 
-              <div className="text-center mt-10">
-                <Link href="/trending">
-                  <button className="group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-10 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 mx-auto shadow-lg hover:shadow-xl transform hover:scale-105 relative overflow-hidden">
-                    {/* Efeito de brilho */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                    {/* Partículas flutuantes */}
-                    <div className="absolute top-2 left-2 w-1 h-1 bg-blue-300 rounded-full animate-ping opacity-60"></div>
-                    <div className="absolute bottom-2 right-2 w-1 h-1 bg-purple-300 rounded-full animate-ping opacity-60" style={{ animationDelay: '0.5s' }}></div>
-
-                    <Award className="h-6 w-6 group-hover:animate-pulse relative z-10" />
-                    <span className="relative z-10">Ver Trending Completo</span>
-                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform relative z-10" />
-                  </button>
-                </Link>
+              {/* Botão Navegar Catálogo */}
+              <div className="flex justify-center mt-8">
+                <button className="px-12 py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bebas font-bold text-xl tracking-wider rounded-lg transition-all duration-200 border border-red-400/20 hover:border-red-300/40">
+                  NAVEGAR CATÁLOGO
+                </button>
               </div>
             </div>
-          </div>
-        </main>
-
-        <Footer />
+          )}
+        </div>
       </div>
+
+
+      {/* Footer Player */}
+      <FooterPlayer />
     </div>
   );
-}
-
-export default function HomePage() {
-  return <HomePageContent />;
 }

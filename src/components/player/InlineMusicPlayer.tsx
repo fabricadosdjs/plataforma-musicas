@@ -163,24 +163,57 @@ const InlineMusicPlayer: React.FC<InlineMusicPlayerProps> = ({
             isPlaying
         });
 
-        // Testar se a URL é válida
-        fetch(track.previewUrl, { method: 'HEAD' })
-            .then(response => {
+        // Testar se a URL é válida e gerar nova se necessário
+        const testAndSetupAudio = async () => {
+            try {
+                const response = await fetch(track.previewUrl, { method: 'HEAD' });
                 console.log('🔍 InlineMusicPlayer: URL test result', {
                     status: response.status,
                     contentType: response.headers.get('content-type'),
                     url: track.previewUrl
                 });
-            })
-            .catch(error => {
-                console.error('🔍 InlineMusicPlayer: URL test failed', {
+
+                if (response.ok) {
+                    // URL válida, usar ela
+                    audio.src = track.previewUrl;
+                } else {
+                    // URL inválida, gerar nova
+                    console.log('🔍 InlineMusicPlayer: URL inválida, gerando nova...');
+                    const previewResponse = await fetch(`/api/tracks/preview?trackId=${track.id}`);
+                    if (previewResponse.ok) {
+                        const { previewUrl } = await previewResponse.json();
+                        console.log('🔍 InlineMusicPlayer: Nova URL gerada:', previewUrl);
+                        audio.src = previewUrl;
+                    } else {
+                        console.error('🔍 InlineMusicPlayer: Falha ao gerar nova URL');
+                        audio.src = track.previewUrl; // Fallback para URL original
+                    }
+                }
+            } catch (error) {
+                console.error('🔍 InlineMusicPlayer: URL test failed, tentando gerar nova...', {
                     error: error?.message || 'Erro desconhecido',
                     url: track.previewUrl
                 });
-            });
+
+                try {
+                    const previewResponse = await fetch(`/api/tracks/preview?trackId=${track.id}`);
+                    if (previewResponse.ok) {
+                        const { previewUrl } = await previewResponse.json();
+                        console.log('🔍 InlineMusicPlayer: Nova URL gerada após erro:', previewUrl);
+                        audio.src = previewUrl;
+                    } else {
+                        audio.src = track.previewUrl; // Fallback
+                    }
+                } catch (previewError) {
+                    console.error('🔍 InlineMusicPlayer: Falha ao gerar nova URL:', previewError);
+                    audio.src = track.previewUrl; // Fallback
+                }
+            }
+        };
+
+        testAndSetupAudio();
 
         const audio = audioRef.current;
-        audio.src = track.previewUrl;
         audio.volume = isMuted ? 0 : volume;
         audio.load();
 

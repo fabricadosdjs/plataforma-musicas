@@ -1,4 +1,3 @@
-import PWAInstaller from '@/components/PWAInstaller';
 // src/app/layout.tsx
 import DynamicGradientBackground from '@/components/layout/DynamicGradientBackground';
 import { GlobalPlayerProvider } from '@/context/GlobalPlayerContext';
@@ -12,7 +11,7 @@ import AuthProvider from '@/context/AuthProvider';
 import { LoadingProvider } from '@/context/LoadingContext';
 import { PageTransitionLoading } from '@/components/ui/PageTransitionLoading';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google'; // Inter como fonte principal
+import { Inter, Montserrat, Jost, Bebas_Neue } from 'next/font/google'; // Inter como fonte principal, Montserrat para DJ City, Jost como fonte principal, Bebas Neue para títulos
 import './globals.css';
 import '../styles/beatport-effects.css';
 import '../styles/mobile-optimizations.css';
@@ -33,6 +32,27 @@ const inter = Inter({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-inter', // Define uma variável CSS para Inter
+});
+
+// Configura a fonte Montserrat para DJ City
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-montserrat', // Define uma variável CSS para Montserrat
+});
+
+// Configura a fonte Jost como fonte principal do site
+const jost = Jost({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-jost', // Define uma variável CSS para Jost
+});
+
+// Configura a fonte Bebas Neue para títulos
+const bebasNeue = Bebas_Neue({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-bebas', // Define uma variável CSS para Bebas Neue
 });
 
 export const metadata: Metadata = {
@@ -126,7 +146,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${inter.variable}`}>
+    <html lang="pt-BR" className={`${inter.variable} ${montserrat.variable} ${jost.variable} ${bebasNeue.variable}`}>
       <body suppressHydrationWarning={true}>
         {/* Meta tags para melhorar downloads - movido para head.tsx ou metadata */}
         <meta
@@ -150,10 +170,7 @@ export default function RootLayout({
                         <PageTransitionLoading>
                           {children}
                         </PageTransitionLoading>
-                        {/* Botão de instalação PWA global */}
-                        <PWAInstaller />
-                        {/* Player global sempre renderizado */}
-                        <FooterPlayerNew />
+                        {/* PWA removido para evitar service worker */}
                         {/* Progresso global de downloads */}
                         <GlobalDownloadProgress />
                       </ImageErrorProvider>

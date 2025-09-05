@@ -199,7 +199,7 @@ export default function AllavsoftPage() {
                                 <CardTitle className="flex items-center gap-2 text-green-400"><Star className="w-6 h-6" /> Depoimento VIP</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p>“O Allavsoft mudou minha rotina! Consigo baixar tudo que preciso para meus projetos, sem limites e com qualidade.” <span className="text-green-400">— DJ Nextor</span></p>
+                                <p>“O Allavsoft mudou minha rotina! Consigo baixar tudo que preciso para meus projetos, sem limites e com qualidade.” <span className="text-green-400">— DJ Nexor</span></p>
                             </CardContent>
                         </Card>
                     </div>

@@ -26,24 +26,24 @@ export const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
         }
 
         const fallbacks: string[] = [];
-        
+
         try {
             const url = new URL(originalUrl);
             const pathname = url.pathname;
-            
+
             // Fallback 1: URL direta sem parâmetros
             fallbacks.push(`https://usc1.contabostorage.com${pathname}`);
-            
+
             // Fallback 2: URL com diferentes endpoints (caso haja mirror/CDN)
             fallbacks.push(`https://eu2.contabostorage.com${pathname}`);
-            
+
             // Fallback 3: URL original (como último recurso)
             fallbacks.push(originalUrl);
-            
+
         } catch (error) {
             console.warn('Erro ao gerar URLs de fallback:', error);
         }
-        
+
         return fallbacks;
     };
 
@@ -55,7 +55,7 @@ export const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
 
         const audio = audioRef.current;
         const currentUrl = urls[currentIndex];
-        
+
         return new Promise((resolve) => {
             const handleSuccess = () => {
                 console.log(`✅ Áudio carregado com sucesso usando URL ${currentIndex + 1}:`, currentUrl);
@@ -67,7 +67,7 @@ export const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
             const handleError = async () => {
                 console.warn(`❌ Falha na URL ${currentIndex + 1}:`, currentUrl);
                 cleanup();
-                
+
                 // Tentar próxima URL
                 const nextSuccess = await attemptPlay(urls, currentIndex + 1);
                 resolve(nextSuccess);
@@ -107,7 +107,7 @@ export const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
 
         // Tentar todas as URLs
         const success = await attemptPlay(urls);
-        
+
         if (!success) {
             const errorMsg = 'Não foi possível carregar o áudio. Tente novamente.';
             console.error('❌ SmartAudioPlayer: Todas as URLs falharam');

@@ -7,10 +7,7 @@ export default function PWAInstaller() {
   const [showInstall, setShowInstall] = useState(false);
 
   useEffect(() => {
-    // Registrar o service worker
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/service-worker.js");
-    }
+    // Registro do service worker desativado
     const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);

@@ -22,8 +22,14 @@ const config: Config = {
                 'gray-light': '#6b7280', // Cinza mais claro para hover
             },
             fontFamily: {
-                // Definindo Inter como fonte principal
-                sans: ['Inter', 'var(--font-inter)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                // Definindo Jost como fonte principal do site
+                sans: ['Jost', 'var(--font-jost)', 'Inter', 'var(--font-inter)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                // Adicionando Montserrat para DJ City
+                'montserrat': ['Montserrat', 'var(--font-montserrat)', 'sans-serif'],
+                // Adicionando Jost como fonte específica
+                'jost': ['Jost', 'var(--font-jost)', 'sans-serif'],
+                // Adicionando Bebas Neue
+                'bebas': ['Bebas Neue', 'cursive'],
                 mono: ['Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'monospace'],
             },
             keyframes: {

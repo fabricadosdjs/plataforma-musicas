@@ -226,12 +226,19 @@ export async function GET(request: NextRequest) {
         }
 
         // Processa informações dos arquivos para importação
-        const processedFiles = importableFiles.map(file => {
+        const processedFiles = await Promise.all(importableFiles.map(async (file) => {
             const parsed = parseAudioFileName(file.filename);
             // Nome completo do arquivo sem extensão
             const fullName = file.filename.replace(/\.[^/.]+$/, '');
+
+            // Gerar URL assinada para acesso seguro
+            const signedUrl = await contaboStorage.getSecureUrl(file.key, 3600); // 1 hora de validade
+
             return {
-                file,
+                file: {
+                    ...file,
+                    url: signedUrl // Substitui a URL pública pela URL assinada
+                },
                 parsed,
                 importData: {
                     songName: parsed.songName,
@@ -239,12 +246,12 @@ export async function GET(request: NextRequest) {
                     style: parsed.style || 'Electronic',
                     version: parsed.version,
                     imageUrl: generatePlaceholderImage(parsed.artist, parsed.songName),
-                    previewUrl: file.url,
-                    downloadUrl: file.url,
+                    previewUrl: signedUrl,
+                    downloadUrl: signedUrl,
                     releaseDate: file.lastModified,
                 }
             };
-        });
+        }));
 
         console.log(`✅ ${importableFiles.length} arquivos prontos para importação`);
         console.log(`📊 Resumo: ${audioFiles.length} total, ${audioFiles.length - importableFiles.length} já existem, ${importableFiles.length} para importar`);

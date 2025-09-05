@@ -1,99 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { apiCache, getCacheKey } from '@/lib/cache';
 
 const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
     try {
-        // Primeiro, vamos ver quantas tracks com folders existem
-        const totalTracksWithFolders = await prisma.track.count({
-            where: {
-                folder: {
-                    not: null
+        // Verificar cache primeiro
+        const cacheKey = getCacheKey('folders_recent');
+        const cached = apiCache.get(cacheKey);
+        if (cached) {
+            console.log('🚀 Cache hit para folders recent');
+            return NextResponse.json(cached, {
+                headers: {
+                    'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+                    'X-Cache': 'HIT'
                 }
-            }
-        });
-
-        if (totalTracksWithFolders === 0) {
-            return NextResponse.json({
-                success: true,
-                folders: [],
-                total: 0
             });
         }
 
-        // Buscar todas as tracks com folders, ordenadas por data de atualização
-        const tracksWithFolders = await prisma.track.findMany({
-            where: {
-                folder: {
-                    not: null
-                }
-            },
-            select: {
-                folder: true,
-                imageUrl: true,
-                updatedAt: true,
-                createdAt: true
-            },
-            orderBy: {
-                updatedAt: 'desc'
-            }
-            // Remover take para pegar todas
-        });
-
-
-
-        // Agrupar por folder e pegar as informações mais recentes
-        const folderMap = new Map<string, {
+        // Query otimizada - usar aggregation em uma única query
+        const foldersStats = await prisma.$queryRaw`
+            SELECT 
+                t.folder as name,
+                COUNT(t.id) as trackCount,
+                COUNT(d.id) as downloadCount,
+                MAX(t."updatedAt") as lastUpdated,
+                MAX(t."createdAt") as newestTrack,
+                COALESCE(
+                    (SELECT t2."imageUrl" FROM "Track" t2 
+                     WHERE t2.folder = t.folder AND t2."imageUrl" IS NOT NULL 
+                     ORDER BY t2."updatedAt" DESC LIMIT 1),
+                    '/images/default-folder.jpg'
+                ) as imageUrl
+            FROM "Track" t
+            LEFT JOIN "Download" d ON t.id = d."trackId"
+            WHERE t.folder IS NOT NULL
+            GROUP BY t.folder
+            ORDER BY MAX(t."updatedAt") DESC, COUNT(t.id) DESC
+            LIMIT 20
+        ` as Array<{
             name: string;
-            trackCount: number;
-            imageUrl: string;
-            lastUpdated: string;
-            downloadCount: number;
-        }>();
+            trackcount: bigint;
+            downloadcount: bigint;
+            lastupdated: Date;
+            newesttrack: Date;
+            imageurl: string;
+        }>;
 
-        tracksWithFolders.forEach(track => {
-            if (!track.folder) return;
+        // Processar resultados
+        const processedFolders = foldersStats.map(folder => ({
+            name: folder.name,
+            trackCount: Number(folder.trackcount),
+            downloadCount: Number(folder.downloadcount),
+            imageUrl: folder.imageurl || '/images/default-folder.jpg',
+            lastUpdated: folder.lastupdated?.toISOString() || folder.newesttrack?.toISOString() || new Date().toISOString()
+        }));
 
-            if (!folderMap.has(track.folder)) {
-                folderMap.set(track.folder, {
-                    name: track.folder,
-                    trackCount: 0,
-                    imageUrl: track.imageUrl || '/images/default-folder.jpg',
-                    lastUpdated: track.updatedAt?.toISOString() || track.createdAt?.toISOString() || new Date().toISOString(),
-                    downloadCount: 0
-                });
-            }
-
-            const folderInfo = folderMap.get(track.folder)!;
-            folderInfo.trackCount++;
-
-            // Atualizar a data mais recente
-            const trackDate = track.updatedAt || track.createdAt;
-            if (trackDate && new Date(trackDate) > new Date(folderInfo.lastUpdated)) {
-                folderInfo.lastUpdated = trackDate.toISOString();
-            }
-
-            // Atualizar a imagem se não tiver uma
-            if (!folderInfo.imageUrl || folderInfo.imageUrl === '/images/default-folder.jpg') {
-                folderInfo.imageUrl = track.imageUrl || '/images/default-folder.jpg';
-            }
-        });
-
-        // Converter para array e ordenar por data mais recente
-        const folders = Array.from(folderMap.values())
-            .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
-            .slice(0, 7); // Pegar os 7 mais recentes
-
-        // Log apenas em desenvolvimento
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`📁 ${folders.length} folders carregados`);
-        }
-
-        return NextResponse.json({
+        const response = {
             success: true,
-            folders: folders,
-            total: folders.length
+            folders: processedFolders,
+            total: processedFolders.length
+        };
+
+        // Cachear por 3 minutos
+        apiCache.set(cacheKey, response, 180);
+
+        console.log(`📁 ${processedFolders.length} folders carregados`);
+
+        return NextResponse.json(response, {
+            headers: {
+                'Cache-Control': 'public, max-age=180, stale-while-revalidate=360',
+                'X-Cache': 'MISS'
+            }
         });
 
     } catch (error) {

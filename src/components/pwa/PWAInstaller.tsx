@@ -24,17 +24,7 @@ export default function PWAInstaller() {
             return;
         }
 
-        // Registrar service worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker
-                .register('/sw.js')
-                .then((registration) => {
-                    console.log('SW registered: ', registration);
-                })
-                .catch((registrationError) => {
-                    console.log('SW registration failed: ', registrationError);
-                });
-        }
+        // Registro do service worker desativado
 
         // Listener para o evento beforeinstallprompt
         const handleBeforeInstallPrompt = (e: Event) => {

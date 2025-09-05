@@ -56,13 +56,16 @@ export const useSimplePagination = (options: UseSimplePaginationOptions): Simple
 
     // Função para carregar uma página específica
     const loadPage = useCallback(async (page: number, force = false) => {
-        console.log('📥 Hook useSimplePagination - loadPage chamada:', { page, force, lastLoadedPage: lastLoadedPage.current, tracksLength: tracks.length });
+        console.log('📥 Hook useSimplePagination - loadPage chamada:', { 
+            page, 
+            force, 
+            lastLoadedPage: lastLoadedPage.current, 
+            tracksLength: tracks.length,
+            currentPageState: currentPage 
+        });
 
-        // Se já carregamos esta página e não é forçado, não recarregar
-        if (!force && lastLoadedPage.current === page && tracks.length > 0) {
-            console.log('⏭️ Hook useSimplePagination - Página já carregada, pulando...');
-            return;
-        }
+        // SEMPRE carregar uma nova página (removido skip logic que estava causando problemas)
+        console.log('🔄 Hook useSimplePagination - Carregando página:', page);
 
         // Cancelar requisição anterior se existir
         if (abortController.current) {
@@ -72,6 +75,8 @@ export const useSimplePagination = (options: UseSimplePaginationOptions): Simple
         // Criar novo controller para esta requisição
         abortController.current = new AbortController();
 
+        // Limpar tracks anteriores imediatamente para forçar atualização visual
+        setTracks([]);
         setIsLoading(true);
         setError(null);
 
@@ -95,10 +100,18 @@ export const useSimplePagination = (options: UseSimplePaginationOptions): Simple
                 pageSize,
                 tracksCount: (result.tracks || result.data || []).length,
                 totalCount: result.totalCount || result.total || 0,
-                result
+                firstTrackId: (result.tracks || result.data || [])[0]?.id,
+                firstTrackName: (result.tracks || result.data || [])[0]?.songName
             });
 
-            setTracks(result.tracks || result.data || []);
+            const newTracks = result.tracks || result.data || [];
+            console.log('🔄 Hook useSimplePagination - Atualizando estado com tracks:', {
+                newTracksLength: newTracks.length,
+                currentTracksLength: tracks.length,
+                page
+            });
+
+            setTracks(newTracks);
             setTotalCount(result.totalCount || result.total || 0);
             setCurrentPage(page);
             setTotalPages(Math.ceil((result.totalCount || result.total || 0) / pageSize));
@@ -121,7 +134,7 @@ export const useSimplePagination = (options: UseSimplePaginationOptions): Simple
         } finally {
             setIsLoading(false);
         }
-    }, [endpoint, pageSize, onError, onPageChange, scrollToTopPage, tracks.length]);
+    }, [endpoint, pageSize, onError, onPageChange, scrollToTopPage]);
 
     // Função para forçar recarregamento
     const forceReload = useCallback(() => {
@@ -153,7 +166,8 @@ export const useSimplePagination = (options: UseSimplePaginationOptions): Simple
             let pageToLoad = initialPage;
             if (typeof window !== 'undefined') {
                 const hash = window.location.hash;
-                const match = hash.match(/#\/page=(\d+)/);
+                // Detectar formato #page=X ou #/page=X
+                const match = hash.match(/#\/?page=(\d+)/);
                 if (match) {
                     pageToLoad = parseInt(match[1], 10);
                     console.log('🔗 Hook useSimplePagination - Página detectada do hash:', pageToLoad);
@@ -164,7 +178,7 @@ export const useSimplePagination = (options: UseSimplePaginationOptions): Simple
             hasInitialized.current = true;
             loadPage(pageToLoad);
         }
-    }, [initialPage, endpoint]); // Remover loadPage das dependências para evitar loop
+    }, [initialPage, endpoint, loadPage]); // Readicionado loadPage para garantir comportamento correto
 
     // Detectar quando a página volta do histórico e recarregar se necessário
     useEffect(() => {
@@ -182,14 +196,53 @@ export const useSimplePagination = (options: UseSimplePaginationOptions): Simple
             }
         };
 
+        // Detectar mudanças no hash da URL
+        const handleHashChange = () => {
+            const hash = window.location.hash;
+            console.log('🔗 Hash mudou:', hash);
+            const match = hash.match(/#\/?page=(\d+)/);
+            if (match) {
+                const newPage = parseInt(match[1], 10);
+                console.log('🔗 Nova página detectada:', newPage, 'Página atual:', currentPage);
+                if (newPage !== currentPage && newPage > 0) {
+                    console.log('🔗 Forçando recarregamento completo da página:', newPage);
+                    // Limpar estado antes de carregar nova página
+                    setTracks([]);
+                    setCurrentPage(newPage);
+                    lastLoadedPage.current = null; // Reset para garantir reload
+                    loadPage(newPage, true); // Forçar reload completo
+                }
+            }
+        };
+
+        // Detectar navegação manual (quando usuário digita URL ou usa botões do navegador)
+        const handlePopstate = (event: PopStateEvent) => {
+            console.log('🔄 Popstate detectado, forçando recarregamento');
+            const hash = window.location.hash;
+            const match = hash.match(/#\/?page=(\d+)/);
+            if (match) {
+                const newPage = parseInt(match[1], 10);
+                if (newPage !== currentPage && newPage > 0) {
+                    setTracks([]);
+                    setCurrentPage(newPage);
+                    lastLoadedPage.current = null;
+                    loadPage(newPage, true);
+                }
+            }
+        };
+
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('focus', handleFocus);
+        window.addEventListener('hashchange', handleHashChange);
+        window.addEventListener('popstate', handlePopstate);
 
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('hashchange', handleHashChange);
+            window.removeEventListener('popstate', handlePopstate);
         };
-    }, [tracks.length, forceReload]);
+    }, [tracks.length, forceReload, currentPage, loadPage]);
 
     // Cleanup ao desmontar
     useEffect(() => {

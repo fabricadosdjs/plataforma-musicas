@@ -38,14 +38,29 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const audioRef = useRef<HTMLAudioElement>(null);
 
     const getSecureAudioUrl = async (track: Track): Promise<string | null> => {
+        // Verificar se há sessão ativa antes de fazer a requisição
+        if (!session?.user) {
+            AudioDebugger.log('warn', 'Usuário não autenticado, não é possível obter URL de áudio', { trackId: track.id, songName: track.songName });
+            showToast('🔒 Faça login para ouvir as músicas', 'error');
+            return null;
+        }
+
         // Usar a API de audio-track para obter a URL de áudio segura (assinada)
         try {
             AudioDebugger.log('info', 'Solicitando URL de áudio via audio-track API', { trackId: track.id, songName: track.songName });
+
+            // Verificar conectividade básica antes de fazer a requisição
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+
             const response = await fetch('/api/audio-track', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ trackId: track.id }),
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -76,12 +91,27 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 return null;
             }
         } catch (error) {
-            AudioDebugger.log('error', 'Erro de rede ao chamar a API audio-track', {
-                error: error instanceof Error ? error.message : String(error),
-                trackId: track.id,
-                songName: track.songName
-            });
-            showToast('❌ Erro de rede ao tentar obter URL de áudio.', 'error');
+            if (error instanceof Error && error.name === 'AbortError') {
+                AudioDebugger.log('error', 'Timeout ao chamar a API audio-track', {
+                    trackId: track.id,
+                    songName: track.songName
+                });
+                showToast('⏱️ Timeout ao obter URL de áudio. Tente novamente.', 'error');
+            } else if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                AudioDebugger.log('error', 'Erro de conexão ao chamar a API audio-track', {
+                    error: error.message,
+                    trackId: track.id,
+                    songName: track.songName
+                });
+                showToast('🌐 Erro de conexão. Verifique sua internet.', 'error');
+            } else {
+                AudioDebugger.log('error', 'Erro de rede ao chamar a API audio-track', {
+                    error: error instanceof Error ? error.message : String(error),
+                    trackId: track.id,
+                    songName: track.songName
+                });
+                showToast('❌ Erro de rede ao tentar obter URL de áudio.', 'error');
+            }
             return null;
         }
     };
@@ -107,9 +137,36 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         // Se uma nova playlist foi fornecida, atualize a playlist
         if (newPlaylist) {
+            console.log('🎵 GlobalPlayer: Atualizando playlist', {
+                newPlaylistLength: newPlaylist.length,
+                trackId: track.id,
+                trackName: track.songName,
+                newPlaylistTracks: newPlaylist.map(t => ({ id: t.id, name: t.songName })),
+                timestamp: new Date().toISOString()
+            });
             setPlaylist(newPlaylist);
             const index = newPlaylist.findIndex(t => t.id === track.id);
+            console.log('🎵 GlobalPlayer: Índice encontrado na playlist:', index);
             setCurrentTrackIndex(index);
+
+            // Verificar se a playlist foi definida corretamente
+            setTimeout(() => {
+                console.log('🎵 GlobalPlayer: Verificação da playlist após setState:', {
+                    playlistLength: newPlaylist.length,
+                    currentTrackIndex: index,
+                    currentTrack: track.songName,
+                    timestamp: new Date().toISOString()
+                });
+            }, 100);
+
+            // Log adicional para verificar se a playlist foi realmente atualizada
+            setTimeout(() => {
+                console.log('🎵 GlobalPlayer: Playlist atualizada após setState:', {
+                    playlistLength: newPlaylist.length,
+                    currentTrackIndex: index,
+                    currentTrack: track.songName
+                });
+            }, 100);
         } else {
             // Se não há playlist nova, criar uma playlist com apenas esta música
             // para permitir que nextTrack/previousTrack funcionem
@@ -132,54 +189,123 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         setCurrentTrack(track);
 
-        // Aguardar o próximo tick para garantir que o áudio esteja configurado
-        setTimeout(() => {
-            if (audioRef.current) {
-                const audio = audioRef.current;
-                console.log('🎵 GlobalPlayer: Configurando áudio para nova track');
+        // Configurar áudio imediatamente
+        if (audioRef.current) {
+            const audio = audioRef.current;
+            console.log('🎵 GlobalPlayer: Configurando áudio para nova track', {
+                secureUrl: secureUrl.substring(0, 100) + '...',
+                trackName: track.songName
+            });
 
-                // Pausar qualquer reprodução atual
-                if (!audio.paused) {
-                    audio.pause();
-                }
-
-                // Definir a nova fonte
-                audio.src = secureUrl;
-                audio.load();
-
-                // Aguardar o carregamento antes de reproduzir
-                audio.addEventListener('canplay', () => {
-                    console.log('🎵 GlobalPlayer: Áudio pronto para reprodução');
-                    audio.play().then(() => {
-                        console.log('🎵 GlobalPlayer: Áudio iniciado com sucesso');
-                        setIsPlaying(true);
-                    }).catch((error) => {
-                        console.error('🎵 GlobalPlayer: Erro ao reproduzir áudio:', error);
-                        setIsPlaying(false);
-                    });
-                }, { once: true });
-
-                audio.addEventListener('error', async (error) => {
-                    console.error('🎵 GlobalPlayer: Erro no carregamento do áudio:', error, 'URL:', audio.src);
-                    setIsPlaying(false);
-
-                    // Testar conectividade da URL
-                    try {
-                        const resp = await fetch(audio.src, { method: 'HEAD' });
-                        if (!resp.ok) {
-                            showToast(`❌ Erro ao carregar áudio: servidor respondeu ${resp.status}`, 'error');
-                        } else {
-                            showToast('❌ Erro ao carregar áudio, mas a URL está acessível. Verifique o formato do arquivo.', 'error');
-                        }
-                    } catch (err) {
-                        showToast('❌ Erro ao carregar áudio: não foi possível acessar a URL.', 'error');
-                    }
-                });
-            } else {
-                console.log('🎵 GlobalPlayer: Nenhum elemento de áudio disponível');
-                setIsPlaying(true);
+            // Pausar qualquer reprodução atual
+            if (!audio.paused) {
+                console.log('🎵 GlobalPlayer: Pausando reprodução atual');
+                audio.pause();
             }
-        }, 0);
+
+            // Handlers para eventos de áudio (declarar antes de usar)
+            const handleCanPlay = () => {
+                console.log('🎵 GlobalPlayer: Áudio pronto para reprodução', {
+                    duration: audio.duration,
+                    trackName: track.songName
+                });
+                audio.play().then(() => {
+                    console.log('🎵 GlobalPlayer: Áudio iniciado com sucesso');
+                    setIsPlaying(true);
+                }).catch((error) => {
+                    console.error('🎵 GlobalPlayer: Erro ao reproduzir áudio:', error);
+                    setIsPlaying(false);
+                });
+            };
+
+            const handleLoadedMetadata = () => {
+                console.log('🎵 GlobalPlayer: Metadata carregada', {
+                    duration: audio.duration,
+                    trackName: track.songName
+                });
+            };
+
+            const handleError = async (error: Event) => {
+                console.error('🎵 GlobalPlayer: Erro no carregamento do áudio:', error, 'URL:', audio.src);
+                setIsPlaying(false);
+
+                // Obter mais detalhes sobre o erro
+                const audioElement = error.target as HTMLAudioElement;
+                const errorCode = audioElement.error?.code;
+                const errorMessage = audioElement.error?.message || 'Erro desconhecido';
+
+                console.error('🎵 GlobalPlayer: Detalhes do erro de áudio:', {
+                    code: errorCode,
+                    message: errorMessage,
+                    networkState: audioElement.networkState,
+                    readyState: audioElement.readyState,
+                    src: audioElement.src
+                });
+
+                // Testar conectividade da URL
+                try {
+                    const resp = await fetch(audio.src, { method: 'HEAD' });
+                    console.log('🎵 GlobalPlayer: Teste de conectividade:', {
+                        status: resp.status,
+                        statusText: resp.statusText,
+                        headers: Object.fromEntries(resp.headers.entries())
+                    });
+
+                    if (!resp.ok) {
+                        showToast(`❌ Erro ao carregar áudio: servidor respondeu ${resp.status}`, 'error');
+                    } else {
+                        showToast(`❌ Erro ao carregar áudio (${errorMessage}). URL acessível mas formato pode estar incorreto.`, 'error');
+                    }
+                } catch (err) {
+                    console.error('🎵 GlobalPlayer: Erro no teste de conectividade:', err);
+                    showToast('❌ Erro ao carregar áudio: não foi possível acessar a URL.', 'error');
+                }
+            };
+
+            // Limpar listeners anteriores
+            audio.removeEventListener('canplay', handleCanPlay);
+            audio.removeEventListener('error', handleError);
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+
+            // Validar URL antes de definir
+            if (!secureUrl || secureUrl.trim() === '') {
+                console.error('🎵 GlobalPlayer: URL de áudio inválida ou vazia');
+                showToast('❌ URL de áudio inválida', 'error');
+                return;
+            }
+
+            // Definir a nova fonte
+            audio.src = secureUrl;
+            audio.load();
+
+            // Adicionar listeners
+            audio.addEventListener('canplay', handleCanPlay, { once: true });
+            audio.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+            audio.addEventListener('error', handleError, { once: true });
+
+            // Timeout para evitar carregamento infinito
+            const timeoutId = setTimeout(() => {
+                if (audio.readyState < 2) { // HAVE_CURRENT_DATA
+                    console.warn('🎵 GlobalPlayer: Timeout no carregamento do áudio');
+                    audio.removeEventListener('canplay', handleCanPlay);
+                    audio.removeEventListener('error', handleError);
+                    audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+                    showToast('❌ Timeout ao carregar áudio. Tente novamente.', 'error');
+                    setIsPlaying(false);
+                }
+            }, 10000); // 10 segundos
+
+            // Limpar timeout quando o áudio carregar
+            const handleLoadComplete = () => {
+                clearTimeout(timeoutId);
+            };
+
+            audio.addEventListener('canplay', handleLoadComplete, { once: true });
+            audio.addEventListener('error', handleLoadComplete, { once: true });
+        } else {
+            console.log('🎵 GlobalPlayer: Nenhum elemento de áudio disponível');
+            setIsPlaying(true);
+        }
     };
 
     const pauseTrack = () => {
@@ -213,7 +339,9 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
         console.log('🎵 GlobalPlayer: nextTrack chamado', {
             playlistLength: playlist.length,
             currentTrackIndex,
-            currentTrack: currentTrack?.songName
+            currentTrack: currentTrack?.songName,
+            playlist: playlist.map(t => ({ id: t.id, name: t.songName })),
+            timestamp: new Date().toISOString()
         });
 
         if (playlist.length === 0) {
@@ -233,10 +361,27 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
             console.log('🎵 GlobalPlayer: Avançando para próxima track:', {
                 from: currentTrack?.songName,
                 to: nextTrackToPlay.songName,
-                index: nextIndex
+                fromIndex: currentTrackIndex,
+                toIndex: nextIndex,
+                playlistLength: playlist.length,
+                nextTrackId: nextTrackToPlay.id
             });
-            // Usar playTrack para carregar o novo áudio
-            playTrack(nextTrackToPlay);
+
+            // Verificar se a próxima track é diferente da atual
+            if (nextTrackToPlay.id === currentTrack?.id) {
+                console.log('🎵 GlobalPlayer: Próxima track é a mesma da atual, pulando para a seguinte');
+                const nextNextIndex = (nextIndex + 1) % playlist.length;
+                const nextNextTrack = playlist[nextNextIndex];
+                if (nextNextTrack && nextNextTrack.id !== currentTrack?.id) {
+                    console.log('🎵 GlobalPlayer: Pulando para a track seguinte:', nextNextTrack.songName);
+                    playTrack(nextNextTrack, playlist);
+                } else {
+                    console.log('🎵 GlobalPlayer: Não há outras tracks na playlist');
+                }
+            } else {
+                // Usar playTrack para carregar o novo áudio, mantendo a playlist atual
+                playTrack(nextTrackToPlay, playlist);
+            }
         } else {
             console.log('🎵 GlobalPlayer: Próxima track não encontrada');
         }
@@ -246,7 +391,9 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
         console.log('🎵 GlobalPlayer: previousTrack chamado', {
             playlistLength: playlist.length,
             currentTrackIndex,
-            currentTrack: currentTrack?.songName
+            currentTrack: currentTrack?.songName,
+            playlist: playlist.map(t => ({ id: t.id, name: t.songName })),
+            timestamp: new Date().toISOString()
         });
 
         if (playlist.length === 0) {
@@ -266,10 +413,27 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
             console.log('🎵 GlobalPlayer: Voltando para track anterior:', {
                 from: currentTrack?.songName,
                 to: prevTrackToPlay.songName,
-                index: prevIndex
+                fromIndex: currentTrackIndex,
+                toIndex: prevIndex,
+                playlistLength: playlist.length,
+                prevTrackId: prevTrackToPlay.id
             });
-            // Usar playTrack para carregar o novo áudio
-            playTrack(prevTrackToPlay);
+
+            // Verificar se a track anterior é diferente da atual
+            if (prevTrackToPlay.id === currentTrack?.id) {
+                console.log('🎵 GlobalPlayer: Track anterior é a mesma da atual, voltando para a anterior');
+                const prevPrevIndex = prevIndex === 0 ? playlist.length - 1 : prevIndex - 1;
+                const prevPrevTrack = playlist[prevPrevIndex];
+                if (prevPrevTrack && prevPrevTrack.id !== currentTrack?.id) {
+                    console.log('🎵 GlobalPlayer: Voltando para a track anterior:', prevPrevTrack.songName);
+                    playTrack(prevPrevTrack, playlist);
+                } else {
+                    console.log('🎵 GlobalPlayer: Não há outras tracks na playlist');
+                }
+            } else {
+                // Usar playTrack para carregar o novo áudio, mantendo a playlist atual
+                playTrack(prevTrackToPlay, playlist);
+            }
         } else {
             console.log('🎵 GlobalPlayer: Track anterior não encontrada');
         }

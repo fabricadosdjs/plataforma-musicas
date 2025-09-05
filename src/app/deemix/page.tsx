@@ -539,7 +539,7 @@ export default function Deemix() {
                                 <CardTitle className="flex items-center gap-2 text-blue-400"><Star className="w-6 h-6" /> Depoimento VIP</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p>“O Deemix é perfeito para baixar músicas em alta qualidade. Recomendo para todos que querem praticidade e organização!” <span className="text-blue-400">— DJ Nextor</span></p>
+                                <p>“O Deemix é perfeito para baixar músicas em alta qualidade. Recomendo para todos que querem praticidade e organização!” <span className="text-blue-400">— DJ Nexor</span></p>
                             </CardContent>
                         </Card>
                     </div>

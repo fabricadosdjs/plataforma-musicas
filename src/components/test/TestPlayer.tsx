@@ -14,8 +14,8 @@ const TestPlayer = () => {
         imageUrl: "",
         releaseDate: "",
         createdAt: "",
-    updatedAt: "",
-    __v: 0
+        updatedAt: "",
+        __v: 0
     };
 
     return (

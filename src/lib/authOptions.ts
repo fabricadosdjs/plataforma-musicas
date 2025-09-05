@@ -10,7 +10,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const ADMIN_ID = 'admin-nextor-001';
-const ADMIN_NAME = 'Administrador Nextor';
+const ADMIN_NAME = 'Administrador Nexor';
 
 // Admin específico para gerenciamento de imagens
 const IMAGE_ADMIN_EMAIL = 'edersonleonardo@nexorrecords.com.br';

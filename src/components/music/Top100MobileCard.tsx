@@ -126,7 +126,7 @@ const Top100MobileCard = ({
                     </div>
 
                     <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-white text-lg truncate mb-1">{track.songName}</h3>
+                        <h3 className="font-semibold text-white text-base truncate mb-1">{track.songName}</h3>
                         <p className="text-gray-300 text-sm mb-2 truncate">{track.artist}</p>
 
                         <div className="flex items-center space-x-2 mb-2">

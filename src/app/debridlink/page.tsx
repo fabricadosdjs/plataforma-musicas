@@ -414,7 +414,7 @@ export default function DebridLinkPage() {
                             <div className="bg-gray-900/60 border border-green-700/30 rounded-2xl p-8 hover:scale-105 transition-all duration-300">
                                 <div className="flex items-center gap-2 mb-4 text-green-400 font-bold"><Star className="w-6 h-6" /> Depoimento VIP</div>
                                 <h4 className="text-xl font-black mb-2 text-green-300">Experiência Real</h4>
-                                <p>“O Debrid-Link me permite baixar packs e playlists sem limites. Recomendo para todos que querem praticidade!” <span className="text-green-400">— DJ Nextor</span></p>
+                                <p>“O Debrid-Link me permite baixar packs e playlists sem limites. Recomendo para todos que querem praticidade!” <span className="text-green-400">— DJ Nexor</span></p>
                             </div>
                         </div>
                     </div>

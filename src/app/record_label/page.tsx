@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
+import Header from '@/components/layout/Header';
 import {
     Music,
     Play,
@@ -139,59 +139,61 @@ const RecordLabelPage = () => {
 
     if (loading) {
         return (
-            <MainLayout>
-                <div className="min-h-screen bg-black overflow-x-hidden">
-                    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 lg:pl-8 lg:pr-8 xl:pl-10 xl:pr-10 2xl:pl-12 2xl:pr-12 py-8">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+            <div className="min-h-screen bg-black">
+                <Header />
+                <div className="pt-32">
+                    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex items-center justify-center h-64">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-            </MainLayout>
         );
     }
 
     return (
-        <MainLayout>
-            <div className="min-h-screen bg-black overflow-x-hidden">
-                <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 lg:pl-8 lg:pr-8 xl:pl-10 xl:pr-10 2xl:pl-12 2xl:pr-12 py-6 sm:py-8 transition-all duration-300">
+        <div className="min-h-screen bg-black">
+            <Header />
+            <div className="pt-32">
+                <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Hero Section - Mobile First */}
                     <div className="mb-8 sm:mb-12">
                         <div className="text-center mb-6 sm:mb-8">
                             <div className="flex items-center justify-center mb-4 sm:mb-6">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-purple-600 rounded-full blur-xl opacity-50"></div>
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-purple-600 rounded-full blur-xl opacity-50"></div>
                                     <div className="relative bg-black rounded-full p-3 sm:p-4">
                                         <Disc3 className="h-8 w-8 sm:h-12 sm:w-12 text-white" />
                                     </div>
                                 </div>
                             </div>
                             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-3 sm:mb-4 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent leading-tight tracking-tight">
-                            RECORD LABEL
-                        </h1>
+                                RECORD LABEL
+                            </h1>
                             <p className="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed px-4 font-light">
-                            Descubra as produções exclusivas da nossa gravadora, disponíveis nos principais streamings
-                        </p>
+                                Descubra as produções exclusivas da nossa gravadora, disponíveis nos principais streamings
+                            </p>
                         </div>
                     </div>
 
-                    {/* Stats Cards - Mobile First Grid */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-8 sm:mb-12">
+                    {/* Stats Cards - Responsive Grid */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 lg:mb-12">
                         <div className="bg-black rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group">
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <div className="relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                                 <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg mx-auto sm:mx-0">
                                     <Music className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
-                </div>
+                                </div>
                                 <div className="text-center sm:text-left">
                                     <p className="text-xs sm:text-sm text-gray-400 font-medium">Total de Músicas</p>
                                     <p className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">45</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
                         <div className="bg-black rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <div className="relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                                 <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg mx-auto sm:mx-0">
                                     <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
@@ -199,12 +201,12 @@ const RecordLabelPage = () => {
                                 <div className="text-center sm:text-left">
                                     <p className="text-xs sm:text-sm text-gray-400 font-medium">Streams Mensais</p>
                                     <p className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">125+</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
                         <div className="bg-black rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <div className="relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                                 <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg mx-auto sm:mx-0">
                                     <Award className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
@@ -212,12 +214,12 @@ const RecordLabelPage = () => {
                                 <div className="text-center sm:text-left">
                                     <p className="text-xs sm:text-sm text-gray-400 font-medium">Prêmios</p>
                                     <p className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">0</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
                         <div className="bg-black rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 hover:scale-105 transition-all duration-300 relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <div className="relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                                 <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg mx-auto sm:mx-0">
                                     <Globe className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
@@ -225,7 +227,7 @@ const RecordLabelPage = () => {
                                 <div className="text-center sm:text-left">
                                     <p className="text-xs sm:text-sm text-gray-400 font-medium">Países</p>
                                     <p className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">12</p>
-                            </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -238,22 +240,22 @@ const RecordLabelPage = () => {
                             <Mic className="h-5 w-5 sm:h-6 sm:w-6 text-purple-400" />
                             <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">Artistas da Gravadora</h2>
                         </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
-                        {/* DJ Jéssika Luana */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 lg:gap-12">
+                            {/* DJ Jéssika Luana */}
                             <div className="bg-black border border-blue-500/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 group relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div className="relative">
+                                <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div className="relative">
                                     <div className="text-center mb-4 sm:mb-6">
                                         <div className="relative mx-auto mb-4">
-                                        <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-purple-600 rounded-full blur-xl opacity-30"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-purple-600 rounded-full blur-xl opacity-30"></div>
                                             <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-black border border-gray-700 rounded-full flex items-center justify-center shadow-2xl mx-auto">
-                                            <img
-                                                src="https://i.ibb.co/vvcZpm0d/20250508-0639-Varia-es-da-Garota-remix-01jtqm5hshex7a23kkhghy64v1.png"
-                                                alt="DJ Jéssika Luana"
+                                                <img
+                                                    src="https://i.ibb.co/vvcZpm0d/20250508-0639-Varia-es-da-Garota-remix-01jtqm5hshex7a23kkhghy64v1.png"
+                                                    alt="DJ Jéssika Luana"
                                                     className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover"
-                                            />
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
                                         <h3 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">DJ Jéssika Luana</h3>
                                         <p className="text-gray-400 mb-4 text-sm sm:text-base">Picada Café, RS</p>
                                         <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm">
@@ -268,8 +270,8 @@ const RecordLabelPage = () => {
                                         </div>
                                     </div>
                                     <p className="text-gray-400 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base text-center sm:text-left">
-                                    DJ Jéssika é a energia contagiante que vem direto de Picada Café para as pistas do mundo. Com um estilo jovem, ousado e criativo, ela domina os ritmos dançantes que fazem qualquer um sair do chão.
-                                </p>
+                                        DJ Jéssika é a energia contagiante que vem direto de Picada Café para as pistas do mundo. Com um estilo jovem, ousado e criativo, ela domina os ritmos dançantes que fazem qualquer um sair do chão.
+                                    </p>
 
                                     {/* Contador de Músicas */}
                                     <div className="text-center mb-6">
@@ -292,7 +294,7 @@ const RecordLabelPage = () => {
                                                     <p className="text-xl font-black text-white tracking-tight">2</p>
                                                 </div>
                                             </div>
-                                </div>
+                                        </div>
                                     </div>
 
                                     {/* Redes Sociais */}
@@ -323,21 +325,21 @@ const RecordLabelPage = () => {
                                                 <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.486 22 2 17.514 2 12S6.486 2 12 2s10 4.486 10 10-4.486 10-10 10zm-1-6.5c0 .828-.672 1.5-1.5 1.5s-1.5-.672-1.5-1.5.672-1.5 1.5-1.5 1.5.672 1.5 1.5zm3 0c0 .828-.672 1.5-1.5 1.5s-1.5-.672-1.5-1.5.672-1.5 1.5-1.5 1.5.672 1.5 1.5zm-6-3c0 .828-.672 1.5-1.5 1.5s-1.5-.672-1.5-1.5.672-1.5 1.5-1.5 1.5.672 1.5 1.5zm3 0c0 .828-.672 1.5-1.5 1.5s-1.5-.672-1.5-1.5.672-1.5 1.5-1.5 1.5.672 1.5 1.5zm3 0c0 .828-.672 1.5-1.5 1.5s-1.5-.672-1.5-1.5.672-1.5 1.5-1.5 1.5.672 1.5 1.5z" />
                                             </svg>
                                         </a>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Rebeka Sanches */}
+                            {/* Rebeka Sanches */}
                             <div className="bg-black border border-blue-500/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 group relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div className="relative">
+                                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div className="relative">
                                     <div className="text-center mb-4 sm:mb-6">
                                         <div className="relative mx-auto mb-4">
-                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full blur-xl opacity-30"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full blur-xl opacity-30"></div>
                                             <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-black border border-gray-700 rounded-full flex items-center justify-center shadow-2xl mx-auto">
-                                            <img
-                                                src="https://i.ibb.co/5XR8b2Xr/492313840-122095806554856833-4887195066294116636-n.jpg"
-                                                alt="Rebeka Sanches"
+                                                <img
+                                                    src="https://i.ibb.co/5XR8b2Xr/492313840-122095806554856833-4887195066294116636-n.jpg"
+                                                    alt="Rebeka Sanches"
                                                     className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover"
                                                 />
                                             </div>
@@ -393,19 +395,19 @@ const RecordLabelPage = () => {
                                         <button className="p-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-full transition-all duration-300 shadow-lg shadow-green-500/25">
                                             <Music className="h-5 w-5 text-white" />
                                         </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
                     {/* Latest Releases - Mobile First Grid */}
                     <div className="mb-8 sm:mb-12">
                         <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                             <Album className="h-5 w-5 sm:h-6 sm:w-6 text-purple-400" />
                             <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">Últimos Lançamentos</h2>
-                    </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-1.5 sm:gap-2 lg:gap-3">
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 lg:gap-4">
                             {[
                                 {
                                     title: "Sul Azul Imortal",
@@ -459,18 +461,18 @@ const RecordLabelPage = () => {
                                 },
                                 {
                                     title: "I Shattered with You",
-                                type: "Single",
-                                year: "2025",
-                                tracks: 1,
-                                artist: "DJ Jéssika Luana",
+                                    type: "Single",
+                                    year: "2025",
+                                    tracks: 1,
+                                    artist: "DJ Jéssika Luana",
                                     duration: "03:14",
                                     spotifyUrl: "https://open.spotify.com/intl-pt/track/7oaqFOKcdGDkZRRuFsfgJ1?si=608b03c5dbee4a30",
-                                isLatest: true
-                            },
+                                    isLatest: true
+                                },
 
-                        ].map((release, index) => (
+                            ].map((release, index) => (
                                 <div key={index} className="bg-black rounded-xl sm:rounded-2xl p-1.5 sm:p-2 lg:p-3 group relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <div className="relative mb-1 sm:mb-1.5 lg:mb-2">
                                         <div className="w-full aspect-square bg-black border border-gray-700 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden">
                                             {release.artist === "DJ Jéssika Luana" && release.year === "2025" ? (
@@ -485,16 +487,16 @@ const RecordLabelPage = () => {
                                                                                 "https://i.ibb.co/SXWHwLVr/atwork-4420662.jpg"
                                                     }
                                                     alt={`${release.title} - ${release.artist}`}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
                                                 <Album className="h-8 w-8 sm:h-12 sm:w-12 text-gray-600" />
-                                        )}
-                                    </div>
-                                    {release.isLatest && (
-                                        <div className="absolute top-2 left-2">
-                                                <span className="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded text-xs">NEW</span>
+                                            )}
                                         </div>
+                                        {release.isLatest && (
+                                            <div className="absolute top-2 left-2">
+                                                <span className="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded text-xs">NEW</span>
+                                            </div>
                                         )}
 
                                         {/* Badge do tipo (Single/EP) */}
@@ -505,10 +507,10 @@ const RecordLabelPage = () => {
                                                 }`}>
                                                 {release.type}
                                             </span>
-                                </div>
+                                        </div>
 
                                         {/* Spotify Link Overlay - Clica na foto para abrir Spotify */}
-                                    {release.isLatest && (
+                                        {release.isLatest && (
                                             <a
                                                 href={release.spotifyUrl}
                                                 target="_blank"
@@ -553,8 +555,8 @@ const RecordLabelPage = () => {
                                                 {release.artist === "DJ Jéssika Luana" ? (
                                                     <a
                                                         href="https://open.spotify.com/intl-pt/artist/5NdJcuUWBt4pNGJC2sI6iZ"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
                                                         className="text-blue-400 hover:text-blue-300 transition-colors duration-300 cursor-pointer hover:underline relative z-20 font-medium"
                                                         title="Ver perfil da DJ Jéssika Luana no Spotify"
                                                     >
@@ -567,20 +569,20 @@ const RecordLabelPage = () => {
                                         )}
 
 
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                </div>
 
                     {/* Nexor Records Section - Mobile First */}
-                <div className="text-center">
+                    <div className="text-center">
                         <div className="bg-black rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 relative overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-600/5"></div>
                             <div className="relative">
                                 {/* Header com ícone */}
                                 <div className="flex items-center justify-center mb-4 sm:mb-6">
-                        <div className="relative">
+                                    <div className="relative">
                                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-xl opacity-30"></div>
                                         <div className="relative bg-black border border-gray-700 rounded-full p-3 sm:p-4 mx-auto">
                                             <Disc3 className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
@@ -595,7 +597,7 @@ const RecordLabelPage = () => {
                                 </p>
 
                                 {/* Serviços em cards */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
                                     {/* Gravação */}
                                     <div className="bg-black border border-gray-700 rounded-xl p-3 sm:p-4 text-center">
                                         <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-2 sm:mb-3">
@@ -625,7 +627,7 @@ const RecordLabelPage = () => {
                                 </div>
 
                                 {/* Call to Action */}
-                                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+                                <div className="flex flex-col md:flex-row gap-4 lg:gap-6 justify-center">
                                     <a
                                         href="https://api.whatsapp.com/send?phone=5551981086784&text=Olá! Gostaria de gravar minha música eletrônica com a Nexor Records. Podem me ajudar?"
                                         target="_blank"
@@ -648,11 +650,11 @@ const RecordLabelPage = () => {
                     </div>
                 </div>
             </div>
-        </MainLayout>
+        </div>
     );
 };
 
-export default RecordLabelPage; 
+export default RecordLabelPage;
 
 // CSS para animação de scroll do texto
 const scrollTextStyles = `

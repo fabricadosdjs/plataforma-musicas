@@ -1,510 +1,463 @@
-
 "use client";
-// Função auxiliar para checar se é um objeto Date válido
-function isValidDate(val: unknown): val is Date {
-  return Object.prototype.toString.call(val) === '[object Date]' && !isNaN((val as Date).getTime());
-}
-// src/components/layout/Header.tsx
 
-import { AlertCircle, CheckCircle, Crown, Search, X, User, Wrench, Link2, Download, Star, Menu, UserCircle, Users, Home, Music } from 'lucide-react';
-import { useSession, signOut } from 'next-auth/react';
-import type { User as AppUser } from '@/types/user';
-import { SafeImage } from '@/components/ui/SafeImage';
+import React, { useState, useRef, useEffect } from 'react';
+import { useSession, signOut, signIn } from 'next-auth/react';
+import { User, ChevronDown, LogOut, Settings, X, Mail, Lock, Phone, Crown, Calendar, CreditCard, ListMusic } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, useRef } from 'react';
-import { useAppContext } from '@/context/AppContext';
-import { Filter } from 'lucide-react'; // Certifique-se de que Filter está importado aqui
-import { getSignInUrl } from '@/lib/utils';
 
-
-interface HeaderProps {
-}
-
-const NEW_LOGO_URL = 'https://i.ibb.co/Y7WKPY57/logo-nexor.png';
-
-const Header = ({ }: HeaderProps) => {
-  const { data: session } = useSession();
+export default function Header() {
+  const { data: session, status } = useSession();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showUserInfoModal, setShowUserInfoModal] = useState(false);
+  const [showHomeSubmenu, setShowHomeSubmenu] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [isLoading, setIsLoading] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  // Fecha os menus ao clicar fora
+  const homeSubmenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menus when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
       }
-    }
-    if (showProfileMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showProfileMenu]);
-
-  // Previne scroll quando menu móvel está aberto
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      console.log('🔍 Menu móvel aberto - z-index:', 'z-[999999]');
-    } else {
-      document.body.style.overflow = 'unset';
-      document.body.style.position = '';
-      document.body.style.width = '';
+      if (homeSubmenuRef.current && !homeSubmenuRef.current.contains(event.target as Node)) {
+        setShowHomeSubmenu(false);
+      }
     }
 
-    return () => {
-      document.body.style.overflow = 'unset';
-      document.body.style.position = '';
-      document.body.style.width = '';
-    };
-  }, [mobileMenuOpen]);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-
-
-  // Usando a função de alerta do AppContext
-  const { showAlert } = useAppContext();
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/' });
+    setShowProfileMenu(false);
+  };
 
   const formatDate = (dateString: string | Date): string => {
-    if (!dateString) return '';
+    if (!dateString) return 'Não informado';
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    if (isNaN(date.getTime())) return 'Data inválida';
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
-
-
-
-
-
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Search functionality removed - handled by individual pages
+    setIsLoading(true);
+
+    try {
+      const result = await signIn('credentials', {
+        email: loginForm.email,
+        password: loginForm.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        alert('Erro no login: Email ou senha incorretos');
+      } else {
+        setShowLoginModal(false);
+        setLoginForm({ email: '', password: '' });
+      }
+    } catch (error) {
+      alert('Erro no login. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (status === "loading") {
+    return (
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-8">
+              <img
+                src="https://i.ibb.co/Y7WKPY57/logo-nexor.png"
+                alt="Nexor Records"
+                className="h-8 sm:h-10 w-auto"
+              />
+              <div className="hidden md:flex items-center space-x-6">
+                <div className="w-16 h-4 bg-gray-700 rounded animate-pulse"></div>
+                <div className="w-12 h-4 bg-gray-700 rounded animate-pulse"></div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="w-6 h-6 bg-gray-700 rounded border"></div>
+              <div className="w-20 h-4 bg-gray-700 rounded animate-pulse"></div>
+              <div className="w-24 h-8 bg-gray-700 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
-    <header className="fixed top-0 left-0 w-full z-[9998] bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-md shadow-lg border-b border-gray-700/30 py-2">
-      {/* Mensagem para usuários não logados */}
-      {!session?.user && (
-        <div className="fixed top-[49px] left-0 w-full z-[9997] bg-gradient-to-r from-pink-500 via-pink-600 to-black py-3 shadow-lg">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center text-center text-white">
-              <span className="text-sm font-medium">
-                Ouça músicas ou{' '}
-                <Link
-                  href="/auth/sign-in"
-                  className="underline hover:text-pink-200 transition-colors font-semibold"
-                >
-                  faça login
+    <>
+      {/* Navigation Bar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black border-b-2 border-gradient-to-r from-purple-600 via-blue-600 to-purple-600 shadow-2xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            {/* Left Side - Logo and Navigation */}
+            <div className="flex items-center space-x-8">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl blur-xl opacity-0 group-hover:opacity-80 transition-opacity duration-500"></div>
+                <div className="relative bg-gray-900 rounded-xl p-2 border border-gray-700 group-hover:border-purple-500 transition-all duration-300">
+                  <img
+                    src="https://i.ibb.co/Y7WKPY57/logo-nexor.png"
+                    alt="Nexor Records"
+                    className="h-10 sm:h-12 w-auto transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+              </div>
+
+              {/* Navigation Items */}
+              <div className="hidden md:flex items-center space-x-4">
+                <Link href="/" className="relative px-4 py-2 rounded-lg bg-gray-900 border border-emerald-600 hover:border-emerald-400 hover:bg-emerald-600 text-emerald-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-emerald-500/25">
+                  <span className="font-semibold text-sm tracking-wide group-hover:tracking-wider transition-all duration-300">HOME</span>
                 </Link>
-                {' '}para ter uma experiência personalizada.
-              </span>
+
+                <div className="relative" ref={homeSubmenuRef}>
+                  <button
+                    onClick={() => setShowHomeSubmenu(!showHomeSubmenu)}
+                    className="relative px-4 py-2 rounded-lg bg-gray-900 border border-purple-600 hover:border-purple-400 hover:bg-purple-600 text-purple-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-purple-500/25 flex items-center space-x-2"
+                  >
+                    <span className="font-semibold text-sm tracking-wide group-hover:tracking-wider transition-all duration-300">MÚSICA</span>
+                    <ChevronDown className="w-3 h-3 group-hover:rotate-180 transition-transform duration-300" />
+                  </button>
+
+                  {/* Music Submenu */}
+                  {showHomeSubmenu && (
+                    <div className="absolute top-full left-0 mt-2 w-64 bg-black rounded-2xl shadow-2xl border-2 border-purple-600 py-4 z-50">
+                      <div className="space-y-1">
+                        <Link
+                          href="/new-releases"
+                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-emerald-600 hover:border-l-4 hover:border-emerald-400 transition-all duration-300 group font-semibold"
+                          onClick={() => setShowHomeSubmenu(false)}
+                        >
+                          <span className="group-hover:tracking-wide transition-all duration-300">NEW RELEASES</span>
+                        </Link>
+                        <Link
+                          href="/most-popular"
+                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600 hover:border-l-4 hover:border-orange-400 transition-all duration-300 group font-semibold"
+                          onClick={() => setShowHomeSubmenu(false)}
+                        >
+                          <span className="group-hover:tracking-wide transition-all duration-300">MOST POPULAR</span>
+                        </Link>
+                        <Link
+                          href="exclusives"
+                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-purple-600 hover:border-l-4 hover:border-purple-400 transition-all duration-300 group font-semibold"
+                          onClick={() => setShowHomeSubmenu(false)}
+                        >
+                          <span className="group-hover:tracking-wide transition-all duration-300">EXCLUSIVES</span>
+                        </Link>
+                        <Link
+                          href="/playlists"
+                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-blue-600 hover:border-l-4 hover:border-blue-400 transition-all duration-300 group font-semibold"
+                          onClick={() => setShowHomeSubmenu(false)}
+                        >
+                          <span className="group-hover:tracking-wide transition-all duration-300">PLAYLISTS</span>
+                        </Link>
+                        <Link
+                          href="/genres"
+                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-blue-600 hover:border-l-4 hover:border-blue-400 transition-all duration-300 group font-semibold"
+                          onClick={() => setShowHomeSubmenu(false)}
+                        >
+                          <span className="group-hover:tracking-wide transition-all duration-300">GÊNEROS</span>
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Link href="/record_label" className="relative px-4 py-2 rounded-lg bg-gray-900 border border-blue-600 hover:border-blue-400 hover:bg-blue-600 text-blue-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-blue-500/25">
+                  <span className="font-semibold text-sm tracking-wide group-hover:tracking-wider transition-all duration-300">LABEL</span>
+                </Link>
+
+                <button className="relative px-4 py-2 rounded-lg bg-gray-900 border border-orange-600 hover:border-orange-400 hover:bg-orange-600 text-orange-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-orange-500/25">
+                  <span className="font-semibold text-sm tracking-wide group-hover:tracking-wider transition-all duration-300">MAIS</span>
+                </button>
+              </div>
+            </div>
+
+
+            {/* Right Side - Crate, User, Join */}
+            <div className="flex items-center space-x-6">
+              <button className="relative flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-900 border border-blue-600 hover:border-blue-400 hover:bg-blue-600 text-blue-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-blue-500/25">
+                <div className="relative">
+                  <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-md flex items-center justify-center shadow-lg">
+                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                    </svg>
+                  </div>
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg">
+                    0
+                  </span>
+                </div>
+                <span className="hidden sm:inline font-semibold text-sm tracking-wide group-hover:tracking-wider transition-all duration-300">Your Crate</span>
+              </button>
+
+              {session?.user ? (
+                // User is logged in - show user info and dropdown
+                <div className="relative" ref={profileMenuRef}>
+                  <button
+                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                    className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 hover:border-purple-500 hover:bg-purple-600 text-gray-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-purple-500/25"
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="hidden sm:inline font-semibold text-sm">{session.user.name || 'Usuário'}</span>
+                    <ChevronDown className="w-3 h-3 group-hover:rotate-180 transition-transform duration-300" />
+                  </button>
+
+                  {/* Profile Dropdown Menu */}
+                  {showProfileMenu && (
+                    <div className="absolute right-0 mt-2 w-64 bg-black rounded-2xl shadow-2xl border-2 border-purple-600 py-4 z-50">
+                      <div className="px-6 py-3 border-b border-gray-700">
+                        <p className="text-sm text-gray-300 font-medium">{(session.user as any)?.whatsapp || 'WhatsApp não informado'}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <button
+                          onClick={() => {
+                            setShowUserInfoModal(true);
+                            setShowProfileMenu(false);
+                          }}
+                          className="w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-purple-600 hover:border-l-4 hover:border-purple-400 transition-all duration-300 group font-semibold"
+                        >
+                          <CreditCard className="w-4 h-4 inline mr-3" />
+                          <span className="group-hover:tracking-wide transition-all duration-300">Informações da Conta</span>
+                        </button>
+
+                        <a
+                          href="/profile"
+                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-blue-600 hover:border-l-4 hover:border-blue-400 transition-all duration-300 group font-semibold"
+                          onClick={() => setShowProfileMenu(false)}
+                        >
+                          <Settings className="w-4 h-4 inline mr-3" />
+                          <span className="group-hover:tracking-wide transition-all duration-300">Your Account</span>
+                        </a>
+
+                        <a
+                          href="/library"
+                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-emerald-600 hover:border-l-4 hover:border-emerald-400 transition-all duration-300 group font-semibold"
+                          onClick={() => setShowProfileMenu(false)}
+                        >
+                          <ListMusic className="w-4 h-4 inline mr-3" />
+                          <span className="group-hover:tracking-wide transition-all duration-300">Biblioteca</span>
+                        </a>
+
+                        <button
+                          onClick={handleLogout}
+                          className="w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-red-600 hover:border-l-4 hover:border-red-400 transition-all duration-300 group font-semibold"
+                        >
+                          <LogOut className="w-4 h-4 inline mr-3" />
+                          <span className="group-hover:tracking-wide transition-all duration-300">Logout</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // User is not logged in - show JOIN NOW button
+                <button
+                  onClick={() => setShowLoginModal(true)}
+                  className="px-6 py-2 rounded-lg bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold transition-all duration-300 shadow-lg hover:shadow-red-500/25 border border-red-500/30 hover:border-red-400/50"
+                >
+                  <span className="text-sm tracking-wide">JOIN NOW</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+      </nav>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm">
+          <div className="bg-black rounded-2xl shadow-2xl w-full max-w-md border-2 border-purple-600">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b-2 border-purple-600">
+              <h2 className="text-xl font-bold text-white bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Entrar na Conta</h2>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleLogin} className="p-6 space-y-4">
+              {/* Email Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="email"
+                    required
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-900 border-2 border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-all duration-300"
+                    placeholder="seu@email.com"
+                  />
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Senha
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="password"
+                    required
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-900 border-2 border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-all duration-300"
+                    placeholder="Sua senha"
+                  />
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-purple-500/25 border border-purple-500/30"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    Entrando...
+                  </>
+                ) : (
+                  'Entrar'
+                )}
+              </button>
+
+              {/* Additional Info */}
+              <div className="text-center">
+                <p className="text-sm text-gray-400">
+                  Não tem uma conta?{' '}
+                  <a href="/plans" className="text-red-500 hover:text-red-400 transition-colors">
+                    Ver planos disponíveis
+                  </a>
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Info Modal */}
+      {showUserInfoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm">
+          <div className="bg-black rounded-2xl shadow-2xl w-full max-w-lg border-2 border-purple-600">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b-2 border-purple-600">
+              <h2 className="text-xl font-bold text-white flex items-center">
+                <Crown className="w-6 h-6 text-yellow-500 mr-3" />
+                <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">Informações da Conta</span>
+              </h2>
+              <button
+                onClick={() => setShowUserInfoModal(false)}
+                className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* User Info Cards */}
+              <div className="grid gap-4">
+                {/* WhatsApp Card */}
+                <div className="bg-gray-900 rounded-xl p-4 border-2 border-green-600 hover:border-green-400 transition-all duration-300 group">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Phone className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400 font-medium">WhatsApp</p>
+                      <p className="text-white font-bold text-lg">{(session?.user as any)?.whatsapp || 'Não informado'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Plan Card */}
+                <div className="bg-gray-900 rounded-xl p-4 border-2 border-yellow-600 hover:border-yellow-400 transition-all duration-300 group">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Crown className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400 font-medium">Plano Atual</p>
+                      <p className="text-yellow-300 font-bold text-lg">
+                        {(session?.user as any)?.planName ||
+                          ((session?.user as any)?.is_vip ? 'VIP' : 'FREE')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Next Payment Card */}
+                <div className="bg-gray-900 rounded-xl p-4 border-2 border-purple-600 hover:border-purple-400 transition-all duration-300 group">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Calendar className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400 font-medium">Próximo Vencimento</p>
+                      <p className="text-white font-bold text-lg">
+                        {(session?.user as any)?.vencimento ?
+                          formatDate((session?.user as any).vencimento) :
+                          'Não informado'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Badge */}
+              <div className="text-center">
+                <div className="inline-flex items-center px-6 py-3 bg-gray-900 text-green-300 rounded-xl border-2 border-green-600 shadow-lg">
+                  <div className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse shadow-lg"></div>
+                  <span className="font-bold text-lg">Conta Ativa</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setShowUserInfoModal(false)}
+                  className="flex-1 bg-gray-900 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 border-2 border-gray-700 hover:border-gray-500 shadow-lg"
+                >
+                  <span className="text-sm tracking-wide">Fechar</span>
+                </button>
+                <a
+                  href="/plans"
+                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 text-center shadow-lg hover:shadow-red-500/25 border-2 border-red-500/30 hover:border-red-400/50"
+                >
+                  <span className="text-sm tracking-wide">Gerenciar Plano</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>
       )}
-      <div className="container mx-auto px-4 flex items-center justify-between">
-        <div className="flex items-center space-x-4 md:space-x-6">
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden flex items-center justify-center p-2 rounded-lg text-gray-200 hover:bg-gray-700/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-200 bg-gray-800/50"
-            onClick={() => {
-              console.log('🔘 Botão do menu clicado');
-              setMobileMenuOpen(true);
-            }}
-            aria-label="Abrir menu"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-          <Link href="/">
-            <div className="relative h-10 w-auto">
-              <SafeImage
-                src={NEW_LOGO_URL}
-                alt="NextorDJ Logo"
-                width={150}
-                height={40}
-                priority
-                className="h-full w-auto object-contain"
-              />
-            </div>
-          </Link>
-          {/* Desktop nav */}
-          {/* Professional Desktop Navigation */}
-          <nav className="hidden md:flex space-x-1 text-gray-300 font-medium items-center">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
-            >
-              <Home className="h-3.5 w-3.5" />
-              HOME
-            </Link>
-
-            <Link
-              href="/new#page=1"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-emerald-400 hover:bg-emerald-500/10 hover:scale-105 border border-transparent hover:border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20"
-            >
-              <CheckCircle className="h-3.5 w-3.5" />
-              NOVIDADES
-            </Link>
-
-            <Link
-              href="/community"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-purple-400 hover:bg-purple-500/10 hover:scale-105 border border-transparent hover:border-purple-500/30 shadow-lg hover:shadow-purple-500/20"
-            >
-              <Users className="h-3.5 w-3.5" />
-              COMUNIDADE
-            </Link>
-
-            <Link
-              href="/trending"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-orange-400 hover:bg-orange-500/10 hover:scale-105 border border-transparent hover:border-orange-500/30 shadow-lg hover:shadow-orange-500/20"
-            >
-              <Star className="h-3.5 w-3.5" />
-              TRENDING
-            </Link>
-
-            <Link
-              href="/plans"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-yellow-400 hover:bg-yellow-500/10 hover:scale-105 border border-transparent hover:border-yellow-500/30 shadow-lg hover:shadow-yellow-500/20"
-            >
-              <Crown className="h-3.5 w-3.5" />
-              PLANOS VIP
-            </Link>
-
-            {Boolean((session?.user as AppUser)?.isAdmin) && (
-              <Link
-                href="/admin/users"
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
-              >
-                <Crown className="h-3.5 w-3.5" />
-                ADMIN
-              </Link>
-            )}
-
-            {/* Professional Tools Dropdown */}
-            <div className="relative group" tabIndex={0}>
-              <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold tracking-wide text-xs transition-all duration-300 hover:text-cyan-400 hover:bg-cyan-500/10 hover:scale-105 border border-transparent hover:border-cyan-500/30 shadow-lg hover:shadow-cyan-500/20 focus:outline-none group-hover:bg-cyan-500/20" tabIndex={-1}>
-                <Wrench className="h-3.5 w-3.5" />
-                FERRAMENTAS
-                <svg className="ml-1 h-2.5 w-2.5 transition-transform duration-300 group-hover:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div className="absolute left-0 mt-2 w-48 bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-black/95 backdrop-blur-xl border border-gray-600/30 rounded-xl shadow-2xl z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-all duration-300 pointer-events-none overflow-hidden" tabIndex={0} onMouseDown={e => e.preventDefault()}>
-                <Link
-                  href="/debridlink"
-                  className="flex items-center gap-2 px-3 py-2.5 text-gray-200 hover:bg-gradient-to-r hover:from-green-600/20 hover:to-green-700/20 border-b border-gray-700/50 transition-all duration-300 font-semibold tracking-wide hover:text-green-300 hover:scale-[1.02] transform text-sm"
-                >
-                  <Link2 className="h-3.5 w-3.5 text-green-400" />
-                  DEBRIDLINK
-                </Link>
-                <Link
-                  href="/allavsoft"
-                  className="flex items-center gap-2 px-3 py-2.5 text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 border-b border-gray-700/50 transition-all duration-300 font-semibold tracking-wide hover:text-red-300 hover:scale-[1.02] transform text-sm"
-                >
-                  <Download className="h-3.5 w-3.5 text-red-400" />
-                  ALLAVSOFT
-                </Link>
-                <Link
-                  href="/deemix"
-                  className="flex items-center gap-2 px-3 py-2.5 text-gray-200 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-purple-700/20 transition-all duration-300 font-semibold tracking-wide hover:text-purple-300 hover:scale-[1.02] transform text-sm"
-                >
-                  <Wrench className="h-3.5 w-3.5 text-purple-400" />
-                  DEEMIX
-                </Link>
-              </div>
-            </div>
-          </nav>
-        </div>
-        {/* Professional Mobile Drawer */}
-        {mobileMenuOpen && (
-          <div className="mobile-menu-overlay flex">
-            {/* Enhanced Overlay */}
-            <div
-              className="mobile-menu-overlay bg-black/70 backdrop-blur-md animate-fadeIn"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            {/* Professional Drawer */}
-            <div className="mobile-menu-drawer bg-gradient-to-br from-gray-900/98 via-gray-800/98 to-black/98 backdrop-blur-xl shadow-2xl border-r border-gray-600/30 animate-slideInLeft flex flex-col overflow-hidden">
-              {/* Header with Close Button */}
-              <div className="relative p-6 border-b border-gray-700/30 bg-gradient-to-r from-gray-800/50 via-gray-900/50 to-black/50">
-                <button
-                  className="absolute top-4 right-4 p-2 rounded-xl text-gray-400 hover:bg-gray-700/50 hover:text-white transition-all duration-300 hover:scale-110"
-                  onClick={() => setMobileMenuOpen(false)}
-                  aria-label="Fechar menu"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-
-                {/* Professional Logo Section */}
-                <div className="flex flex-col items-center mb-4">
-                  <SafeImage src={NEW_LOGO_URL} alt="Logo" width={140} height={36} className="mb-3 drop-shadow-lg" />
-                  <div className="text-center">
-                    <h3 className="text-white font-bold text-lg tracking-wider">PLATAFORMA DJ</h3>
-                    <p className="text-gray-400 text-sm font-medium">Sua música, seu estilo</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Professional Navigation */}
-              <nav className="flex flex-col gap-2 px-6 py-4 flex-1 overflow-y-auto">
-                <Link
-                  href="/"
-                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-red-300 hover:scale-[1.02] transform border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Home className="h-5 w-5" />
-                  HOME
-                </Link>
-
-                <Link
-                  href="/new#page=1"
-                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-emerald-600/20 hover:to-emerald-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-emerald-300 hover:scale-[1.02] transform border border-transparent hover:border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <CheckCircle className="h-5 w-5" />
-                  NOVIDADES
-                </Link>
-
-                <Link
-                  href="/community"
-                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-purple-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-purple-300 hover:scale-[1.02] transform border border-transparent hover:border-purple-500/30 shadow-lg hover:shadow-purple-500/20"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Users className="h-5 w-5" />
-                  COMUNIDADE
-                </Link>
-
-                <Link
-                  href="/trending"
-                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-orange-600/20 hover:to-orange-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-orange-300 hover:scale-[1.02] transform border border-transparent hover:border-orange-500/30 shadow-lg hover:shadow-orange-500/20"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Star className="h-5 w-5" />
-                  TRENDING
-                </Link>
-
-                <Link
-                  href="/plans"
-                  className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-yellow-600/20 hover:to-yellow-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-yellow-300 hover:scale-[1.02] transform border border-transparent hover:border-yellow-500/30 shadow-lg hover:shadow-yellow-500/20"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Crown className="h-5 w-5" />
-                  PLANOS VIP
-                </Link>
-
-                {Boolean((session?.user as AppUser)?.isAdmin) && (
-                  <Link
-                    href="/admin/users"
-                    className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-red-300 hover:scale-[1.02] transform border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Crown className="h-5 w-5" />
-                    ADMIN
-                  </Link>
-                )}
-
-                {/* Tools Section */}
-                <div className="border-t border-gray-700/50 my-4 pt-4">
-                  <h4 className="text-gray-400 text-xs uppercase tracking-wider font-bold mb-3 px-4">FERRAMENTAS</h4>
-
-                  <Link
-                    href="/debridlink"
-                    className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-green-600/20 hover:to-green-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-green-300 hover:scale-[1.02] transform border border-transparent hover:border-green-500/30 shadow-lg hover:shadow-green-500/20"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Link2 className="h-5 w-5 text-green-400" />
-                    DEBRIDLINK
-                  </Link>
-
-                  <Link
-                    href="/allavsoft"
-                    className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-red-300 hover:scale-[1.02] transform border border-transparent hover:border-red-500/30 shadow-lg hover:shadow-red-500/20"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Download className="h-5 w-5 text-red-400" />
-                    ALLAVSOFT
-                  </Link>
-
-                  <Link
-                    href="/deemix"
-                    className="flex items-center gap-4 py-4 px-4 rounded-xl text-gray-200 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-purple-700/20 text-base font-bold tracking-wider transition-all duration-300 hover:text-purple-300 hover:scale-[1.02] transform border border-transparent hover:border-purple-500/30 shadow-lg hover:shadow-purple-500/20"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Wrench className="h-5 w-5 text-purple-400" />
-                    DEEMIX
-                  </Link>
-                </div>
-
-
-              </nav>
-
-              {/* Professional Footer */}
-              <div className="p-6 border-t border-gray-700/50 bg-gradient-to-r from-gray-800/30 to-gray-900/50">
-                {session?.user ? (
-                  <button
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white font-bold tracking-wider hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-red-500/30 hover:scale-[1.02] transform border border-red-500/30"
-                    onClick={() => { setMobileMenuOpen(false); signOut({ callbackUrl: getSignInUrl() }); }}
-                  >
-                    SAIR DA CONTA
-                  </button>
-                ) : (
-                  <div className="space-y-3">
-                    <a
-                      href="https://wa.me/55514935052274?text=Olá! Gostaria de solicitar informações sobre os planos de assinatura da plataforma de músicas."
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full block py-3.5 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 text-white text-center font-bold tracking-wider hover:from-yellow-700 hover:to-yellow-800 transition-all duration-300 shadow-lg hover:shadow-yellow-500/30 hover:scale-[1.02] transform border border-yellow-500/30"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      ASSINAR
-                    </a>
-                    <Link
-                      href="/auth/sign-in"
-                      className="w-full block py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center font-bold tracking-wider hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transform border border-blue-500/30"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      ENTRAR NA CONTA
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center space-x-4">
-          {session?.user ? (
-            <div className="flex items-center space-x-3">
-
-
-
-
-              {/* Menu do Perfil */}
-              <div className="relative" ref={profileMenuRef}>
-                <button
-                  className="flex items-center space-x-3 text-white font-medium hover:text-blue-400 transition-colors focus:outline-none bg-gray-800/50 rounded-xl px-3 py-2 border border-gray-700 hover:border-gray-600"
-                  onClick={() => setShowProfileMenu((prev) => !prev)}
-                  aria-label="Abrir menu de perfil"
-                >
-                  <div className="relative">
-                    <UserCircle className="h-8 w-8" />
-                    {session.user.is_vip && (
-                      <Crown className="h-4 w-4 text-yellow-400 absolute -top-1 -right-1 bg-gray-900 rounded-full p-0.5" />
-                    )}
-                  </div>
-                </button>
-                {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-72 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 p-6">
-                    <div className="mb-4 text-white">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="relative">
-                          <UserCircle className="h-12 w-12 text-gray-300" />
-                          {session.user.is_vip && (
-                            <Crown className="h-5 w-5 text-yellow-400 absolute -top-1 -right-1 bg-gray-900 rounded-full p-0.5" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-bold text-lg">{session.user.name || 'Usuário'}</div>
-                          <div className="text-gray-400 text-sm">
-                            {typeof (session.user as AppUser).whatsapp === 'string' ? (session.user as AppUser).whatsapp : 'WhatsApp não informado'}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${(() => {
-                        // Lógica para determinar status VIP real
-                        const isVipByField = session.user.is_vip;
-                        const vencimento = (session.user as AppUser).vencimento;
-                        const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
-                        const isVipReal = isVipByField || hasValidVencimento;
-                        return isVipReal;
-                      })()
-                        ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-                        : 'bg-red-500/20 text-red-300 border border-red-500/30'
-                        }`}>
-                        {(() => {
-                          // Lógica para determinar status VIP real
-                          const isVipByField = session.user.is_vip;
-                          const vencimento = (session.user as AppUser).vencimento;
-                          const hasValidVencimento = vencimento && new Date(vencimento) > new Date();
-                          const isVipReal = isVipByField || hasValidVencimento;
-
-                          if (isVipReal) {
-                            if ((session.user as AppUser).planName) {
-                              return <><Crown className="h-4 w-4" /> {(session.user as AppUser).planName}</>;
-                            } else if (hasValidVencimento) {
-                              return <><Crown className="h-4 w-4" /> BÁSICO</>;
-                            } else {
-                              return <><Crown className="h-4 w-4" /> VIP</>;
-                            }
-                          } else {
-                            return <><AlertCircle className="h-4 w-4" /> Free</>;
-                          }
-                        })()}
-                      </div>
-
-                      {session.user.vencimento && (typeof session.user.vencimento === 'string' || isValidDate(session.user.vencimento)) && (
-                        <div className="mt-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                          <div className="text-gray-400 text-xs mb-1">Vencimento:</div>
-                          <div className="text-white font-semibold">{formatDate(session.user.vencimento)}</div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Link
-                        href="/profile"
-                        className="flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 rounded-lg transition-colors font-medium"
-                        onClick={() => setShowProfileMenu(false)}
-                      >
-                        <UserCircle className="h-5 w-5" />
-                        Meu Perfil
-                      </Link>
-                      <Link
-                        href="/mymusic"
-                        className="flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 rounded-lg transition-colors font-medium"
-                        onClick={() => setShowProfileMenu(false)}
-                      >
-                        <Music className="h-5 w-5" />
-                        Minhas Músicas
-                      </Link>
-                      <button
-                        className="flex items-center gap-3 w-full text-left px-4 py-3 text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium"
-                        onClick={() => signOut({
-                          callbackUrl: getSignInUrl()
-                        })}
-                      >
-                        <X className="h-5 w-5" />
-                        Sair da Conta
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-3">
-              <Link href="/plans" className="px-3 py-2 bg-gradient-to-r from-yellow-600 to-yellow-700 text-white rounded-lg font-semibold hover:from-yellow-700 hover:to-yellow-800 transition-all shadow-lg text-xs">
-                ASSINAR
-              </Link>
-              <Link href="/auth/sign-in" className="px-3 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transition-all shadow-lg text-xs">
-                ENTRAR
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-
-
-
-
-    </header>
+    </>
   );
-};
-
-export default Header;
+}

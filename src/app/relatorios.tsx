@@ -304,7 +304,7 @@ const RelatoriosPage = () => {
                       <Music className="h-5 w-5 text-blue-400" />
                     </div>
                     <div>
-                      <h4 className="text-white font-medium text-sm">{track.songName}</h4>
+                      <h4 className="text-white font-medium text-xs">{track.songName}</h4>
                       <p className="text-gray-400 text-xs">{track.artist}</p>
                     </div>
                   </div>

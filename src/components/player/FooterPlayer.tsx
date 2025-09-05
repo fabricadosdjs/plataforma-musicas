@@ -1,472 +1,510 @@
-// src/components/player/FooterPlayer.tsx
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import {
-    Play,
-    Pause,
-    SkipBack,
-    SkipForward,
-    Volume2,
-    VolumeX,
-    Minimize2,
-    X,
-    Maximize2,
-    ChevronLeft,
-    ChevronRight,
-    Square,
-    Circle,
-    Waves,
-    Heart,
-    Download
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, Download, Heart, ArrowDownToLine, HeartHandshake } from 'lucide-react';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { generateGradientColors, generateInitials } from '@/utils/imageUtils';
 import { useSession } from 'next-auth/react';
-import { useToastContext } from '@/context/ToastContext';
-import { useDownloadsCache } from '@/hooks/useDownloadsCache';
+import toast from 'react-hot-toast';
+import { Track } from '@/types/track';
+import { useTrackStates } from '@/hooks/useTrackStates';
 
-const FooterPlayer = () => {
-    const {
-        currentTrack,
-        isPlaying,
-        togglePlayPause,
-        nextTrack,
-        previousTrack,
-        audioRef
-    } = useGlobalPlayer();
+export default function FooterPlayer() {
+    const { currentTrack, isPlaying, togglePlayPause, nextTrack, previousTrack, audioRef, stopTrack, playlist, currentTrackIndex } = useGlobalPlayer();
     const { data: session } = useSession();
-    const { showToast } = useToastContext();
-    const downloadsCache = useDownloadsCache();
-    const [volume, setVolume] = useState(1.0);
-    const [isMuted, setIsMuted] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
+    const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [isMinimized, setIsMinimized] = useState(false);
-    const [isHidden, setIsHidden] = useState(false);
-    const waveformRef = useRef<HTMLCanvasElement>(null);
-    const animationFrameId = useRef<number>();
-    const [isChangingVolume, setIsChangingVolume] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [isClosed, setIsClosed] = useState(false);
+    const [volume, setVolume] = useState(1);
+    const [isMuted, setIsMuted] = useState(false);
 
-    // Criar dados simulados de waveform
-    const generateWaveformData = () => {
-        const data = [];
-        for (let i = 0; i < 100; i++) {
-            data.push(Math.random() * 0.8 + 0.2);
-        }
-        return data;
-    };
-    const [waveformData] = useState(generateWaveformData());
+    // Hook personalizado para estados de download e like
+    const {
+        isDownloaded,
+        isDownloading,
+        isLiked,
+        isLiking,
+        markAsDownloaded,
+        markAsDownloading,
+        markAsNotDownloading,
+        markAsLiked,
+        markAsNotLiked,
+        markAsLiking,
+        markAsNotLiking,
+        loadUserStates
+    } = useTrackStates();
 
-    // Sincronizar com o áudio do contexto global
+    // Atualizar tempo real da música
     useEffect(() => {
-        if (!audioRef.current || !currentTrack) return;
+        if (!audioRef.current || !currentTrack) {
+            console.log('🎵 FooterPlayer: Sem áudio ou track, resetando tempo');
+            setCurrentTime(0);
+            setDuration(0);
+            setProgress(0);
+            return;
+        }
 
         const audio = audioRef.current;
-
-        // Event listeners para sincronização
-        const handleLoadedMetadata = () => {
-            setDuration(audio.duration);
-            console.log('🎵 FooterPlayer: Metadata carregado, duração:', audio.duration);
-        };
+        console.log('🎵 FooterPlayer: Configurando listeners de tempo', {
+            track: currentTrack.songName,
+            currentSrc: audio.src.substring(0, 50) + '...'
+        });
 
         const handleTimeUpdate = () => {
             setCurrentTime(audio.currentTime);
+            if (audio.duration && !isNaN(audio.duration)) {
+                setProgress((audio.currentTime / audio.duration) * 100);
+            }
         };
 
-        const handleEnded = () => {
-            console.log('🎵 FooterPlayer: Música terminou');
-            // Não chamar togglePlayPause aqui, deixar o contexto global gerenciar
+        const handleLoadedMetadata = () => {
+            console.log('🎵 FooterPlayer: Metadata carregada', {
+                duration: audio.duration,
+                durationFormatted: audio.duration ? `${Math.floor(audio.duration / 60)}:${Math.floor(audio.duration % 60).toString().padStart(2, '0')}` : 'N/A',
+                track: currentTrack.songName,
+                trackId: currentTrack.id,
+                audioSrc: audio.src.substring(0, 100) + '...',
+                readyState: audio.readyState,
+                networkState: audio.networkState
+            });
+            if (audio.duration && !isNaN(audio.duration)) {
+                setDuration(audio.duration);
+                setCurrentTime(audio.currentTime);
+                setProgress((audio.currentTime / audio.duration) * 100);
+            } else {
+                console.warn('🎵 FooterPlayer: Duração inválida ou não disponível', {
+                    duration: audio.duration,
+                    isNaN: isNaN(audio.duration),
+                    track: currentTrack.songName,
+                    trackId: currentTrack.id
+                });
+            }
         };
 
-        const handlePlay = () => {
-            console.log('🎵 FooterPlayer: Áudio começou a tocar');
+        const handleDurationChange = () => {
+            console.log('🎵 FooterPlayer: Duração mudou', {
+                duration: audio.duration,
+                durationFormatted: audio.duration ? `${Math.floor(audio.duration / 60)}:${Math.floor(audio.duration % 60).toString().padStart(2, '0')}` : 'N/A',
+                track: currentTrack.songName,
+                trackId: currentTrack.id,
+                readyState: audio.readyState,
+                networkState: audio.networkState
+            });
+            if (audio.duration && !isNaN(audio.duration)) {
+                setDuration(audio.duration);
+            } else {
+                console.warn('🎵 FooterPlayer: Duração inválida no evento durationchange', {
+                    duration: audio.duration,
+                    isNaN: isNaN(audio.duration),
+                    track: currentTrack.songName,
+                    trackId: currentTrack.id
+                });
+            }
         };
 
-        const handlePause = () => {
-            console.log('🎵 FooterPlayer: Áudio pausado');
-        };
+        // Limpar listeners anteriores
+        audio.removeEventListener('timeupdate', handleTimeUpdate);
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.removeEventListener('durationchange', handleDurationChange);
 
-        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        // Adicionar novos listeners
         audio.addEventListener('timeupdate', handleTimeUpdate);
-        audio.addEventListener('ended', handleEnded);
-        audio.addEventListener('play', handlePlay);
-        audio.addEventListener('pause', handlePause);
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.addEventListener('durationchange', handleDurationChange);
+
+        // Atualizar imediatamente se já carregado
+        if (audio.duration && !isNaN(audio.duration)) {
+            console.log('🎵 FooterPlayer: Áudio já carregado, atualizando imediatamente', {
+                duration: audio.duration,
+                durationFormatted: `${Math.floor(audio.duration / 60)}:${Math.floor(audio.duration % 60).toString().padStart(2, '0')}`,
+                currentTime: audio.currentTime,
+                track: currentTrack.songName,
+                trackId: currentTrack.id,
+                readyState: audio.readyState,
+                networkState: audio.networkState
+            });
+            setDuration(audio.duration);
+            setCurrentTime(audio.currentTime);
+            setProgress((audio.currentTime / audio.duration) * 100);
+        } else {
+            console.log('🎵 FooterPlayer: Áudio ainda não carregado, aguardando metadata', {
+                duration: audio.duration,
+                isNaN: isNaN(audio.duration),
+                track: currentTrack.songName,
+                trackId: currentTrack.id,
+                readyState: audio.readyState,
+                networkState: audio.networkState
+            });
+        }
 
         return () => {
-            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
             audio.removeEventListener('timeupdate', handleTimeUpdate);
-            audio.removeEventListener('ended', handleEnded);
-            audio.removeEventListener('play', handlePlay);
-            audio.removeEventListener('pause', handlePause);
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            audio.removeEventListener('durationchange', handleDurationChange);
         };
     }, [currentTrack, audioRef]);
 
-    // Desenhar waveform
-    const drawWaveform = () => {
-        if (!waveformRef.current) return;
-
-        const canvas = waveformRef.current;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const width = canvas.width;
-        const height = canvas.height;
-        const barWidth = width / waveformData.length;
-        const progress = duration > 0 ? currentTime / duration : 0;
-
-        ctx.clearRect(0, 0, width, height);
-
-        waveformData.forEach((amplitude, index) => {
-            const barHeight = amplitude * height * 0.8;
-            const x = index * barWidth;
-            const y = (height - barHeight) / 2;
-
-            // Cor baseada no progresso
-            const isPlayed = index / waveformData.length <= progress;
-            ctx.fillStyle = isPlayed ? '#3b82f6' : '#4A5568';
-
-            ctx.fillRect(x, y, Math.max(barWidth - 1, 1), barHeight);
-        });
-    };
-
-    // Atualizar canvas quando necessário
+    // Controlar volume do áudio
     useEffect(() => {
-        const animate = () => {
-            drawWaveform();
-            if (isPlaying) {
-                animationFrameId.current = requestAnimationFrame(animate);
-            }
-        };
+        if (audioRef.current) {
+            audioRef.current.volume = isMuted ? 0 : volume;
+        }
+    }, [volume, isMuted]);
 
+    // Resetar estado de fechado quando nova música toca
+    useEffect(() => {
         if (currentTrack) {
-            animate();
+            setIsClosed(false);
         }
+    }, [currentTrack]);
 
-        return () => {
-            if (animationFrameId.current) {
-                cancelAnimationFrame(animationFrameId.current);
-            }
-        };
-    }, [currentTrack, isPlaying, currentTime, duration, waveformData]);
-
-    // Atualizar volume
+    // Carregar estados iniciais de downloads e likes
     useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.volume = isMuted ? 0 : volume;
-        }
-    }, [volume, isMuted, audioRef]);
+        if (!session?.user || !currentTrack) return;
 
-    // Sincronizar volume quando mudar
-    useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.volume = isMuted ? 0 : volume;
-        }
-    }, [volume, isMuted, audioRef]);
+        loadUserStates([currentTrack.id]);
+    }, [session?.user, currentTrack, loadUserStates]);
 
-    // Buscar posição no waveform
-    const handleWaveformClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!audioRef.current || !waveformRef.current || duration === 0) return;
-
-        const canvas = waveformRef.current;
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const percentage = x / canvas.width;
-        const newTime = percentage * duration;
-
-        audioRef.current.currentTime = newTime;
-        setCurrentTime(newTime);
+    const handleClose = () => {
+        setIsClosed(true);
+        stopTrack();
     };
 
-    const formatTime = (time: number) => {
-        const minutes = Math.floor(time / 60);
-        const seconds = Math.floor(time % 60);
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    };
-
-    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newVolume = parseFloat(e.target.value);
+    const handleVolumeChange = (newVolume: number) => {
         setVolume(newVolume);
-        setIsChangingVolume(true);
-
-        if (audioRef.current) {
-            audioRef.current.volume = isMuted ? 0 : newVolume;
-        }
-
-        // Reset flag após um delay para evitar interferências
-        setTimeout(() => setIsChangingVolume(false), 100);
+        setIsMuted(newVolume === 0);
     };
 
     const toggleMute = () => {
-        const newMutedState = !isMuted;
-        setIsMuted(newMutedState);
-        if (audioRef.current) {
-            audioRef.current.volume = newMutedState ? 0 : volume;
-        }
+        setIsMuted(!isMuted);
     };
 
-    const handleMinimize = () => {
-        setIsMinimized(!isMinimized);
-    };
-
-    const handleClose = () => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-        }
-        setIsHidden(true);
-    };
-
-    const handlePrevious = () => {
-        if (!audioRef.current) return;
-
-        if (audioRef.current.currentTime > 3) {
-            // Se já tocou mais de 3 segundos, volta para o início da música atual
-            audioRef.current.currentTime = 0;
-            setCurrentTime(0);
-        } else {
-            // Senão, vai para a música anterior
-            previousTrack();
-        }
-    };
-
-    const handleNext = () => {
-        // Chama a função nextTrack do contexto para ir para a próxima música
-        nextTrack();
-    };
-
-    const handleLike = () => {
-        if (!session) {
-            showToast('🔐 Faça login para curtir músicas', 'warning');
+    // Função de download
+    const handleDownload = async (track: Track) => {
+        if (!session?.user) {
+            toast.error('Faça login para baixar músicas');
             return;
         }
 
-        if (!currentTrack) return;
-
-        const currentLiked = downloadsCache.isLiked(currentTrack.id);
-
-        if (currentLiked) {
-            downloadsCache.markAsUnliked(currentTrack.id);
-            showToast('💔 Música removida dos favoritos', 'info');
-        } else {
-            downloadsCache.markAsLiked(currentTrack.id);
-            showToast('❤️ Música adicionada aos favoritos', 'success');
+        if (isDownloading(track.id)) {
+            return; // Já está baixando
         }
 
-        console.log('🎵 FooterPlayer: Like toggled for track:', currentTrack.songName);
+        markAsDownloading(track.id);
+
+        try {
+            // 1. Registrar download no banco
+            const downloadResponse = await fetch('/api/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ trackId: track.id })
+            });
+
+            if (!downloadResponse.ok) {
+                throw new Error('Erro ao registrar download');
+            }
+
+            const downloadData = await downloadResponse.json();
+            console.log('🎵 Download registrado:', downloadData);
+
+            // 2. Baixar arquivo
+            const response = await fetch(downloadData.downloadUrl);
+            if (!response.ok) {
+                throw new Error('Erro ao baixar arquivo');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${track.artist} - ${track.songName}.mp3`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            markAsDownloaded(track.id);
+            toast.success('Música baixada com sucesso!');
+        } catch (error) {
+            console.error('Erro ao baixar música:', error);
+            toast.error('Erro ao baixar música');
+        } finally {
+            markAsNotDownloading(track.id);
+        }
     };
 
-    const handleDownload = () => {
-        if (!session) {
-            showToast('🔐 Faça login para baixar músicas', 'warning');
+    // Função para lidar com likes
+    const handleLike = async (track: Track) => {
+        if (!session?.user) {
+            toast.error('Faça login para curtir músicas');
             return;
         }
 
-        if (!currentTrack) return;
-
-        // Verificar se já foi baixado
-        const isDownloaded = downloadsCache.isDownloaded(currentTrack.id);
-
-        if (isDownloaded) {
-            showToast('✅ Música já foi baixada', 'info');
-            return;
+        if (isLiking(track.id)) {
+            return; // Já está processando
         }
 
-        // Aqui você pode implementar a lógica de download
-        // Por enquanto, apenas mostra uma mensagem
-        showToast('📥 Iniciando download...', 'info');
-        console.log('🎵 FooterPlayer: Download iniciado para:', currentTrack.songName);
+        markAsLiking(track.id);
+
+        try {
+            const response = await fetch('/api/likes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    trackId: track.id
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro ao curtir música');
+            }
+
+            const data = await response.json();
+            console.log('🎵 Like response:', data);
+
+            if (data.liked) {
+                markAsLiked(track.id);
+                toast.success('Música curtida!');
+            } else {
+                markAsNotLiked(track.id);
+                toast.success('Música descurtida');
+            }
+        } catch (error) {
+            console.error('Erro ao curtir música:', error);
+            toast.error('Erro ao curtir música');
+        } finally {
+            markAsNotLiking(track.id);
+        }
     };
 
+    if (!currentTrack || isClosed) return null;
 
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        const formatted = `${mins}:${secs.toString().padStart(2, '0')}`;
 
-    // Verificar se o usuário está logado
-    const isLoggedIn = !!session;
+        // Log da duração formatada para debug
+        if (seconds > 0) {
+            console.log('🎵 FooterPlayer: formatTime chamado', {
+                seconds,
+                formatted,
+                track: currentTrack?.songName,
+                trackId: currentTrack?.id
+            });
+        }
 
-    // Bloquear player para usuários não logados
-    if (!isLoggedIn) {
-        return (
-            <div className="fixed bottom-0 left-0 w-full bg-gradient-to-r from-gray-900 to-black border-t border-gray-800 shadow-2xl z-50 flex flex-col items-center">
-                <div className="w-full max-w-3xl flex flex-col items-center px-4 py-4">
-                    <div className="text-center text-gray-300 text-sm font-semibold">Faça login para acessar o player de músicas.</div>
-                </div>
-            </div>
-        );
-    }
+        return formatted;
+    };
 
-    if (!currentTrack || isHidden) return null;
 
     return (
-        <div className="fixed bottom-0 left-0 w-full bg-gradient-to-r from-gray-900 via-black to-gray-900 border-t border-gray-700/50 backdrop-blur-lg shadow-2xl z-50 flex flex-col items-center">
-            {/* Header com controles */}
-            <div className="w-full max-w-3xl flex items-center justify-between px-4 py-2">
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleMinimize}
-                        className="group text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/5 hover:border-white/20"
-                        title={isMinimized ? "Expandir" : "Minimizar"}
-                    >
-                        {isMinimized ? (
-                            <Maximize2 size={14} className="group-hover:scale-110 transition-transform duration-200" />
-                        ) : (
-                            <Minimize2 size={14} className="group-hover:scale-110 transition-transform duration-200" />
-                        )}
-                    </button>
-                </div>
-                <div className="flex items-center gap-2">
+        <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-white/20 z-50 shadow-2xl">
+            <div className="max-w-7xl mx-auto px-4 py-4">
+                <div className="flex items-center justify-between" style={{ fontFamily: 'Jost, sans-serif' }}>
+                    {/* Botão de fechar modernizado */}
                     <button
                         onClick={handleClose}
-                        className="group text-gray-400 hover:text-red-400 p-2 rounded-full hover:bg-red-500/10 transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/5 hover:border-red-400/20"
+                        className="p-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 mr-4 group"
                         title="Fechar player"
                     >
-                        <X size={14} className="group-hover:scale-110 transition-transform duration-200" />
+                        <X className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                     </button>
-                </div>
-            </div>
 
-            {/* O elemento audio é gerenciado pelo GlobalPlayerContext */}
-            <div className="w-full max-w-3xl flex flex-col items-center px-4 py-2">
-                {/* Controles centrais acima do waveform */}
-                <div className="flex items-center w-full justify-between mb-4">
-                    {/* Informações da música (esquerda) */}
-                    {!isMinimized && (
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                            <div className="flex-shrink-0 w-12 h-12">
-                                <img
-                                    src={currentTrack.imageUrl}
-                                    alt={currentTrack.songName}
-                                    className="w-12 h-12 rounded-lg object-cover border border-gray-700 shadow-md"
-                                    style={{ minWidth: '48px', minHeight: '48px', maxWidth: '48px', maxHeight: '48px' }}
+                    {/* Informações da música modernizadas */}
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                        {/* Thumbnail com borda animada - MAIOR */}
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 relative group">
+                            {/* Borda animada quando está tocando */}
+                            {isPlaying && (
+                                <div className="absolute inset-0 border-2 border-gradient-to-r from-emerald-400 to-blue-500 rounded-2xl animate-pulse"></div>
+                            )}
+
+                            {/* Efeito de brilho */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                            {/* Thumbnail */}
+                            <div className="relative z-10 w-full h-full rounded-2xl overflow-hidden">
+                                <OptimizedImage
+                                    track={currentTrack}
+                                    className="w-full h-full object-cover"
+                                    fallbackClassName={`w-full h-full bg-gradient-to-br ${generateGradientColors(currentTrack.songName, currentTrack.artist)} flex items-center justify-center text-white font-bold text-lg`}
+                                    fallbackContent={generateInitials(currentTrack.songName, currentTrack.artist)}
                                 />
                             </div>
-                            <div className="flex flex-col min-w-0">
-                                <span className="text-white font-semibold text-sm truncate max-w-[150px]">
-                                    {currentTrack.songName}
-                                </span>
-                                <span className="text-gray-300 text-xs truncate max-w-[150px]">
-                                    {currentTrack.artist}
-                                </span>
-                            </div>
                         </div>
-                    )}
 
-                    {/* Controles de reprodução (centro) */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* Nome da música e artista modernizados */}
+                        <div className="min-w-0 flex-1">
+                            <h4 className="text-white font-medium truncate leading-tight" style={{ fontSize: '14px' }}>
+                                {currentTrack.songName}
+                            </h4>
+                            <p className="text-gray-300/80 truncate leading-tight mt-0.5" style={{ fontSize: '13px' }}>
+                                {currentTrack.artist}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Controles centrais modernizados */}
+                    <div className="flex items-center gap-3">
+                        {/* Botão anterior modernizado */}
                         <button
-                            onClick={handlePrevious}
-                            className="group p-2.5 rounded-full hover:bg-white/10 text-gray-300 hover:text-white transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/5 hover:border-white/20"
-                            title="Anterior"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('🎵 FooterPlayer: Botão anterior clicado', {
+                                    playlistLength: playlist.length,
+                                    currentTrackIndex,
+                                    currentTrack: currentTrack?.songName,
+                                    playlist: playlist.map(t => ({ id: t.id, name: t.songName })),
+                                    event: e.type,
+                                    timestamp: new Date().toISOString()
+                                });
+                                console.log('🎵 FooterPlayer: Chamando previousTrack()');
+                                previousTrack();
+                                console.log('🎵 FooterPlayer: previousTrack() chamado');
+                            }}
+                            className="p-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 group"
+                            title="Música anterior"
                         >
-                            <ChevronLeft size={20} className="group-hover:scale-110 transition-transform duration-200" />
+                            <SkipBack className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
                         </button>
+
+                        {/* Botão play/pause modernizado */}
                         <button
                             onClick={togglePlayPause}
-                            className="group p-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/20"
-                            title={isPlaying ? "Pausar" : "Tocar"}
+                            className="p-4 bg-gradient-to-r from-emerald-500 to-blue-500 text-white rounded-2xl hover:from-emerald-400 hover:to-blue-400 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 group"
+                            title={isPlaying ? 'Pausar' : 'Tocar'}
                         >
                             {isPlaying ? (
-                                <Square size={18} className="group-hover:scale-110 transition-transform duration-200" fill="currentColor" />
+                                <Pause className="w-6 h-6 group-hover:scale-110 transition-transform duration-200" />
                             ) : (
-                                <Play size={18} className="ml-0.5 group-hover:scale-110 transition-transform duration-200" fill="currentColor" />
+                                <Play className="w-6 h-6 ml-0.5 group-hover:scale-110 transition-transform duration-200" />
                             )}
                         </button>
+
+                        {/* Botão próxima modernizado */}
                         <button
-                            onClick={handleNext}
-                            className="group p-2.5 rounded-full hover:bg-white/10 text-gray-300 hover:text-white transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/5 hover:border-white/20"
-                            title="Próxima"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('🎵 FooterPlayer: Botão próxima clicado', {
+                                    playlistLength: playlist.length,
+                                    currentTrackIndex,
+                                    currentTrack: currentTrack?.songName,
+                                    playlist: playlist.map(t => ({ id: t.id, name: t.songName })),
+                                    event: e.type,
+                                    timestamp: new Date().toISOString()
+                                });
+                                console.log('🎵 FooterPlayer: Chamando nextTrack()');
+                                nextTrack();
+                                console.log('🎵 FooterPlayer: nextTrack() chamado');
+                            }}
+                            className="p-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 group"
+                            title="Próxima música"
                         >
-                            <ChevronRight size={20} className="group-hover:scale-110 transition-transform duration-200" />
+                            <SkipForward className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
                         </button>
+
                     </div>
 
-                    {/* Botões de Like e Download (direita) */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Botão de Like - CORES CHAMATIVAS PARA DEBUG */}
-                        <button
-                            onClick={handleLike}
-                            className="group p-2.5 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm border bg-gradient-to-br from-red-500/40 to-red-600/50 text-red-300 border-red-500/60 hover:from-red-500/50 hover:to-red-600/60 shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40"
-                            title="Curtir música"
-                        >
-                            <Heart
-                                size={20}
-                                className="group-hover:scale-110 transition-transform duration-200"
-                            />
-                        </button>
 
-                        {/* Botão de Download - CORES CHAMATIVAS PARA DEBUG */}
-                        <button
-                            onClick={handleDownload}
-                            className="group p-2.5 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm border bg-gradient-to-br from-green-500/40 to-green-600/50 text-green-300 border-green-500/60 hover:from-green-500/50 hover:to-green-600/60 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40"
-                            title="Baixar música"
-                        >
-                            <Download
-                                size={20}
-                                className="group-hover:scale-110 transition-transform duration-200"
+                    {/* Tempo e volume modernizados */}
+                    <div className="flex items-center gap-4 flex-1 justify-end">
+                        {/* Tempo atual */}
+                        <span className="text-white/90 font-medium" style={{ fontSize: '13px' }}>
+                            {formatTime(currentTime)}
+                        </span>
+
+                        {/* Separador modernizado */}
+                        <span className="text-white/40" style={{ fontSize: '13px' }}>/</span>
+
+                        {/* Tempo total */}
+                        <span className="text-white/60 font-medium" style={{ fontSize: '13px' }}>
+                            {formatTime(duration)}
+                        </span>
+
+                        {/* Volume modernizado */}
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={toggleMute}
+                                className="p-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 group"
+                                title={isMuted ? 'Ativar som' : 'Silenciar'}
+                            >
+                                {isMuted ? (
+                                    <VolumeX className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                                ) : (
+                                    <Volume2 className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                                )}
+                            </button>
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.1"
+                                value={isMuted ? 0 : volume}
+                                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                                className="w-20 h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer slider hover:bg-white/30 transition-colors duration-200"
+                                style={{
+                                    background: `linear-gradient(to right, #10b981 0%, #10b981 ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.2) ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.2) 100%)`
+                                }}
+                                title={`Volume: ${Math.round((isMuted ? 0 : volume) * 100)}%`}
                             />
-                        </button>
+                        </div>
+
+                        {/* Botões de Download e Like modernizados */}
+                        <div className="flex items-center gap-2 ml-4">
+                            {/* Botão Download modernizado */}
+                            <button
+                                onClick={() => handleDownload(currentTrack)}
+                                disabled={isDownloading(currentTrack.id)}
+                                style={{ fontSize: '13px' }}
+                                className={`p-2.5 rounded-xl font-medium transition-all duration-300 hover:scale-110 flex items-center gap-1.5 group ${isDownloaded(currentTrack.id)
+                                    ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-400 hover:to-green-500 shadow-lg'
+                                    : isDownloading(currentTrack.id)
+                                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg'
+                                        : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white backdrop-blur-sm'
+                                    }`}
+                                title={
+                                    isDownloaded(currentTrack.id)
+                                        ? 'Já baixado'
+                                        : isDownloading(currentTrack.id)
+                                            ? 'Baixando...'
+                                            : 'Download'
+                                }
+                            >
+                                {isDownloading(currentTrack.id) ? (
+                                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <ArrowDownToLine className="w-3.5 h-3.5 group-hover:scale-110 transition-transform duration-200" />
+                                )}
+                            </button>
+
+                            {/* Botão Like modernizado */}
+                            <button
+                                onClick={() => handleLike(currentTrack)}
+                                disabled={isLiking(currentTrack.id)}
+                                style={{ fontSize: '13px' }}
+                                className={`p-2.5 rounded-xl font-medium transition-all duration-300 hover:scale-110 flex items-center gap-1.5 group ${isLiked(currentTrack.id)
+                                    ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:from-pink-400 hover:to-rose-500 shadow-lg'
+                                    : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white backdrop-blur-sm'
+                                    }`}
+                                title={isLiked(currentTrack.id) ? 'Descurtir' : 'Curtir'}
+                            >
+                                {isLiking(currentTrack.id) ? (
+                                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <HeartHandshake className="w-3.5 h-3.5 group-hover:scale-110 transition-transform duration-200" fill={isLiked(currentTrack.id) ? "currentColor" : "none"} stroke="currentColor" />
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
-                {/* Waveform centralizado e ocupando toda a linha */}
-                {!isMinimized && (
-                    <div className="w-full flex flex-col items-center">
-                        <div className="relative w-full">
-                            <canvas
-                                ref={waveformRef}
-                                width={800}
-                                height={40}
-                                className="w-full h-10 cursor-pointer rounded-lg backdrop-blur-sm border border-white/10 hover:border-white/20 transition-colors duration-200"
-                                onClick={handleWaveformClick}
-                            />
-                            {/* Overlay com ícone de ondas quando não há música tocando */}
-                            {!isPlaying && (
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <Waves size={20} className="text-gray-500 opacity-50" />
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex justify-between w-full text-xs text-gray-400 mt-1">
-                            <span>{formatTime(currentTime)}</span>
-                            <span>{formatTime(duration)}</span>
-                        </div>
-                        <div className="flex items-center gap-3 mt-2">
-                            {/* Controles de volume */}
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={toggleMute}
-                                    className="group p-2 rounded-full hover:bg-white/10 text-gray-300 hover:text-white transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-white/5 hover:border-white/20"
-                                    title={isMuted ? "Ativar som" : "Silenciar"}
-                                >
-                                    {isMuted ? (
-                                        <VolumeX size={16} className="group-hover:scale-110 transition-transform duration-200" />
-                                    ) : (
-                                        <Volume2 size={16} className="group-hover:scale-110 transition-transform duration-200" />
-                                    )}
-                                </button>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="1"
-                                    step="0.01"
-                                    value={isMuted ? 0 : volume}
-                                    onChange={handleVolumeChange}
-                                    className="w-24 h-2 bg-gray-700/50 rounded-full appearance-none cursor-pointer slider backdrop-blur-sm border border-white/10 hover:border-white/20 transition-colors duration-200"
-                                    style={{
-                                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(isMuted ? 0 : volume) * 100}%, #374151 ${(isMuted ? 0 : volume) * 100}%, #374151 100%)`
-                                    }}
-                                />
-                                <span className="text-xs text-gray-400 w-8">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
 }
-
-function formatTime(seconds: number) {
-    if (!seconds || isNaN(seconds)) return "0:00";
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-export default FooterPlayer;

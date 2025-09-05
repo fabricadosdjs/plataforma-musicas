@@ -393,25 +393,6 @@ const VirtualizedMusicList = React.memo(function VirtualizedMusicList({
                     </div>
                 </div>
             </div>
-
-            {/* Loading indicator para infinite scroll */}
-            {enableInfiniteScroll && hasMore && (
-                <div className="text-center py-4">
-                    {isLoading ? (
-                        <div className="flex items-center justify-center gap-2">
-                            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                            <span className="text-gray-400">Carregando mais músicas...</span>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={onLoadMore}
-                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-300"
-                        >
-                            Carregar Mais
-                        </button>
-                    )}
-                </div>
-            )}
         </div>
     );
 });

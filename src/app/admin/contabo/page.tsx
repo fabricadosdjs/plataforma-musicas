@@ -87,7 +87,7 @@ export default function ContaboStoragePage() {
 
     // Estados de paginação para a aba de importação
     const [currentPage, setCurrentPage] = useState(0);
-    const [itemsPerPage] = useState(50);
+    const [itemsPerPage] = useState(30);
 
     // Estados para gerenciamento de pastas
     const [folders, setFolders] = useState<string[]>([]);

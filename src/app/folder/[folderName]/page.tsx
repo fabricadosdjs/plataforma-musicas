@@ -123,53 +123,7 @@ export default function FolderPage() {
     // Estado para contador em tempo real
     const [availableTracksCount, setAvailableTracksCount] = useState(0);
 
-    // Carregar tracks do folder
-    useEffect(() => {
-        const loadTracks = async () => {
-            try {
-                setLoading(true);
-                console.log('🔍 Carregando tracks para folder:', folderName);
-
-                const response = await fetch(`/api/tracks/by-folder?folder=${encodeURIComponent(folderName)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('✅ Tracks carregadas:', data.tracks?.length || 0);
-                    setTracks(data.tracks || []);
-
-                    // Calcular estatísticas
-                    if (data.tracks && data.tracks.length > 0) {
-                        const tracks = data.tracks;
-                        const totalDownloads = tracks.reduce((sum: number, track: Track) => sum + (track.downloadCount || 0), 0);
-                        const totalLikes = tracks.reduce((sum: number, track: Track) => sum + (track.likeCount || 0), 0);
-                        const totalPlays = tracks.reduce((sum: number, track: Track) => sum + (typeof track.playCount === 'number' ? track.playCount : 0), 0);
-                        const uniqueArtists = new Set(tracks.map((t: Track) => t.artist)).size;
-                        const uniquePools = new Set(tracks.map((t: Track) => t.pool).filter(Boolean)).size;
-                        const latestRelease = tracks[0]?.releaseDate ? new Date(tracks[0].releaseDate) : null;
-
-                        setStats({
-                            totalDownloads,
-                            totalLikes,
-                            totalPlays,
-                            uniqueArtists,
-                            uniquePools,
-                            latestRelease,
-                            totalTracks: tracks.length
-                        });
-                    }
-                } else {
-                    console.error('❌ Erro na resposta da API:', response.status);
-                    showToast('Erro ao carregar músicas do folder', 'error');
-                }
-            } catch (error) {
-                console.error('❌ Erro ao carregar tracks:', error);
-                showToast('Erro ao carregar músicas', 'error');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadTracks();
-    }, [folderName, showToast]);
+    // Nota: A busca do folder é realizada no efeito abaixo (fetchFolderTracks) que já carrega tracks e stats em paralelo.
 
     // Obter estilos únicos disponíveis
     const availableStyles = useMemo(() => {
@@ -999,12 +953,21 @@ export default function FolderPage() {
                 {/* Lista de Músicas */}
                 <div className="w-full max-w-[95%] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8">
                     {loading ? (
-                        <div className="flex items-center justify-center py-16">
-                            <div className="text-center">
-                                <div className="animate-spin w-12 h-12 border-4 border-[#8b5cf6] border-t-transparent rounded-full mx-auto mb-4"></div>
-                                <p className="text-[#b3b3b3] text-lg">
-                                    Carregando músicas do folder {folderName}...
-                                </p>
+                        <div>
+                            <div className="h-6 w-48 bg-[#1b1b1b] rounded mb-6 animate-pulse" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+                                {[...Array(12)].map((_, i) => (
+                                    <div key={i} className="bg-[#181818] rounded-lg border border-[#282828] p-3 animate-pulse">
+                                        <div className="aspect-square w-full rounded-md bg-[#222]" />
+                                        <div className="mt-3 h-4 w-3/4 bg-[#222] rounded" />
+                                        <div className="mt-2 h-3 w-1/2 bg-[#222] rounded" />
+                                        <div className="mt-4 flex gap-2">
+                                            <div className="h-8 w-12 bg-[#222] rounded" />
+                                            <div className="h-8 w-12 bg-[#222] rounded" />
+                                            <div className="h-8 w-12 bg-[#222] rounded" />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     ) : filteredTracks.length === 0 ? (
@@ -1032,9 +995,16 @@ export default function FolderPage() {
                         <MusicList
                             tracks={filteredTracks}
                             downloadedTrackIds={downloadedTrackIds}
-                            setDownloadedTrackIds={handleDownloadedTrackIdsChange}
-                            showDate={true}
-                            enableInfiniteScroll={false}
+                            setDownloadedTrackIds={(updater: number[] | ((prev: number[]) => number[])) => {
+                                setDownloadedTrackIds((prevArr) => {
+                                    const nextArr = typeof updater === 'function'
+                                        ? (updater as (p: number[]) => number[])(prevArr)
+                                        : updater;
+                                    localStorage.setItem('downloadedTrackIds', JSON.stringify(nextArr));
+                                    setTimeout(() => updateAvailableTracksCount(), 0);
+                                    return nextArr;
+                                });
+                            }}
                         />
                     )}
                 </div>

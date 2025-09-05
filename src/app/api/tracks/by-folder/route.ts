@@ -1,130 +1,130 @@
-import prisma from '@/lib/prisma';
-import { NextResponse } from 'next/server';
-import { Track } from '@prisma/client';
+import { NextRequest, NextResponse } from 'next/server';
+import { ContaboStorage } from '@/lib/contabo-storage';
 
+// Função para criar instância do storage
+function createStorage() {
+    return new ContaboStorage({
+        endpoint: process.env.CONTABO_ENDPOINT!,
+        region: process.env.CONTABO_REGION!,
+        accessKeyId: process.env.CONTABO_ACCESS_KEY!,
+        secretAccessKey: process.env.CONTABO_SECRET_KEY!,
+        bucketName: process.env.CONTABO_BUCKET_NAME!,
+    });
+}
 
-export async function GET(request: Request) {
+// Função para analisar o nome do arquivo e extrair informações
+function analyzeFileName(filename: string) {
+    // Remove a extensão
+    const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+
+    // Padrões comuns de nomenclatura de música
+    const patterns = [
+        // "Artist - Song Name (Version)"
+        /^(.+?)\s*-\s*(.+?)\s*\((.+?)\)$/,
+        // "Artist - Song Name"
+        /^(.+?)\s*-\s*(.+?)$/,
+        // "Song Name (Artist)"
+        /^(.+?)\s*\((.+?)\)$/,
+        // "Artist - Song Name [Version]"
+        /^(.+?)\s*-\s*(.+?)\s*\[(.+?)\]$/,
+    ];
+
+    for (const pattern of patterns) {
+        const match = nameWithoutExt.match(pattern);
+        if (match) {
+            if (pattern.source.includes('\\(') && match.length === 4) {
+                // Padrão com versão
+                return {
+                    artist: match[1].trim(),
+                    songName: match[2].trim(),
+                    version: match[3].trim()
+                };
+            } else if (match.length === 3) {
+                // Padrão sem versão
+                return {
+                    artist: match[1].trim(),
+                    songName: match[2].trim(),
+                    version: undefined
+                };
+            }
+        }
+    }
+
+    // Se não conseguir analisar, usar o nome completo como título
+    return {
+        artist: 'Artista Desconhecido',
+        songName: nameWithoutExt,
+        version: undefined
+    };
+}
+
+export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const folder = searchParams.get('folder');
-        const limit = parseInt(searchParams.get('limit') || '100', 10);
-        const offset = parseInt(searchParams.get('offset') || '0', 10);
+        const limit = parseInt(searchParams.get('limit') || '1000');
 
         if (!folder) {
-            return new NextResponse('Parâmetro folder é obrigatório', { status: 400 });
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: 'Parâmetro folder é obrigatório',
+                    tracks: []
+                },
+                { status: 400 }
+            );
         }
 
-        console.log('🔍 Buscando músicas por folder:', folder, 'limit:', limit, 'offset:', offset);
+        console.log(`🔍 Buscando músicas da pasta: ${folder}`);
 
-        let tracks: Track[] = [];
+        const storage = createStorage();
 
-        // Buscar por folder exato com paginação
-        try {
-            const exactFolderTracks = await prisma.$queryRaw<Track[]>`
-                SELECT * FROM "Track"
-                WHERE folder = ${folder}
-                ORDER BY "releaseDate" DESC NULLS LAST, "createdAt" DESC
-                LIMIT ${limit} OFFSET ${offset}
-            `;
+        // Buscar arquivos da pasta específica
+        const files = await storage.listAudioFiles(folder + '/');
 
-            if (exactFolderTracks && exactFolderTracks.length > 0) {
-                tracks = exactFolderTracks;
-                console.log(`✅ Encontradas ${tracks.length} músicas com folder exato: ${folder}`);
-            }
-        } catch (error) {
-            console.log('⚠️ Erro ao buscar por folder exato, tentando por data...');
-        }
+        // Converter arquivos do storage em formato de tracks
+        const tracks = files.slice(0, limit).map((file, index) => {
+            const analysis = analyzeFileName(file.filename);
 
-        // Se não encontrar por folder exato, tentar buscar por data (também paginado)
-        if (tracks.length === 0) {
-            console.log('🔍 Folder não encontrado, tentando buscar por data...');
+            return {
+                id: index + 1, // ID temporário baseado no índice
+                songName: analysis.songName,
+                artist: analysis.artist,
+                style: 'Unknown', // Será determinado posteriormente
+                version: analysis.version,
+                pool: 'Storage', // Indica que vem do storage
+                folder: folder,
+                imageUrl: null,
+                previewUrl: file.url,
+                downloadUrl: file.url,
+                releaseDate: file.lastModified.toISOString().split('T')[0],
+                createdAt: file.lastModified.toISOString(),
+                updatedAt: file.lastModified.toISOString(),
+                // Informações adicionais do storage
+                storageKey: file.key,
+                fileSize: file.size,
+                isFromStorage: true
+            };
+        });
 
-            let searchDate: Date | null = null;
-
-            // Formato brasileiro: "23 de agosto de 2025"
-            const brazilianDateMatch = folder.match(/(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})/);
-            if (brazilianDateMatch) {
-                const [, day, month, year] = brazilianDateMatch;
-                const months: { [key: string]: number } = {
-                    'janeiro': 0, 'fevereiro': 1, 'março': 2, 'abril': 3, 'maio': 4, 'junho': 5,
-                    'julho': 6, 'agosto': 7, 'setembro': 8, 'outubro': 9, 'novembro': 10, 'dezembro': 11
-                };
-                if (months[month.toLowerCase()] !== undefined) {
-                    searchDate = new Date(parseInt(year), months[month.toLowerCase()], parseInt(day));
-                    console.log('📅 Data brasileira convertida:', searchDate);
-                }
-            }
-
-            // Formato DD/MM/YYYY
-            const slashDateMatch = folder.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-            if (slashDateMatch && !searchDate) {
-                const [, day, month, year] = slashDateMatch;
-                searchDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                console.log('📅 Data com barras convertida:', searchDate);
-            }
-
-            if (searchDate) {
-                const startOfDay = new Date(searchDate);
-                startOfDay.setHours(0, 0, 0, 0);
-                const endOfDay = new Date(searchDate);
-                endOfDay.setHours(23, 59, 59, 999);
-
-                console.log('🔍 Buscando músicas entre:', startOfDay, 'e', endOfDay);
-
-                try {
-                    const dateTracks = await prisma.$queryRaw<Track[]>`
-                        SELECT * FROM "Track"
-                        WHERE ("createdAt" >= ${startOfDay} AND "createdAt" <= ${endOfDay})
-                           OR ("updatedAt" >= ${startOfDay} AND "updatedAt" <= ${endOfDay})
-                           OR ("releaseDate" >= ${startOfDay} AND "releaseDate" <= ${endOfDay})
-                        ORDER BY "releaseDate" DESC NULLS LAST, "createdAt" DESC
-                        LIMIT ${limit} OFFSET ${offset}
-                    `;
-
-                    tracks = dateTracks;
-                    console.log(`✅ Encontradas ${tracks.length} músicas na data: ${folder}`);
-                } catch (error) {
-                    console.log('⚠️ Erro ao buscar por data, usando método alternativo...');
-                    const fallbackTracks = await prisma.track.findMany({
-                        where: {
-                            OR: [
-                                {
-                                    createdAt: {
-                                        gte: startOfDay,
-                                        lte: endOfDay
-                                    }
-                                },
-                                {
-                                    updatedAt: {
-                                        gte: startOfDay,
-                                        lte: endOfDay
-                                    }
-                                }
-                            ]
-                        },
-                        orderBy: [
-                            { createdAt: 'desc' }
-                        ],
-                        take: limit,
-                        skip: offset
-                    });
-                    tracks = fallbackTracks;
-                    console.log(`✅ Encontradas ${tracks.length} músicas usando fallback: ${folder}`);
-                }
-            } else {
-                console.log('❌ Não foi possível converter o folder para data');
-            }
-        }
+        console.log(`✅ ${tracks.length} músicas encontradas na pasta ${folder}`);
 
         return NextResponse.json({
             success: true,
-            folder: folder,
-            tracks: tracks,
+            tracks,
+            folder,
             count: tracks.length
         });
 
     } catch (error) {
-        console.error('❌ Erro ao buscar músicas por folder:', error);
-        return new NextResponse('Erro interno do servidor', { status: 500 });
+        console.error('Error fetching tracks by storage folder:', error);
+        return NextResponse.json(
+            {
+                success: false,
+                error: 'Erro ao conectar com o storage',
+                tracks: []
+            },
+            { status: 500 }
+        );
     }
 }

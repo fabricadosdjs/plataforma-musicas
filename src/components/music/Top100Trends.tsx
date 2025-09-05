@@ -60,7 +60,7 @@ const Top100Trends = ({ tracks }: Top100TrendsProps) => {
                             <div key={track.id} className="flex items-center p-2 bg-green-900/30 rounded-lg">
                                 <div className="flex items-center space-x-2 flex-1 min-w-0">
                                     <span className="text-sm font-bold text-white flex-shrink-0">#{track.position}</span>
-                                    <span className="text-xs text-gray-300 truncate flex-1">{track.songName}</span>
+                                    <span className="text-[10px] text-gray-300 truncate flex-1">{track.songName}</span>
                                 </div>
                                 <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                     {getChangeIcon(track.change)}
@@ -87,7 +87,7 @@ const Top100Trends = ({ tracks }: Top100TrendsProps) => {
                             <div key={track.id} className="flex items-center p-2 bg-red-900/30 rounded-lg">
                                 <div className="flex items-center space-x-2 flex-1 min-w-0">
                                     <span className="text-sm font-bold text-white flex-shrink-0">#{track.position}</span>
-                                    <span className="text-xs text-gray-300 truncate flex-1">{track.songName}</span>
+                                    <span className="text-[10px] text-gray-300 truncate flex-1">{track.songName}</span>
                                 </div>
                                 <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                     {getChangeIcon(track.change)}
@@ -114,7 +114,7 @@ const Top100Trends = ({ tracks }: Top100TrendsProps) => {
                             <div key={track.id} className="flex items-center p-2 bg-yellow-900/30 rounded-lg">
                                 <div className="flex items-center space-x-2 flex-1 min-w-0">
                                     <span className="text-sm font-bold text-white flex-shrink-0">#{track.position}</span>
-                                    <span className="text-xs text-gray-300 truncate flex-1">{track.songName}</span>
+                                    <span className="text-[10px] text-gray-300 truncate flex-1">{track.songName}</span>
                                 </div>
                                 <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                     {getChangeIcon(track.change)}
@@ -139,7 +139,7 @@ const Top100Trends = ({ tracks }: Top100TrendsProps) => {
                             <div key={track.id} className="flex items-center p-2 bg-orange-900/30 rounded-lg">
                                 <div className="flex items-center space-x-2 flex-1 min-w-0">
                                     <span className="text-sm font-bold text-white flex-shrink-0">#{track.position}</span>
-                                    <span className="text-xs text-gray-300 truncate flex-1">{track.songName}</span>
+                                    <span className="text-[10px] text-gray-300 truncate flex-1">{track.songName}</span>
                                 </div>
                                 <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                     {getTrendIcon(track.trend)}

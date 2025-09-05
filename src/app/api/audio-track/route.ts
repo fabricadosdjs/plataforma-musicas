@@ -85,7 +85,12 @@ export async function POST(request: NextRequest) {
                 const bucketIndex = urlParts.findIndex(part => part.includes('plataforma-de-musicas'));
 
                 if (bucketIndex !== -1) {
-                    const fileKey = urlParts.slice(bucketIndex + 1).join('/');
+                    const pathParts = urlParts.slice(bucketIndex + 1);
+                    let fileKey = pathParts.join('/');
+                    // Remover parâmetros de query se existirem
+                    if (fileKey.includes('?')) {
+                        fileKey = fileKey.split('?')[0];
+                    }
                     console.log('🎵 API audio-track: Chave extraída:', fileKey);
 
                     // Gerar URL assinada para reprodução (1 hora de validade)
@@ -139,6 +144,20 @@ export async function POST(request: NextRequest) {
 }
 
 /**
+ * Handler para requisições HEAD (para testes de conectividade)
+ */
+export async function HEAD() {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, HEAD, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+    });
+}
+
+/**
  * Handler para requisições OPTIONS (CORS)
  */
 export async function OPTIONS() {
@@ -146,7 +165,7 @@ export async function OPTIONS() {
         status: 200,
         headers: {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Methods': 'POST, HEAD, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         },
     });

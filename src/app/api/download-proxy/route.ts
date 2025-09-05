@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
             const urlParts = fileKey.split('/');
             const bucketIndex = urlParts.findIndex(part => part.includes('plataforma-de-musicas'));
             if (bucketIndex !== -1) {
-                fileKey = urlParts.slice(bucketIndex + 1).join('/');
+                // Pegar tudo após o bucket, incluindo parâmetros de query
+                const pathParts = urlParts.slice(bucketIndex + 1);
+                fileKey = pathParts.join('/');
             }
         }
 
@@ -41,11 +43,21 @@ export async function GET(request: NextRequest) {
             console.log('🔍 Download Proxy: Erro ao decodificar chave:', error);
         }
 
-        console.log('🔍 Download Proxy: URL completa recebida:', request.url);
-        console.log('🔍 Download Proxy: Parâmetros de busca:', Object.fromEntries(searchParams.entries()));
-        console.log('🔍 Download Proxy: Chave do arquivo extraída:', fileKey);
-        console.log('🔍 Download Proxy: Chave do arquivo processada:', fileKey);
-        console.log('🔍 Download Proxy: Chave do arquivo decodificada:', fileKey);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('🔍 Download Proxy:', {
+                url: request.url,
+                key: fileKey
+            });
+        }
+
+        // Se a chave original era uma URL completa (já assinada), redirecionar diretamente
+        const originalKey = searchParams.get('key');
+        if (originalKey && originalKey.startsWith('https://')) {
+            if (process.env.NODE_ENV !== 'production') {
+                console.log('🔍 Download Proxy: Redirecionando para URL já assinada');
+            }
+            return NextResponse.redirect(originalKey, { status: 302 });
+        }
 
         try {
             // Obter URL assinada do Contabo Storage
@@ -56,43 +68,12 @@ export async function GET(request: NextRequest) {
                 return NextResponse.json({ error: 'Falha ao gerar URL de download' }, { status: 500 });
             }
 
-            console.log('🔍 Download Proxy: URL assinada gerada para:', fileKey);
-
-            // Fazer proxy do arquivo
-            const fileResponse = await fetch(signedUrl);
-
-            if (!fileResponse.ok) {
-                console.error('❌ Download Proxy: Erro ao buscar arquivo:', fileResponse.status, fileResponse.statusText);
-                return NextResponse.json({
-                    error: 'Erro ao buscar arquivo no storage',
-                    status: fileResponse.status
-                }, { status: fileResponse.status });
+            if (process.env.NODE_ENV !== 'production') {
+                console.log('🔍 Download Proxy: Redirecionando para URL assinada');
             }
 
-            // Obter o arquivo como blob
-            const fileBlob = await fileResponse.blob();
-
-            if (fileBlob.size === 0) {
-                console.error('❌ Download Proxy: Arquivo vazio recebido para:', fileKey);
-                return NextResponse.json({ error: 'Arquivo vazio' }, { status: 500 });
-            }
-
-            console.log('✅ Download Proxy: Arquivo servido com sucesso:', fileKey, 'Tamanho:', fileBlob.size);
-
-            // Extrair nome do arquivo da chave
-            const fileName = fileKey.split('/').pop() || 'arquivo.mp3';
-
-            // Retornar o arquivo
-            return new NextResponse(fileBlob, {
-                headers: {
-                    'Content-Type': 'audio/mpeg',
-                    'Content-Disposition': `attachment; filename="${fileName}"`,
-                    'Content-Length': fileBlob.size.toString(),
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0'
-                }
-            });
+            // Redirecionar diretamente para a URL assinada (início de download quase instantâneo)
+            return NextResponse.redirect(signedUrl, { status: 302 });
 
         } catch (storageError) {
             console.error('❌ Download Proxy: Erro no storage:', storageError);

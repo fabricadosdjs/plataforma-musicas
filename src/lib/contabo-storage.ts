@@ -43,6 +43,10 @@ export class ContaboStorage {
             },
             forcePathStyle: true, // Necessário para compatibilidade S3
             apiVersion: '2006-03-01',
+            requestHandler: {
+                requestTimeout: 30000, // 30 segundos para operações S3
+                connectionTimeout: 10000, // 10 segundos para conexão
+            },
         });
         this.bucketName = config.bucketName;
         this.endpoint = config.endpoint;
@@ -110,8 +114,10 @@ export class ContaboStorage {
      * Gera URL pública para um arquivo
      */
     getPublicUrl(key: string): string {
+        // Codificar cada parte do caminho separadamente para tratar caracteres especiais
+        const encodedKey = key.split('/').map(part => encodeURIComponent(part)).join('/');
         // URL pública do bucket Contabo com o ID específico
-        return `https://usc1.contabostorage.com/211285f2fbcc4760a62df1aff280735f:plataforma-de-musicas/${key}`;
+        return `https://usc1.contabostorage.com/211285f2fbcc4760a62df1aff280735f:plataforma-de-musicas/${encodedKey}`;
     }
 
     /**
@@ -119,38 +125,27 @@ export class ContaboStorage {
      */
     async getSecureUrl(key: string, expiresIn: number = 3600): Promise<string> {
         try {
-            console.log('🎵 ContaboStorage: Gerando URL assinada para:', { key, bucketName: this.bucketName });
+            // Decodificar a chave se ela estiver codificada
+            const decodedKey = decodeURIComponent(key);
+            console.log('🎵 ContaboStorage: Gerando URL assinada para:', {
+                originalKey: key,
+                decodedKey: decodedKey,
+                bucketName: this.bucketName
+            });
 
             const command = new GetObjectCommand({
                 Bucket: this.bucketName,
-                Key: key,
+                Key: decodedKey,
             });
 
             const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
             console.log('🎵 ContaboStorage: URL assinada gerada com sucesso');
-            
-            // Testar se a URL assinada é válida fazendo uma requisição HEAD
-            try {
-                const testResponse = await fetch(signedUrl, { 
-                    method: 'HEAD',
-                    headers: {
-                        'Accept': 'audio/*',
-                        'Cache-Control': 'no-cache'
-                    }
-                });
-                
-                if (testResponse.ok) {
-                    console.log('🎵 ContaboStorage: URL assinada validada com sucesso');
-                    return signedUrl;
-                } else {
-                    console.warn('🎵 ContaboStorage: URL assinada inválida, status:', testResponse.status);
-                    throw new Error(`URL assinada retornou status ${testResponse.status}`);
-                }
-            } catch (testError) {
-                console.warn('🎵 ContaboStorage: Erro ao validar URL assinada:', testError);
-                throw testError;
-            }
-            
+            console.log('🎵 ContaboStorage: URL gerada:', signedUrl.substring(0, 100) + '...');
+
+            // Retornar URL assinada sem validação para evitar timeouts
+            // A validação será feita pelo cliente quando necessário
+            return signedUrl;
+
         } catch (error) {
             console.error('🎵 ContaboStorage: Erro ao gerar URL assinada:', {
                 error: error instanceof Error ? error.message : error,
@@ -158,10 +153,10 @@ export class ContaboStorage {
                 bucketName: this.bucketName,
                 endpoint: this.endpoint
             });
-            
-            // Fallback para URL pública
+
+            // Fallback para URL pública em caso de erro
             const publicUrl = this.getPublicUrl(key);
-            console.log('🎵 ContaboStorage: Usando fallback para URL pública:', publicUrl);
+            console.log('🎵 ContaboStorage: Usando fallback para URL pública:', publicUrl.substring(0, 100) + '...');
             return publicUrl;
         }
     }
@@ -171,9 +166,12 @@ export class ContaboStorage {
      */
     async getSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
         try {
+            // Decodificar a chave se ela estiver codificada
+            const decodedKey = decodeURIComponent(key);
+
             const command = new GetObjectCommand({
                 Bucket: this.bucketName,
-                Key: key,
+                Key: decodedKey,
             });
 
             return await getSignedUrl(this.s3Client, command, { expiresIn });
@@ -192,11 +190,14 @@ export class ContaboStorage {
         contentType?: string
     ): Promise<string> {
         try {
+            // Decodificar a chave se ela estiver codificada
+            const decodedKey = decodeURIComponent(key);
+
             const command = new PutObjectCommand({
                 Bucket: this.bucketName,
-                Key: key,
+                Key: decodedKey,
                 Body: file,
-                ContentType: contentType || this.getMimeType(key),
+                ContentType: contentType || this.getMimeType(decodedKey),
                 ACL: 'public-read', // Para tornar o arquivo público
             });
 
@@ -213,9 +214,12 @@ export class ContaboStorage {
      */
     async getFileInfo(key: string): Promise<StorageFile | null> {
         try {
+            // Decodificar a chave se ela estiver codificada
+            const decodedKey = decodeURIComponent(key);
+
             const command = new ListObjectsV2Command({
                 Bucket: this.bucketName,
-                Prefix: key,
+                Prefix: decodedKey,
                 MaxKeys: 1,
             });
 
@@ -249,11 +253,13 @@ export class ContaboStorage {
      */
     async deleteFile(key: string): Promise<void> {
         try {
-            console.log(`🗑️ Tentando excluir arquivo: ${key}`);
+            // Decodificar a chave se ela estiver codificada
+            const decodedKey = decodeURIComponent(key);
+            console.log(`🗑️ Tentando excluir arquivo: ${decodedKey}`);
 
             const command = new DeleteObjectCommand({
                 Bucket: this.bucketName,
-                Key: key,
+                Key: decodedKey,
             });
 
             const result = await this.s3Client.send(command);

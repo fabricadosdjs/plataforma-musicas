@@ -1,0 +1,75 @@
+/* Animação de rotação para a borda azul */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Animação de pulso para a borda azul */
+@keyframes pulse-blue {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+/* Classe para animação de borda girando */
+.rotating-border {
+    animation: spin 2s linear infinite;
+}
+
+/* Classe para animação de pulso */
+.pulsing-border {
+    animation: pulse-blue 2s ease-in-out infinite;
+}
+
+/* Estilos para o slider de volume */
+.slider {
+    background: #374151;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+    border: 2px solid #374151;
+}
+
+.slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+    border: 2px solid #374151;
+}
+
+.slider::-webkit-slider-track {
+    background: #374151;
+    height: 4px;
+    border-radius: 2px;
+}
+
+.slider::-moz-range-track {
+    background: #374151;
+    height: 4px;
+    border-radius: 2px;
+    border: none;
+}

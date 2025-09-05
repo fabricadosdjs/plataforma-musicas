@@ -113,7 +113,40 @@ const FullscreenMusicPlayer: React.FC<FullscreenMusicPlayerProps> = ({
         if (!audioRef.current || !track?.previewUrl) return;
 
         const audio = audioRef.current;
-        audio.src = track.previewUrl;
+
+        // Configurar src com validação
+        const setupAudioSrc = async () => {
+            try {
+                const response = await fetch(track.previewUrl, { method: 'HEAD' });
+                if (response.ok) {
+                    audio.src = track.previewUrl;
+                } else {
+                    // Gerar nova URL se a atual não funcionar
+                    const previewResponse = await fetch(`/api/tracks/preview?trackId=${track.id}`);
+                    if (previewResponse.ok) {
+                        const { previewUrl } = await previewResponse.json();
+                        audio.src = previewUrl;
+                    } else {
+                        audio.src = track.previewUrl; // Fallback
+                    }
+                }
+            } catch (error) {
+                // Em caso de erro, tentar gerar nova URL
+                try {
+                    const previewResponse = await fetch(`/api/tracks/preview?trackId=${track.id}`);
+                    if (previewResponse.ok) {
+                        const { previewUrl } = await previewResponse.json();
+                        audio.src = previewUrl;
+                    } else {
+                        audio.src = track.previewUrl; // Fallback
+                    }
+                } catch (previewError) {
+                    audio.src = track.previewUrl; // Fallback
+                }
+            }
+        };
+
+        setupAudioSrc();
         audio.volume = isMuted ? 0 : volume;
         audio.load();
 

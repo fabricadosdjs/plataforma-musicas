@@ -3,7 +3,7 @@
     "short_name": "Plataforma",
     "description": "Baixe músicas, playlists e acompanhe novidades!",
     "start_url": "/",
-    "display": "standalone",
+    "display": "browser",
     "background_color": "#121212",
     "theme_color": "#1db954",
     "icons": [

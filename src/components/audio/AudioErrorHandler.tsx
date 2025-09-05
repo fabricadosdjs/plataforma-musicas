@@ -16,19 +16,19 @@ export const AudioErrorHandler: React.FC<AudioErrorHandlerProps> = ({ audioRef }
 
         const handleError = (event: Event) => {
             const now = Date.now();
-            
+
             // Evitar spam de erros - só processar se passou mais de 5 segundos
             if (now - lastErrorTime < 5000) {
                 return;
             }
-            
+
             setLastErrorTime(now);
             setErrorCount(prev => prev + 1);
-            
+
             // Diferentes estratégias baseadas no número de erros
             if (errorCount < 3) {
                 console.warn('🎵 AudioErrorHandler: Tentativa de recuperação automática');
-                
+
                 // Tentar recarregar o áudio após um pequeno delay
                 setTimeout(() => {
                     if (audio && audio.src) {

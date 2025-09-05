@@ -133,8 +133,8 @@ export const ConsoleLogger: React.FC = () => {
                 <button
                     onClick={() => setIsCapturing(!isCapturing)}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${isCapturing
-                            ? 'bg-red-600 hover:bg-red-700 text-white'
-                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        ? 'bg-red-600 hover:bg-red-700 text-white'
+                        : 'bg-green-600 hover:bg-green-700 text-white'
                         }`}
                 >
                     {isCapturing ? '🛑 Parar Captura' : '▶️ Iniciar Captura'}
@@ -192,14 +192,14 @@ export const ConsoleLogger: React.FC = () => {
                             <div
                                 key={index}
                                 className={`p-3 rounded-lg text-sm font-mono ${log.type === 'error' ? 'bg-red-900/20 border border-red-500/30' :
-                                        log.type === 'warn' ? 'bg-yellow-900/20 border border-yellow-500/30' :
-                                            'bg-gray-700/50 border border-gray-600/30'
+                                    log.type === 'warn' ? 'bg-yellow-900/20 border border-yellow-500/30' :
+                                        'bg-gray-700/50 border border-gray-600/30'
                                     }`}
                             >
                                 <div className="flex items-start gap-2">
                                     <span className={`text-xs px-2 py-1 rounded ${log.type === 'error' ? 'bg-red-600 text-white' :
-                                            log.type === 'warn' ? 'bg-yellow-600 text-black' :
-                                                'bg-gray-600 text-white'
+                                        log.type === 'warn' ? 'bg-yellow-600 text-black' :
+                                            'bg-gray-600 text-white'
                                         }`}>
                                         {log.type.toUpperCase()}
                                     </span>
