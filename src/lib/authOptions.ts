@@ -315,6 +315,8 @@ export const authOptions: AuthOptions = {
         signIn: '/auth/sign-in',
         signOut: '/auth/sign-in',
     },
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key',
     debug: process.env.NODE_ENV === 'development', // Adicionar debug em desenvolvimento
+    // Configuração para resolver erro de fetch
+    trustHost: true,
 };

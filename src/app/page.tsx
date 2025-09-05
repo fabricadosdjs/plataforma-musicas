@@ -229,6 +229,7 @@ export default function HomePage() {
     }
   };
 
+
   // Fetch available options for search filters
   const fetchSearchOptions = async () => {
     try {
@@ -857,6 +858,7 @@ export default function HomePage() {
               </button>
             </div>
           </div>
+
 
           {/* Discover More Section */}
           <div className="mb-12 -mt-4">
