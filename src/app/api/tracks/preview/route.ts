@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
         // Extrair a chave do arquivo da downloadUrl
         let fileKey = track.downloadUrl;
-        if (fileKey.startsWith('https://')) {
+        if (fileKey && fileKey.startsWith('https://')) {
             const urlParts = fileKey.split('/');
             const bucketIndex = urlParts.findIndex(part => part.includes('plataforma-de-musicas'));
             if (bucketIndex !== -1) {
@@ -49,6 +49,9 @@ export async function GET(request: NextRequest) {
         }
 
         // Gerar nova URL assinada para preview (válida por 1 hora)
+        if (!fileKey) {
+            return NextResponse.json({ error: 'Chave do arquivo não encontrada' }, { status: 400 });
+        }
         const previewUrl = await contaboStorage.getSignedUrl(fileKey, 3600);
 
         if (!previewUrl) {

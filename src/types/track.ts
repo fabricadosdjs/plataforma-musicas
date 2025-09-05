@@ -35,6 +35,7 @@ export interface Track {
     albumId?: number;
     labelId?: number;
     audioUrl?: string;
+    isFromStorage?: boolean;
     // Adicione quaisquer outros campos que você espera do backend
     [key: string]: unknown;
 }

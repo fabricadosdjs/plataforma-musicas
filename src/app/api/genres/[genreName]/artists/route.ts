@@ -3,9 +3,10 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest, { params }: { params: { genreName: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ genreName: string }> }) {
     try {
-        const genreName = params.genreName;
+        const resolvedParams = await params;
+        const genreName = resolvedParams.genreName;
         const decodedGenreName = decodeURIComponent(genreName);
 
         // Normalização inteligente: tentar múltiplas variações

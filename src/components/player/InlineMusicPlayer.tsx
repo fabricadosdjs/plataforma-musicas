@@ -191,7 +191,7 @@ const InlineMusicPlayer: React.FC<InlineMusicPlayerProps> = ({
                 }
             } catch (error) {
                 console.error('🔍 InlineMusicPlayer: URL test failed, tentando gerar nova...', {
-                    error: error?.message || 'Erro desconhecido',
+                    error: (error as any)?.message || 'Erro desconhecido',
                     url: track.previewUrl
                 });
 

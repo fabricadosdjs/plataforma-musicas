@@ -149,7 +149,8 @@ export default function ManagerPlaylistTracksPage({ params }: { params: Promise<
                 setAvailableTracks(data.tracks || []);
 
                 // Extrair estilos únicos
-                const uniqueStyles = [...new Set(data.tracks.map((track: Track) => track.style).filter(Boolean))];
+                const styles = data.tracks.map((track: Track) => track.style).filter(Boolean) as string[];
+                const uniqueStyles = [...new Set(styles)];
                 setAvailableStyles(uniqueStyles);
             } else {
                 toast.error('Erro ao carregar músicas');
@@ -559,7 +560,7 @@ export default function ManagerPlaylistTracksPage({ params }: { params: Promise<
                                                         style={{ width: `${(count as number / stats.tracks.total) * 100}%` }}
                                                     ></div>
                                                 </div>
-                                                <span className="text-white font-medium w-8 text-right">{count}</span>
+                                                <span className="text-white font-medium w-8 text-right">{count as number}</span>
                                             </div>
                                         </div>
                                     ))}
@@ -774,7 +775,7 @@ export default function ManagerPlaylistTracksPage({ params }: { params: Promise<
                                                             {track.pool}
                                                         </span>
                                                     )}
-                                                    {track.isFromStorage && (
+                                                    {(track as any).isFromStorage && (
                                                         <span className="px-2 py-1 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 text-orange-300 text-xs rounded-full flex items-center">
                                                             <Folder className="w-3 h-3 mr-1" />
                                                             Storage

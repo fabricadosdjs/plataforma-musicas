@@ -20,7 +20,7 @@ import {
 import { Playlist, PlaylistTrack } from '@/types/playlist';
 
 interface PlaylistManagePageProps {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }
 
 export default function PlaylistManagePage({ params }: PlaylistManagePageProps) {
@@ -34,6 +34,15 @@ export default function PlaylistManagePage({ params }: PlaylistManagePageProps) 
     const [availableTracks, setAvailableTracks] = useState<any[]>([]);
     const [selectedTracks, setSelectedTracks] = useState<Set<number>>(new Set());
     const [saving, setSaving] = useState(false);
+    const [playlistId, setPlaylistId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const resolveParams = async () => {
+            const resolvedParams = await params;
+            setPlaylistId(resolvedParams.id);
+        };
+        resolveParams();
+    }, [params]);
 
     useEffect(() => {
         if (status === 'loading') return;
@@ -43,15 +52,17 @@ export default function PlaylistManagePage({ params }: PlaylistManagePageProps) 
             return;
         }
 
-        if (params.id) {
+        if (playlistId) {
             fetchPlaylist();
         }
-    }, [session, status, router, params.id]);
+    }, [session, status, router, playlistId]);
 
     const fetchPlaylist = async () => {
+        if (!playlistId) return;
+
         try {
             setLoading(true);
-            const response = await fetch(`/api/playlists/${params.id}`);
+            const response = await fetch(`/api/playlists/${playlistId}`);
             const data = await response.json();
 
             if (response.ok) {
@@ -97,7 +108,7 @@ export default function PlaylistManagePage({ params }: PlaylistManagePageProps) 
 
             // Adicionar tracks uma por uma
             for (const trackId of selectedTracks) {
-                const response = await fetch(`/api/playlists/${params.id}/tracks`, {
+                const response = await fetch(`/api/playlists/${playlistId}/tracks`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ trackId })
@@ -128,7 +139,7 @@ export default function PlaylistManagePage({ params }: PlaylistManagePageProps) 
         }
 
         try {
-            const response = await fetch(`/api/playlists/${params.id}/tracks?trackId=${trackId}`, {
+            const response = await fetch(`/api/playlists/${playlistId}/tracks?trackId=${trackId}`, {
                 method: 'DELETE'
             });
 
@@ -324,8 +335,8 @@ export default function PlaylistManagePage({ params }: PlaylistManagePageProps) 
                                         <div
                                             key={track.id}
                                             className={`p-3 rounded-lg border transition-colors cursor-pointer ${selectedTracks.has(track.id)
-                                                    ? 'bg-green-900/20 border-green-500'
-                                                    : 'bg-gray-700/50 border-gray-600 hover:bg-gray-700'
+                                                ? 'bg-green-900/20 border-green-500'
+                                                : 'bg-gray-700/50 border-gray-600 hover:bg-gray-700'
                                                 }`}
                                             onClick={() => toggleTrackSelection(track.id)}
                                         >

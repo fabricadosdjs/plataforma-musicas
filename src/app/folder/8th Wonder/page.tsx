@@ -399,7 +399,6 @@ export default function EighthWonderPage() {
                     <MusicList
                         tracks={tracks}
                         showDate={false}
-                        enableInfiniteScroll={false}
                         downloadedTrackIds={downloadedTrackIds}
                         setDownloadedTrackIds={setDownloadedTrackIds}
                     />

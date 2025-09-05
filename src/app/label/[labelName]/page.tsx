@@ -97,7 +97,7 @@ export default function LabelPage() {
                         </div>
                     </div>
                 ) : (
-                    <MusicList tracks={filteredTracks} downloadedTrackIds={[]} setDownloadedTrackIds={() => { }} showDate={true} enableInfiniteScroll={false} />
+                    <MusicList tracks={filteredTracks} downloadedTrackIds={[]} setDownloadedTrackIds={() => { }} showDate={true} />
                 )}
             </div>
         </div>

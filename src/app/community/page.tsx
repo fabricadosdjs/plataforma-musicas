@@ -557,10 +557,7 @@ export default function CommunityPage() {
                             tracks={hasSearched ? searchResults : tracks}
                             downloadedTrackIds={downloadedTrackIds}
                             setDownloadedTrackIds={setDownloadedTrackIds}
-                            enableInfiniteScroll={false}
-                            hasMore={false}
                             isLoading={loading || searchLoading}
-                            onLoadMore={() => { }}
                         />
                     )}
                 </div>

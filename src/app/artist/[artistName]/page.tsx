@@ -446,7 +446,6 @@ export default function ArtistPage() {
                             downloadedTrackIds={downloadedTrackIds}
                             setDownloadedTrackIds={handleDownloadedTrackIdsChange}
                             showDate={true}
-                            enableInfiniteScroll={false}
                         />
                     )}
                 </div>

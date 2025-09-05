@@ -43,6 +43,8 @@ export async function GET(
             include: {
                 track: {
                     select: {
+                        songName: true,
+                        artist: true,
                         style: true,
                         pool: true,
                         createdAt: true,
@@ -59,8 +61,8 @@ export async function GET(
 
         // Calcular estatísticas
         const totalTracks = tracks.length;
-        const styles = tracks.map(t => t.track?.style).filter(Boolean);
-        const pools = tracks.map(t => t.track?.pool).filter(Boolean);
+        const styles = tracks.map(t => t.track?.style).filter((style): style is string => Boolean(style));
+        const pools = tracks.map(t => t.track?.pool).filter((pool): pool is string => Boolean(pool));
 
         // Estatísticas por estilo
         const styleStats = styles.reduce((acc: Record<string, number>, style) => {
@@ -78,9 +80,9 @@ export async function GET(
         const totalDownloads = tracks.reduce((sum, t) => sum + (t.track?.downloads?.length || 0), 0);
 
         // Música mais baixada
-        const mostDownloaded = tracks.reduce((max, t) => {
+        const mostDownloaded = tracks.reduce((max: { track: any; downloads: number }, t) => {
             const downloads = t.track?.downloads?.length || 0;
-            return downloads > (max.downloads || 0) ? { track: t.track, downloads } : max;
+            return downloads > max.downloads ? { track: t.track, downloads } : max;
         }, { track: null, downloads: 0 });
 
         // Estilo mais popular
@@ -115,7 +117,7 @@ export async function GET(
                 lastAdded: lastAddedTrack?.track ? {
                     name: lastAddedTrack.track.songName,
                     artist: lastAddedTrack.track.artist,
-                    addedAt: lastAddedTrack.createdAt
+                    addedAt: lastAddedTrack.addedAt
                 } : null
             },
             styles: {

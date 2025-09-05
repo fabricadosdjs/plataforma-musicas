@@ -56,9 +56,9 @@ export async function GET(request: NextRequest) {
         });
 
         const result = {
-            styles: styles.map(s => s.style).filter(Boolean).filter(s => s.trim() !== ''),
-            artists: artists.map(a => a.artist).filter(Boolean).filter(a => a.trim() !== ''),
-            pools: pools.map(p => p.pool).filter(Boolean).filter(p => p.trim() !== ''),
+            styles: styles.map(s => s.style).filter((s): s is string => Boolean(s)).filter(s => s.trim() !== ''),
+            artists: artists.map(a => a.artist).filter((a): a is string => Boolean(a)).filter(a => a.trim() !== ''),
+            pools: pools.map(p => p.pool).filter((p): p is string => Boolean(p)).filter(p => p.trim() !== ''),
         };
 
         console.log('📊 Search Options carregadas:', {

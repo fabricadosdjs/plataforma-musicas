@@ -445,7 +445,6 @@ export default function PoolPage() {
                                 }
                             }}
                             showDate={true}
-                            enableInfiniteScroll={false}
                         />
                     )}
                 </div>

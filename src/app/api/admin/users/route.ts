@@ -5,23 +5,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { VIP_PLANS_CONFIG, getVipPlan, PlanType } from '@/lib/plans-config';
 
-// Extend the Session type to include 'id' on user
-declare module "next-auth" {
-    interface Session {
-        user: {
-            deezerPassword: any;
-            deezerEmail: string;
-            deezerPremium: any;
-            vencimento: boolean | undefined;
-            valor: any;
-            id: string;
-            name?: string | null;
-            email?: string | null;
-            image?: string | null;
-            is_vip?: boolean;
-        }
-    }
-}
+// Session type is already extended in src/types/next-auth.d.ts
 
 // Helper function to parse dates, considering potential custom object format and problematic year prefixes
 function parseDateInput(dateInput: any): Date | null {
