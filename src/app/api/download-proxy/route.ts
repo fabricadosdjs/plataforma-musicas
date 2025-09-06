@@ -50,13 +50,21 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // Se a chave original era uma URL completa (já assinada), redirecionar diretamente
+        // Se a chave original era uma URL completa (já assinada), extrair a chave e gerar nova URL
         const originalKey = searchParams.get('key');
         if (originalKey && originalKey.startsWith('https://')) {
             if (process.env.NODE_ENV !== 'production') {
-                console.log('🔍 Download Proxy: Redirecionando para URL já assinada');
+                console.log('🔍 Download Proxy: URL já assinada detectada, extraindo chave');
             }
-            return NextResponse.redirect(originalKey, { status: 302 });
+            // Extrair a chave da URL do Contabo Storage
+            const urlParts = originalKey.split('/');
+            const bucketIndex = urlParts.findIndex(part => part.includes('plataforma-de-musicas'));
+            if (bucketIndex !== -1) {
+                // Pegar tudo após o bucket, mas antes dos parâmetros de query
+                const pathParts = urlParts.slice(bucketIndex + 1);
+                const pathWithoutQuery = pathParts.join('/').split('?')[0];
+                fileKey = pathWithoutQuery;
+            }
         }
 
         try {
