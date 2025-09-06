@@ -41,14 +41,14 @@ async function detectNewFiles(request: NextRequest) {
         console.log(`📊 Encontradas ${existingTracks.length} tracks no banco de dados`);
 
         const existingUrls = new Set([
-            ...existingTracks.map(track => track.previewUrl).filter(Boolean),
-            ...existingTracks.map(track => track.downloadUrl).filter(Boolean)
+            ...existingTracks.map((track: any) => track.previewUrl).filter(Boolean),
+            ...existingTracks.map((track: any) => track.downloadUrl).filter(Boolean)
         ]);
 
         console.log(`🔗 URLs existentes no banco: ${existingUrls.size}`);
 
         // Filtrar apenas arquivos novos
-        const newFiles = audioFiles.filter(file => {
+        const newFiles = audioFiles.filter((file: any) => {
             const isNew = !existingUrls.has(file.url);
             if (!isNew) {
                 console.log(`⏭️ Arquivo já existe: ${file.filename}`);
@@ -59,7 +59,7 @@ async function detectNewFiles(request: NextRequest) {
         console.log(`🆕 Arquivos novos detectados: ${newFiles.length}`);
 
         // Análise prévia dos arquivos novos
-        const previewTracks = newFiles.map(file => {
+        const previewTracks = newFiles.map((file: any) => {
             console.log(`📝 Analisando arquivo: ${file.filename}`);
 
             const nameWithoutExt = file.filename.replace(/\.(mp3|wav|flac|m4a|aac|ogg)$/i, '');
@@ -122,8 +122,8 @@ async function detectNewFiles(request: NextRequest) {
             newTracks: previewTracks,
             lastUpdate: new Date().toISOString(),
             statistics: {
-                byStyle: Object.entries(styleStats).map(([style, count]) => ({ style, count })),
-                byPool: Object.entries(poolStats).map(([pool, count]) => ({ pool, count })),
+                byStyle: Object.entries(styleStats).map(([style, count]: [any, any]) => ({ style, count })),
+                byPool: Object.entries(poolStats).map(([pool, count]: [any, any]) => ({ pool, count })),
                 averageConfidence: 0.8 // Valor padrão
             },
             debug: {
