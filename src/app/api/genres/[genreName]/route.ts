@@ -25,7 +25,7 @@ export async function GET(
         if (decodedGenreName.includes('-')) {
             const withHyphen = decodedGenreName
                 .split('-')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                 .join('-');
             variations.push(withHyphen);
         }
@@ -35,7 +35,7 @@ export async function GET(
             .replace(/-/g, ' ')
             .replace(/&/g, '&')
             .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
             .join(' ');
         variations.push(withSpaces);
 
@@ -46,8 +46,8 @@ export async function GET(
                 .replace('/-/', ' / ')
                 .replace(/\//g, ' / ')
                 .split(/\s+/)
-                .filter(word => word.length > 0)
-                .map(word => word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : word)
+                .filter((word: any) => word.length > 0)
+                .map((word: any) => word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : word)
                 .join(' ');
             variations.push(withSlash);
         }
@@ -60,7 +60,7 @@ export async function GET(
 
         // Usar OR para tentar todas as variações
         const whereClause: any = {
-            OR: variations.map(variation => ({
+            OR: variations.map((variation: any) => ({
                 style: {
                     equals: variation,
                     mode: 'insensitive'
@@ -102,7 +102,7 @@ export async function GET(
         const totalPages = Math.ceil(totalCount / limit);
 
         const response = {
-            tracks: tracks.map(track => ({
+            tracks: tracks.map((track: any) => ({
                 ...track,
                 downloadCount: 0,
                 likeCount: 0,
