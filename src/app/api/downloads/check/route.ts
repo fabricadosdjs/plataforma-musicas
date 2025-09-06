@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
             where: {
                 userId: (session.user as any).id,
                 trackId: {
-                    in: trackIds.map(id => parseInt(id))
+                    in: trackIds.map((id: any) => parseInt(id))
                 }
             },
             select: {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
         // Criar mapa de downloads
         const downloadMap: { [key: number]: boolean } = {};
-        downloads.forEach(download => {
+        downloads.forEach((download: any) => {
             downloadMap[download.trackId] = true;
         });
 
