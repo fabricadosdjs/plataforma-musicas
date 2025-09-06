@@ -140,12 +140,12 @@ export async function POST(request: NextRequest) {
 
         // Criar índices para busca rápida
         const urlIndex = new Set([
-            ...databaseTracks.map(track => track.downloadUrl),
-            ...databaseTracks.map(track => track.previewUrl)
+            ...databaseTracks.map((track: any) => track.downloadUrl),
+            ...databaseTracks.map((track: any) => track.previewUrl)
         ]);
 
         const nameIndex = new Map<string, any[]>();
-        databaseTracks.forEach(track => {
+        databaseTracks.forEach((track: any) => {
             const normalizedName = normalizeTrackName(
                 track.artist || '',
                 track.songName || '',
@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
         console.log(`   📊 Total de duplicatas: ${duplicates.length}`);
 
         // Calcular estatísticas
-        const totalStorageSize = duplicates.reduce((sum, dup) => sum + dup.storageFile.size, 0);
+        const totalStorageSize = duplicates.reduce((sum, dup: any) => sum + dup.storageFile.size, 0);
 
         const result = {
             success: true,
@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
                 similarityMatches,
                 totalSize: totalStorageSize,
                 averageSimilarity: duplicates.length > 0
-                    ? duplicates.reduce((sum, dup) => sum + dup.similarity, 0) / duplicates.length
+                    ? duplicates.reduce((sum, dup: any) => sum + dup.similarity, 0) / duplicates.length
                     : 0
             }
         };
