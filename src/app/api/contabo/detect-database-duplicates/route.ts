@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
             // 1. Verificar correspondência exata por URL
             if (urlIndex.has(storageFile.url)) {
                 const dbTrack = databaseTracks.find(
-                    track => track.downloadUrl === storageFile.url || track.previewUrl === storageFile.url
+                    (track: any) => track.downloadUrl === storageFile.url || track.previewUrl === storageFile.url
                 );
 
                 if (dbTrack) {
