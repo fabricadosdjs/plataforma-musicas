@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Download, Heart, Home, Music, Star, Crown, List, BarChart3, Tag, Users, RefreshCw, Globe, ChevronDown } from 'lucide-react';
+import { Play, Pause, Download, Heart, Music, Star, ChevronDown } from 'lucide-react';
+import Link from 'next/link';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { generateGradientColors, generateInitials } from '@/utils/imageUtils';
 import FooterPlayer from '@/components/player/FooterPlayer';
@@ -12,45 +13,9 @@ import Header from '@/components/layout/Header';
 import { useGlobalPlayer } from '@/context/GlobalPlayerContext';
 import { Track } from '@/types/track';
 import { useTrackStates } from '@/hooks/useTrackStates';
-// AdvancedSearch removido - não é mais necessário
-import Link from 'next/link';
 
 // Interface PopularTrack removida - não é mais necessária
 
-const featuredDJs = [
-  "CALVIN HARRIS",
-  "DAVID GUETTA",
-  "MARTIN GARRIX",
-  "TIËSTO",
-  "SKRILLEX"
-];
-
-const heroSlides = [
-  {
-    id: 1,
-    imageUrl: "https://s3.amazonaws.com/djc.www.images/djcity2/heroes/1756235131293-An%20archive%20of%20the%20top%20tracks%20downloaded%20each%20month.-thumbnail.png",
-    title: "Archive Collection",
-    subtitle: "Top tracks downloaded each month"
-  },
-  {
-    id: 2,
-    imageUrl: "https://s3.amazonaws.com/djc.www.images/djcity2/heroes/1755820289808-Playlists-thumbnail.png",
-    title: "Playlists",
-    subtitle: "Curated mixes for every occasion"
-  }
-];
-
-const navigationItems = [
-  { name: 'Home', icon: Home, href: '/', active: false },
-  { name: 'New Releases', icon: Music, href: '/new-releases', active: false },
-  { name: 'Most Popular', icon: Star, href: '/most-popular', active: true },
-  { name: 'Nexor Records Exclusives', icon: Crown, href: '/exclusives', active: false },
-  { name: 'Playlists', icon: List, href: '/playlists', active: false },
-  { name: 'Genres', icon: Tag, href: '/genres', active: false },
-  { name: 'Remixers', icon: Users, href: '/remixers', active: false },
-  { name: 'Track Updates', icon: RefreshCw, href: '/updates', active: false },
-  { name: 'Global', icon: Globe, href: '/global', active: false },
-];
 
 export default function MostPopularPage() {
   const { data: session } = useSession();
@@ -60,7 +25,6 @@ export default function MostPopularPage() {
   const [recentStyles, setRecentStyles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
   // Hook personalizado para estados de download e like
   const {
     isDownloaded, isDownloading, isLiked, isLiking,
@@ -350,15 +314,6 @@ export default function MostPopularPage() {
     });
   }, [tracks, selectedGenre]);
 
-  // Auto-slide hero section
-  useEffect(() => {
-
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 5000); // Change slide every 5 seconds
-
-    return () => clearInterval(interval);
-  }, []);
 
   // Listener para mudanças na URL (botão voltar/avançar)
   useEffect(() => {
@@ -678,57 +633,22 @@ export default function MostPopularPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-montserrat">
+    <div className="min-h-screen bg-black text-white font-inter">
       <Header />
 
-      {/* Main Content */}
-      <div className="pt-24 flex min-h-screen pb-32">
-        {/* Left Sidebar - Navigation */}
-        <div className="w-72 bg-gray-900/40 backdrop-blur-sm p-4">
-          <div className="pt-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-500 rounded-full"></div>
-              <h2 className="text-xl font-montserrat font-bold text-white tracking-wide whitespace-nowrap">
-                NAVEGUE O CATÁLOGO
-              </h2>
-            </div>
-            <nav className="space-y-1">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-medium uppercase tracking-wide transition-all duration-300 ${item.active
-                      ? 'bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-300 border-l-2 border-orange-500'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800/30'
-                      }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-        </div>
+      <div className="pt-20">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
 
-        {/* Main Content Area */}
-        <div className="flex-1 p-4 sm:p-6 min-w-0 overflow-hidden">
-
-          {/* Most Popular Section Header */}
+          {/* Hero Section */}
           <div className="mb-12">
             <div className="relative">
-              {/* Background image with 50% transparency */}
+              {/* Background gradient - same as genres page */}
               <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
+                className="absolute inset-0 rounded-2xl"
                 style={{
-                  backgroundImage: 'url(https://i.ibb.co/5Wsg1TXK/lisa-alter-ego-3440x1440-21612.jpg)',
-                  opacity: 0.5
+                  backgroundImage: 'linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.6) 100%), linear-gradient(45deg, #1a1a1a 0%, #2d1b69 25%, #11998e 50%, #38ef7d 75%, #1a1a1a 100%)'
                 }}
               ></div>
-              {/* Background gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-red-900/20 via-transparent to-red-900/20 rounded-2xl"></div>
 
               {/* Main content */}
               <div className="relative p-8 bg-gradient-to-r from-gray-900/40 to-gray-800/30 backdrop-blur-sm rounded-2xl border border-gray-700/30 shadow-2xl">
@@ -742,30 +662,53 @@ export default function MostPopularPage() {
                   </div>
 
                   {/* MAIS POPULARES - Enhanced */}
-                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bebas font-black text-white tracking-tight mb-3 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent drop-shadow-2xl">
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bebas-neue font-black text-white tracking-tight mb-3 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent drop-shadow-2xl">
                     MAIS POPULARES
                   </h1>
 
-                  {/* Top 100 Mais Baixadas de Todos os Tempos - Enhanced */}
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                    <p className="text-gray-300 text-base font-montserrat font-medium tracking-wide">
-                      Top 100 Mais Baixadas de Todos os Tempos
-                    </p>
-                  </div>
+                  {/* Subtitle */}
+                  <p className="text-gray-300 text-lg font-montserrat font-medium max-w-2xl mx-auto leading-relaxed">
+                    As 100 músicas mais baixadas de todos os tempos. Descubra os hits que dominaram as pistas de dança.
+                  </p>
                 </div>
 
-                {/* Decorative elements */}
-                <div className="absolute top-4 right-4 opacity-20">
-                  <div className="w-16 h-16 border border-red-500/30 rounded-full flex items-center justify-center">
-                    <div className="w-8 h-8 border border-red-500/50 rounded-full flex items-center justify-center">
-                      <div className="w-4 h-4 bg-red-500/30 rounded-full"></div>
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 hover:border-red-500/50 transition-all duration-300">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
+                        <Music className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-black text-white">{tracks.length}</p>
+                        <p className="text-gray-400 text-sm">Tracks no Top 100</p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="absolute bottom-4 left-4 opacity-10">
-                  <div className="w-12 h-12 border border-gray-500/30 rounded-full"></div>
+                  <div className="bg-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 hover:border-red-500/50 transition-all duration-300">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                        <Download className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-black text-white">{getDownloadedCount()}</p>
+                        <p className="text-gray-400 text-sm">Baixadas</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 hover:border-red-500/50 transition-all duration-300">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                        <Star className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-black text-white">{getNewTracksCount()}</p>
+                        <p className="text-gray-400 text-sm">Novas</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -844,140 +787,138 @@ export default function MostPopularPage() {
                 </div>
 
                 {/* Lista de Músicas com Ranking */}
-                <div className="space-y-0 w-full max-w-full overflow-hidden">
+                <div className="bg-music-list rounded-lg">
                   {addRankingToTracks(tracks).map((track, index) => (
-                    <div key={track.id} className="relative w-full max-w-full overflow-hidden">
-                      {/* Linha divisória branca */}
-                      {index > 0 && (
-                        <div className="absolute -top-px left-0 right-0 h-px bg-white/30 z-10"></div>
-                      )}
+                    <div key={track.id} className="flex items-center gap-6 p-4 hover:bg-hover-row transition-all duration-200 border-b border-gray-700/30 last:border-b-0">
+                      {/* Número do Ranking */}
+                      <div className="flex-shrink-0 w-12 text-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${track.rank <= 3
+                          ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black'
+                          : track.rank <= 10
+                            ? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white'
+                            : 'bg-gray-700 text-gray-300'
+                          }`}>
+                          {track.rank}
+                        </div>
+                      </div>
 
-                      {/* Row da música */}
-                      <div className="flex items-center gap-4 bg-gray-900/30 hover:bg-[#242424] backdrop-blur-sm p-4 transition-all duration-300 border border-transparent hover:border-gray-700/50">
-                        {/* Número do Ranking */}
-                        <div className="flex-shrink-0 w-12 text-center">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${track.rank <= 3
-                            ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black'
-                            : track.rank <= 10
-                              ? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white'
-                              : 'bg-gray-700 text-gray-300'
-                            }`}>
-                            {track.rank}
-                          </div>
+                      {/* Capa da Música com Play/Pause */}
+                      <div className="flex-shrink-0 relative w-16 h-16">
+                        {/* Borda azul quando está tocando */}
+                        {currentTrack?.id === track.id && isPlaying && (
+                          <div className="absolute inset-0 border-2 border-blue-500 rounded"></div>
+                        )}
+
+                        {/* Capa da música */}
+                        <div className="w-full h-full rounded overflow-hidden">
+                          <OptimizedImage
+                            track={track}
+                            className="w-full h-full object-cover"
+                            fallbackClassName={`w-full h-full bg-gradient-to-br ${generateGradientColors(track.songName, track.artist)} flex items-center justify-center text-white font-bold text-sm`}
+                            fallbackContent={generateInitials(track.songName, track.artist)}
+                          />
                         </div>
 
-                        {/* Capa da Música com Play/Pause */}
-                        <div className="flex-shrink-0 relative w-20 h-20">
-                          {/* Borda azul quando está tocando */}
-                          {currentTrack?.id === track.id && isPlaying && (
-                            <div className="absolute inset-0 border-2 border-blue-500 rounded"></div>
-                          )}
+                        {/* Overlay preto quando está tocando */}
+                        {currentTrack?.id === track.id && isPlaying && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <Pause className="w-6 h-6 text-white" />
+                          </div>
+                        )}
 
-                          {/* Capa da música */}
-                          <div className="w-full h-full rounded overflow-hidden">
-                            <OptimizedImage
-                              track={track}
-                              className="w-full h-full object-cover"
-                              fallbackClassName={`w-full h-full bg-gradient-to-br ${generateGradientColors(track.songName, track.artist)} flex items-center justify-center text-white font-bold text-sm`}
-                              fallbackContent={generateInitials(track.songName, track.artist)}
-                            />
+                        {/* Botão Play sobreposto (só aparece no hover quando não está tocando) */}
+                        {!(currentTrack?.id === track.id && isPlaying) && (
+                          <button
+                            onClick={() => handlePlayPause(track)}
+                            className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-all duration-200 opacity-0 hover:opacity-100 group"
+                            title="Tocar"
+                          >
+                            <Play className="w-6 h-6 text-white ml-0.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Informações da música */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex-1 min-w-0 mr-3">
+                            <h3 className="text-white font-inter font-semibold text-xs truncate mb-1" title={track.songName}>
+                              {track.songName}
+                            </h3>
+                            <p className="text-gray-300 font-inter text-xs truncate mb-2">
+                              {track.artist}
+                            </p>
                           </div>
 
-                          {/* Overlay preto quando está tocando */}
-                          {currentTrack?.id === track.id && isPlaying && (
-                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                              <Pause className="w-6 h-6 text-white" />
-                            </div>
-                          )}
-
-                          {/* Botão Play sobreposto (só aparece no hover quando não está tocando) */}
-                          {!(currentTrack?.id === track.id && isPlaying) && (
+                          {/* Botões de Download e Like estilo Facebook */}
+                          <div className="flex gap-2 flex-shrink-0">
+                            {/* Botão Download */}
                             <button
-                              onClick={() => handlePlayPause(track)}
-                              className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-all duration-200 opacity-0 hover:opacity-100 group"
-                              title="Tocar"
+                              onClick={() => handleDownload(track)}
+                              disabled={isDownloading(track.id)}
+                              className={`px-3 py-1.5 rounded text-xs font-inter font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${isDownloaded(track.id)
+                                ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
+                                : isDownloading(track.id)
+                                  ? 'bg-yellow-600/20 text-yellow-400'
+                                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
+                                }`}
+                              title={
+                                isDownloaded(track.id)
+                                  ? 'Já baixado'
+                                  : isDownloading(track.id)
+                                    ? 'Baixando...'
+                                    : 'Download'
+                              }
                             >
-                              <Play className="w-6 h-6 text-white ml-0.5" />
+                              {isDownloading(track.id) ? (
+                                <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Download className="w-3 h-3" />
+                              )}
+                              {isDownloaded(track.id) ? 'Baixado' : 'Download'}
                             </button>
-                          )}
+
+                            {/* Botão Like */}
+                            <button
+                              onClick={() => handleLike(track)}
+                              disabled={isLiking(track.id)}
+                              className={`px-3 py-1.5 rounded text-xs font-inter font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${isLiked(track.id)
+                                ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
+                                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
+                                }`}
+                              title={isLiked(track.id) ? 'Descurtir' : 'Curtir'}
+                            >
+                              {isLiking(track.id) ? (
+                                <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <svg className="w-3 h-3" fill={isLiked(track.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                              )}
+                              {isLiked(track.id) ? 'Curtido' : 'Curtir'}
+                            </button>
+                          </div>
                         </div>
 
-                        {/* Informações da música */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex-1 min-w-0 mr-3">
-                              <h3 className="text-white truncate" style={{ fontFamily: 'Jost, sans-serif', fontWeight: 600, fontSize: '12px' }} title={track.songName}>
-                                {track.songName}
-                              </h3>
-                              <p className="text-gray-300 truncate -mt-0.5" style={{ fontFamily: 'Jost, sans-serif', fontWeight: 400, fontSize: '13px' }}>
-                                {track.artist}
-                              </p>
-                            </div>
-
-                            {/* Botões de Download e Like estilo Facebook */}
-                            <div className="flex gap-2 flex-shrink-0">
-                              {/* Botão Download */}
-                              <button
-                                onClick={() => handleDownload(track)}
-                                disabled={isDownloading(track.id)}
-                                style={{ fontFamily: 'Jost, sans-serif', fontWeight: 400, fontSize: '13px' }}
-                                className={`px-4 py-2 rounded font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${isDownloaded(track.id)
-                                  ? 'bg-green-600 text-white hover:bg-green-700'
-                                  : isDownloading(track.id)
-                                    ? 'bg-yellow-600 text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
-                                  }`}
-                                title={
-                                  isDownloaded(track.id)
-                                    ? 'Já baixado'
-                                    : isDownloading(track.id)
-                                      ? 'Baixando...'
-                                      : 'Download'
-                                }
-                              >
-                                {isDownloading(track.id) ? (
-                                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                  <Download className="w-3 h-3" />
-                                )}
-                                {isDownloaded(track.id) ? 'Baixado' : 'Download'}
-                              </button>
-
-                              {/* Botão Like */}
-                              <button
-                                onClick={() => handleLike(track)}
-                                disabled={isLiking(track.id)}
-                                style={{ fontFamily: 'Jost, sans-serif', fontWeight: 400, fontSize: '13px' }}
-                                className={`px-4 py-2 rounded font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${isLiked(track.id)
-                                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
-                                  }`}
-                                title={isLiked(track.id) ? 'Descurtir' : 'Curtir'}
-                              >
-                                {isLiking(track.id) ? (
-                                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                  <svg className="w-3 h-3" fill={isLiked(track.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                  </svg>
-                                )}
-                                {isLiked(track.id) ? 'Curtido' : 'Curtir'}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="flex gap-2">
-                            {track.style && (
-                              <span className="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded uppercase tracking-wide" style={{ fontFamily: 'Jost, sans-serif', fontWeight: 400, fontSize: '13px' }}>
-                                {track.style}
-                              </span>
-                            )}
-                            {track.pool && (
-                              <span className="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded uppercase tracking-wide" style={{ fontFamily: 'Jost, sans-serif', fontWeight: 400, fontSize: '13px' }}>
-                                {track.pool}
-                              </span>
-                            )}
-                          </div>
+                        <div className="flex gap-1 flex-wrap">
+                          {track.style && (
+                            <Link
+                              href={`/genres/${track.style.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '')}`}
+                              className="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded font-inter font-medium text-xs hover:bg-red-500/30 hover:text-red-200 transition-all duration-200 border border-red-500/30"
+                              title={`Ver todas as músicas de ${track.style}`}
+                            >
+                              {track.style}
+                            </Link>
+                          )}
+                          {track.pool && (
+                            <Link
+                              href={`/pools/${track.pool.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '')}`}
+                              className="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded font-inter font-medium text-xs hover:bg-blue-500/30 hover:text-blue-200 transition-all duration-200 border border-blue-500/30"
+                              title={`Ver todas as músicas da pool ${track.pool}`}
+                            >
+                              {track.pool}
+                            </Link>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -988,11 +929,10 @@ export default function MostPopularPage() {
             )}
           </div>
         </div>
-
       </div>
 
       {/* Footer Player */}
       <FooterPlayer />
-    </div>
+    </div >
   );
 }

@@ -5,8 +5,8 @@ import Header from '@/components/layout/Header';
 import { Search, X, ArrowUpRight, Music, TrendingUp, Users, Star } from 'lucide-react';
 import Link from 'next/link';
 
-interface Genre {
-    id: number;
+interface Pool {
+    id: string;
     name: string;
     slug: string;
     trackCount: number;
@@ -15,45 +15,45 @@ interface Genre {
     isTrending?: boolean;
 }
 
-const GenresPage = () => {
-    const [genres, setGenres] = useState<Genre[]>([]);
+const PoolsPage = () => {
+    const [pools, setPools] = useState<Pool[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<'default' | 'popularity' | 'alphabetical'>('default');
 
-    // Gêneros em destaque (top 6)
-    const featuredGenres = [
-        { name: 'BRAZILIAN FUNK', url: '/genres/brazilian-funk' },
-        { name: 'DANCE COMERCIAL', url: '/genres/dance-comercial' },
-        { name: 'HOUSE', url: '/genres/house' },
-        { name: 'FUNK CARIOCA', url: '/genres/funk-carioca' },
-        { name: 'PROGRESSIVE HOUSE', url: '/genres/progressive-house' },
-        { name: 'TECH HOUSE', url: '/genres/tech-house' }
+    // Pools em destaque (top 6)
+    const featuredPools = [
+        { name: 'HOUSE MUSIC', url: '/pools/house-music' },
+        { name: 'TECHNO', url: '/pools/techno' },
+        { name: 'PROGRESSIVE', url: '/pools/progressive' },
+        { name: 'DEEP HOUSE', url: '/pools/deep-house' },
+        { name: 'MINIMAL', url: '/pools/minimal' },
+        { name: 'MELODIC', url: '/pools/melodic' }
     ];
 
     useEffect(() => {
-        fetchGenres();
+        fetchPools();
     }, []);
 
-    const fetchGenres = async () => {
+    const fetchPools = async () => {
         try {
-            const response = await fetch('/api/genres');
+            const response = await fetch('/api/pools');
             if (response.ok) {
                 const data = await response.json();
-                setGenres(data);
+                setPools(data);
             }
         } catch (error) {
-            console.error('Error fetching genres:', error);
+            console.error('Error fetching pools:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredGenres = genres.filter(genre =>
-        genre.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredPools = pools.filter(pool =>
+        pool.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const sortedGenres = [...filteredGenres].sort((a, b) => {
+    const sortedPools = [...filteredPools].sort((a, b) => {
         switch (sortBy) {
             case 'popularity':
                 return b.trackCount - a.trackCount;
@@ -92,7 +92,7 @@ const GenresPage = () => {
             <div className="min-h-screen bg-black">
                 <Header />
                 <div className="pt-20 flex items-center justify-center">
-                    <div className="text-white text-xl">Carregando gêneros...</div>
+                    <div className="text-white text-xl">Carregando pools...</div>
                 </div>
             </div>
         );
@@ -125,14 +125,14 @@ const GenresPage = () => {
                                         </span>
                                     </div>
 
-                                    {/* GÊNEROS - Enhanced */}
+                                    {/* POOLS - Enhanced */}
                                     <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bebas-neue font-black text-white tracking-tight mb-3 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent drop-shadow-2xl">
-                                        GÊNEROS
+                                        POOLS
                                     </h1>
 
                                     {/* Subtitle */}
                                     <p className="text-gray-300 text-lg font-montserrat font-medium max-w-2xl mx-auto leading-relaxed">
-                                        Explore nossa vasta coleção de gêneros musicais. Encontre o estilo perfeito para sua próxima mix.
+                                        Explore nossa vasta coleção de pools musicais. Encontre a pool perfeita para sua próxima mix.
                                     </p>
                                 </div>
 
@@ -144,8 +144,8 @@ const GenresPage = () => {
                                                 <Music className="h-6 w-6 text-white" />
                                             </div>
                                             <div>
-                                                <p className="text-2xl font-black text-white">{genres.length}</p>
-                                                <p className="text-gray-400 text-sm">Gêneros Disponíveis</p>
+                                                <p className="text-2xl font-black text-white">{pools.length}</p>
+                                                <p className="text-gray-400 text-sm">Pools Disponíveis</p>
                                             </div>
                                         </div>
                                     </div>
@@ -157,7 +157,7 @@ const GenresPage = () => {
                                             </div>
                                             <div>
                                                 <p className="text-2xl font-black text-white">
-                                                    {genres.reduce((sum, genre) => sum + genre.trackCount, 0).toLocaleString()}
+                                                    {pools.reduce((sum, pool) => sum + pool.trackCount, 0).toLocaleString()}
                                                 </p>
                                                 <p className="text-gray-400 text-sm">Total de Tracks</p>
                                             </div>
@@ -171,9 +171,9 @@ const GenresPage = () => {
                                             </div>
                                             <div>
                                                 <p className="text-2xl font-black text-white">
-                                                    {genres.filter(g => g.isPopular).length}
+                                                    {pools.filter(p => p.isPopular).length}
                                                 </p>
-                                                <p className="text-gray-400 text-sm">Gêneros Populares</p>
+                                                <p className="text-gray-400 text-sm">Pools Populares</p>
                                             </div>
                                         </div>
                                     </div>
@@ -182,16 +182,16 @@ const GenresPage = () => {
                         </div>
                     </div>
 
-                    {/* Featured Genres - Top Row */}
+                    {/* Featured Pools - Top Row */}
                     <div className="mb-4">
                         <div className="flex flex-wrap gap-3">
-                            {featuredGenres.map((genre, index) => (
+                            {featuredPools.map((pool, index) => (
                                 <Link
                                     key={index}
-                                    href={genre.url}
+                                    href={pool.url}
                                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors duration-200"
                                 >
-                                    {genre.name}
+                                    {pool.name}
                                     <ArrowUpRight className="h-4 w-4" />
                                 </Link>
                             ))}
@@ -206,7 +206,7 @@ const GenresPage = () => {
                             </div>
                             <input
                                 type="text"
-                                placeholder="Search genre..."
+                                placeholder="Search pool..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-10 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
@@ -244,32 +244,32 @@ const GenresPage = () => {
                         </div>
                     </div>
 
-                    {/* Genres Grid */}
+                    {/* Pools Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-                        {sortedGenres.map((genre) => (
+                        {sortedPools.map((pool) => (
                             <Link
-                                key={genre.id}
-                                href={`/genres/${genre.slug}`}
+                                key={pool.id}
+                                href={`/pools/${pool.slug}`}
                                 className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-red-500 rounded-lg p-4 cursor-pointer transition-all duration-200 group relative min-h-[120px] flex flex-col justify-between block"
                             >
                                 {/* Track Count Badge */}
                                 <div className="absolute top-2 right-2 z-10">
                                     <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded font-bold">
-                                        {genre.trackCount}
+                                        {pool.trackCount}
                                     </div>
                                 </div>
 
-                                {/* Genre Name */}
+                                {/* Pool Name */}
                                 <div className="text-center flex-1 flex items-center justify-center pt-6">
                                     <h3 className="text-white font-bold text-sm uppercase tracking-wide leading-tight">
-                                        {genre.name}
+                                        {pool.name}
                                     </h3>
                                 </div>
 
                                 {/* Updated Badge */}
                                 <div className="text-center mt-2">
                                     <div className="bg-red-600 text-white text-xs px-2 py-1 rounded font-bold inline-block">
-                                        {formatDatePortuguese(genre.lastUpdated)}
+                                        {formatDatePortuguese(pool.lastUpdated)}
                                     </div>
                                 </div>
                             </Link>
@@ -279,7 +279,7 @@ const GenresPage = () => {
                     {/* Results Count */}
                     <div className="mt-8 text-center">
                         <p className="text-gray-400 text-sm">
-                            {sortedGenres.length} gêneros encontrados
+                            {sortedPools.length} pools encontradas
                         </p>
                     </div>
                 </div>
@@ -288,4 +288,4 @@ const GenresPage = () => {
     );
 };
 
-export default GenresPage;
+export default PoolsPage;

@@ -12,7 +12,13 @@ export async function GET(
         const { poolName } = await params;
         const decodedPoolName = decodeURIComponent(poolName);
 
-        console.log('🔍 API Pool Tracks chamada para:', decodedPoolName);
+        // Extrair parâmetros de paginação da URL
+        const { searchParams } = new URL(request.url);
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '60');
+        const offset = (page - 1) * limit;
+
+        console.log('🔍 API Pool Tracks chamada para:', decodedPoolName, `- página ${page}, limite ${limit}`);
 
         // Verificar conexão com o banco
         try {
@@ -23,8 +29,9 @@ export async function GET(
             throw dbError;
         }
 
-        // Buscar todas as tracks da pool específica
-        const tracks = await prisma.track.findMany({
+        // Buscar tracks da pool específica com paginação
+        // Primeiro, tentar encontrar a pool exata
+        let poolTracks = await prisma.track.findMany({
             where: {
                 pool: decodedPoolName
             },
@@ -34,7 +41,7 @@ export async function GET(
                 artist: true,
                 style: true,
                 pool: true,
-                folder: true, // Adicionando o campo folder
+                folder: true,
                 imageUrl: true,
                 downloadUrl: true,
                 releaseDate: true,
@@ -46,12 +53,70 @@ export async function GET(
             orderBy: [
                 { createdAt: 'desc' }
             ],
+            skip: offset,
+            take: limit
         });
 
-        console.log(`📊 Pool ${decodedPoolName}: ${tracks.length} tracks encontradas`);
+        // Se não encontrou, tentar buscar por similaridade (case insensitive)
+        if (poolTracks.length === 0) {
+            const allPools = await prisma.track.findMany({
+                select: {
+                    pool: true
+                },
+                distinct: ['pool']
+            });
+
+            // Encontrar pool que corresponde ao slug
+            const matchingPool = allPools.find((p: any) => {
+                const poolSlug = p.pool.toLowerCase()
+                    .replace(/\s+/g, '-')
+                    .replace(/[^a-z0-9-]/g, '')
+                    .replace(/-+/g, '-')
+                    .replace(/^-|-$/g, '');
+                return poolSlug === decodedPoolName.toLowerCase();
+            });
+
+            if (matchingPool) {
+                poolTracks = await prisma.track.findMany({
+                    where: {
+                        pool: matchingPool.pool
+                    },
+                    select: {
+                        id: true,
+                        songName: true,
+                        artist: true,
+                        style: true,
+                        pool: true,
+                        folder: true,
+                        imageUrl: true,
+                        downloadUrl: true,
+                        releaseDate: true,
+                        createdAt: true,
+                        previewUrl: true,
+                        isCommunity: true,
+                        uploadedBy: true,
+                    },
+                    orderBy: [
+                        { createdAt: 'desc' }
+                    ],
+                    skip: offset,
+                    take: limit
+                });
+            }
+        }
+
+        const totalCount = await prisma.track.count({
+            where: {
+                pool: poolTracks.length > 0 ? poolTracks[0].pool : decodedPoolName
+            }
+        });
+
+        const totalPages = Math.ceil(totalCount / limit);
+
+        console.log(`📊 Pool ${decodedPoolName}: ${poolTracks.length}/${totalCount} tracks encontradas (página ${page}/${totalPages})`);
 
         // Processar tracks
-        const tracksWithPreview = tracks.map((track: any) => ({
+        const tracksWithPreview = poolTracks.map((track: any) => ({
             ...track,
             previewUrl: track.downloadUrl || '',
             isCommunity: false,
@@ -64,7 +129,14 @@ export async function GET(
         return NextResponse.json({
             tracks: tracksWithPreview,
             poolName: decodedPoolName,
-            totalCount: tracks.length
+            totalCount,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalCount,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
         });
 
     } catch (error) {
@@ -86,6 +158,3 @@ export async function GET(
         );
     }
 }
-
-
-

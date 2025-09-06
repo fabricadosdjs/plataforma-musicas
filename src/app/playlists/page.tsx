@@ -2,24 +2,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Home, Music, Star, Crown, List, Tag, Users, RefreshCw, Globe, Play, Eye } from 'lucide-react';
+import { Music, Star, List, Play, Eye } from 'lucide-react';
 import FooterPlayer from '@/components/player/FooterPlayer';
 import Header from '@/components/layout/Header';
 import Link from 'next/link';
 import { generatePlaylistUrl } from '@/lib/playlist-utils';
 import { Playlist } from '@/types/playlist';
 
-const navigationItems = [
-    { name: 'Home', icon: Home, href: '/', active: false },
-    { name: 'New Releases', icon: Music, href: '/new-releases', active: false },
-    { name: 'Most Popular', icon: Star, href: '/most-popular', active: false },
-    { name: 'Nexor Records Exclusives', icon: Crown, href: '/exclusives', active: false },
-    { name: 'Playlists', icon: List, href: '/playlists', active: true },
-    { name: 'Genres', icon: Tag, href: '/genres', active: false },
-    { name: 'Remixers', icon: Users, href: '/remixers', active: false },
-    { name: 'Track Updates', icon: RefreshCw, href: '/updates', active: false },
-    { name: 'Global', icon: Globe, href: '/global', active: false },
-];
 
 export default function PlaylistsPage() {
     const [isClient, setIsClient] = useState(false);
@@ -50,61 +39,27 @@ export default function PlaylistsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black text-white font-montserrat">
+        <div className="min-h-screen bg-black text-white font-inter">
             <Header />
 
             {/* Main Content */}
-            <div className="pt-24 flex min-h-screen pb-32">
-                {/* Left Sidebar - Navigation */}
-                <div className="w-72 bg-gray-900/40 backdrop-blur-sm p-4">
-                    <div className="pt-8">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-500 rounded-full"></div>
-                            <h2 className="text-xl font-montserrat font-bold text-white tracking-wide whitespace-nowrap">
-                                NAVEGUE O CATÁLOGO
-                            </h2>
-                        </div>
-                        <nav className="space-y-1">
-                            {navigationItems.map((item) => {
-                                const Icon = item.icon;
-                                return (
-                                    <Link
-                                        key={item.name}
-                                        href={item.href}
-                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-medium uppercase tracking-wide transition-all duration-300 ${item.active
-                                            ? 'bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-300 border-l-2 border-orange-500'
-                                            : 'text-gray-400 hover:text-white hover:bg-gray-800/30'
-                                            }`}
-                                    >
-                                        <Icon className="w-4 h-4" />
-                                        <span>{item.name}</span>
-                                    </Link>
-                                );
-                            })}
-                        </nav>
-                    </div>
-                </div>
+            <div className="pt-20">
+                <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
 
-                {/* Main Content Area */}
-                <div className="flex-1 p-4 sm:p-6 min-w-0 overflow-hidden">
-
-                    {/* Playlists Section Header */}
+                    {/* Hero Section */}
                     <div className="mb-12">
                         <div className="relative">
-                            {/* Background image with 50% transparency */}
+                            {/* Background gradient - same as genres page */}
                             <div
-                                className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
+                                className="absolute inset-0 rounded-2xl"
                                 style={{
-                                    backgroundImage: 'url(https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80)',
-                                    opacity: 0.5
+                                    backgroundImage: 'linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.6) 100%), linear-gradient(45deg, #1a1a1a 0%, #2d1b69 25%, #11998e 50%, #38ef7d 75%, #1a1a1a 100%)'
                                 }}
                             ></div>
-                            {/* Background gradient overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-red-900/20 via-transparent to-red-900/20 rounded-2xl"></div>
 
                             {/* Main content */}
                             <div className="relative p-8 bg-gradient-to-r from-gray-900/40 to-gray-800/30 backdrop-blur-sm rounded-2xl border border-gray-700/30 shadow-2xl">
-                                <div className="text-center mb-6">
+                                <div className="text-center mb-8">
                                     {/* Pool de Gravação - Enhanced */}
                                     <div className="flex items-center justify-center gap-3 mb-2">
                                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -114,7 +69,7 @@ export default function PlaylistsPage() {
                                     </div>
 
                                     {/* PLAYLISTS - Enhanced */}
-                                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bebas font-black text-white tracking-tight mb-3 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent drop-shadow-2xl">
+                                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bebas-neue font-black text-white tracking-tight mb-3 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent drop-shadow-2xl">
                                         PLAYLISTS
                                     </h1>
 
@@ -124,6 +79,45 @@ export default function PlaylistsPage() {
                                         <p className="text-gray-300 text-base font-montserrat font-medium tracking-wide">
                                             Essa é a nossa seção de playlists
                                         </p>
+                                    </div>
+                                </div>
+
+                                {/* Stats Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="bg-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 hover:border-red-500/50 transition-all duration-300">
+                                        <div className="flex items-center space-x-4">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl flex items-center justify-center">
+                                                <List className="w-6 h-6 text-white" />
+                                            </div>
+                                            <div>
+                                                <p className="text-2xl font-black text-white">{playlists.length}</p>
+                                                <p className="text-gray-400 text-sm">Total de Playlists</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 hover:border-green-500/50 transition-all duration-300">
+                                        <div className="flex items-center space-x-4">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                                                <Star className="w-6 h-6 text-white" />
+                                            </div>
+                                            <div>
+                                                <p className="text-2xl font-black text-white">{playlists.filter(p => p.isFeatured).length}</p>
+                                                <p className="text-gray-400 text-sm">Em Destaque</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300">
+                                        <div className="flex items-center space-x-4">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
+                                                <Eye className="w-6 h-6 text-white" />
+                                            </div>
+                                            <div>
+                                                <p className="text-2xl font-black text-white">{playlists.filter(p => p.isPublic).length}</p>
+                                                <p className="text-gray-400 text-sm">Públicas</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -326,9 +320,7 @@ export default function PlaylistsPage() {
                             </p>
                         </div>
                     )}
-
                 </div>
-
             </div>
 
             {/* Footer Player */}

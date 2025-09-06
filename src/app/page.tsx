@@ -1185,7 +1185,7 @@ export default function HomePage() {
       {/* Seção de Pesquisa e Musiclist em Largura Total */}
       <div className="w-full px-4 sm:px-6 pb-32 -mt-20 sm:-mt-24 lg:-mt-40">
         {/* Barra de Pesquisa Avançada */}
-        <div className="mb-4">
+        <div className="mb-1">
           <AdvancedSearch
             onSearch={handleAdvancedSearch}
             onClear={handleSearchClear}
@@ -1220,7 +1220,7 @@ export default function HomePage() {
               <p className="font-inter font-normal">Nenhuma música disponível</p>
             </div>
           ) : (
-            <div className="mt-8">
+            <div className="mt-2">
               {/* Lista de Músicas Agrupadas por Data */}
               {Object.entries(groupTracksByDate(tracks)).map(([dateKey, dateTracks]) => (
                 <div key={dateKey} className="mb-8">
@@ -1298,77 +1298,100 @@ export default function HomePage() {
                     <div className="w-full h-px bg-green-500 mt-2"></div>
                   </div>
 
-                  {/* Lista de Músicas da Data */}
-                  <div className="space-y-0">
+                  {/* Lista de Músicas da Data - Design Moderno */}
+                  <div className="bg-music-list rounded-lg overflow-hidden">
                     {dateTracks.map((track, index) => (
-                      <div key={track.id} className="relative">
-                        {/* Linha divisória branca */}
+                      <div key={track.id} className="relative group">
+                        {/* Linha divisória sutil */}
                         {index > 0 && (
-                          <div className="absolute -top-px left-0 right-0 h-px bg-white/30 z-10"></div>
+                          <div className="absolute -top-px left-0 right-0 h-px bg-gray-700/30"></div>
                         )}
 
-                        {/* Row da música */}
-                        <div className="flex items-center gap-4 bg-gray-900/30 hover:bg-[#242424] backdrop-blur-sm p-4 transition-all duration-300 border border-transparent hover:border-gray-700/50">
-                          {/* Capa da Música com Play/Pause */}
-                          <div className="flex-shrink-0 relative w-20 h-20">
-                            {/* Borda azul quando está tocando */}
-                            {currentTrack?.id === track.id && isPlaying && (
-                              <div className="absolute inset-0 border-2 border-blue-500 rounded"></div>
-                            )}
+                        {/* Row da música - Design minimalista */}
+                        <div className="flex items-center gap-6 px-6 py-4 hover:bg-hover-row transition-all duration-200">
 
+                          {/* Capa da Música */}
+                          <div className="flex-shrink-0 relative w-16 h-16">
                             {/* Capa da música */}
                             <div className="w-full h-full rounded overflow-hidden">
                               <OptimizedImage
                                 track={track}
                                 className="w-full h-full object-cover"
-                                fallbackClassName={`w-full h-full bg-gradient-to-br ${generateGradientColors(track.songName, track.artist)} flex items-center justify-center text-white font-bold text-sm`}
+                                fallbackClassName={`w-full h-full bg-gradient-to-br ${generateGradientColors(track.songName, track.artist)} flex items-center justify-center text-white font-bold text-xs`}
                                 fallbackContent={generateInitials(track.songName, track.artist)}
                               />
                             </div>
 
-                            {/* Overlay preto quando está tocando */}
-                            {currentTrack?.id === track.id && isPlaying && (
-                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                <Pause className="w-6 h-6 text-white" />
-                              </div>
-                            )}
-
-                            {/* Botão Play sobreposto (só aparece no hover quando não está tocando) */}
-                            {!(currentTrack?.id === track.id && isPlaying) && (
-                              <button
-                                onClick={() => handlePlayPause(track, false)}
-                                className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-all duration-200 opacity-0 hover:opacity-100 group"
-                                title="Tocar"
-                              >
-                                <Play className="w-6 h-6 text-white ml-0.5" />
-                              </button>
-                            )}
+                            {/* Overlay de play/pause */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 flex items-center justify-center transition-all duration-200">
+                              {currentTrack?.id === track.id && isPlaying ? (
+                                <button
+                                  onClick={() => handlePlayPause(track, false)}
+                                  className="opacity-100"
+                                  title="Pausar"
+                                >
+                                  <Pause className="w-5 h-5 text-white" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handlePlayPause(track, false)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                  title="Tocar"
+                                >
+                                  <Play className="w-5 h-5 text-white ml-0.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
 
                           {/* Informações da música */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="flex-1 min-w-0 mr-3">
-                                <h3 className="text-white font-inter font-semibold truncate" style={{ fontSize: '13px' }} title={track.songName}>
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                {/* Nome da música */}
+                                <h3 className="text-white font-inter font-semibold text-sm truncate mb-1" title={track.songName}>
                                   {track.songName}
                                 </h3>
-                                <p className="text-gray-300 font-inter font-normal truncate -mt-0.5" style={{ fontSize: '13px' }}>
+
+                                {/* Artista */}
+                                <p className="text-gray-300 font-inter text-sm truncate mb-2">
                                   {track.artist}
                                 </p>
+
+                                {/* Tags de estilo e pool destacadas */}
+                                <div className="flex gap-1 flex-wrap">
+                                  {track.style && (
+                                    <Link
+                                      href={`/genres/${generateGenreSlug(track.style)}`}
+                                      className="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded font-inter font-medium text-xs hover:bg-red-500/30 hover:text-red-200 transition-all duration-200 border border-red-500/30"
+                                      title={`Ver todas as músicas de ${track.style}`}
+                                    >
+                                      {track.style}
+                                    </Link>
+                                  )}
+                                  {track.pool && (
+                                    <Link
+                                      href={`/pools/${track.pool.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '')}`}
+                                      className="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded font-inter font-medium text-xs hover:bg-blue-500/30 hover:text-blue-200 transition-all duration-200 border border-blue-500/30"
+                                      title={`Ver todas as músicas da pool ${track.pool}`}
+                                    >
+                                      {track.pool}
+                                    </Link>
+                                  )}
+                                </div>
                               </div>
 
-                              {/* Botões de Download e Like estilo Facebook */}
-                              <div className="flex gap-2 flex-shrink-0">
+                              {/* Botões de ação */}
+                              <div className="flex gap-2 flex-shrink-0 ml-4">
                                 {/* Botão Download */}
                                 <button
                                   onClick={() => handleDownload(track)}
                                   disabled={downloadingTracks.has(track.id)}
-                                  style={{ fontSize: '13px' }}
-                                  className={`px-4 py-2 rounded font-inter font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${downloadedTracks.has(track.id)
-                                    ? 'bg-green-600 text-white hover:bg-green-700'
+                                  className={`px-3 py-1.5 rounded text-xs font-inter font-medium transition-all duration-200 flex items-center gap-1 ${downloadedTracks.has(track.id)
+                                    ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
                                     : downloadingTracks.has(track.id)
-                                      ? 'bg-yellow-600 text-white'
-                                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                                      ? 'bg-yellow-600/20 text-yellow-400'
+                                      : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
                                     }`}
                                   title={
                                     downloadedTracks.has(track.id)
@@ -1379,7 +1402,7 @@ export default function HomePage() {
                                   }
                                 >
                                   {downloadingTracks.has(track.id) ? (
-                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
                                   ) : (
                                     <Download className="w-3 h-3" />
                                   )}
@@ -1390,15 +1413,14 @@ export default function HomePage() {
                                 <button
                                   onClick={() => handleLike(track)}
                                   disabled={likingTracks.has(track.id)}
-                                  style={{ fontSize: '13px' }}
-                                  className={`px-4 py-2 rounded font-inter font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${likedTracks.has(track.id)
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                                  className={`px-3 py-1.5 rounded text-xs font-inter font-medium transition-all duration-200 flex items-center gap-1 ${likedTracks.has(track.id)
+                                    ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
+                                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
                                     }`}
                                   title={likedTracks.has(track.id) ? 'Descurtir' : 'Curtir'}
                                 >
                                   {likingTracks.has(track.id) ? (
-                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
                                   ) : (
                                     <svg className="w-3 h-3" fill={likedTracks.has(track.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -1407,24 +1429,6 @@ export default function HomePage() {
                                   {likedTracks.has(track.id) ? 'Curtido' : 'Curtir'}
                                 </button>
                               </div>
-                            </div>
-
-                            <div className="flex gap-2">
-                              {track.style && (
-                                <Link
-                                  href={`/genres/${generateGenreSlug(track.style)}`}
-                                  className="bg-red-500/20 text-red-300 px-2 py-1 rounded font-inter font-medium hover:bg-red-500/30 hover:text-red-200 transition-all duration-200 cursor-pointer"
-                                  style={{ fontSize: '13px' }}
-                                  title={`Ver todas as músicas de ${track.style}`}
-                                >
-                                  {track.style}
-                                </Link>
-                              )}
-                              {track.pool && (
-                                <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded font-inter font-medium" style={{ fontSize: '13px' }}>
-                                  {track.pool}
-                                </span>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -1435,48 +1439,53 @@ export default function HomePage() {
               ))}
               {/* Paginação */}
               {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-3 mt-12">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 bg-gray-800/50 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700/50 transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50"
-                  >
-                    Anterior
-                  </button>
+                <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex justify-center items-center gap-3 mt-12">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 bg-gray-800/50 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700/50 transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50"
+                    >
+                      Anterior
+                    </button>
 
-                  <div className="flex gap-2">
-                    {Array.from({ length: Math.min(10, totalPages) }, (_, i) => {
-                      const pageNum = Math.max(1, Math.min(totalPages - 9, currentPage - 4)) + i;
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          className={`px-4 py-2 rounded-lg transition-all duration-200 ${currentPage === pageNum
-                            ? 'bg-red-500 text-white shadow-lg shadow-red-500/25'
-                            : 'bg-gray-800/50 text-white hover:bg-gray-700/50 border border-gray-700/50 hover:border-gray-600/50'
-                            }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
+                    <div className="flex gap-2">
+                      {Array.from({ length: Math.min(15, totalPages) }, (_, i) => {
+                        const pageNum = Math.max(1, Math.min(totalPages - 14, currentPage - 7)) + i;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm ${currentPage === pageNum
+                              ? 'bg-red-500 text-white shadow-lg shadow-red-500/25'
+                              : 'bg-gray-800/50 text-white hover:bg-gray-700/50 border border-gray-700/50 hover:border-gray-600/50'
+                              }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 bg-gray-800/50 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700/50 transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50"
+                    >
+                      Próximo
+                    </button>
                   </div>
-
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 bg-gray-800/50 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700/50 transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50"
-                  >
-                    Próximo
-                  </button>
                 </div>
               )}
 
               {/* Botão Navegar Catálogo */}
               <div className="flex justify-center mt-8">
-                <button className="px-12 py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bebas font-bold text-xl tracking-wider rounded-lg transition-all duration-200 border border-red-400/20 hover:border-red-300/40">
+                <Link
+                  href="/new-releases"
+                  className="px-12 py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bebas-neue font-bold text-xl tracking-wider rounded-lg transition-all duration-300 border border-red-400/20 hover:border-red-300/40 hover:scale-105 hover:shadow-lg hover:shadow-red-500/25"
+                >
                   NAVEGAR CATÁLOGO
-                </button>
+                </Link>
               </div>
             </div>
           )}

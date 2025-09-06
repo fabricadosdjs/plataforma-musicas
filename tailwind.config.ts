@@ -13,21 +13,27 @@ const config: Config = {
             colors: {
                 // Definindo cores para o tema cinza escuro
                 primary: '#ffffff', // Branco para textos e elementos principais
-                secondary: '#374151', // Cor principal do tema cinza escuro
+                secondary: '#262626', // Cor principal do tema cinza escuro
                 accent: '#1f2937', // Cinza mais escuro para elementos de destaque
-                background: '#374151', // Fundo principal cinza escuro
+                background: '#121212', // Fundo principal cinza escuro
                 text: '#ffffff', // Cor padrão do texto branco
-                'gray-dark': '#374151', // Cinza escuro personalizado
-                'gray-darker': '#1f2937', // Cinza mais escuro
-                'gray-light': '#6b7280', // Cinza mais claro para hover
+                'gray-dark': '#262626', // Cinza escuro personalizado
+                'gray-darker': '#121212', // Cinza mais escuro
+                'gray-light': '#444444', // Cinza mais claro para hover
+                'music-list': '#262626', // Cor específica para lista de música
+                'hover-row': '#444444', // Cor específica para hover das rows
             },
             fontFamily: {
-                // Definindo Jost como fonte principal do site
-                sans: ['Jost', 'var(--font-jost)', 'Inter', 'var(--font-inter)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                // Definindo Poppins como fonte principal do site
+                sans: ['Poppins', 'var(--font-poppins)', 'Inter', 'var(--font-inter)', 'Jost', 'var(--font-jost)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
                 // Adicionando Montserrat para DJ City
                 'montserrat': ['Montserrat', 'var(--font-montserrat)', 'sans-serif'],
                 // Adicionando Jost como fonte específica
                 'jost': ['Jost', 'var(--font-jost)', 'sans-serif'],
+                // Adicionando Poppins como fonte específica
+                'poppins': ['Poppins', 'var(--font-poppins)', 'sans-serif'],
+                // Adicionando Inter como fonte específica
+                'inter': ['Inter', 'var(--font-inter)', 'sans-serif'],
                 // Adicionando Bebas Neue
                 'bebas': ['Bebas Neue', 'cursive'],
                 mono: ['Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'monospace'],

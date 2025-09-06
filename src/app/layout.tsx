@@ -11,7 +11,7 @@ import AuthProvider from '@/context/AuthProvider';
 import { LoadingProvider } from '@/context/LoadingContext';
 import { PageTransitionLoading } from '@/components/ui/PageTransitionLoading';
 import type { Metadata } from 'next';
-import { Inter, Montserrat, Jost, Bebas_Neue } from 'next/font/google'; // Inter como fonte principal, Montserrat para DJ City, Jost como fonte principal, Bebas Neue para títulos
+import { Poppins, Montserrat, Jost, Bebas_Neue } from 'next/font/google'; // Poppins como fonte principal, Montserrat para DJ City, Jost como fonte principal, Bebas Neue para títulos
 import './globals.css';
 import '../styles/beatport-effects.css';
 import '../styles/mobile-optimizations.css';
@@ -27,11 +27,11 @@ import { ImageErrorProvider } from '@/components/providers/ImageErrorProvider';
 import GlobalDownloadProgress from '@/components/download/GlobalDownloadProgress';
 import '@/utils/errorFilter'; // Importar filtro de erros global
 
-// Configura a fonte Inter como a fonte principal
-const inter = Inter({
+// Configura a fonte Poppins como a fonte principal
+const poppins = Poppins({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-inter', // Define uma variável CSS para Inter
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-poppins', // Define uma variável CSS para Poppins
 });
 
 // Configura a fonte Montserrat para DJ City
@@ -146,7 +146,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${montserrat.variable} ${jost.variable} ${bebasNeue.variable}`}>
+    <html lang="pt-BR" className={`${poppins.variable} ${montserrat.variable} ${jost.variable} ${bebasNeue.variable} font-poppins`}>
       <body suppressHydrationWarning={true}>
         {/* Meta tags para melhorar downloads - movido para head.tsx ou metadata */}
         <meta

@@ -303,9 +303,9 @@ export default function FooterPlayer() {
 
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-white/20 z-50 shadow-2xl">
-            <div className="max-w-7xl mx-auto px-4 py-4">
-                <div className="flex items-center justify-between" style={{ fontFamily: 'Jost, sans-serif' }}>
+        <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-sm border-t border-white/10 z-50 shadow-2xl">
+            <div className="max-w-6xl mx-auto px-6 py-3">
+                <div className="flex items-center justify-between font-inter">
                     {/* Botão de fechar modernizado */}
                     <button
                         onClick={handleClose}
@@ -315,130 +315,101 @@ export default function FooterPlayer() {
                         <X className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                     </button>
 
-                    {/* Informações da música modernizadas */}
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                        {/* Thumbnail com borda animada - MAIOR */}
-                        <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 relative group">
-                            {/* Borda animada quando está tocando */}
+                    {/* Informações da música */}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Thumbnail minimalista */}
+                        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 relative">
+                            {/* Borda sutil quando está tocando */}
                             {isPlaying && (
-                                <div className="absolute inset-0 border-2 border-gradient-to-r from-emerald-400 to-blue-500 rounded-2xl animate-pulse"></div>
+                                <div className="absolute inset-0 border border-emerald-400 rounded-lg"></div>
                             )}
 
-                            {/* Efeito de brilho */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                            {/* Thumbnail */}
-                            <div className="relative z-10 w-full h-full rounded-2xl overflow-hidden">
-                                <OptimizedImage
-                                    track={currentTrack}
-                                    className="w-full h-full object-cover"
-                                    fallbackClassName={`w-full h-full bg-gradient-to-br ${generateGradientColors(currentTrack.songName, currentTrack.artist)} flex items-center justify-center text-white font-bold text-lg`}
-                                    fallbackContent={generateInitials(currentTrack.songName, currentTrack.artist)}
-                                />
-                            </div>
+                            <OptimizedImage
+                                track={currentTrack}
+                                className="w-full h-full object-cover"
+                                fallbackClassName={`w-full h-full bg-gradient-to-br ${generateGradientColors(currentTrack.songName, currentTrack.artist)} flex items-center justify-center text-white font-bold text-xs`}
+                                fallbackContent={generateInitials(currentTrack.songName, currentTrack.artist)}
+                            />
                         </div>
 
-                        {/* Nome da música e artista modernizados */}
+                        {/* Nome da música e artista */}
                         <div className="min-w-0 flex-1">
-                            <h4 className="text-white font-medium truncate leading-tight" style={{ fontSize: '14px' }}>
+                            <h4 className="text-white font-inter font-medium text-sm truncate leading-tight">
                                 {currentTrack.songName}
                             </h4>
-                            <p className="text-gray-300/80 truncate leading-tight mt-0.5" style={{ fontSize: '13px' }}>
+                            <p className="text-gray-300/80 font-inter text-xs truncate leading-tight mt-0.5">
                                 {currentTrack.artist}
                             </p>
                         </div>
                     </div>
 
-                    {/* Controles centrais modernizados */}
-                    <div className="flex items-center gap-3">
-                        {/* Botão anterior modernizado */}
+                    {/* Controles centrais */}
+                    <div className="flex items-center gap-2">
+                        {/* Botão anterior */}
                         <button
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                console.log('🎵 FooterPlayer: Botão anterior clicado', {
-                                    playlistLength: playlist.length,
-                                    currentTrackIndex,
-                                    currentTrack: currentTrack?.songName,
-                                    playlist: playlist.map(t => ({ id: t.id, name: t.songName })),
-                                    event: e.type,
-                                    timestamp: new Date().toISOString()
-                                });
-                                console.log('🎵 FooterPlayer: Chamando previousTrack()');
                                 previousTrack();
-                                console.log('🎵 FooterPlayer: previousTrack() chamado');
                             }}
-                            className="p-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 group"
+                            className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
                             title="Música anterior"
                         >
-                            <SkipBack className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                            <SkipBack className="w-4 h-4" />
                         </button>
 
-                        {/* Botão play/pause modernizado */}
+                        {/* Botão play/pause */}
                         <button
                             onClick={togglePlayPause}
-                            className="p-4 bg-gradient-to-r from-emerald-500 to-blue-500 text-white rounded-2xl hover:from-emerald-400 hover:to-blue-400 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 group"
+                            className="p-2.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-400 transition-all duration-200"
                             title={isPlaying ? 'Pausar' : 'Tocar'}
                         >
                             {isPlaying ? (
-                                <Pause className="w-6 h-6 group-hover:scale-110 transition-transform duration-200" />
+                                <Pause className="w-4 h-4" />
                             ) : (
-                                <Play className="w-6 h-6 ml-0.5 group-hover:scale-110 transition-transform duration-200" />
+                                <Play className="w-4 h-4 ml-0.5" />
                             )}
                         </button>
 
-                        {/* Botão próxima modernizado */}
+                        {/* Botão próxima */}
                         <button
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                console.log('🎵 FooterPlayer: Botão próxima clicado', {
-                                    playlistLength: playlist.length,
-                                    currentTrackIndex,
-                                    currentTrack: currentTrack?.songName,
-                                    playlist: playlist.map(t => ({ id: t.id, name: t.songName })),
-                                    event: e.type,
-                                    timestamp: new Date().toISOString()
-                                });
-                                console.log('🎵 FooterPlayer: Chamando nextTrack()');
                                 nextTrack();
-                                console.log('🎵 FooterPlayer: nextTrack() chamado');
                             }}
-                            className="p-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 group"
+                            className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
                             title="Próxima música"
                         >
-                            <SkipForward className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                            <SkipForward className="w-4 h-4" />
                         </button>
-
                     </div>
 
 
-                    {/* Tempo e volume modernizados */}
-                    <div className="flex items-center gap-4 flex-1 justify-end">
-                        {/* Tempo atual */}
-                        <span className="text-white/90 font-medium" style={{ fontSize: '13px' }}>
-                            {formatTime(currentTime)}
-                        </span>
+                    {/* Tempo e volume */}
+                    <div className="flex items-center gap-3 flex-1 justify-end">
+                        {/* Tempo */}
+                        <div className="flex items-center gap-1">
+                            <span className="text-white/80 font-inter text-xs">
+                                {formatTime(currentTime)}
+                            </span>
+                            <span className="text-white/40 text-xs">/</span>
+                            <span className="text-white/60 font-inter text-xs">
+                                {formatTime(duration)}
+                            </span>
+                        </div>
 
-                        {/* Separador modernizado */}
-                        <span className="text-white/40" style={{ fontSize: '13px' }}>/</span>
-
-                        {/* Tempo total */}
-                        <span className="text-white/60 font-medium" style={{ fontSize: '13px' }}>
-                            {formatTime(duration)}
-                        </span>
-
-                        {/* Volume modernizado */}
-                        <div className="flex items-center gap-3">
+                        {/* Volume */}
+                        <div className="flex items-center gap-2">
                             <button
                                 onClick={toggleMute}
-                                className="p-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 group"
+                                className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded transition-all duration-200"
                                 title={isMuted ? 'Ativar som' : 'Silenciar'}
                             >
                                 {isMuted ? (
-                                    <VolumeX className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                                    <VolumeX className="w-3.5 h-3.5" />
                                 ) : (
-                                    <Volume2 className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                                    <Volume2 className="w-3.5 h-3.5" />
                                 )}
                             </button>
                             <input
@@ -448,7 +419,7 @@ export default function FooterPlayer() {
                                 step="0.1"
                                 value={isMuted ? 0 : volume}
                                 onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                                className="w-20 h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer slider hover:bg-white/30 transition-colors duration-200"
+                                className="w-16 h-1 bg-white/20 rounded-full appearance-none cursor-pointer hover:bg-white/30 transition-colors duration-200"
                                 style={{
                                     background: `linear-gradient(to right, #10b981 0%, #10b981 ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.2) ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.2) 100%)`
                                 }}
@@ -456,18 +427,17 @@ export default function FooterPlayer() {
                             />
                         </div>
 
-                        {/* Botões de Download e Like modernizados */}
-                        <div className="flex items-center gap-2 ml-4">
-                            {/* Botão Download modernizado */}
+                        {/* Botões de Download e Like */}
+                        <div className="flex items-center gap-1.5 ml-3">
+                            {/* Botão Download */}
                             <button
                                 onClick={() => handleDownload(currentTrack)}
                                 disabled={isDownloading(currentTrack.id)}
-                                style={{ fontSize: '13px' }}
-                                className={`p-2.5 rounded-xl font-medium transition-all duration-300 hover:scale-110 flex items-center gap-1.5 group ${isDownloaded(currentTrack.id)
-                                    ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-400 hover:to-green-500 shadow-lg'
+                                className={`p-1.5 rounded-lg font-inter text-xs font-medium transition-all duration-200 flex items-center gap-1 ${isDownloaded(currentTrack.id)
+                                    ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
                                     : isDownloading(currentTrack.id)
-                                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg'
-                                        : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white backdrop-blur-sm'
+                                        ? 'bg-yellow-600/20 text-yellow-400'
+                                        : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
                                     }`}
                                 title={
                                     isDownloaded(currentTrack.id)
@@ -478,27 +448,26 @@ export default function FooterPlayer() {
                                 }
                             >
                                 {isDownloading(currentTrack.id) ? (
-                                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
                                 ) : (
-                                    <ArrowDownToLine className="w-3.5 h-3.5 group-hover:scale-110 transition-transform duration-200" />
+                                    <Download className="w-3 h-3" />
                                 )}
                             </button>
 
-                            {/* Botão Like modernizado */}
+                            {/* Botão Like */}
                             <button
                                 onClick={() => handleLike(currentTrack)}
                                 disabled={isLiking(currentTrack.id)}
-                                style={{ fontSize: '13px' }}
-                                className={`p-2.5 rounded-xl font-medium transition-all duration-300 hover:scale-110 flex items-center gap-1.5 group ${isLiked(currentTrack.id)
-                                    ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:from-pink-400 hover:to-rose-500 shadow-lg'
-                                    : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white backdrop-blur-sm'
+                                className={`p-1.5 rounded-lg font-inter text-xs font-medium transition-all duration-200 flex items-center gap-1 ${isLiked(currentTrack.id)
+                                    ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
+                                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
                                     }`}
                                 title={isLiked(currentTrack.id) ? 'Descurtir' : 'Curtir'}
                             >
                                 {isLiking(currentTrack.id) ? (
-                                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
                                 ) : (
-                                    <HeartHandshake className="w-3.5 h-3.5 group-hover:scale-110 transition-transform duration-200" fill={isLiked(currentTrack.id) ? "currentColor" : "none"} stroke="currentColor" />
+                                    <Heart className="w-3 h-3" fill={isLiked(currentTrack.id) ? "currentColor" : "none"} stroke="currentColor" />
                                 )}
                             </button>
                         </div>

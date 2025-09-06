@@ -12,10 +12,12 @@ export default function Header() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showUserInfoModal, setShowUserInfoModal] = useState(false);
   const [showHomeSubmenu, setShowHomeSubmenu] = useState(false);
+  const [showSupportSubmenu, setShowSupportSubmenu] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const homeSubmenuRef = useRef<HTMLDivElement>(null);
+  const supportSubmenuRef = useRef<HTMLDivElement>(null);
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -26,6 +28,9 @@ export default function Header() {
       if (homeSubmenuRef.current && !homeSubmenuRef.current.contains(event.target as Node)) {
         setShowHomeSubmenu(false);
       }
+      if (supportSubmenuRef.current && !supportSubmenuRef.current.contains(event.target as Node)) {
+        setShowSupportSubmenu(false);
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -35,6 +40,11 @@ export default function Header() {
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/' });
     setShowProfileMenu(false);
+  };
+
+  // Função para forçar recarregamento da página
+  const handleForceReload = (href: string) => {
+    window.location.href = href;
   };
 
   const formatDate = (dateString: string | Date): string => {
@@ -120,9 +130,12 @@ export default function Header() {
 
               {/* Navigation Items */}
               <div className="hidden md:flex items-center space-x-4">
-                <Link href="/" className="relative px-4 py-2 rounded-lg bg-gray-900 border border-emerald-600 hover:border-emerald-400 hover:bg-emerald-600 text-emerald-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-emerald-500/25">
+                <button
+                  onClick={() => handleForceReload('/')}
+                  className="relative px-4 py-2 rounded-lg bg-gray-900 border border-emerald-600 hover:border-emerald-400 hover:bg-emerald-600 text-emerald-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-emerald-500/25"
+                >
                   <span className="font-semibold text-sm tracking-wide group-hover:tracking-wider transition-all duration-300">HOME</span>
-                </Link>
+                </button>
 
                 <div className="relative" ref={homeSubmenuRef}>
                   <button
@@ -137,53 +150,113 @@ export default function Header() {
                   {showHomeSubmenu && (
                     <div className="absolute top-full left-0 mt-2 w-64 bg-black rounded-2xl shadow-2xl border-2 border-purple-600 py-4 z-50">
                       <div className="space-y-1">
-                        <Link
-                          href="/new-releases"
-                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-emerald-600 hover:border-l-4 hover:border-emerald-400 transition-all duration-300 group font-semibold"
-                          onClick={() => setShowHomeSubmenu(false)}
+                        <button
+                          onClick={() => {
+                            setShowHomeSubmenu(false);
+                            handleForceReload('/new-releases');
+                          }}
+                          className="block w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-emerald-600 hover:border-l-4 hover:border-emerald-400 transition-all duration-300 group font-semibold"
                         >
                           <span className="group-hover:tracking-wide transition-all duration-300">NEW RELEASES</span>
-                        </Link>
-                        <Link
-                          href="/most-popular"
-                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600 hover:border-l-4 hover:border-orange-400 transition-all duration-300 group font-semibold"
-                          onClick={() => setShowHomeSubmenu(false)}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowHomeSubmenu(false);
+                            handleForceReload('/most-popular');
+                          }}
+                          className="block w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600 hover:border-l-4 hover:border-orange-400 transition-all duration-300 group font-semibold"
                         >
                           <span className="group-hover:tracking-wide transition-all duration-300">MOST POPULAR</span>
-                        </Link>
-                        <Link
-                          href="exclusives"
-                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-purple-600 hover:border-l-4 hover:border-purple-400 transition-all duration-300 group font-semibold"
-                          onClick={() => setShowHomeSubmenu(false)}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowHomeSubmenu(false);
+                            handleForceReload('/exclusives');
+                          }}
+                          className="block w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-purple-600 hover:border-l-4 hover:border-purple-400 transition-all duration-300 group font-semibold"
                         >
                           <span className="group-hover:tracking-wide transition-all duration-300">EXCLUSIVES</span>
-                        </Link>
-                        <Link
-                          href="/playlists"
-                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-blue-600 hover:border-l-4 hover:border-blue-400 transition-all duration-300 group font-semibold"
-                          onClick={() => setShowHomeSubmenu(false)}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowHomeSubmenu(false);
+                            handleForceReload('/playlists');
+                          }}
+                          className="block w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-blue-600 hover:border-l-4 hover:border-blue-400 transition-all duration-300 group font-semibold"
                         >
                           <span className="group-hover:tracking-wide transition-all duration-300">PLAYLISTS</span>
-                        </Link>
-                        <Link
-                          href="/genres"
-                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-blue-600 hover:border-l-4 hover:border-blue-400 transition-all duration-300 group font-semibold"
-                          onClick={() => setShowHomeSubmenu(false)}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowHomeSubmenu(false);
+                            handleForceReload('/genres');
+                          }}
+                          className="block w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-blue-600 hover:border-l-4 hover:border-blue-400 transition-all duration-300 group font-semibold"
                         >
                           <span className="group-hover:tracking-wide transition-all duration-300">GÊNEROS</span>
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   )}
                 </div>
 
-                <Link href="/record_label" className="relative px-4 py-2 rounded-lg bg-gray-900 border border-blue-600 hover:border-blue-400 hover:bg-blue-600 text-blue-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-blue-500/25">
+                <button
+                  onClick={() => handleForceReload('/record_label')}
+                  className="relative px-4 py-2 rounded-lg bg-gray-900 border border-blue-600 hover:border-blue-400 hover:bg-blue-600 text-blue-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-blue-500/25"
+                >
                   <span className="font-semibold text-sm tracking-wide group-hover:tracking-wider transition-all duration-300">LABEL</span>
-                </Link>
-
-                <button className="relative px-4 py-2 rounded-lg bg-gray-900 border border-orange-600 hover:border-orange-400 hover:bg-orange-600 text-orange-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-orange-500/25">
-                  <span className="font-semibold text-sm tracking-wide group-hover:tracking-wider transition-all duration-300">MAIS</span>
                 </button>
+
+                <button
+                  onClick={() => handleForceReload('/plans')}
+                  className="relative px-4 py-2 rounded-lg bg-gray-900 border border-orange-600 hover:border-orange-400 hover:bg-orange-600 text-orange-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-orange-500/25"
+                >
+                  <span className="font-semibold text-sm tracking-wide group-hover:tracking-wider transition-all duration-300">PLANOS</span>
+                </button>
+                <div className="relative" ref={supportSubmenuRef}>
+                  <button
+                    onClick={() => setShowSupportSubmenu(!showSupportSubmenu)}
+                    className="relative px-4 py-2 rounded-lg bg-gray-900 border border-orange-600 hover:border-orange-400 hover:bg-orange-600 text-orange-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-orange-500/25 flex items-center space-x-2"
+                  >
+                    <span className="font-semibold text-sm tracking-wide group-hover:tracking-wider transition-all duration-300">SUPORTE</span>
+                    <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${showSupportSubmenu ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Support Submenu */}
+                  {showSupportSubmenu && (
+                    <div className="absolute top-full left-0 mt-2 w-64 bg-black rounded-2xl shadow-2xl border-2 border-orange-600 py-4 z-50">
+                      <div className="space-y-1">
+                        <button
+                          onClick={() => {
+                            setShowSupportSubmenu(false);
+                            handleForceReload('/politica-grupo');
+                          }}
+                          className="block w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600 hover:border-l-4 hover:border-orange-400 transition-all duration-300 group font-semibold"
+                        >
+                          <span className="group-hover:tracking-wide transition-all duration-300">POLÍTICA GRUPO</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowSupportSubmenu(false);
+                            handleForceReload('/privacidade');
+                          }}
+                          className="block w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600 hover:border-l-4 hover:border-orange-400 transition-all duration-300 group font-semibold"
+                        >
+                          <span className="group-hover:tracking-wide transition-all duration-300">PRIVACIDADE</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowSupportSubmenu(false);
+                            handleForceReload('/termos');
+                          }}
+                          className="block w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600 hover:border-l-4 hover:border-orange-400 transition-all duration-300 group font-semibold"
+                        >
+                          <span className="group-hover:tracking-wide transition-all duration-300">TERMOS DE SERVIÇO</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -222,23 +295,27 @@ export default function Header() {
                           <span className="group-hover:tracking-wide transition-all duration-300">Informações da Conta</span>
                         </button>
 
-                        <a
-                          href="/profile"
-                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-blue-600 hover:border-l-4 hover:border-blue-400 transition-all duration-300 group font-semibold"
-                          onClick={() => setShowProfileMenu(false)}
+                        <button
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            handleForceReload('/profile');
+                          }}
+                          className="block w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-blue-600 hover:border-l-4 hover:border-blue-400 transition-all duration-300 group font-semibold"
                         >
                           <Settings className="w-4 h-4 inline mr-3" />
                           <span className="group-hover:tracking-wide transition-all duration-300">Your Account</span>
-                        </a>
+                        </button>
 
-                        <a
-                          href="/library"
-                          className="block px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-emerald-600 hover:border-l-4 hover:border-emerald-400 transition-all duration-300 group font-semibold"
-                          onClick={() => setShowProfileMenu(false)}
+                        <button
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            handleForceReload('/library');
+                          }}
+                          className="block w-full text-left px-6 py-3 text-sm text-gray-300 hover:text-white hover:bg-emerald-600 hover:border-l-4 hover:border-emerald-400 transition-all duration-300 group font-semibold"
                         >
                           <ListMusic className="w-4 h-4 inline mr-3" />
                           <span className="group-hover:tracking-wide transition-all duration-300">Biblioteca</span>
-                        </a>
+                        </button>
 
                         <button
                           onClick={handleLogout}
@@ -339,9 +416,12 @@ export default function Header() {
               <div className="text-center">
                 <p className="text-sm text-gray-400">
                   Não tem uma conta?{' '}
-                  <a href="/plans" className="text-red-500 hover:text-red-400 transition-colors">
+                  <button
+                    onClick={() => handleForceReload('/plans')}
+                    className="text-red-500 hover:text-red-400 transition-colors"
+                  >
                     Ver planos disponíveis
-                  </a>
+                  </button>
                 </p>
               </div>
             </form>
@@ -434,12 +514,12 @@ export default function Header() {
                 >
                   <span className="text-sm tracking-wide">Fechar</span>
                 </button>
-                <a
-                  href="/plans"
+                <button
+                  onClick={() => handleForceReload('/plans')}
                   className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 text-center shadow-lg hover:shadow-red-500/25 border-2 border-red-500/30 hover:border-red-400/50"
                 >
                   <span className="text-sm tracking-wide">Gerenciar Plano</span>
-                </a>
+                </button>
               </div>
             </div>
           </div>
