@@ -69,7 +69,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         const uniqueArtists = artists
             .map((t: any) => t.artist)
-            .filter((artist): artist is string => artist !== null && artist !== undefined);
+            .filter((artist: any): artist is string => artist !== null && artist !== undefined);
 
         return NextResponse.json(uniqueArtists);
 
