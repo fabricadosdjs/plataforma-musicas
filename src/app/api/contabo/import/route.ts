@@ -208,11 +208,11 @@ export async function GET(request: NextRequest) {
             });
 
             // Verifica correspondência
-            problematicFiles.forEach(file => {
+            problematicFiles.forEach((file: any) => {
                 const parsed = parseAudioFileName(file.filename);
                 const artistSongKey = `${parsed.artist.toLowerCase().trim()}|${parsed.songName.toLowerCase().trim()}`;
 
-                const matchingTrack = problematicTracks.find(track => {
+                const matchingTrack = problematicTracks.find((track: any) => {
                     const trackKey = `${track.artist?.toLowerCase().trim()}|${track.songName?.toLowerCase().trim()}`;
                     return trackKey === artistSongKey;
                 });
@@ -226,7 +226,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Processa informações dos arquivos para importação
-        const processedFiles = await Promise.all(importableFiles.map(async (file) => {
+        const processedFiles = await Promise.all(importableFiles.map(async (file: any) => {
             const parsed = parseAudioFileName(file.filename);
             // Nome completo do arquivo sem extensão
             const fullName = file.filename.replace(/\.[^/.]+$/, '');
@@ -276,15 +276,15 @@ export async function GET(request: NextRequest) {
         }
 
         // Validação específica para pasta problemática
-        const problematicFilesInStorage = audioFiles.filter(file => file.key.startsWith(problematicFolder));
-        const problematicTracksInDB = existingTracks.filter(track =>
+        const problematicFilesInStorage = audioFiles.filter((file: any) => file.key.startsWith(problematicFolder));
+        const problematicTracksInDB = existingTracks.filter((track: any) =>
             track.filename && track.filename.startsWith(problematicFolder)
         );
 
         console.log(`🔍 VALIDAÇÃO ESPECÍFICA - Pasta: ${problematicFolder}`);
         console.log(`  Arquivos no storage: ${problematicFilesInStorage.length}`);
         console.log(`  Tracks no banco: ${problematicTracksInDB.length}`);
-        console.log(`  Arquivos para importar (calculado): ${importableFiles.filter(file => file.key.startsWith(problematicFolder)).length}`);
+        console.log(`  Arquivos para importar (calculado): ${importableFiles.filter((file: any) => file.key.startsWith(problematicFolder)).length}`);
 
         if (problematicFilesInStorage.length !== problematicTracksInDB.length) {
             console.warn(`⚠️ PROBLEMA DETECTADO: Pasta ${problematicFolder} tem ${problematicFilesInStorage.length} no storage mas ${problematicTracksInDB.length} no banco!`);
@@ -571,7 +571,7 @@ async function getFolderStatus(audioFiles: any[], existingTracks: any[], problem
     console.log(`🔍 getFolderStatus: Analisando ${audioFiles.length} arquivos e ${existingTracks.length} tracks existentes`);
 
     // Agrupa arquivos por pasta
-    audioFiles.forEach(file => {
+    audioFiles.forEach((file: any) => {
         const folderPath = file.key.split('/').slice(0, -1).join('/') || 'root';
 
         if (!folderStats[folderPath]) {
@@ -590,7 +590,7 @@ async function getFolderStatus(audioFiles: any[], existingTracks: any[], problem
     console.log(`🔍 getFolderStatus: Pastas encontradas:`, Object.keys(folderStats));
 
     // Verifica quantos arquivos de cada pasta já existem no banco
-    existingTracks.forEach(track => {
+    existingTracks.forEach((track: any) => {
         if (track.filename) {
             const folderPath = track.filename.split('/').slice(0, -1).join('/') || 'root';
 
@@ -629,14 +629,14 @@ async function getFolderStatus(audioFiles: any[], existingTracks: any[], problem
         console.log(`  Porcentagem: ${stats.importPercentage?.toFixed(1)}%`);
 
         // Verifica se há tracks no banco para essa pasta
-        const tracksInFolder = existingTracks.filter(track =>
+        const tracksInFolder = existingTracks.filter((track: any) =>
             track.filename && track.filename.startsWith(problematicFolder)
         );
         console.log(`  Tracks encontrados no banco para esta pasta: ${tracksInFolder.length}`);
 
         if (tracksInFolder.length > 0) {
             console.log(`  Exemplos de tracks no banco:`);
-            tracksInFolder.slice(0, 3).forEach(track => {
+            tracksInFolder.slice(0, 3).forEach((track: any) => {
                 console.log(`    - ${track.filename} | ${track.artist} - ${track.songName}`);
             });
         }
@@ -644,7 +644,7 @@ async function getFolderStatus(audioFiles: any[], existingTracks: any[], problem
 
     // Log detalhado de cada pasta
     console.log(`🔍 getFolderStatus: Estatísticas finais das pastas:`);
-    Object.entries(folderStats).forEach(([folderPath, stats]) => {
+    Object.entries(folderStats).forEach(([folderPath, stats]: [any, any]) => {
         console.log(`  ${folderPath}:`);
         console.log(`    Total no storage: ${stats.totalFiles}`);
         console.log(`    Existente no banco: ${stats.existingFiles}`);
@@ -654,7 +654,7 @@ async function getFolderStatus(audioFiles: any[], existingTracks: any[], problem
     });
 
     // Calcula estatísticas e status de cada pasta
-    Object.keys(folderStats).forEach(folderPath => {
+    Object.keys(folderStats).forEach((folderPath: any) => {
         const stats = folderStats[folderPath];
         stats.importableFiles = stats.totalFiles - stats.existingFiles;
         stats.importPercentage = stats.totalFiles > 0 ? (stats.existingFiles / stats.totalFiles) * 100 : 0;
