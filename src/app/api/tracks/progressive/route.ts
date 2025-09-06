@@ -64,7 +64,7 @@ export async function GET(request: Request) {
         // Agrupar músicas por data
         const tracksByDate = new Map<string, any[]>();
 
-        allTracks.forEach(track => {
+        allTracks.forEach((track: any) => {
             let dateKey: string;
 
             if (track.releaseDate) {
@@ -100,7 +100,7 @@ export async function GET(request: Request) {
         });
 
         // Ordenar datas (mais recente primeiro)
-        const sortedDates = Array.from(tracksByDate.keys()).sort((a, b) => {
+        const sortedDates = Array.from(tracksByDate.keys()).sort((a: any, b: any) => {
             if (a === 'no-date') return 1;
             if (b === 'no-date') return 1;
             return b.localeCompare(a);
@@ -119,7 +119,7 @@ export async function GET(request: Request) {
 
         // Coletar músicas das datas desta página
         const tracksForThisPage: any[] = [];
-        datesForThisPage.forEach(dateKey => {
+        datesForThisPage.forEach((dateKey: any) => {
             const tracksForDate = tracksByDate.get(dateKey) || [];
             tracksForThisPage.push(...tracksForDate);
         });

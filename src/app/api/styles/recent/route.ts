@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
         // Buscar informações adicionais para cada estilo
         const stylesWithInfo = await Promise.all(
-            recentStyles.map(async (styleGroup) => {
+            recentStyles.map(async (styleGroup: any) => {
                 // Buscar a música mais recente deste estilo
                 const latestTrack = await prisma.track.findFirst({
                     where: {

@@ -35,9 +35,9 @@ export async function GET(request: NextRequest) {
         let totalDuration = 0;
         const genreCounts: { [key: string]: number } = {};
 
-        userLibraryPlaylists.forEach(userLibrary => {
+        userLibraryPlaylists.forEach((userLibrary: any) => {
             if (userLibrary.playlist) {
-                userLibrary.playlist.tracks.forEach(playlistTrack => {
+                userLibrary.playlist.tracks.forEach((playlistTrack: any) => {
                     if (playlistTrack.track) {
                         totalTracksCount++;
 

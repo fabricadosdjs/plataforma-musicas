@@ -53,31 +53,31 @@ export async function GET(
         const totalTracks = tracks.length;
 
         // Contar downloads únicos por música (cada música só pode ter 1 download por usuário)
-        const totalDownloads = tracks.reduce((sum, track) => {
+        const totalDownloads = tracks.reduce((sum: any, track: any) => {
             // Usar Set para contar usuários únicos que baixaram cada música
-            const uniqueUsers = new Set(track.downloads.map(download => download.userId).filter(Boolean));
+            const uniqueUsers = new Set(track.downloads.map((download: any) => download.userId).filter(Boolean));
             return sum + uniqueUsers.size;
         }, 0);
 
         // Contar likes únicos por música (cada música só pode ter 1 like por usuário)
-        const totalLikes = tracks.reduce((sum, track) => {
+        const totalLikes = tracks.reduce((sum: any, track: any) => {
             // Usar Set para contar usuários únicos que deram like em cada música
-            const uniqueUsers = new Set(track.likes.map(like => like.userId).filter(Boolean));
+            const uniqueUsers = new Set(track.likes.map((like: any) => like.userId).filter(Boolean));
             return sum + uniqueUsers.size;
         }, 0);
 
         // Contar plays únicos por música (cada música só pode ter 1 play por usuário)
-        const totalPlays = tracks.reduce((sum, track) => {
+        const totalPlays = tracks.reduce((sum: any, track: any) => {
             // Usar Set para contar usuários únicos que tocaram cada música
-            const uniqueUsers = new Set(track.plays.map(play => play.userId).filter(Boolean));
+            const uniqueUsers = new Set(track.plays.map((play: any) => play.userId).filter(Boolean));
             return sum + uniqueUsers.size;
         }, 0);
 
-        const uniqueArtists = new Set(tracks.map(track => track.artist)).size;
-        const uniqueStyles = new Set(tracks.map(track => track.style).filter(style => style && style !== 'N/A')).size;
+        const uniqueArtists = new Set(tracks.map((track: any) => track.artist)).size;
+        const uniqueStyles = new Set(tracks.map((track: any) => track.style).filter((style: any) => style && style !== 'N/A')).size;
 
         // Encontrar o lançamento mais recente
-        const latestRelease = tracks.reduce((latest, track) => {
+        const latestRelease = tracks.reduce((latest: any, track: any) => {
             const trackDate = new Date(track.releaseDate || track.createdAt);
             return !latest || trackDate > new Date(latest) ? track.releaseDate || track.createdAt : latest;
         }, null as Date | null);

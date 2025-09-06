@@ -50,7 +50,7 @@ export async function GET() {
         }
 
         // Formatar as tracks para o formato esperado pelos testes
-        const formattedTracks = tracks.map(track => ({
+        const formattedTracks = tracks.map((track: any) => ({
             id: track.id,
             songName: track.songName,
             artist: track.artist,

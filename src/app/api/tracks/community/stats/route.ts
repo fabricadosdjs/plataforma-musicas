@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
                 _count: {
                     artist: true
                 }
-            }).then(result => result.length),
+            }).then((result: any) => result.length),
 
             // Total de downloads de músicas da comunidade
             prisma.download.count({

@@ -30,12 +30,12 @@ export async function POST(req: Request) {
 
         // Criar sets para verificação rápida
         const existingUrls = new Set([
-            ...existingTracks.map(track => track.previewUrl),
-            ...existingTracks.map(track => track.downloadUrl)
+            ...existingTracks.map((track: any) => track.previewUrl),
+            ...existingTracks.map((track: any) => track.downloadUrl)
         ]);
 
         const existingSongs = new Set(
-            existingTracks.map(track => `${track.artist} - ${track.songName}`.toLowerCase())
+            existingTracks.map((track: any) => `${track.artist} - ${track.songName}`.toLowerCase())
         );
 
         // Verificar duplicatas
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
                 results.duplicates.push({
                     track,
                     reason: isDuplicateUrl ? 'URL duplicada' : 'Música já existe',
-                    existingTrack: existingTracks.find(existing =>
+                    existingTrack: existingTracks.find((existing: any) =>
                         existing.previewUrl === track.previewUrl ||
                         existing.downloadUrl === track.downloadUrl ||
                         `${existing.artist} - ${existing.songName}`.toLowerCase() === songKey

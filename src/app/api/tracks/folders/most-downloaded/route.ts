@@ -31,7 +31,7 @@ export async function GET() {
 
         // Criar mapa de downloads por track
         const downloadMap = new Map();
-        downloadsByTrack.forEach(download => {
+        downloadsByTrack.forEach((download: any) => {
             downloadMap.set(download.trackId, download._count._all);
         });
 
@@ -63,7 +63,7 @@ export async function GET() {
             }
         } = {};
 
-        tracksWithDetails.forEach(track => {
+        tracksWithDetails.forEach((track: any) => {
             const folder = track.folder!;
             const downloadCount = downloadMap.get(track.id) || 0;
 
@@ -96,7 +96,7 @@ export async function GET() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        Object.keys(folderData).forEach(folderName => {
+        Object.keys(folderData).forEach((folderName: any) => {
             const folderDate = new Date(folderData[folderName].lastUpdated);
             folderDate.setHours(0, 0, 0, 0);
             folderData[folderName].hasUpdatesToday = folderDate.getTime() === today.getTime();
@@ -104,8 +104,8 @@ export async function GET() {
 
         // Formatar resultado com todas as pastas
         const formattedFolders = allFolders
-            .filter(folder => folder.folder && folder.folder !== 'N/A')
-            .map(folder => {
+            .filter((folder: any) => folder.folder && folder.folder !== 'N/A')
+            .map((folder: any) => {
                 const data = folderData[folder.folder!];
                 return {
                     name: folder.folder!,
@@ -116,7 +116,7 @@ export async function GET() {
                     imageUrl: data.imageUrl
                 };
             })
-            .sort((a, b) => {
+            .sort((a: any, b: any) => {
                 // Primeiro: pastas atualizadas hoje
                 if (a.hasUpdatesToday && !b.hasUpdatesToday) return -1;
                 if (!a.hasUpdatesToday && b.hasUpdatesToday) return 1;
@@ -132,7 +132,7 @@ export async function GET() {
             });
 
         console.log(`✅ ${formattedFolders.length} pastas carregadas com dados completos`);
-        console.log('📊 Pastas encontradas:', formattedFolders.map(f => `${f.name}: ${f.downloadCount} downloads, atualizado: ${f.lastUpdated}`));
+        console.log('📊 Pastas encontradas:', formattedFolders.map((f: any) => `${f.name}: ${f.downloadCount} downloads, atualizado: ${f.lastUpdated}`));
 
         return NextResponse.json({
             success: true,

@@ -25,7 +25,7 @@ export async function GET() {
         });
 
         // Formatar os dados
-        const formattedGenres = genres.map((genre, index) => ({
+        const formattedGenres = genres.map((genre: any, index: any) => ({
             id: index + 1,
             name: genre.style || 'Unknown',
             slug: (genre.style || 'unknown').toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-%2F-').replace(/--/g, '-'),

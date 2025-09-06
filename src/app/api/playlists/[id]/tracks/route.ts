@@ -73,7 +73,7 @@ export async function GET(
         });
 
         return NextResponse.json({
-            tracks: playlistTracks.map(pt => ({
+            tracks: playlistTracks.map((pt: any) => ({
                 ...pt,
                 track: pt.track
             }))

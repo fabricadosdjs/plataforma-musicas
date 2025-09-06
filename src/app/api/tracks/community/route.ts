@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
         const tracksByDate: { [date: string]: any[] } = {};
         const sortedDates: string[] = [];
 
-        tracks.forEach(track => {
+        tracks.forEach((track: any) => {
             const releaseDate = track.releaseDate ? track.releaseDate.toISOString().split('T')[0] : 'unknown';
 
             if (!tracksByDate[releaseDate]) {
@@ -163,10 +163,10 @@ export async function GET(request: NextRequest) {
         });
 
         // Ordenar datas
-        sortedDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+        sortedDates.sort((a: any, b: any) => new Date(b).getTime() - new Date(a).getTime());
 
         return NextResponse.json({
-            tracks: tracks.map(track => ({
+            tracks: tracks.map((track: any) => ({
                 ...track,
                 downloadCount: (track as any).downloadCount || 0,
                 likeCount: (track as any).likeCount || 0,

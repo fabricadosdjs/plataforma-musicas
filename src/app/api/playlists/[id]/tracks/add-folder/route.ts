@@ -87,7 +87,7 @@ export async function POST(
                 playlistId: playlistId,
                 track: {
                     storageKey: {
-                        in: tracksToAdd.map(t => t.storageKey)
+                        in: tracksToAdd.map((t: any) => t.storageKey)
                     }
                 }
             },
@@ -100,8 +100,8 @@ export async function POST(
             }
         });
 
-        const existingStorageKeys = existingTracks.map(t => t.track?.storageKey).filter(Boolean);
-        const newTracks = tracksToAdd.filter(t => !existingStorageKeys.includes(t.storageKey));
+        const existingStorageKeys = existingTracks.map((t: any) => t.track?.storageKey).filter(Boolean);
+        const newTracks = tracksToAdd.filter((t: any) => !existingStorageKeys.includes(t.storageKey));
 
         if (newTracks.length === 0) {
             return NextResponse.json(

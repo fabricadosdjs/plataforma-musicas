@@ -61,39 +61,39 @@ export async function GET(
 
         // Calcular estatísticas
         const totalTracks = tracks.length;
-        const styles = tracks.map(t => t.track?.style).filter((style): style is string => Boolean(style));
-        const pools = tracks.map(t => t.track?.pool).filter((pool): pool is string => Boolean(pool));
+        const styles = tracks.map((t: any) => t.track?.style).filter((style: any): style is string => Boolean(style));
+        const pools = tracks.map((t: any) => t.track?.pool).filter((pool: any): pool is string => Boolean(pool));
 
         // Estatísticas por estilo
-        const styleStats = styles.reduce((acc: Record<string, number>, style) => {
+        const styleStats = styles.reduce((acc: Record<string, number>, style: any) => {
             acc[style] = (acc[style] || 0) + 1;
             return acc;
         }, {});
 
         // Estatísticas por pool
-        const poolStats = pools.reduce((acc: Record<string, number>, pool) => {
+        const poolStats = pools.reduce((acc: Record<string, number>, pool: any) => {
             acc[pool] = (acc[pool] || 0) + 1;
             return acc;
         }, {});
 
         // Total de downloads
-        const totalDownloads = tracks.reduce((sum, t) => sum + (t.track?.downloads?.length || 0), 0);
+        const totalDownloads = tracks.reduce((sum: any, t: any) => sum + (t.track?.downloads?.length || 0), 0);
 
         // Música mais baixada
-        const mostDownloaded = tracks.reduce((max: { track: any; downloads: number }, t) => {
+        const mostDownloaded = tracks.reduce((max: { track: any; downloads: number }, t: any) => {
             const downloads = t.track?.downloads?.length || 0;
             return downloads > max.downloads ? { track: t.track, downloads } : max;
         }, { track: null, downloads: 0 });
 
         // Estilo mais popular
         const mostPopularStyle = Object.entries(styleStats).reduce((max, [style, count]) =>
-            count > max.count ? { style, count } : max,
+            (count as number) > max.count ? { style, count: count as number } : max,
             { style: '', count: 0 }
         );
 
         // Pool mais popular
         const mostPopularPool = Object.entries(poolStats).reduce((max, [pool, count]) =>
-            count > max.count ? { pool, count } : max,
+            (count as number) > max.count ? { pool, count: count as number } : max,
             { pool: '', count: 0 }
         );
 
@@ -123,12 +123,12 @@ export async function GET(
             styles: {
                 total: Object.keys(styleStats).length,
                 distribution: styleStats,
-                mostPopular: mostPopularStyle.style || 'N/A'
+                mostPopular: (mostPopularStyle as any).style || 'N/A'
             },
             pools: {
                 total: Object.keys(poolStats).length,
                 distribution: poolStats,
-                mostPopular: mostPopularPool.pool || 'N/A'
+                mostPopular: (mostPopularPool as any).pool || 'N/A'
             },
             downloads: {
                 total: totalDownloads,

@@ -52,7 +52,7 @@ export async function GET(
         });
 
         // Transformar os dados para o formato esperado
-        const tracksWithCounts = topTracks.map(track => ({
+        const tracksWithCounts = topTracks.map((track: any) => ({
             id: track.id,
             songName: track.songName,
             artist: track.artist,
@@ -67,7 +67,7 @@ export async function GET(
 
         // Log dos primeiros tracks para debug
         if (tracksWithCounts.length > 0) {
-            console.log('🏆 Primeiros 3 tracks do Top 10:', tracksWithCounts.slice(0, 3).map(t => ({
+            console.log('🏆 Primeiros 3 tracks do Top 10:', tracksWithCounts.slice(0, 3).map((t: any) => ({
                 songName: t.songName,
                 downloads: t.downloadCount,
                 likes: t.likeCount,

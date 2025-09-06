@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
                 isVip: user.is_vip || false,
                 dailyLimit: user.is_vip ? 'Ilimitado' : 100
             },
-            recentDownloads: recentDownloads.map(download => ({
+            recentDownloads: recentDownloads.map((download: any) => ({
                 id: download.id,
                 downloadedAt: download.downloadedAt,
                 track: download.track

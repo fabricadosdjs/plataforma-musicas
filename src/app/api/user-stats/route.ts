@@ -96,17 +96,17 @@ export async function GET(request: NextRequest) {
                 playsCount
             },
             recentActivity: {
-                downloads: recentDownloads.map(d => ({
+                downloads: recentDownloads.map((d: any) => ({
                     id: d.id,
                     downloadedAt: d.downloadedAt,
                     track: d.track
                 })),
-                likes: recentLikes.map(l => ({
+                likes: recentLikes.map((l: any) => ({
                     id: l.id,
                     createdAt: l.createdAt,
                     track: l.track
                 })),
-                plays: recentPlays.map(p => ({
+                plays: recentPlays.map((p: any) => ({
                     id: p.id,
                     playedAt: p.createdAt,
                     track: p.track

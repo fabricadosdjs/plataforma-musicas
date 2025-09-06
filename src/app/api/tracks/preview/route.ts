@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         let fileKey = track.downloadUrl;
         if (fileKey && fileKey.startsWith('https://')) {
             const urlParts = fileKey.split('/');
-            const bucketIndex = urlParts.findIndex(part => part.includes('plataforma-de-musicas'));
+            const bucketIndex = urlParts.findIndex((part: any) => part.includes('plataforma-de-musicas'));
             if (bucketIndex !== -1) {
                 // Pegar apenas o caminho do arquivo, sem parâmetros de query
                 const pathParts = urlParts.slice(bucketIndex + 1);

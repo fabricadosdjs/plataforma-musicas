@@ -69,10 +69,10 @@ export async function GET(request: NextRequest) {
         ]);
 
         // Formatar dados
-        const formattedPlaylists = playlists.map(playlist => ({
+        const formattedPlaylists = playlists.map((playlist: any) => ({
             ...playlist,
             trackCount: playlist._count.tracks,
-            tracks: playlist.tracks.map(pt => ({
+            tracks: playlist.tracks.map((pt: any) => ({
                 ...pt,
                 track: pt.track
             }))

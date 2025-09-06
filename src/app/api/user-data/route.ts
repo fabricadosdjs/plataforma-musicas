@@ -47,10 +47,10 @@ export async function GET(request: NextRequest) {
         });
 
         // Buscar IDs das tracks baixadas nas últimas 24h
-        const downloadedTrackIds = user.downloads.map(d => d.trackId);
+        const downloadedTrackIds = user.downloads.map((d: any) => d.trackId);
 
         // Buscar IDs das tracks curtidas
-        const likedTrackIds = user.likes.map(l => l.trackId);
+        const likedTrackIds = user.likes.map((l: any) => l.trackId);
         console.log('🔍 API /user-data: Likes encontrados:', user.likes);
         console.log('🔍 API /user-data: likedTrackIds:', likedTrackIds);
 

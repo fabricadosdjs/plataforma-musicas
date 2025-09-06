@@ -27,8 +27,8 @@ export async function GET() {
 
         // Formatar resultado
         const formattedStyles = styles
-            .filter(style => style.style && style.style !== 'N/A')
-            .map(style => ({
+            .filter((style: any) => style.style && style.style !== 'N/A')
+            .map((style: any) => ({
                 name: style.style,
                 count: style._count.style
             }));

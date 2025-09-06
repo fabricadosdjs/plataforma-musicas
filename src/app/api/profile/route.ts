@@ -176,17 +176,17 @@ export async function GET(request: NextRequest) {
             planIcon: planInfo.icon,
             planName: planInfo.name,
 
-            recentDownloads: user.downloads.map(d => ({
+            recentDownloads: user.downloads.map((d: any) => ({
                 id: d.id,
                 downloadedAt: d.downloadedAt,
                 track: d.track
             })),
-            recentLikes: user.likes.map(l => ({
+            recentLikes: user.likes.map((l: any) => ({
                 id: l.id,
                 createdAt: l.createdAt,
                 track: l.track
             })),
-            recentPlays: user.plays.map(p => ({
+            recentPlays: user.plays.map((p: any) => ({
                 id: p.id,
                 createdAt: p.createdAt,
                 track: p.track

@@ -48,10 +48,10 @@ export async function GET() {
     });
 
     return NextResponse.json({
-      genres: genres.map(g => g.style).filter(style => style && style.trim() !== ''),
-      artists: artists.map(a => a.artist).filter(artist => artist && artist.trim() !== ''),
-      versions: versions.map(v => v.version).filter(version => version && version.trim() !== ''),
-      pools: pools.map(p => p.pool).filter(pool => pool && pool.trim() !== '')
+      genres: genres.map((g: any) => g.style).filter((style: any) => style && style.trim() !== ''),
+      artists: artists.map((a: any) => a.artist).filter((artist: any) => artist && artist.trim() !== ''),
+      versions: versions.map((v: any) => v.version).filter((version: any) => version && version.trim() !== ''),
+      pools: pools.map((p: any) => p.pool).filter((pool: any) => pool && pool.trim() !== '')
     });
   } catch (error) {
     console.error('Error fetching filters:', error);

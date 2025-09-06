@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
                 totalTracks,
                 communityTracks,
                 sampleTracks,
-                uniqueArtists: uniqueArtists.map(a => a.artist),
-                uniqueUploaders: uniqueUploaders.map(u => u.uploadedBy),
+                uniqueArtists: uniqueArtists.map((a: any) => a.artist),
+                uniqueUploaders: uniqueUploaders.map((u: any) => u.uploadedBy),
                 timestamp: new Date().toISOString()
             }
         });

@@ -98,12 +98,12 @@ export async function POST(req: Request) {
 
       // Criar sets para verificação rápida
       const existingUrls = new Set([
-        ...existingTracks.map(track => track.previewUrl),
-        ...existingTracks.map(track => track.downloadUrl)
+        ...existingTracks.map((track: any) => track.previewUrl),
+        ...existingTracks.map((track: any) => track.downloadUrl)
       ]);
 
       const existingSongs = new Set(
-        existingTracks.map(track => `${track.artist} - ${track.songName}`.toLowerCase())
+        existingTracks.map((track: any) => `${track.artist} - ${track.songName}`.toLowerCase())
       );
 
       // Separar músicas únicas e duplicadas
@@ -213,7 +213,7 @@ export async function POST(req: Request) {
 
       // 5. Prepara os dados para o banco de dados (formato antigo)
       const tracksToCreate = detailsArray.map((detailLine: string, index: number) => {
-        const [artist, songName] = detailLine.split(' - ').map(s => s.trim());
+        const [artist, songName] = detailLine.split(' - ').map((s: any) => s.trim());
 
         return {
           songName: songName || 'Sem Título',

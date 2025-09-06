@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
         // Buscar estatísticas básicas para cada artista
         const artistsWithStats = await Promise.all(
-            artistStats.slice(0, 10).map(async (artist) => {
+            artistStats.slice(0, 10).map(async (artist: any) => {
                 const artistName = artist.artist;
 
                 try {
@@ -110,8 +110,8 @@ export async function GET(request: NextRequest) {
 
         // Ordenar por downloads e retornar top 6
         const topArtists = artistsWithStats
-            .filter(artist => artist && artist.artist) // Filtrar artistas válidos
-            .sort((a, b) => (b.totalDownloads || 0) - (a.totalDownloads || 0))
+            .filter((artist: any) => artist && artist.artist) // Filtrar artistas válidos
+            .sort((a: any, b: any) => (b.totalDownloads || 0) - (a.totalDownloads || 0))
             .slice(0, 6);
 
         return NextResponse.json(topArtists);

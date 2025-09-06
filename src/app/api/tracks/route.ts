@@ -115,13 +115,13 @@ export async function GET(request: NextRequest) {
 
     // Preparar resposta com cache
     const response = {
-      tracks: tracks.map(track => ({
+      tracks: tracks.map((track: any) => ({
         ...track,
         downloadCount: 0, // Será calculado separadamente se necessário
         likeCount: 0, // Será calculado separadamente se necessário
-        isDownloaded: userDownloads.some(d => d.trackId === track.id),
-        isLiked: userLikes.some(l => l.trackId === track.id),
-        downloadedAt: userDownloads.find(d => d.trackId === track.id)?.downloadedAt || null
+        isDownloaded: userDownloads.some((d: any) => d.trackId === track.id),
+        isLiked: userLikes.some((l: any) => l.trackId === track.id),
+        downloadedAt: userDownloads.find((d: any) => d.trackId === track.id)?.downloadedAt || null
       })),
       pagination: {
         currentPage: page,
@@ -134,8 +134,8 @@ export async function GET(request: NextRequest) {
       userData: {
         isVip: user?.is_vip || false,
         downloadsLeft,
-        downloadedTrackIds: userDownloads.map(d => d.trackId),
-        likedTrackIds: userLikes.map(l => l.trackId),
+        downloadedTrackIds: userDownloads.map((d: any) => d.trackId),
+        likedTrackIds: userLikes.map((l: any) => l.trackId),
         dailyDownloadCount: user?.dailyDownloadCount || 0
       },
       cacheInfo: {
