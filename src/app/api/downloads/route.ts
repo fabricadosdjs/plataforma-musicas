@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const downloadedTrackIds = user.downloads.map(download => download.trackId);
+        const downloadedTrackIds = user.downloads.map((download: any) => download.trackId);
 
         return NextResponse.json({
             downloads: downloadedTrackIds,
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
                 dailyDownloadCount: 0, // Não implementado no novo schema
                 dailyLimit: 'Ilimitado', // Todos os usuários logados têm limite ilimitado
                 remainingDownloads: 'Ilimitado',
-                downloadedTrackIds: userDownloads.map(d => Number(d.trackId)),
+                downloadedTrackIds: userDownloads.map((d: any) => Number(d.trackId)),
                 downloadedTracksTime: {}, // Será calculado no frontend
                 isVipUser: true, // Todos os usuários logados são tratados como VIP
                 userId: String(user.id)
