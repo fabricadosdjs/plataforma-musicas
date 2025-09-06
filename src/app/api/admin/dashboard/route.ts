@@ -290,7 +290,7 @@ export async function GET(request: NextRequest) {
                     artist: mostLikedTrack.artist,
                     likeCount: mostLikedTrack._count.likes
                 } : null,
-                recentTracks: recentTracks.map(track => ({
+                recentTracks: recentTracks.map((track: any) => ({
                     id: track.id,
                     songName: track.songName,
                     artist: track.artist,
@@ -306,7 +306,7 @@ export async function GET(request: NextRequest) {
             revenueStats: {
                 totalRevenue: totalRevenue._sum.valor || 0,
                 averageUserValue: averageUserValue._avg.valor || 0,
-                vipPlansDistribution: vipPlansDistribution.map(plan => ({
+                vipPlansDistribution: vipPlansDistribution.map((plan: any) => ({
                     valor: plan.valor,
                     _count: plan._count.valor
                 }))
