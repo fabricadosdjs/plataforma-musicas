@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
         // Log de alguns exemplos para debug
         if (existingTracks.length > 0) {
-            console.log(`🔍 DEBUG: Primeiros 3 tracks no banco:`, existingTracks.slice(0, 3).map(t => ({
+            console.log(`🔍 DEBUG: Primeiros 3 tracks no banco:`, existingTracks.slice(0, 3).map((t: any) => ({
                 id: t.id,
                 artist: t.artist,
                 songName: t.songName,
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
 
         // Cria índice para busca por nome normalizado
         const tracksByNormalizedName = new Set();
-        existingTracks.forEach(track => {
+        existingTracks.forEach((track: any) => {
             const normalizedKey = normalizeTrackName(track.artist || '', track.songName || '', track.version || undefined);
             tracksByNormalizedName.add(normalizedKey);
         });
@@ -92,12 +92,12 @@ export async function GET(request: NextRequest) {
             existingTracks
                 .map((t: any) => t.filename)
                 .filter(Boolean)
-                .map(filename => filename.toLowerCase())
+                .map((filename: any) => filename.toLowerCase())
         );
 
         // Cria índice para busca por artista + música (sem versão)
         const tracksByArtistSong = new Set();
-        existingTracks.forEach(track => {
+        existingTracks.forEach((track: any) => {
             const key = `${track.artist?.toLowerCase().trim()}|${track.songName?.toLowerCase().trim()}`;
             tracksByArtistSong.add(key);
         });
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
         console.log(`  - Artista+Música únicos: ${tracksByArtistSong.size}`);
 
         // Filtra arquivos que ainda não estão no banco (comparação por URL, nome e filename)
-        const importableFiles = audioFiles.filter(file => {
+        const importableFiles = audioFiles.filter((file: any) => {
             console.log(`🔍 Verificando arquivo: ${file.filename}`);
 
             // 1. Verifica por URL exata (mais confiável)
@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
 
         // Log detalhado de comparação
         console.log(`🔍 DEBUG: Comparando arquivos do storage com tracks do banco:`);
-        audioFiles.slice(0, 10).forEach((file, index) => {
+        audioFiles.slice(0, 10).forEach((file: any, index: any) => {
             const parsed = parseAudioFileName(file.filename);
             const normalizedKey = normalizeTrackName(parsed.artist, parsed.songName, parsed.version || undefined);
             const artistSongKey = `${parsed.artist.toLowerCase().trim()}|${parsed.songName.toLowerCase().trim()}`;
@@ -187,8 +187,8 @@ export async function GET(request: NextRequest) {
         });
 
         // Log específico para a pasta problemática
-        const problematicFiles = audioFiles.filter(file => file.key.startsWith(problematicFolder));
-        const problematicTracks = existingTracks.filter(track =>
+        const problematicFiles = audioFiles.filter((file: any) => file.key.startsWith(problematicFolder));
+        const problematicTracks = existingTracks.filter((track: any) =>
             track.filename && track.filename.startsWith(problematicFolder)
         );
 
@@ -198,12 +198,12 @@ export async function GET(request: NextRequest) {
             console.log(`  Tracks no banco: ${problematicTracks.length}`);
 
             console.log(`  Primeiros 5 arquivos no storage:`);
-            problematicFiles.slice(0, 5).forEach((file, index) => {
+            problematicFiles.slice(0, 5).forEach((file: any, index: any) => {
                 console.log(`    ${index + 1}. ${file.filename} (${file.key})`);
             });
 
             console.log(`  Primeiros 5 tracks no banco:`);
-            problematicTracks.slice(0, 5).forEach((track, index) => {
+            problematicTracks.slice(0, 5).forEach((track: any, index: any) => {
                 console.log(`    ${index + 1}. ${track.filename} | ${track.artist} - ${track.songName}`);
             });
 
