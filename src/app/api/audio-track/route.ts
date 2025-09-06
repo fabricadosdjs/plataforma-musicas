@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
             try {
                 // Extrair a chave da URL do Contabo Storage
                 const urlParts = audioUrl.split('/');
-                const bucketIndex = urlParts.findIndex(part => part.includes('plataforma-de-musicas'));
+                const bucketIndex = urlParts.findIndex((part: any) => part.includes('plataforma-de-musicas'));
 
                 if (bucketIndex !== -1) {
                     const pathParts = urlParts.slice(bucketIndex + 1);
