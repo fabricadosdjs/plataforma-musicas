@@ -92,10 +92,10 @@ class AIPrecisionLogger {
         const total = this.logs.length;
         if (total === 0) return { total: 0, averageConfidence: 0, styleDistribution: {} };
 
-        const averageConfidence = this.logs.reduce((sum, log) => sum + log.confidence, 0) / total;
+        const averageConfidence = this.logs.reduce((sum, log: any) => sum + log.confidence, 0) / total;
 
         const styleDistribution: Record<string, number> = {};
-        this.logs.forEach(log => {
+        this.logs.forEach((log: any) => {
             styleDistribution[log.detectedStyle] = (styleDistribution[log.detectedStyle] || 0) + 1;
         });
 
@@ -103,7 +103,7 @@ class AIPrecisionLogger {
             total,
             averageConfidence: Math.round(averageConfidence * 100) / 100,
             styleDistribution,
-            recentDetections: this.logs.slice(-10).map(log => ({
+            recentDetections: this.logs.slice(-10).map((log: any) => ({
                 filename: log.filename,
                 style: log.detectedStyle,
                 confidence: log.confidence
@@ -559,7 +559,7 @@ function parseAudioFileNameAdvanced(filename: string): TrackMetadata {
         if (lowerFilename.includes(style.toLowerCase())) {
             // Capitalizar o estilo encontrado
             extractedStyle = style.split(' ')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
 
             // Remover o estilo do nome do arquivo para não aparecer no título
@@ -599,7 +599,7 @@ function parseAudioFileNameAdvanced(filename: string): TrackMetadata {
             detectedSuffix = match[0].trim().replace(/[()]/g, '');
             // Capitalizar o sufixo
             detectedSuffix = detectedSuffix.split(' ')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
             cleanName = cleanName.replace(pattern, '').trim();
             break;
@@ -780,12 +780,12 @@ export async function POST(request: NextRequest) {
             });
 
             const existingUrls = new Set([
-                ...existingTracks.map(track => track.previewUrl),
-                ...existingTracks.map(track => track.downloadUrl)
+                ...existingTracks.map((track: any) => track.previewUrl),
+                ...existingTracks.map((track: any) => track.downloadUrl)
             ]);
 
             // Filtrar apenas arquivos novos
-            filesToProcess = audioFiles.filter(file => !existingUrls.has(file.url));
+            filesToProcess = audioFiles.filter((file: any) => !existingUrls.has(file.url));
             console.log(`⭐ Novos arquivos para processar: ${filesToProcess.length}`);
         }
 
