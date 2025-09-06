@@ -16,7 +16,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         if (decodedGenreName.includes('-')) {
             const withHyphen = decodedGenreName
                 .split('-')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                 .join('-');
             variations.push(withHyphen);
         }
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             .replace(/-/g, ' ')
             .replace(/&/g, '&')
             .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
             .join(' ');
         variations.push(withSpaces);
 
@@ -37,8 +37,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 .replace('/-/', ' / ')
                 .replace(/\//g, ' / ')
                 .split(/\s+/)
-                .filter(word => word.length > 0)
-                .map(word => word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : word)
+                .filter((word: any) => word.length > 0)
+                .map((word: any) => word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : word)
                 .join(' ');
             variations.push(withSlash);
         }
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         const artists = await prisma.track.findMany({
             where: {
-                OR: variations.map(variation => ({
+                OR: variations.map((variation: any) => ({
                     style: {
                         equals: variation,
                         mode: 'insensitive'
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         });
 
         const uniqueArtists = artists
-            .map(t => t.artist)
+            .map((t: any) => t.artist)
             .filter((artist): artist is string => artist !== null && artist !== undefined);
 
         return NextResponse.json(uniqueArtists);
