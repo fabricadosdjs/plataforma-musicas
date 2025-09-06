@@ -31,7 +31,7 @@ export async function GET(request: Request) {
         });
 
         // Organizar por estilo
-        const tracksByStyle = tracks.reduce((acc: any, track) => {
+        const tracksByStyle = tracks.reduce((acc: any, track: any) => {
             const style = track.style || 'Sem Estilo';
             if (!acc[style]) {
                 acc[style] = [];
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
         }, {});
 
         // Contar total por estilo
-        const styleCounts = Object.keys(tracksByStyle).map(style => ({
+        const styleCounts = Object.keys(tracksByStyle).map((style: any) => ({
             style,
             count: tracksByStyle[style].length
         }));
