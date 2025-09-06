@@ -48,12 +48,12 @@ export async function GET(request: NextRequest) {
             existingTracks
                 .map((t: any) => t.filename)
                 .filter(Boolean)
-                .map(filename => filename.toLowerCase())
+                .map((filename: any) => filename.toLowerCase())
         );
 
         // Cria índice para busca por nome normalizado
         const tracksByNormalizedName = new Map();
-        existingTracks.forEach(track => {
+        existingTracks.forEach((track: any) => {
             const normalizedKey = normalizeTrackName(track.artist || '', track.songName || '', track.version || undefined);
             if (!tracksByNormalizedName.has(normalizedKey)) {
                 tracksByNormalizedName.set(normalizedKey, []);
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         });
 
         // Filtra arquivos que já estão no banco (comparação por URL, filename ou nome normalizado)
-        const existingFiles = audioFiles.filter(file => {
+        const existingFiles = audioFiles.filter((file: any) => {
             // 1. Verifica por URL exata (mais confiável)
             if (existingUrls.has(file.url)) {
                 console.log(`🚫 Arquivo já existe por URL: ${file.filename}`);
@@ -89,9 +89,9 @@ export async function GET(request: NextRequest) {
         });
 
         // Processa informações dos arquivos existentes
-        const processedExistingFiles = existingFiles.map(file => {
+        const processedExistingFiles = existingFiles.map((file: any) => {
             // Encontra o track correspondente no banco (primeiro por URL, depois por nome)
-            let existingTrack = existingTracks.find(track =>
+            let existingTrack = existingTracks.find((track: any) =>
                 track.downloadUrl === file.url || track.previewUrl === file.url
             );
 
