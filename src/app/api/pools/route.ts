@@ -23,8 +23,12 @@ export async function GET() {
             by: ['pool'],
             where: {
                 pool: {
-                    not: null,
-                    not: ''
+                    not: null
+                },
+                AND: {
+                    pool: {
+                        not: ''
+                    }
                 }
             },
             _count: {
