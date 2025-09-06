@@ -69,7 +69,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         const uniquePools = pools
             .map((t: any) => t.pool)
-            .filter((pool): pool is string => pool !== null && pool !== undefined);
+            .filter((pool: any): pool is string => pool !== null && pool !== undefined);
 
         return NextResponse.json(uniquePools);
 
