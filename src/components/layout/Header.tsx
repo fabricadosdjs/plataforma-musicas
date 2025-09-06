@@ -188,21 +188,8 @@ export default function Header() {
             </div>
 
 
-            {/* Right Side - Crate, User, Join */}
+            {/* Right Side - User, Join */}
             <div className="flex items-center space-x-6">
-              <button className="relative flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-900 border border-blue-600 hover:border-blue-400 hover:bg-blue-600 text-blue-300 hover:text-white transition-all duration-300 group shadow-lg hover:shadow-blue-500/25">
-                <div className="relative">
-                  <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-md flex items-center justify-center shadow-lg">
-                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-                    </svg>
-                  </div>
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-lg">
-                    0
-                  </span>
-                </div>
-                <span className="hidden sm:inline font-semibold text-sm tracking-wide group-hover:tracking-wider transition-all duration-300">Your Crate</span>
-              </button>
 
               {session?.user ? (
                 // User is logged in - show user info and dropdown
