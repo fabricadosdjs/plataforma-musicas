@@ -1067,21 +1067,21 @@ export default function HomePage() {
 
         {/* Right Sidebar */}
         <div className="w-full lg:w-2/5 p-4 sm:p-6 lg:pl-4 lg:pr-6">
-          <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/30 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
-            <div className="flex items-center gap-3 mb-6 -mt-4">
-              <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-500 rounded-full"></div>
-              <h3 className="text-xl font-inter font-bold text-white tracking-wide">Most Popular</h3>
+          <div className="bg-gray-900/20 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-800/30">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-1 h-4 bg-gradient-to-b from-orange-500 to-red-500 rounded-full"></div>
+              <h3 className="text-lg font-inter font-bold text-white">Most Popular</h3>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {popularTracks.slice(0, 12).map((track, index) => (
-                <div key={track.id} className="flex items-center gap-3 p-3 bg-gray-800/30 hover:bg-gray-700/40 rounded-lg transition-all duration-200 border border-gray-700/30 hover:border-gray-600/50">
+                <div key={track.id} className="flex items-center gap-2 p-2 bg-gray-800/20 hover:bg-gray-700/30 rounded-lg transition-all duration-200">
                   {/* Número da posição */}
-                  <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                  <div className="flex-shrink-0 w-5 h-5 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">{index + 1}</span>
                   </div>
 
                   {/* Capa da música com botão de play */}
-                  <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden relative group">
+                  <div className="flex-shrink-0 w-8 h-8 rounded overflow-hidden relative group">
                     <OptimizedImage
                       track={track}
                       className="w-full h-full object-cover"
@@ -1098,31 +1098,26 @@ export default function HomePage() {
                       title={currentTrack?.id === track.id && isPlaying ? 'Pausar' : 'Tocar'}
                     >
                       {currentTrack?.id === track.id && isPlaying ? (
-                        <Pause className="w-4 h-4 text-white" />
+                        <Pause className="w-3 h-3 text-white" />
                       ) : (
-                        <Play className="w-4 h-4 text-white ml-0.5" />
+                        <Play className="w-3 h-3 text-white ml-0.5" />
                       )}
                     </button>
                   </div>
 
                   {/* Informações da música */}
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-white font-inter font-semibold text-sm truncate" title={track.songName}>
+                    <h4 className="text-white font-inter font-medium text-xs truncate" title={track.songName}>
                       {track.songName}
                     </h4>
-                    <p className="text-gray-300 font-inter font-normal text-xs truncate">
+                    <p className="text-gray-400 font-inter text-xs truncate">
                       {track.artist}
                     </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {track.style && (
-                        <span className="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded text-xs font-inter font-medium">
-                          {track.style}
-                        </span>
-                      )}
-                      <span className="text-gray-400 text-xs">
-                        {track.downloadCount} downloads
+                    {track.style && (
+                      <span className="bg-red-500/20 text-red-300 px-1 py-0.5 rounded text-xs font-inter">
+                        {track.style}
                       </span>
-                    </div>
+                    )}
                   </div>
 
                   {/* Botões de Download e Like */}
@@ -1131,8 +1126,7 @@ export default function HomePage() {
                     <button
                       onClick={() => handleDownload(track)}
                       disabled={downloadingTracks.has(track.id)}
-                      style={{ fontSize: '11px' }}
-                      className={`px-2 py-1 rounded font-inter font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${downloadedTracks.has(track.id)
+                      className={`p-1.5 rounded font-inter transition-all duration-200 hover:scale-105 flex items-center ${downloadedTracks.has(track.id)
                         ? 'bg-green-600 text-white hover:bg-green-700'
                         : downloadingTracks.has(track.id)
                           ? 'bg-yellow-600 text-white'
@@ -1147,32 +1141,27 @@ export default function HomePage() {
                       }
                     >
                       {downloadingTracks.has(track.id) ? (
-                        <div className="w-2 h-2 border border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Download className="w-2 h-2" />
+                        <Download className="w-3 h-3" />
                       )}
-                      {downloadedTracks.has(track.id) ? 'Baixado' : 'Download'}
                     </button>
 
                     {/* Botão Like */}
                     <button
                       onClick={() => handleLike(track)}
                       disabled={likingTracks.has(track.id)}
-                      style={{ fontSize: '11px' }}
-                      className={`px-2 py-1 rounded font-inter font-medium transition-all duration-200 hover:scale-105 flex items-center gap-1 ${likedTracks.has(track.id)
+                      className={`p-1.5 rounded font-inter transition-all duration-200 hover:scale-105 flex items-center ${likedTracks.has(track.id)
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
                         : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
                         }`}
                       title={likedTracks.has(track.id) ? 'Descurtir' : 'Curtir'}
                     >
                       {likingTracks.has(track.id) ? (
-                        <div className="w-2 h-2 border border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <svg className="w-2 h-2" fill={likedTracks.has(track.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
+                        <Heart className={`w-3 h-3 ${likedTracks.has(track.id) ? 'fill-current' : ''}`} />
                       )}
-                      {likedTracks.has(track.id) ? 'Curtido' : 'Curtir'}
                     </button>
                   </div>
                 </div>

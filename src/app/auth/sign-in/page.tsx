@@ -2,7 +2,6 @@
 'use client';
 
 import { MessageCircle, Lock } from 'lucide-react';
-import NewFooter from '@/components/layout/NewFooter';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -36,7 +35,7 @@ export default function SignInPage() {
           setError(result.error);
         }
       } else {
-        router.push('/new#/page=1');
+        router.push('/');
         router.refresh();
       }
     } catch (err) {
@@ -108,15 +107,6 @@ export default function SignInPage() {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-4">
-          <p className="text-gray-500 text-xs">
-            © 2025 Nexor Records. Acesso exclusivo para membros VIP.
-          </p>
-        </div>
-
-        {/* Novo Footer */}
-        <NewFooter />
       </div>
     </div>
   );

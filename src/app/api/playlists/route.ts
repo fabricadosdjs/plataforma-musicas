@@ -6,12 +6,16 @@ import { PlaylistFilters } from '@/types/playlist';
 
 export async function GET(request: NextRequest) {
     try {
+        console.log('🔍 API Playlists: Iniciando requisição...');
+
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '20');
         const search = searchParams.get('search') || '';
         const isPublic = searchParams.get('isPublic');
         const isFeatured = searchParams.get('isFeatured');
+
+        console.log('📋 Parâmetros recebidos:', { page, limit, search, isPublic, isFeatured });
 
         const filters: any = {};
 
@@ -33,7 +37,16 @@ export async function GET(request: NextRequest) {
 
         const offset = (page - 1) * limit;
 
+        console.log('🔍 Filtros aplicados:', filters);
+        console.log('📄 Paginação:', { page, limit, offset });
+
+        // Testar conexão primeiro
+        console.log('🔌 Testando conexão com banco...');
+        await prisma.$connect();
+        console.log('✅ Conexão estabelecida');
+
         // Buscar playlists com contagem de tracks
+        console.log('🔍 Buscando playlists...');
         const [playlists, totalCount] = await Promise.all([
             prisma.playlist.findMany({
                 where: filters,
@@ -68,6 +81,9 @@ export async function GET(request: NextRequest) {
             prisma.playlist.count({ where: filters })
         ]);
 
+        console.log(`✅ Playlists encontradas: ${playlists.length}`);
+        console.log(`📊 Total no banco: ${totalCount}`);
+
         // Formatar dados
         const formattedPlaylists = playlists.map((playlist: any) => ({
             ...playlist,
@@ -80,7 +96,8 @@ export async function GET(request: NextRequest) {
 
         const totalPages = Math.ceil(totalCount / limit);
 
-        return NextResponse.json({
+        console.log('📤 Enviando resposta...');
+        const response = {
             playlists: formattedPlaylists,
             pagination: {
                 currentPage: page,
@@ -89,12 +106,21 @@ export async function GET(request: NextRequest) {
                 hasNextPage: page < totalPages,
                 hasPrevPage: page > 1
             }
-        });
+        };
+
+        return NextResponse.json(response);
 
     } catch (error) {
-        console.error('Error fetching playlists:', error);
+        console.error('❌ Error fetching playlists:', error);
+        console.error('Stack trace:', error.stack);
+
+        // Retornar erro mais detalhado para debug
         return NextResponse.json(
-            { error: 'Erro ao buscar playlists' },
+            {
+                error: 'Erro ao buscar playlists',
+                details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            },
             { status: 500 }
         );
     }

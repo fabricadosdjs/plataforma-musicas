@@ -396,6 +396,18 @@ export default function Header() {
                 </div>
               </div>
 
+              {/* Esqueci minha senha */}
+              <div className="text-right">
+                <a
+                  href="https://wa.me/5551935052274?text=Olá! Esqueci minha senha e preciso recuperar o acesso à minha conta VIP na Plataforma de Músicas."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors duration-200"
+                >
+                  Esqueci minha senha
+                </a>
+              </div>
+
               {/* Submit Button */}
               <button
                 type="submit"

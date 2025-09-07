@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import Image from 'next/image';
+import Link from 'next/link';
 import {
     Play,
     Pause,
@@ -37,6 +38,14 @@ export default function PlaylistPage({ params }: PlaylistPageProps) {
     const { data: session } = useSession();
     const router = useRouter();
     const { currentTrack, isPlaying, playTrack, togglePlayPause } = useGlobalPlayer();
+
+    // Função para gerar slug do gênero
+    const generateGenreSlug = (style: string) => {
+        return style.toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/\//g, '-%2F-')
+            .replace(/--/g, '-');
+    };
 
     const [playlist, setPlaylist] = useState<Playlist | null>(null);
     const [loading, setLoading] = useState(true);
@@ -974,16 +983,25 @@ export default function PlaylistPage({ params }: PlaylistPageProps) {
                                                     <p className="text-gray-400 text-sm truncate font-inter">
                                                         {track.artist}
                                                     </p>
-                                                    <div className="flex items-center gap-2 mt-1">
+                                                    {/* Tags de estilo e pool destacadas */}
+                                                    <div className="flex gap-1 flex-wrap mt-1">
                                                         {track.style && (
-                                                            <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded font-inter border border-gray-600">
+                                                            <Link
+                                                                href={`/genres/${generateGenreSlug(track.style)}`}
+                                                                className="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded font-inter font-medium text-xs hover:bg-red-500/30 hover:text-red-200 transition-all duration-200 border border-red-500/30"
+                                                                title={`Ver todas as músicas de ${track.style}`}
+                                                            >
                                                                 {track.style}
-                                                            </span>
+                                                            </Link>
                                                         )}
                                                         {track.pool && (
-                                                            <span className="text-xs bg-red-900/30 text-red-300 px-2 py-1 rounded font-inter border border-red-700/50">
+                                                            <Link
+                                                                href={`/pools/${track.pool.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '')}`}
+                                                                className="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded font-inter font-medium text-xs hover:bg-blue-500/30 hover:text-blue-200 transition-all duration-200 border border-blue-500/30"
+                                                                title={`Ver todas as músicas da pool ${track.pool}`}
+                                                            >
                                                                 {track.pool}
-                                                            </span>
+                                                            </Link>
                                                         )}
                                                     </div>
                                                 </div>

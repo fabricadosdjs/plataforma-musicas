@@ -23,16 +23,33 @@ export default function PlaylistsPage() {
     const fetchPlaylists = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/playlists?limit=100');
-            const data = await response.json();
+
+            // Tentar API principal primeiro
+            let response = await fetch('/api/playlists?limit=100');
+            let data = await response.json();
 
             if (response.ok) {
                 setPlaylists(data.playlists || []);
+                console.log('✅ Playlists carregadas via API principal');
             } else {
-                console.error('Erro ao carregar playlists:', data.error);
+                console.error('❌ Erro na API principal:', data.error);
+
+                // Tentar API de fallback
+                console.log('🔄 Tentando API de fallback...');
+                response = await fetch('/api/playlists/fallback?limit=100');
+                data = await response.json();
+
+                if (response.ok) {
+                    setPlaylists(data.playlists || []);
+                    console.log('✅ Playlists carregadas via API de fallback');
+                } else {
+                    console.error('❌ Erro na API de fallback:', data.error);
+                    setPlaylists([]);
+                }
             }
         } catch (error) {
-            console.error('Error fetching playlists:', error);
+            console.error('❌ Error fetching playlists:', error);
+            setPlaylists([]);
         } finally {
             setLoading(false);
         }
