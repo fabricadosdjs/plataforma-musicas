@@ -103,7 +103,7 @@ export const ErrorRetryButton: React.FC<{
             </div>
 
             <p className="text-sm text-red-500 dark:text-red-400 text-center max-w-md">
-                {error.message || 'Ocorreu um erro inesperado ao carregar as músicas.'}
+                {(error as Error).message || 'Ocorreu um erro inesperado ao carregar as músicas.'}
             </p>
 
             <button

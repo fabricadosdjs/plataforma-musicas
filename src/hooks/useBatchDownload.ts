@@ -278,8 +278,8 @@ export function useBatchDownload() {
                         } catch (error: any) {
                             if (error.name === 'AbortError') break;
 
-                            lastErrorMessage = error.message || 'Erro de rede';
-                            console.error(`❌ Erro de rede: ${track.songName} (tentativa ${attempts}/${maxAttempts})`, error.message);
+                            lastErrorMessage = (error as Error).message || 'Erro de rede';
+                            console.error(`❌ Erro de rede: ${track.songName} (tentativa ${attempts}/${maxAttempts})`, (error as Error).message);
 
                             // Se não é a última tentativa, aguarda antes de tentar novamente
                             if (attempts < maxAttempts) {

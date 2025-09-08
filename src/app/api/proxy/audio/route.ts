@@ -136,14 +136,14 @@ export async function GET(request: NextRequest) {
         } else if (error.name === 'InvalidAccessKeyId' || error.name === 'SignatureDoesNotMatch') {
             message = 'Credenciais de acesso inválidas';
             status = 401;
-        } else if (error.code === 'NetworkingError') {
+        } else if ((error as Error).code === 'NetworkingError') {
             message = 'Erro de rede ao acessar o storage';
             status = 503;
         }
 
         return NextResponse.json({
             error: message,
-            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
         }, { status });
     }
 }

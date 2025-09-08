@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
             {
                 success: false,
                 error: 'Erro interno do servidor',
-                details: error instanceof Error ? error.message : 'Erro desconhecido'
+                details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
             },
             { status: 500 }
         );

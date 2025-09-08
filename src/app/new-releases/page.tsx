@@ -773,7 +773,7 @@ export default function NewReleasesPage() {
       }
     } catch (error) {
       console.error('❌ Erro no like:', error);
-      toast.error(`❌ Erro ao curtir música: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      toast.error(`❌ Erro ao curtir música: ${error instanceof Error ? (error as Error).message : 'Erro desconhecido'}`);
     } finally {
       markAsNotLiking(track.id);
     }

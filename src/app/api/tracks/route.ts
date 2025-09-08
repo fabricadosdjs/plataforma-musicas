@@ -153,13 +153,13 @@ export async function GET(request: NextRequest) {
 
     // Log mais detalhado do erro
     if (error instanceof Error) {
-      console.error('❌ Mensagem de erro:', error.message);
-      console.error('❌ Stack trace:', error.stack);
+      console.error('❌ Mensagem de erro:', (error as Error).message);
+      console.error('❌ Stack trace:', (error as Error).stack);
     }
 
     return NextResponse.json({
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
+      details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
     }, { status: 500 });
   }
 }

@@ -97,16 +97,16 @@ export const GlobalPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     songName: track.songName
                 });
                 showToast('⏱️ Timeout ao obter URL de áudio. Tente novamente.', 'error');
-            } else if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+            } else if (error instanceof TypeError && (error as Error).message.includes('Failed to fetch')) {
                 AudioDebugger.log('error', 'Erro de conexão ao chamar a API audio-track', {
-                    error: error.message,
+                    error: (error as Error).message,
                     trackId: track.id,
                     songName: track.songName
                 });
                 showToast('🌐 Erro de conexão. Verifique sua internet.', 'error');
             } else {
                 AudioDebugger.log('error', 'Erro de rede ao chamar a API audio-track', {
-                    error: error instanceof Error ? error.message : String(error),
+                    error: error instanceof Error ? (error as Error).message : String(error),
                     trackId: track.id,
                     songName: track.songName
                 });

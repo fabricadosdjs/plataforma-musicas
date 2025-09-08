@@ -75,7 +75,7 @@ export async function GET() {
         return NextResponse.json({
             success: false,
             message: 'Erro interno do servidor',
-            error: error instanceof Error ? error.message : 'Erro desconhecido'
+            error: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
         }, { status: 500 });
     }
 }

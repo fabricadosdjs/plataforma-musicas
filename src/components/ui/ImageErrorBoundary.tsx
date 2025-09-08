@@ -169,7 +169,7 @@ export class ImageErrorBoundary extends Component<Props, State> {
         }
 
         // Verificar se é um erro relacionado a imagem
-        if (error.message.includes('drawImage') || error.message.includes('CanvasRenderingContext2D')) {
+        if ((error as Error).message.includes('drawImage') || (error as Error).message.includes('CanvasRenderingContext2D')) {
             console.warn('Erro de imagem detectado - provavelmente causado por extensão do navegador');
 
             // Tentar limpar elementos de imagem problemáticos

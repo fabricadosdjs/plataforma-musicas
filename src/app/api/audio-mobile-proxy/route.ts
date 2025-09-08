@@ -116,13 +116,13 @@ export async function GET(request: NextRequest) {
         if (error instanceof Error) {
             if (error.name === 'AbortError') {
                 return NextResponse.json({ error: 'Timeout ao buscar áudio' }, { status: 408 });
-            } else if (error.message.includes('fetch')) {
+            } else if ((error as Error).message.includes('fetch')) {
                 return NextResponse.json({ error: 'Erro ao buscar áudio remoto' }, { status: 502 });
-            } else if (error.message.includes('401')) {
+            } else if ((error as Error).message.includes('401')) {
                 return NextResponse.json({ error: 'URL não autorizada' }, { status: 401 });
-            } else if (error.message.includes('403')) {
+            } else if ((error as Error).message.includes('403')) {
                 return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-            } else if (error.message.includes('404')) {
+            } else if ((error as Error).message.includes('404')) {
                 return NextResponse.json({ error: 'Arquivo não encontrado' }, { status: 404 });
             }
         }

@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
         // Tratamento de erro otimizado
         if (error instanceof Error) {
-            if (error.message.includes('timeout') || error.message.includes('aborted')) {
+            if ((error as Error).message.includes('timeout') || (error as Error).message.includes('aborted')) {
                 return NextResponse.json({
                     error: 'Timeout na consulta. Tente novamente.',
                     code: 'TIMEOUT'

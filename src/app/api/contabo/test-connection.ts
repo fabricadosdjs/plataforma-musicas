@@ -20,7 +20,7 @@ export async function testContaboConnection() {
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: error instanceof Error ? (error as Error).message : String(error),
     };
   }
 }

@@ -53,7 +53,7 @@ export default function PaginatedMusicList({ endpoint, pageSize = 60, showDate =
     return (
         <div>
             {error && (
-                <div className="mb-4 text-red-400">{error.message}</div>
+                <div className="mb-4 text-red-400">{(error as Error).message}</div>
             )}
             <MusicList
                 key={`musiclist-page-${currentPage}-tracks-${tracks.length}-update-${forceUpdateKey}-first-${tracks[0]?.id || 'empty'}`}

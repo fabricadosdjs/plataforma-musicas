@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         console.error('❌ Erro na API de likes:', error);
         return NextResponse.json({
             error: 'Erro interno do servidor',
-            details: error instanceof Error ? error.message : 'Erro desconhecido'
+            details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
         }, { status: 500 });
     }
 }

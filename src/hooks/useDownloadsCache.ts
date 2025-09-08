@@ -211,7 +211,7 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
                 console.error('❌ Erro ao atualizar cache:', error);
 
                 // Tratamento específico para timeouts com retry automático
-                if (error instanceof Error && error.message.includes('timeout')) {
+                if (error instanceof Error && (error as Error).message.includes('timeout')) {
                     if (retryCount < 2) { // Máximo 3 tentativas (0, 1, 2)
                         console.warn(`⏰ Timeout detectado, tentando novamente (${retryCount + 1}/3)...`);
                         // Aguardar um pouco antes de tentar novamente
@@ -224,7 +224,7 @@ export const useDownloadsCache = (): UseDownloadsCacheReturn => {
                     }
                 } else {
                     if (error instanceof Error) {
-                        setError(error.message || 'Erro desconhecido');
+                        setError((error as Error).message || 'Erro desconhecido');
                     } else {
                         setError(String(error) || 'Erro desconhecido');
                     }

@@ -144,15 +144,15 @@ export async function GET(
 
         if (error instanceof Error) {
             console.error('🔍 Detalhes do erro:', {
-                message: error.message,
-                stack: error.stack,
+                message: (error as Error).message,
+                stack: (error as Error).stack,
             });
         }
 
         return NextResponse.json(
             {
                 error: 'Erro interno do servidor',
-                details: error instanceof Error ? error.message : 'Erro desconhecido'
+                details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
             },
             { status: 500 }
         );

@@ -72,7 +72,7 @@ export const useAudioCompatibility = (): UseAudioCompatibilityReturn => {
                 codec: 'unknown',
                 contentType: 'unknown',
                 recommendations: ['Verificar conectividade de rede', 'Verificar se a URL está acessível'],
-                warnings: [`Erro na verificação: ${error instanceof Error ? error.message : 'Desconhecido'}`]
+                warnings: [`Erro na verificação: ${error instanceof Error ? (error as Error).message : 'Desconhecido'}`]
             };
 
             setLastResult(errorResult);
@@ -137,7 +137,7 @@ export const useAudioCompatibility = (): UseAudioCompatibilityReturn => {
         } catch (error) {
             return {
                 isSupported: false,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? (error as Error).message : 'Unknown error'
             };
         }
     };

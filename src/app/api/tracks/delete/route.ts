@@ -77,7 +77,7 @@ export async function DELETE(request: NextRequest) {
       }
     } catch (error) {
       console.error(`❌ Erro ao excluir do storage:`, error);
-      storageError = error instanceof Error ? error.message : 'Erro desconhecido';
+      storageError = error instanceof Error ? (error as Error).message : 'Erro desconhecido';
     }
 
     // Excluir do banco de dados
@@ -105,7 +105,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: 'Erro interno do servidor',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
+      details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
     }, { status: 500 });
   }
 } 

@@ -575,7 +575,7 @@ const EditUserPage = () => {
             }
         } catch (error) {
             console.error('Erro ao atualizar usuário:', error);
-            setMessage({ type: 'error', text: `Erro ao atualizar usuário: ${error instanceof Error ? error.message : 'Erro desconhecido'}` });
+            setMessage({ type: 'error', text: `Erro ao atualizar usuário: ${error instanceof Error ? (error as Error).message : 'Erro desconhecido'}` });
         } finally {
             setSaving(false);
         }

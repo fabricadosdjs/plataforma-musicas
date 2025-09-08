@@ -45,7 +45,7 @@ export async function testAudioUrl(url: string): Promise<{
         const result = {
             url,
             isAccessible: false,
-            error: error instanceof Error ? error.message : 'Erro desconhecido',
+            error: error instanceof Error ? (error as Error).message : 'Erro desconhecido',
             responseTime: undefined,
             statusCode: undefined
         };
@@ -87,8 +87,8 @@ export function logAudioElementState(audio: HTMLAudioElement, context: string = 
         volume: audio.volume,
         muted: audio.muted,
         error: audio.error ? {
-            code: audio.error.code,
-            message: audio.error.message
+            code: audio.(error as Error).code,
+            message: audio.(error as Error).message
         } : null,
         sources: Array.from(audio.querySelectorAll('source')).map(s => ({
             src: s.src,

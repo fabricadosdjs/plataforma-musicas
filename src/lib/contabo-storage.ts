@@ -148,7 +148,7 @@ export class ContaboStorage {
 
         } catch (error) {
             console.error('🎵 ContaboStorage: Erro ao gerar URL assinada:', {
-                error: error instanceof Error ? error.message : error,
+                error: error instanceof Error ? (error as Error).message : error,
                 key,
                 bucketName: this.bucketName,
                 endpoint: this.endpoint
@@ -266,7 +266,7 @@ export class ContaboStorage {
             console.log(`✅ Arquivo excluído com sucesso: ${key}`, result);
         } catch (error) {
             console.error(`❌ Erro ao deletar arquivo ${key}:`, error);
-            throw new Error(`Falha ao deletar arquivo: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+            throw new Error(`Falha ao deletar arquivo: ${error instanceof Error ? (error as Error).message : 'Erro desconhecido'}`);
         }
     }
 

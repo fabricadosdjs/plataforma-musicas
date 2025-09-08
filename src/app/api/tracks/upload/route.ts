@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
         console.error('❌ Erro no upload de música:', error);
         console.error('📋 Detalhes do erro:', {
             name: error instanceof Error ? error.name : 'Unknown',
-            message: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : 'No stack trace',
+            message: error instanceof Error ? (error as Error).message : 'Unknown error',
+            stack: error instanceof Error ? (error as Error).stack : 'No stack trace',
             cause: error instanceof Error ? error.cause : 'No cause'
         });
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
             {
                 success: false,
                 error: 'Erro durante o upload da música',
-                details: error instanceof Error ? error.message : 'Erro desconhecido'
+                details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
             },
             { status: 500 }
         );
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
             {
                 success: false,
                 error: 'Erro ao buscar músicas',
-                details: error instanceof Error ? error.message : 'Erro desconhecido'
+                details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
             },
             { status: 500 }
         );

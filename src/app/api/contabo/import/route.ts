@@ -304,7 +304,7 @@ export async function GET(request: NextRequest) {
             {
                 success: false,
                 error: 'Erro ao analisar arquivos para importação',
-                details: error instanceof Error ? error.message : 'Erro desconhecido'
+                details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
             },
             { status: 500 }
         );
@@ -427,7 +427,7 @@ export async function POST(request: NextRequest) {
 
             } catch (error) {
                 results.failed++;
-                const errorMsg = `Erro ao importar ${fileData.file?.filename || 'arquivo'}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`;
+                const errorMsg = `Erro ao importar ${fileData.file?.filename || 'arquivo'}: ${error instanceof Error ? (error as Error).message : 'Erro desconhecido'}`;
                 results.errors.push(errorMsg);
                 console.error(errorMsg);
             }
@@ -447,7 +447,7 @@ export async function POST(request: NextRequest) {
             {
                 success: false,
                 error: 'Erro durante a importação',
-                details: error instanceof Error ? error.message : 'Erro desconhecido'
+                details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
             },
             { status: 500 }
         );

@@ -290,7 +290,7 @@ export default function NewUserPage() {
                 router.push('/admin/users?message=user-created');
             } else {
                 const error = await response.json();
-                setErrors({ submit: error.message || 'Erro ao criar usuário' });
+                setErrors({ submit: (error as Error).message || 'Erro ao criar usuário' });
             }
         } catch (error) {
             setErrors({ submit: 'Erro de conexão' });

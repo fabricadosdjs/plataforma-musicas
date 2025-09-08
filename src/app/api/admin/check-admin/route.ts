@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             success: false,
             error: 'Erro interno do servidor',
-            details: error instanceof Error ? error.message : 'Erro desconhecido'
+            details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
         }, { status: 500 });
     }
 }
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: false,
             error: 'Erro interno do servidor',
-            details: error instanceof Error ? error.message : 'Erro desconhecido'
+            details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
         }, { status: 500 });
     }
 } 

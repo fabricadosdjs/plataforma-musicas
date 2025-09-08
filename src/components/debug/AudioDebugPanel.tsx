@@ -32,7 +32,7 @@ export default function AudioDebugPanel({ track, className = '' }: AudioDebugPan
                 setTestResults(prev => [...prev, `❌ ${label}: HTTP ${response.status}`]);
             }
         } catch (error) {
-            setTestResults(prev => [...prev, `❌ ${label}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`]);
+            setTestResults(prev => [...prev, `❌ ${label}: ${error instanceof Error ? (error as Error).message : 'Erro desconhecido'}`]);
         }
     };
 

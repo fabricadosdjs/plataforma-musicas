@@ -72,8 +72,8 @@ export async function GET(request: NextRequest) {
         // Log mais detalhado do erro
         if (error instanceof Error) {
             console.error('🔍 Detalhes do erro:', {
-                message: error.message,
-                stack: error.stack,
+                message: (error as Error).message,
+                stack: (error as Error).stack,
                 name: error.name
             });
         }

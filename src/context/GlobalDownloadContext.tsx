@@ -288,7 +288,7 @@ export const GlobalDownloadProvider: React.FC<{ children: React.ReactNode }> = (
                         ? {
                             ...item,
                             status: 'failed',
-                            error: error instanceof Error ? error.message : 'Erro desconhecido',
+                            error: error instanceof Error ? (error as Error).message : 'Erro desconhecido',
                             progress: 0
                         }
                         : item
@@ -305,7 +305,7 @@ export const GlobalDownloadProvider: React.FC<{ children: React.ReactNode }> = (
                         }
                         : batch
                 ));
-                showToast(`Erro ao baixar ${track.songName}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`, 'error');
+                showToast(`Erro ao baixar ${track.songName}: ${error instanceof Error ? (error as Error).message : 'Erro desconhecido'}`, 'error');
             }
         } finally {
             // Remover o controller deste batch

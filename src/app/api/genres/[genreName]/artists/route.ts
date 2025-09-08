@@ -77,7 +77,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         console.error('❌ Erro na API /api/genres/[genreName]/artists GET:', error);
         return NextResponse.json({
             error: 'Internal server error',
-            details: error instanceof Error ? error.message : 'Erro desconhecido'
+            details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
         }, { status: 500 });
     }
 }

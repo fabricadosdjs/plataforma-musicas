@@ -56,7 +56,7 @@ async function downloadWithYtDlp(url: string, outputPath: string, quality: strin
 
             exec(command, (error, stdout, stderr) => {
                 if (error) {
-                    console.error(`❌ Erro no ${tool}:`, error.message);
+                    console.error(`❌ Erro no ${tool}:`, (error as Error).message);
                     console.error(`❌ stderr:`, stderr);
                     resolve(false);
                 } else {
@@ -769,7 +769,7 @@ async function verifyActualBitrate(filePath: string, expectedQuality: string): P
         });
 
         ffprobe.on('error', (error) => {
-            console.warn('⚠️ Não foi possível verificar bitrate:', error.message);
+            console.warn('⚠️ Não foi possível verificar bitrate:', (error as Error).message);
         });
 
     } catch (error) {

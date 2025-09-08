@@ -143,7 +143,7 @@ export const testAudioConnectivity = async (url: string): Promise<{
         }
     } catch (error) {
         const responseTime = Date.now() - startTime;
-        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        const errorMessage = error instanceof Error ? (error as Error).message : 'Erro desconhecido';
 
         AudioDebugger.log('error', 'Falha no teste de conectividade', {
             error: errorMessage,

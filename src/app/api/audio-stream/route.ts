@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
                 console.error('🎵 AudioStream: Erro ao acessar Contabo:', error);
                 return NextResponse.json({
                     error: 'Erro de conexão com Contabo',
-                    details: error instanceof Error ? error.message : 'Unknown error'
+                    details: error instanceof Error ? (error as Error).message : 'Unknown error'
                 }, { status: 500 });
             }
         } else {
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
                 console.error('🎵 AudioStream: Erro ao acessar URL:', error);
                 return NextResponse.json({
                     error: 'Erro de conexão',
-                    details: error instanceof Error ? error.message : 'Unknown error'
+                    details: error instanceof Error ? (error as Error).message : 'Unknown error'
                 }, { status: 500 });
             }
         }
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
         console.error('🎵 AudioStream: Erro interno:', error);
         return NextResponse.json({
             error: 'Erro interno do servidor',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            details: error instanceof Error ? (error as Error).message : 'Unknown error'
         }, { status: 500 });
     }
 }
@@ -154,7 +154,7 @@ export async function HEAD(request: NextRequest) {
             console.error('🎵 AudioStream: Erro no HEAD:', error);
             return NextResponse.json({
                 error: 'Erro de conexão',
-                details: error instanceof Error ? error.message : 'Unknown error'
+                details: error instanceof Error ? (error as Error).message : 'Unknown error'
             }, { status: 500 });
         }
 
@@ -162,7 +162,7 @@ export async function HEAD(request: NextRequest) {
         console.error('🎵 AudioStream: Erro interno no HEAD:', error);
         return NextResponse.json({
             error: 'Erro interno do servidor',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            details: error instanceof Error ? (error as Error).message : 'Unknown error'
         }, { status: 500 });
     }
 }

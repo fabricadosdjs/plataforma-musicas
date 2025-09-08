@@ -35,7 +35,7 @@ export const VipStatusDebugger: React.FC = () => {
             }
         } catch (error) {
             console.error('❌ Erro ao forçar atualização VIP:', error);
-            setResult(`❌ Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+            setResult(`❌ Erro: ${error instanceof Error ? (error as Error).message : 'Erro desconhecido'}`);
         } finally {
             setIsLoading(false);
         }

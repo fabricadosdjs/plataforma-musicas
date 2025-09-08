@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
                         key: duplicate.storageFile.key,
                         filename: duplicate.storageFile.filename,
                         success: false,
-                        error: error instanceof Error ? error.message : 'Erro desconhecido'
+                        error: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
                     };
                 }
             });
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: false,
             error: 'Erro interno na remoção de duplicatas',
-            details: error instanceof Error ? error.message : 'Erro desconhecido'
+            details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
         }, { status: 500 });
     }
 }

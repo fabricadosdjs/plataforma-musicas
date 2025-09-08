@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
             console.error('🎵 AudioDirect: Erro de conexão:', error);
             return NextResponse.json({
                 error: 'Erro de conexão com URL de áudio',
-                details: error instanceof Error ? error.message : 'Unknown error'
+                details: error instanceof Error ? (error as Error).message : 'Unknown error'
             }, { status: 500 });
         }
 
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         console.error('🎵 AudioDirect: Erro interno:', error);
         return NextResponse.json({
             error: 'Erro interno do servidor',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            details: error instanceof Error ? (error as Error).message : 'Unknown error'
         }, { status: 500 });
     }
 }
@@ -109,7 +109,7 @@ export async function HEAD(request: NextRequest) {
             console.error('🎵 AudioDirect: Erro no HEAD:', error);
             return NextResponse.json({
                 error: 'Erro de conexão',
-                details: error instanceof Error ? error.message : 'Unknown error'
+                details: error instanceof Error ? (error as Error).message : 'Unknown error'
             }, { status: 500 });
         }
 
@@ -117,7 +117,7 @@ export async function HEAD(request: NextRequest) {
         console.error('🎵 AudioDirect: Erro interno no HEAD:', error);
         return NextResponse.json({
             error: 'Erro interno do servidor',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            details: error instanceof Error ? (error as Error).message : 'Unknown error'
         }, { status: 500 });
     }
 }

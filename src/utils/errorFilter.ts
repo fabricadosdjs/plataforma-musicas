@@ -23,15 +23,15 @@ export const errorFilter = {
 
         if (error instanceof Error) {
             // Ignorar erros de rede temporários
-            if (error.message.includes('NetworkError') ||
-                error.message.includes('fetch') ||
-                error.message.includes('AbortError')) {
+            if ((error as Error).message.includes('NetworkError') ||
+                (error as Error).message.includes('fetch') ||
+                (error as Error).message.includes('AbortError')) {
                 return true;
             }
 
             // Ignorar erros de áudio específicos
-            if (error.message.includes('HTMLMediaElement') ||
-                error.message.includes('audio')) {
+            if ((error as Error).message.includes('HTMLMediaElement') ||
+                (error as Error).message.includes('audio')) {
                 return true;
             }
         }

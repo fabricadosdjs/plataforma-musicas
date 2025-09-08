@@ -93,12 +93,12 @@ export async function GET(request: NextRequest) {
 
     } catch (error) {
         console.error('❌ Error in fallback API:', error);
-        console.error('Stack trace:', error.stack);
+        console.error('Stack trace:', (error as Error).stack);
 
         return NextResponse.json(
             {
                 error: 'Erro ao buscar playlists (fallback)',
-                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
             },
             { status: 500 }
         );

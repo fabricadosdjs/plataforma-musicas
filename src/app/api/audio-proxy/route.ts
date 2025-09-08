@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
         console.error('🎵 AudioProxy: Erro interno:', error);
         return NextResponse.json({
             error: 'Erro interno do servidor',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            details: error instanceof Error ? (error as Error).message : 'Unknown error'
         }, { status: 500 });
     }
 }
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({
                 error: 'Erro ao acessar proxy',
                 method: strategy,
-                details: error instanceof Error ? error.message : 'Unknown error'
+                details: error instanceof Error ? (error as Error).message : 'Unknown error'
             }, { status: 500 });
         }
 
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
         console.error('🎵 AudioProxy: Erro no POST:', error);
         return NextResponse.json({
             error: 'Erro interno do servidor',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            details: error instanceof Error ? (error as Error).message : 'Unknown error'
         }, { status: 500 });
     }
 }

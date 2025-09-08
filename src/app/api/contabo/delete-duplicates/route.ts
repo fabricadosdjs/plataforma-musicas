@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: false,
             error: 'Erro ao excluir duplicatas',
-            details: error instanceof Error ? error.message : 'Erro desconhecido'
+            details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
         }, { status: 500 });
     }
 }

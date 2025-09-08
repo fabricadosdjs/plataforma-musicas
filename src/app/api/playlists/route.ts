@@ -112,14 +112,14 @@ export async function GET(request: NextRequest) {
 
     } catch (error) {
         console.error('❌ Error fetching playlists:', error);
-        console.error('Stack trace:', error.stack);
+        console.error('Stack trace:', (error as Error).stack);
 
         // Retornar erro mais detalhado para debug
         return NextResponse.json(
             {
                 error: 'Erro ao buscar playlists',
-                details: process.env.NODE_ENV === 'development' ? error.message : undefined,
-                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+                details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined,
+                stack: process.env.NODE_ENV === 'development' ? (error as Error).stack : undefined
             },
             { status: 500 }
         );

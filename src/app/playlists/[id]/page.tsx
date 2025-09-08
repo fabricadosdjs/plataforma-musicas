@@ -232,7 +232,7 @@ export default function PlaylistPage({ params }: PlaylistPageProps) {
             }
         } catch (error) {
             console.error('❌ Erro no download individual:', error);
-            toast.error(`❌ Erro ao baixar música: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+            toast.error(`❌ Erro ao baixar música: ${error instanceof Error ? (error as Error).message : 'Erro desconhecido'}`);
         } finally {
             setDownloadingTracks(prev => {
                 const newSet = new Set(prev);
@@ -285,7 +285,7 @@ export default function PlaylistPage({ params }: PlaylistPageProps) {
             }
         } catch (error) {
             console.error('❌ Erro no like:', error);
-            toast.error(`❌ Erro ao curtir música: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+            toast.error(`❌ Erro ao curtir música: ${error instanceof Error ? (error as Error).message : 'Erro desconhecido'}`);
         } finally {
             setLikingTracks(prev => {
                 const newSet = new Set(prev);

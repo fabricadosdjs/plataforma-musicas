@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
             {
                 success: false,
                 error: 'Erro durante o upload',
-                details: error instanceof Error ? error.message : 'Erro desconhecido'
+                details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
             },
             { status: 500 }
         );
@@ -85,7 +85,7 @@ export async function DELETE(request: NextRequest) {
             {
                 success: false,
                 error: 'Erro ao deletar arquivo',
-                details: error instanceof Error ? error.message : 'Erro desconhecido'
+                details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
             },
             { status: 500 }
         );

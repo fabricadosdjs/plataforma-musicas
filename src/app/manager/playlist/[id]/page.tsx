@@ -207,10 +207,10 @@ export default function ManagerPlaylistTracksPage({ params }: { params: Promise<
         } catch (error) {
             console.error('Error fetching folders:', error);
             if (error instanceof Error) {
-                if (error.message.includes('JSON')) {
+                if ((error as Error).message.includes('JSON')) {
                     toast.error('Erro de formato de resposta. Tente recarregar a página.');
                 } else {
-                    toast.error(`Erro ao carregar pastas: ${error.message}`);
+                    toast.error(`Erro ao carregar pastas: ${(error as Error).message}`);
                 }
             } else {
                 toast.error('Erro ao carregar pastas');
@@ -249,10 +249,10 @@ export default function ManagerPlaylistTracksPage({ params }: { params: Promise<
         } catch (error) {
             console.error('Error fetching tracks by folder:', error);
             if (error instanceof Error) {
-                if (error.message.includes('JSON')) {
+                if ((error as Error).message.includes('JSON')) {
                     toast.error('Erro de formato de resposta. Tente recarregar a página.');
                 } else {
-                    toast.error(`Erro ao carregar músicas da pasta: ${error.message}`);
+                    toast.error(`Erro ao carregar músicas da pasta: ${(error as Error).message}`);
                 }
             } else {
                 toast.error('Erro ao carregar músicas da pasta');

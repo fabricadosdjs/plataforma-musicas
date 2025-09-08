@@ -129,15 +129,15 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('❌ API audio-track: Erro geral:', {
-            error: error instanceof Error ? error.message : String(error),
+            error: error instanceof Error ? (error as Error).message : String(error),
             errorName: error instanceof Error ? error.name : 'Unknown',
-            stack: error instanceof Error ? error.stack : 'No stack trace',
+            stack: error instanceof Error ? (error as Error).stack : 'No stack trace',
             trackId: 'Unknown'
         });
 
         return NextResponse.json({
             error: 'Erro interno do servidor',
-            details: error instanceof Error ? error.message : 'Erro desconhecido',
+            details: error instanceof Error ? (error as Error).message : 'Erro desconhecido',
             timestamp: new Date().toISOString()
         }, { status: 500 });
     }

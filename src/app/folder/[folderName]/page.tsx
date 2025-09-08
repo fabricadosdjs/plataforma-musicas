@@ -413,7 +413,7 @@ export default function FolderPage() {
 
                         let reason = 'Erro de rede';
                         if (error instanceof Error) {
-                            reason = error.message || 'Erro desconhecido';
+                            reason = (error as Error).message || 'Erro desconhecido';
                         }
 
                         setBatchProgress(prev => ({

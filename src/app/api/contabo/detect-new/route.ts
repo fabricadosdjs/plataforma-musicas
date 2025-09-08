@@ -143,7 +143,7 @@ async function detectNewFiles(request: NextRequest) {
         return NextResponse.json({
             success: false,
             error: 'Erro ao detectar novos arquivos',
-            details: error instanceof Error ? error.message : 'Erro desconhecido'
+            details: error instanceof Error ? (error as Error).message : 'Erro desconhecido'
         }, { status: 500 });
     }
 }

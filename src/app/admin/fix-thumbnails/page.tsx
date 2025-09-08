@@ -148,7 +148,7 @@ export default function FixThumbnailsPage() {
             return tracks;
         } catch (error: any) {
             console.error('❌ Erro ao buscar músicas:', error);
-            showToast(`❌ Erro ao buscar músicas: ${error.message}`, 'error');
+            showToast(`❌ Erro ao buscar músicas: ${(error as Error).message}`, 'error');
             return [];
         }
     };
@@ -239,7 +239,7 @@ export default function FixThumbnailsPage() {
                     newResults.push({
                         batch: i + 1,
                         status: 'error',
-                        message: `Erro no lote ${i + 1}: ${error.message}`,
+                        message: `Erro no lote ${i + 1}: ${(error as Error).message}`,
                         tracks: batch.length
                     });
                     console.error(`❌ Erro no lote ${i + 1}:`, error);
@@ -272,7 +272,7 @@ export default function FixThumbnailsPage() {
 
         } catch (error: any) {
             console.error('❌ Erro durante a correção de thumbnails:', error);
-            showToast(`❌ Erro durante a correção: ${error.message}`, 'error');
+            showToast(`❌ Erro durante a correção: ${(error as Error).message}`, 'error');
             setIsLoading(false);
         }
     };

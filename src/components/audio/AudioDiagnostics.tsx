@@ -79,7 +79,7 @@ export const AudioDiagnostics: React.FC = () => {
                 fileSize: 0,
                 duration: 0,
                 supported: false,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? (error as Error).message : 'Unknown error'
             });
         } finally {
             setIsLoading(false);

@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
             console.error('🎵 CloudflareProxy: Erro de conexão:', error);
             return NextResponse.json({
                 error: 'Erro de conexão via Cloudflare',
-                details: error instanceof Error ? error.message : 'Unknown error',
+                details: error instanceof Error ? (error as Error).message : 'Unknown error',
                 cfRay: 'cloudflare-proxy-' + Math.random().toString(36).substr(2, 9)
             }, {
                 status: 500,
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
         console.error('🎵 CloudflareProxy: Erro interno:', error);
         return NextResponse.json({
             error: 'Erro interno do Cloudflare Proxy',
-            details: error instanceof Error ? error.message : 'Unknown error',
+            details: error instanceof Error ? (error as Error).message : 'Unknown error',
             cfRay: 'cloudflare-proxy-' + Math.random().toString(36).substr(2, 9)
         }, {
             status: 500,
@@ -148,7 +148,7 @@ export async function HEAD(request: NextRequest) {
             console.error('🎵 CloudflareProxy: Erro no HEAD:', error);
             return NextResponse.json({
                 error: 'Erro de conexão via Cloudflare',
-                details: error instanceof Error ? error.message : 'Unknown error',
+                details: error instanceof Error ? (error as Error).message : 'Unknown error',
                 cfRay: 'cloudflare-proxy-' + Math.random().toString(36).substr(2, 9)
             }, {
                 status: 500,
@@ -163,7 +163,7 @@ export async function HEAD(request: NextRequest) {
         console.error('🎵 CloudflareProxy: Erro interno no HEAD:', error);
         return NextResponse.json({
             error: 'Erro interno do Cloudflare Proxy',
-            details: error instanceof Error ? error.message : 'Unknown error',
+            details: error instanceof Error ? (error as Error).message : 'Unknown error',
             cfRay: 'cloudflare-proxy-' + Math.random().toString(36).substr(2, 9)
         }, {
             status: 500,
