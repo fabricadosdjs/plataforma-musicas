@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
 
     } catch (error) {
         console.error('❌ API Library: Erro ao buscar biblioteca:', error);
-        console.error('Stack trace:', error.stack);
+        console.error('Stack trace:', (error as Error).stack);
 
         return NextResponse.json(
             {
