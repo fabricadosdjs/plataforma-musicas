@@ -173,7 +173,7 @@ export async function GET(request: NextRequest) {
         } else if (error.name === 'InvalidAccessKeyId' || error.name === 'SignatureDoesNotMatch') {
             message = 'Credenciais de acesso inválidas';
             status = 401;
-        } else if ((error as Error).code === 'NetworkingError') {
+        } else if ((error as any).code === 'NetworkingError') {
             message = 'Erro de rede ao acessar o storage';
             status = 503;
         }

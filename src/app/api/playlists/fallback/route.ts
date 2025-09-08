@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         const playlistsWithCounts = await Promise.all(
             playlists.map(async (playlist) => {
                 try {
-                    const trackCount = await prisma.playlistTrack.count({
+                    const trackCount = await prisma!.playlistTrack.count({
                         where: { playlistId: playlist.id }
                     });
 

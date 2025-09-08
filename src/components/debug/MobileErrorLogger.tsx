@@ -173,7 +173,7 @@ export const MobileErrorLogger: React.FC = () => {
 
 🔍 LOGS CAPTURADOS:
 ${filteredErrors.map((error, index) =>
-            `[${index + 1}] [${error.timestamp}] ${error.type.toUpperCase()}: ${(error as Error).message}`
+            `[${index + 1}] [${error.timestamp}] ${error.type.toUpperCase()}: ${error.message}`
         ).join('\n')}
 
 📅 Gerado em: ${new Date().toLocaleString('pt-BR')}`;
@@ -335,9 +335,9 @@ ${filteredErrors.map((error, index) =>
                                     </span>
                                 </div>
                                 <div className="mt-1 text-gray-200 break-words">
-                                    {(error as Error).message.length > 100
-                                        ? (error as Error).message.substring(0, 100) + '...'
-                                        : (error as Error).message
+                                    {error.message.length > 100
+                                        ? error.message.substring(0, 100) + '...'
+                                        : error.message
                                     }
                                 </div>
                             </div>

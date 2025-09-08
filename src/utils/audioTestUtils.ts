@@ -87,8 +87,8 @@ export function logAudioElementState(audio: HTMLAudioElement, context: string = 
         volume: audio.volume,
         muted: audio.muted,
         error: audio.error ? {
-            code: audio.(error as Error).code,
-            message: audio.(error as Error).message
+            code: audio.error.code,
+            message: audio.error.message
         } : null,
         sources: Array.from(audio.querySelectorAll('source')).map(s => ({
             src: s.src,
